@@ -1,8 +1,14 @@
+# Dependances du programme. Versions minimales connues pour fonctionner
+# (plancher = version testee actuellement). Le ">=" autorise les mises a
+# jour compatibles sans permettre une version trop ancienne.
+#
+# Teste avec Python 3.14.
+
 # Database connectivity
-psycopg2-binary
+psycopg2-binary>=2.9.11
 
 # CS2 Demo parsing
-demoparser2
+demoparser2>=0.41.1
 
 # Windows-specific functionality (Optional)
-# pywin32; sys_platform == 'win32'
+# pywin32>=311; sys_platform == 'win32'
