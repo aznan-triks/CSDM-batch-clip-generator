@@ -89,3 +89,29 @@ def _build_theme(bg_name: str, accent_name_or_hex: str) -> dict:
         "YELLOW":    sc["YELLOW"],
         "BLUE":      sc["BLUE"],
     }
+
+
+# ── Theme VIVANT, partage entre modules ─────────────────────────────────────
+#  _THEME est l'unique dictionnaire de couleurs courantes. Il est mute EN PLACE
+#  (clear + update) par apply_theme(), jamais reassigne : ainsi tous les modules
+#  qui importent _THEME / _t voient le meme objet et les memes valeurs apres un
+#  changement de theme. C'est ce qui permet d'extraire des widgets dans d'autres
+#  fichiers sans casser la mise a jour des couleurs.
+_THEME: dict = _build_theme("dark", "green")
+
+
+def _t(key: str) -> str:
+    """Couleur courante du theme pour une cle donnee (ex. _t('BG'))."""
+    return _THEME[key]
+
+
+def apply_theme(bg_name: str, accent: str) -> dict:
+    """Recalcule le theme et met _THEME a jour EN PLACE. Retourne _THEME.
+
+    Mutation sur place volontaire : ne PAS reassigner _THEME, sinon les autres
+    modules garderaient l'ancien dictionnaire.
+    """
+    new = _build_theme(bg_name, accent)
+    _THEME.clear()
+    _THEME.update(new)
+    return _THEME

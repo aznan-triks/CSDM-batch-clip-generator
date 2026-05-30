@@ -37,17 +37,12 @@ APP_VERSION = "v204"
 #  Theme system
 # ═══════════════════════════════════════════════════════
 
-# ── Palettes de theme + fabrique (Phase 1.1) ───────────────────────────────
-#  Extraites dans csdm/theme.py. Les variables VIVANTES (_THEME, BG, ...)
-#  restent ci-dessous : ~640 lectures les attendent comme globales du module.
-from csdm.theme import _build_theme, _ACCENT_PRESETS
-
-# Active theme — populated at startup and updated on theme change
-_THEME: dict = _build_theme("dark", "green")
-
-def _t(key: str) -> str:
-    """Return the current theme colour for a given key."""
-    return _THEME[key]
+# ── Palettes + theme VIVANT partage (Phase 1.1 / 1.2) ───────────────────────
+#  Les couleurs courantes vivent dans csdm/theme.py (_THEME mute en place +
+#  accesseur _t). On les importe ici. Les ~640 lectures du fichier utilisent
+#  encore les globales BG/BG2/... ci-dessous : on les garde synchronisees a
+#  partir du dict partage. Les futurs modules de widgets, eux, utilisent _t().
+from csdm.theme import _build_theme, _ACCENT_PRESETS, _THEME, _t, apply_theme as _apply_theme_dict
 
 # Apply the initial theme to module-level globals for backward compat
 BG       = _THEME["BG"]
@@ -76,8 +71,9 @@ def _apply_theme_globals(bg_name: str, accent: str):
     After this, any new widget creation will use the updated globals.
     Existing widgets are updated by App._apply_theme_to_widgets().
     """
-    global _THEME
-    _THEME = _build_theme(bg_name, accent)
+    # Mute le theme PARTAGE en place (csdm/theme._THEME) — pas de reassignation,
+    # sinon les autres modules garderaient l'ancien dictionnaire.
+    _apply_theme_dict(bg_name, accent)
     g = globals()
     for name in _THEME_GLOBAL_NAMES:
         g[name] = _THEME[name]
