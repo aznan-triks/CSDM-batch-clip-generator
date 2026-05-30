@@ -9,6 +9,23 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — internal restructuring (no behaviour change)
+
+### Changed: split the single-file monolith into a `csdm/` package (Phase 1.1)
+
+The application is being reorganised from one ~12.6k-line file into a small
+package, one module per responsibility. No user-facing behaviour changes; the
+entry point is still `csdm_batch_clips_generator.py`, which re-imports every
+moved name so all call sites keep working.
+
+- `csdm/static_data.py` — kill-filter registry + weapon/codec/resolution/match-type tables
+- `csdm/config.py` — `DEFAULT_CONFIG`, preset groups, JSON load/save helpers
+- `csdm/theme.py` — theme palettes + `_build_theme()` factory (live theme globals stay in the main file)
+
+Main file reduced from 12,621 to ~11,855 lines so far. Test suite green (11/11).
+
+---
+
 ## [v204]
 
 ### Improved: Mate POV — replace body-point loop with single eye check; tighten max dist
