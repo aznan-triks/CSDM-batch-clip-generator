@@ -18,7 +18,7 @@ from pathlib import Path
 
 from csdm import static_data as sd
 from csdm import config as cfgmod
-from csdm_batch_clips_generator import iso_to_display, display_to_iso
+from csdm_batch_clips_generator import App, iso_to_display, display_to_iso
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -201,6 +201,55 @@ class DateHelperTests(unittest.TestCase):
 
     def test_garbage_display_becomes_empty(self):
         self.assertEqual(display_to_iso("not a date"), "")
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  Assistants purs de App (testes sur une instance nue, sans Tk ni DB)
+# ════════════════════════════════════════════════════════════════════════════
+class AppPureHelperTests(unittest.TestCase):
+    def setUp(self):
+        self.app = App.__new__(App)
+
+    def test_normalize_recsys(self):
+        self.assertEqual(App._normalize_recsys("CS"), "CS")
+        self.assertEqual(App._normalize_recsys("cs"), "CS")
+        self.assertEqual(App._normalize_recsys("  Cs "), "CS")
+        self.assertEqual(App._normalize_recsys("HLAE"), "HLAE")
+        self.assertEqual(App._normalize_recsys(""), "HLAE")
+        self.assertEqual(App._normalize_recsys(None), "HLAE")
+        self.assertEqual(App._normalize_recsys("anything else"), "HLAE")
+
+    def test_hms_formats(self):
+        self.assertEqual(self.app._hms(0), "0s")
+        self.assertEqual(self.app._hms(45), "45s")
+        self.assertEqual(self.app._hms(90), "1m30s")
+        self.assertEqual(self.app._hms(600), "10m00s")
+        self.assertEqual(self.app._hms(3661), "1h01m01s")
+
+    def test_hms_truncates_float(self):
+        self.assertEqual(self.app._hms(59.9), "59s")
+
+    def test_fmt_summary_singular_vs_plural(self):
+        s1 = self.app._fmt_summary(1, 1, 10, 10)
+        self.assertIn("1 clip ", s1)   # singulier (pas de 's')
+        self.assertIn("1 demo", s1)
+        s2 = self.app._fmt_summary(3, 5, 100, 20)
+        self.assertIn("5 clips", s2)   # pluriel
+        self.assertIn("3 demos", s2)
+
+    def test_fuzzy_sid_in_set_within_tolerance(self):
+        # Tolerance de classe = 16 (derive float64 sur les SteamID64).
+        base = 76561198000000000
+        sids = {str(base)}
+        self.assertTrue(self.app._fuzzy_sid_in_set(str(base), sids))
+        self.assertTrue(self.app._fuzzy_sid_in_set(str(base + 16), sids))
+        self.assertTrue(self.app._fuzzy_sid_in_set(str(base - 16), sids))
+        self.assertFalse(self.app._fuzzy_sid_in_set(str(base + 17), sids))
+
+    def test_fuzzy_sid_in_set_rejects_bad_input(self):
+        self.assertFalse(self.app._fuzzy_sid_in_set("notanumber", {"123"}))
+        self.assertFalse(self.app._fuzzy_sid_in_set("123", set()))
+        self.assertFalse(self.app._fuzzy_sid_in_set(None, {"123"}))
 
 
 if __name__ == "__main__":
