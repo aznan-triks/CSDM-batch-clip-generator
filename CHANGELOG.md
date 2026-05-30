@@ -9,6 +9,41 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v204]
+
+### Improved: Mate POV — replace body-point loop with single eye check; tighten max dist
+
+**Body-point loop removed.** At ≤550 u the angular spread from head to legs is under 6°, so testing 3 separate points added no filtering value over a single centre check. Replaced with one check against the victim's eye position (`Z + 54`, CS2 standing eye height). Simpler, equally accurate.
+
+**Max dist 3000 → 550 u.** Beyond ~550 Hammer units, the probability of a clear same-floor LOS drops sharply. Tight engagement range only.
+
+**Constants removed:** `_MATE_POV_BODY_HEIGHTS`, `_MATE_POV_MIN_VISIBLE`
+**Constant added:** `_MATE_POV_EYE_HEIGHT = 54`
+
+---
+
+## [v203]
+
+### Fixed: Mate POV — obstacle/floor filtering to reject blocked LOS
+
+Mate POV was accepting teammates on different floors, looking through ceilings, or barely glancing toward the victim — producing useless clips.
+
+**Root cause:** LOS check was purely angle-based with very loose parameters. No geometry filter existed for floor/ceiling blocking.
+
+**Changes:**
+
+- `_MATE_POV_FOV_HALF_DEG` tightened: `45°` → `20°` — victim must be clearly in the mate's view, not at the edge
+- `_MATE_POV_MIN_VISIBLE` raised: `2` → `3` — all three body points (head/chest/legs) must be inside the FOV cone
+- `_MATE_POV_MAX_DIST` reduced: `5000` → `3000` Hammer units — distant mates almost always have walls between them
+- `_MATE_POV_MIN_DIST = 80` (new) — reject mates clipping into or directly on top of the victim
+- `_MATE_POV_MAX_Z_DELTA = 300` (new) — reject if height difference > 300 units (≈ 2.5 player heights); filters different-floor mates where a ceiling/floor would block LOS
+- `_MATE_POV_MAX_ELEVATION = 30.0°` (new) — reject if the required elevation angle to look from mate to victim exceeds 30°; steep angles strongly indicate the mate is on a different level
+- `health` added to `parse_ticks` columns — dead players (health ≤ 0) are now excluded from mate candidates; health column absence (older demos) is handled gracefully
+
+**Note:** BSP ray-casting is not available via demoparser2. These geometric filters eliminate the most common false-positive cases (different floors, extreme distances, glancing angles) but cannot detect walls on the same level.
+
+---
+
 ## [v202]
 
 ### Fixed: map column detection — `map_name` lives in `demos` table, not `matches`

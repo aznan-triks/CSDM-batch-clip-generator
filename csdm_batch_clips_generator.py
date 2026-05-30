@@ -29,7 +29,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════
 #  Version
 # ═══════════════════════════════════════════════════════
-APP_VERSION = "v202"
+APP_VERSION = "v204"
 
 # ═══════════════════════════════════════════════════════
 #  Theme
@@ -359,8 +359,8 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
     FilterDef("kill_mod_mate_pov",       "👥 MATE POV:",      "👥 MATE POV",   "dp2",
         ("Record from the victim's teammate who has the best angular view of the kill.\n"
          "Uses demoparser2 player positions + view angles at kill tick.\n"
-         "⚠ LOS is angle-based (no BSP ray-cast). At least 2 of 3 body points must be\n"
-         "within the teammate's field of view.\n"
+         "Filters: victim eye clearly in view (±20°), alive mate, same floor (Z ≤300 u),\n"
+         "elevation ≤30°, distance 80–550 u. No BSP ray-cast — walls not detected.\n"
          "★ Must = skip clips with no qualifying teammate."),
         dp2_filter="_mate_pov_filter",
         dp2_apply=None,
@@ -4192,8 +4192,8 @@ class App(tk.Tk):
         _mp_lbl.pack(side="left")
         add_tip(_mp_lbl,
                 "Record from the best-angle teammate of the victim instead of the victim.\n"
-                "Uses demoparser2 player positions + view angles at kill tick.\n"
-                "⚠ LOS is angle-based (no BSP ray-cast).\n"
+                "Requires: victim eye clearly in view (±20°), alive mate, same floor,\n"
+                "elevation ≤30°, distance 80–550 u. No BSP — walls not detected.\n"
                 "Only applies in Victim / Both perspective modes.")
         _mp_en = hchk(self._mate_pov_row, "Enable", self.v["kill_mod_mate_pov"])
         _mp_en.pack(side="left", padx=(4, 0))
@@ -6393,10 +6393,12 @@ class App(tk.Tk):
     #   3. camera_fn="_mate_pov_camera_sid" lets _build_json look it up generically.
     # LOS is angle-based only (no BSP ray-cast available via demoparser2).
 
-    _MATE_POV_BODY_HEIGHTS = (64, 40, 10)   # head / chest / legs (units above feet)
-    _MATE_POV_FOV_HALF_DEG = 45.0           # half-angle: point must be within ±45° to count
-    _MATE_POV_MIN_VISIBLE   = 2             # body points in FOV required ("≥50% visible")
-    _MATE_POV_MAX_DIST      = 5000          # ignore mates further than this (Hammer units)
+    _MATE_POV_EYE_HEIGHT     = 54           # eye-level offset above feet (CS2 standing)
+    _MATE_POV_FOV_HALF_DEG   = 20.0         # half-angle: victim must be clearly in view
+    _MATE_POV_MAX_DIST       = 550          # ignore mates beyond 550 u — walls very likely
+    _MATE_POV_MIN_DIST       = 80           # ignore mates clipping into / directly on victim
+    _MATE_POV_MAX_Z_DELTA    = 300          # reject if height diff > 300 u — different floors
+    _MATE_POV_MAX_ELEVATION  = 30.0         # reject if elevation angle > 30° — through floor/ceil
     # demoparser2 stores SteamIDs with the lower 3 bits zeroed (CS2 entity handle
     # encoding).  float64 precision loss on 17-digit SteamID64 values can produce
     # a rounding error of up to 16 units at the magnitudes involved (~7.6×10^16).
@@ -6423,7 +6425,7 @@ class App(tk.Tk):
         try:
             from demoparser2 import DemoParser
             parser = DemoParser(demo_path)
-            df = parser.parse_ticks(["X", "Y", "Z", "pitch", "yaw", "team_num"], ticks=needed)
+            df = parser.parse_ticks(["X", "Y", "Z", "pitch", "yaw", "team_num", "health"], ticks=needed)
         except Exception as e:
             self._async_log(f"  ⚠ Mate POV parse_ticks error: {e}", "warn")
             return cached
@@ -6443,13 +6445,14 @@ class App(tk.Tk):
             def _fc(name):
                 return next((c for c in cols if c.lower() == name.lower()), None)
 
-            col_tick = _fc("tick")
-            col_x    = _fc("X")
-            col_y    = _fc("Y")
-            col_z    = _fc("Z")
-            col_yaw  = _fc("yaw")
-            col_pit  = _fc("pitch")
-            col_team = _fc("team_num")
+            col_tick   = _fc("tick")
+            col_x      = _fc("X")
+            col_y      = _fc("Y")
+            col_z      = _fc("Z")
+            col_yaw    = _fc("yaw")
+            col_pit    = _fc("pitch")
+            col_team   = _fc("team_num")
+            col_health = _fc("health")
 
             if not (col_tick and col_x and col_y and col_z):
                 self._async_log(f"  ⚠ Mate POV: missing columns tick/X/Y/Z in {cols}", "warn")
@@ -6470,13 +6473,15 @@ class App(tk.Tk):
 
             # Numeric columns → float64 numpy (fine for positions/angles)
             num_cols = [c for c in [col_tick, col_x, col_y, col_z,
-                                    col_yaw, col_pit, col_team] if c]
+                                    col_yaw, col_pit, col_team, col_health] if c]
             arr = df[num_cols].to_numpy()
 
             base = 4   # tick, X, Y, Z are always present → indices 0-3
-            yaw_i  = base     if col_yaw  else None
-            pit_i  = base + (1 if col_yaw else 0) if col_pit  else None
-            team_i = base + (1 if col_yaw else 0) + (1 if col_pit else 0) if col_team else None
+            offset = 0
+            yaw_i    = (base + offset) if col_yaw    else None; offset += (1 if col_yaw    else 0)
+            pit_i    = (base + offset) if col_pit    else None; offset += (1 if col_pit    else 0)
+            team_i   = (base + offset) if col_team   else None; offset += (1 if col_team   else 0)
+            health_i = (base + offset) if col_health else None
 
             def _fv(v):
                 if v is None: return 0.0
@@ -6497,12 +6502,13 @@ class App(tk.Tk):
                     continue
 
                 cached.setdefault(t, {})[sid] = {
-                    "X":    _fv(row[1]),
-                    "Y":    _fv(row[2]),
-                    "Z":    _fv(row[3]),
-                    "yaw":  _fv(row[yaw_i])  if yaw_i  is not None else 0.0,
-                    "pitch":_fv(row[pit_i])  if pit_i  is not None else 0.0,
-                    "team": int(_fv(row[team_i])) if team_i is not None else 0,
+                    "X":      _fv(row[1]),
+                    "Y":      _fv(row[2]),
+                    "Z":      _fv(row[3]),
+                    "yaw":    _fv(row[yaw_i])    if yaw_i    is not None else 0.0,
+                    "pitch":  _fv(row[pit_i])    if pit_i    is not None else 0.0,
+                    "team":   int(_fv(row[team_i]))   if team_i   is not None else 0,
+                    "health": int(_fv(row[health_i])) if health_i is not None else -1,
                 }
         except Exception as e:
             self._async_log(f"  ⚠ Mate POV: position parse failed: {e}", "warn")
@@ -6616,10 +6622,31 @@ class App(tk.Tk):
             if self._fuzzy_sid_in_set(sid, sids_active):
                 continue                                  # skip the active (our) player(s)
 
+            # Dead player — health==-1 means column absent (unknown), allow those through
+            hp = pd.get("health", -1)
+            if hp != -1 and hp <= 0:
+                continue
+
             dx   = vx - pd["X"]
             dy   = vy - pd["Y"]
+            dz   = vz - pd["Z"]
             dist = math.sqrt(dx * dx + dy * dy)
+
+            if dist < self._MATE_POV_MIN_DIST:
+                continue                                  # clipping / on top of victim
             if dist > self._MATE_POV_MAX_DIST:
+                continue                                  # too far — walls likely
+
+            # Different-floor filter: large Z delta means ceiling/floor between them
+            if abs(dz) > self._MATE_POV_MAX_Z_DELTA:
+                continue
+
+            # Elevation angle filter: steep look-up/down angle = different levels
+            dist3d = math.sqrt(dist * dist + dz * dz)
+            if dist3d < 1:
+                continue
+            elevation = math.degrees(math.asin(max(-1.0, min(1.0, dz / dist3d))))
+            if abs(elevation) > self._MATE_POV_MAX_ELEVATION:
                 continue
 
             # View direction from yaw / pitch
@@ -6629,26 +6656,19 @@ class App(tk.Tk):
             ly =  math.cos(pitch_r) * math.sin(yaw_r)
             lz = -math.sin(pitch_r)
 
-            # Test body points (head / chest / legs) — ≥ _MATE_POV_MIN_VISIBLE must qualify
-            visible   = 0
-            angle_sum = 0.0
-            for bz_off in self._MATE_POV_BODY_HEIGHTS:
-                bdx  = vx - pd["X"]
-                bdy  = vy - pd["Y"]
-                bdz  = (vz + bz_off) - pd["Z"]
-                blen = math.sqrt(bdx * bdx + bdy * bdy + bdz * bdz)
-                if blen < 1:
-                    continue
-                dot = (lx * bdx + ly * bdy + lz * bdz) / blen
-                ang = math.degrees(math.acos(max(-1.0, min(1.0, dot))))
-                if ang <= self._MATE_POV_FOV_HALF_DEG:
-                    visible   += 1
-                    angle_sum += ang
-
-            if visible < self._MATE_POV_MIN_VISIBLE:
+            # Single eye-point check — at ≤550 u the angular spread across the body
+            # is <6°, so multi-point sampling adds no value over one centre check.
+            bdx  = vx - pd["X"]
+            bdy  = vy - pd["Y"]
+            bdz  = (vz + self._MATE_POV_EYE_HEIGHT) - pd["Z"]
+            blen = math.sqrt(bdx * bdx + bdy * bdy + bdz * bdz)
+            if blen < 1:
                 continue
-
-            score = angle_sum / visible   # average angle — lower = more centred
+            dot = (lx * bdx + ly * bdy + lz * bdz) / blen
+            score = math.degrees(math.acos(max(-1.0, min(1.0, dot))))
+            if score > self._MATE_POV_FOV_HALF_DEG:
+                continue
+            # score = angle to victim eye — lower = more centred
             if score < best_score:
                 best_score = score
                 best_sid   = sid
