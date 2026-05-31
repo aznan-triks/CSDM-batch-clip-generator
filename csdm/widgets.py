@@ -10,10 +10,13 @@ globaux de App (molette, redimensionnement) iterent dessus. Ce sont les memes
 objets que ceux importes par le fichier principal.
 """
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 
 from csdm.theme import _t
-from csdm.ui_kit import FONT_MONO, FONT_SM, FONT_DESC
+from csdm.ui_kit import (
+    FONT_MONO, FONT_SM, FONT_DESC,
+    UI_SEC_PADX, UI_SEC_PADY, UI_SEC_GAP,
+)
 
 # Registry of all live ScrollableFrame instances — used by the global wheel dispatcher.
 _SCROLL_FRAMES: list = []
@@ -334,3 +337,140 @@ def dp2_badge(parent):
     lbl = tk.Label(parent, text="demoparser2", font=FONT_DESC, fg=_t("BLUE"), bg=_t("BG2"))
     add_tip(lbl, "Requires: pip install demoparser2")
     return lbl
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  Carte de section pliable + champ de chemin (Phase 1.2)
+# ════════════════════════════════════════════════════════════════════════════
+class Sec(tk.Frame):
+    """Collapsible section card — drop-in replacement for the old LabelFrame Sec.
+
+    Children packed/gridded into a Sec instance go into the body (content area).
+    The header with toggle arrow is a sibling frame managed internally.
+
+    Usage is identical to the old Sec:
+        sec = Sec(parent, "MY SECTION")
+        sec.pack(fill="x")
+        tk.Label(sec, text="hello").pack()   # goes into the body, correct
+    """
+
+    def __init__(self, parent, title, collapsed=False, **kw):
+        # _wrapper holds the header + this body frame
+        self._wrapper = tk.Frame(parent, bg=_t("BG"), bd=0)
+
+        # ── Header ────────────────────────────────────────────────────────────
+        self._hdr = tk.Frame(self._wrapper, bg=_t("BG2"), cursor="hand2")
+        self._hdr.pack(fill="x")
+
+        self._stripe = tk.Frame(self._hdr, width=3, bg=_t("ORANGE"))
+        self._stripe.pack(side="left", fill="y")
+
+        self._arrow = tk.Label(self._hdr, text="▾",
+                               font=("Consolas", 9, "bold"),
+                               bg=_t("BG2"), fg=_t("ORANGE"),
+                               padx=UI_SEC_PADX // 2, pady=5)
+        self._arrow.pack(side="left")
+
+        self._title_lbl = tk.Label(self._hdr, text=title.upper(),
+                                   font=("Consolas", 9, "bold"),
+                                   bg=_t("BG2"), fg=_t("ORANGE"),
+                                   anchor="w", pady=5)
+        self._title_lbl.pack(side="left", fill="x", expand=True)
+
+        self._sep = tk.Frame(self._wrapper, height=1, bg=_t("BORDER"))
+        self._sep.pack(fill="x")
+
+        # ── Body = this Frame ─────────────────────────────────────────────────
+        kw.setdefault("bg", _t("BG2"))
+        kw.setdefault("padx", UI_SEC_PADX)
+        kw.setdefault("pady", UI_SEC_PADY)
+        super().__init__(self._wrapper, **kw)
+        tk.Frame.pack(self, fill="x")   # pack body into wrapper
+
+        self._open = not collapsed
+        self._title = title
+
+        # Bind header click to toggle
+        for w in (self._hdr, self._arrow, self._title_lbl, self._stripe):
+            w.bind("<Button-1>", self._toggle)
+
+        if collapsed:
+            self._collapse_now()
+
+    # ── Pack / grid / place — proxy to wrapper ────────────────────────────────
+
+    def pack(self, **kw):
+        kw.setdefault("pady", (0, UI_SEC_GAP))
+        self._wrapper.pack(**kw)
+
+    def pack_forget(self):
+        self._wrapper.pack_forget()
+
+    def grid(self, **kw):
+        self._wrapper.grid(**kw)
+
+    def grid_forget(self):
+        self._wrapper.grid_forget()
+
+    def place(self, **kw):
+        self._wrapper.place(**kw)
+
+    # ── Collapse / expand ─────────────────────────────────────────────────────
+
+    def _toggle(self, *_):
+        if self._open:
+            self._collapse_now()
+        else:
+            self._expand_now()
+
+    def _collapse_now(self):
+        self._open = False
+        self._arrow.config(text="▸")
+        self._sep.pack_forget()
+        tk.Frame.pack_forget(self)
+
+    def _expand_now(self):
+        self._open = True
+        self._arrow.config(text="▾")
+        self._sep.pack(fill="x")
+        tk.Frame.pack(self, fill="x")
+
+    # ── Theme update ──────────────────────────────────────────────────────────
+
+    def apply_theme(self):
+        try: self._wrapper.config(bg=_t("BG"))
+        except tk.TclError: pass
+        try: self._hdr.config(bg=_t("BG2"))
+        except tk.TclError: pass
+        try: self._stripe.config(bg=_t("ORANGE"))
+        except tk.TclError: pass
+        try: self._arrow.config(bg=_t("BG2"), fg=_t("ORANGE"))
+        except tk.TclError: pass
+        try: self._title_lbl.config(bg=_t("BG2"), fg=_t("ORANGE"))
+        except tk.TclError: pass
+        try: self._sep.config(bg=_t("BORDER"))
+        except tk.TclError: pass
+        try: self.config(bg=_t("BG2"))
+        except tk.TclError: pass
+
+class PathField(tk.Frame):
+    def __init__(self, parent, label, desc, var, mode="file"):
+        super().__init__(parent, bg=_t("BG2"))
+        mlabel(self, label, anchor="w").pack(fill="x")
+        if desc:
+            tk.Label(self, text=desc, font=FONT_DESC, fg=_t("DESC_COLOR"), bg=_t("BG2"), anchor="w").pack(fill="x")
+        row = tk.Frame(self, bg=_t("BG2"))
+        row.pack(fill="x", pady=(3, 0))
+        tk.Entry(row, textvariable=var, font=FONT_MONO, bg=_t("BG3"), fg=_t("TEXT"), insertbackground=_t("ORANGE"),
+                 relief="flat", bd=0, highlightthickness=1, highlightbackground=_t("BORDER"),
+                 highlightcolor=_t("ORANGE")).pack(side="left", fill="x", expand=True, ipady=6, ipadx=8)
+
+        def browse():
+            p = (filedialog.askopenfilename(filetypes=[("Exe", "*.exe;*.cmd"), ("All files", "*.*")])
+                 if mode == "file" else filedialog.askdirectory())
+            if p:
+                var.set(p)
+
+        tk.Button(row, text=" ... ", command=browse, font=FONT_SM, bg=_t("BG3"), fg=_t("MUTED"), relief="flat",
+                  cursor="hand2", activebackground=_t("BORDER"), activeforeground=_t("ORANGE"),
+                  highlightthickness=0, bd=0).pack(side="left", padx=(4, 0), ipady=6, ipadx=4)
