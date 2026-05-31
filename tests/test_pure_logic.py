@@ -366,5 +366,37 @@ class CameraTickTests(unittest.TestCase):
         self.assertEqual(ticks, sorted(set(ticks)))
 
 
+# ════════════════════════════════════════════════════════════════════════════
+#  Detection de la colonne "map" (schema DB variable — bug silencieux possible)
+# ════════════════════════════════════════════════════════════════════════════
+class MapColumnDetectionTests(unittest.TestCase):
+    def test_direct_candidate_in_matches(self):
+        col, alias, join = App._detect_map_col({"matches": ["id", "map_name"], "demos": []})
+        self.assertEqual((col, alias, join), ("map_name", "m", ""))
+
+    def test_substring_fallback_in_matches(self):
+        # No exact candidate, but a column containing "map".
+        col, alias, join = App._detect_map_col({"matches": ["id", "the_map_field"]})
+        self.assertEqual((col, alias), ("the_map_field", "m"))
+        self.assertEqual(join, "")
+
+    def test_join_demos_on_checksum(self):
+        schema = {"matches": ["id", "checksum"], "demos": ["checksum", "map_name"]}
+        col, alias, join = App._detect_map_col(schema)
+        self.assertEqual(col, "map_name")
+        self.assertEqual(alias, "d")
+        self.assertIn("LEFT JOIN demos d", join)
+        self.assertIn("checksum", join)
+
+    def test_no_map_column_anywhere(self):
+        col, alias, join = App._detect_map_col({"matches": ["id", "score"], "demos": []})
+        self.assertEqual((col, alias, join), (None, "m", ""))
+
+    def test_demos_map_without_checksum_link_is_unusable(self):
+        # map lives in demos but there's no checksum to join on -> give up cleanly.
+        schema = {"matches": ["id"], "demos": ["map_name"]}
+        self.assertEqual(App._detect_map_col(schema), (None, "m", ""))
+
+
 if __name__ == "__main__":
     unittest.main()
