@@ -18,7 +18,11 @@ from pathlib import Path
 
 from csdm import static_data as sd
 from csdm import config as cfgmod
-from csdm_batch_clips_generator import App, iso_to_display, display_to_iso
+from csdm_batch_clips_generator import (
+    App, iso_to_display, display_to_iso,
+    fmt_duration, safe_folder_name, build_camera_ticks,
+    _generate_id_for_type, _count_kills,
+)
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -286,6 +290,80 @@ class AppPureHelperTests(unittest.TestCase):
         self.assertFalse(self.app._fuzzy_sid_in_set("notanumber", {"123"}))
         self.assertFalse(self.app._fuzzy_sid_in_set("123", set()))
         self.assertFalse(self.app._fuzzy_sid_in_set(None, {"123"}))
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  Utilitaires du coeur metier (fonctions pures au niveau module)
+# ════════════════════════════════════════════════════════════════════════════
+class CoreUtilTests(unittest.TestCase):
+    def test_fmt_duration_minutes(self):
+        self.assertEqual(fmt_duration(0), "0:00")
+        self.assertEqual(fmt_duration(65), "1:05")
+        self.assertEqual(fmt_duration(599), "9:59")
+
+    def test_fmt_duration_hours(self):
+        self.assertEqual(fmt_duration(3600), "1:00:00")
+        self.assertEqual(fmt_duration(3661), "1:01:01")
+
+    def test_fmt_duration_truncates_float(self):
+        self.assertEqual(fmt_duration(65.9), "1:05")
+
+    def test_safe_folder_name_strips_invalid_chars(self):
+        # Note: '/' and '\\' are path separators (Path.stem drops them), so we
+        # test the other forbidden characters: < > " | ? *
+        self.assertEqual(safe_folder_name('a<b>c|d?e*f"g'), "a_b_c_d_e_f_g")
+
+    def test_safe_folder_name_drops_extension(self):
+        # Path.stem -> extension removed.
+        self.assertEqual(safe_folder_name("match_2026.dem"), "match_2026")
+
+    def test_safe_folder_name_truncates_to_100(self):
+        self.assertEqual(len(safe_folder_name("x" * 200)), 100)
+
+    def test_count_kills(self):
+        events = [{"type": "kill"}, {"type": "round"}, {"type": "kill"}, {"type": "death"}]
+        self.assertEqual(_count_kills(events), 2)
+        self.assertEqual(_count_kills([]), 0)
+
+    def test_generate_id_for_int_types(self):
+        for t in ("bigint", "integer", "int4", "smallint", "serial"):
+            v = _generate_id_for_type(t)
+            self.assertIsInstance(v, int)
+            self.assertGreaterEqual(v, 100_000_000)
+
+    def test_generate_id_for_text_and_uuid(self):
+        for t in ("uuid", "text", "varchar(64)", "character varying"):
+            v = _generate_id_for_type(t)
+            self.assertIsInstance(v, str)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  Construction des ticks de camera (logique sensible : clips au bon moment)
+# ════════════════════════════════════════════════════════════════════════════
+class CameraTickTests(unittest.TestCase):
+    def test_basic_offsets(self):
+        # tickrate 64 -> pre = 32, post = 8.
+        seq = {"start_tick": 1000, "end_tick": 2000, "events": [{"tick": 1500}]}
+        self.assertEqual(build_camera_ticks(seq, 64), [1000, 1468, 1508])
+
+    def test_clamped_to_sequence_bounds(self):
+        # An event near the edges must not produce ticks outside [start, end].
+        seq = {"start_tick": 1000, "end_tick": 2000,
+               "events": [{"tick": 1010}, {"tick": 1995}]}
+        ticks = build_camera_ticks(seq, 64)
+        self.assertEqual(min(ticks), 1000)
+        self.assertEqual(max(ticks), 2000)
+        self.assertEqual(ticks, sorted(ticks))
+
+    def test_start_tick_always_present(self):
+        seq = {"start_tick": 500, "end_tick": 900, "events": []}
+        self.assertEqual(build_camera_ticks(seq, 64), [500])
+
+    def test_result_is_sorted_and_unique(self):
+        seq = {"start_tick": 0, "end_tick": 10000,
+               "events": [{"tick": 5000}, {"tick": 5000}, {"tick": 3000}]}
+        ticks = build_camera_ticks(seq, 128)
+        self.assertEqual(ticks, sorted(set(ticks)))
 
 
 if __name__ == "__main__":
