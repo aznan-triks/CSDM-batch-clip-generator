@@ -86,32 +86,16 @@ def _apply_theme_globals(bg_name: str, accent: str):
                    selectcolor=_THEME["BG3"])
     _BTN_KW.update(activebackground=_THEME["BORDER"], activeforeground=_THEME["ORANGE"])
 
-FONT_MONO = ("Consolas", 10)
-FONT_SM = ("Consolas", 9)
-FONT_DESC = ("Consolas", 8)
-
-# ── UI spacing constants — single source of truth ───────────────────────────
-#  All padx / pady / ipadx / ipady values that appear in more than one place
-#  are derived from these. Change here → changes everywhere.
-UI_TAB_PAD    = 10   # outer padding of scrollable tab inner frame (top/bottom/left/right)
-UI_SEC_PADX   = 14   # horizontal body padding inside every Sec card
-UI_SEC_PADY   = 8    # vertical body padding inside every Sec card
-UI_SEC_GAP    = 6    # vertical gap between consecutive Sec cards
-UI_ROW_PAD    = 4    # standard vertical gap between rows inside a section
-UI_BTN_IPADX  = 8    # standard horizontal inner padding for action buttons
-UI_BTN_IPADY  = 4    # standard vertical inner padding for action buttons
-UI_ENTRY_IPAD = 6    # inner padding for text Entry fields
-# Minimum pixel widths for the two PanedWindow panes.  The sash is clamped to
-# these limits on release so neither panel can ever be completely squeezed away.
-UI_PANE_LEFT_MIN  = 380   # categories / notebook panel
-UI_PANE_RIGHT_MIN = 200   # console / log panel
-
-# Shared kwargs for flat checkbox/radio widgets
-_CHK_KW = dict(font=FONT_SM, bg=BG2, fg=MUTED, activebackground=BG2,
-               activeforeground=ORANGE, selectcolor=BG3,
-               relief="flat", bd=0, cursor="hand2", highlightthickness=0)
-_BTN_KW = dict(relief="flat", bd=0, cursor="hand2", highlightthickness=0,
-               activebackground=BORDER, activeforeground=ORANGE)
+# ── Boite a outils UI : polices, espacements, styles (Phase 1.2) ────────────
+#  Extraits dans csdm/ui_kit.py. _CHK_KW/_BTN_KW sont les MEMES objets dict
+#  que ceux mis a jour en place par _apply_theme_globals ci-dessus.
+from csdm.ui_kit import (
+    FONT_MONO, FONT_SM, FONT_DESC,
+    UI_TAB_PAD, UI_SEC_PADX, UI_SEC_PADY, UI_SEC_GAP, UI_ROW_PAD,
+    UI_BTN_IPADX, UI_BTN_IPADY, UI_ENTRY_IPAD,
+    UI_PANE_LEFT_MIN, UI_PANE_RIGHT_MIN,
+    _CHK_KW, _BTN_KW,
+)
 
 
 # ── Runtime-injection CFG constants ──────────────────────────────────────────
