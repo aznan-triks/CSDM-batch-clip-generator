@@ -13,6 +13,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from csdm.theme import _t
+from csdm.ui_kit import FONT_MONO, FONT_SM, FONT_DESC
 
 # Registry of all live ScrollableFrame instances — used by the global wheel dispatcher.
 _SCROLL_FRAMES: list = []
@@ -161,3 +162,175 @@ class WrapRow(tk.Frame):
             _WRAP_ROWS.remove(self)
         except ValueError:
             pass
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  Assistants d'affichage (helpers UI) + info-bulle
+#  Deplaces depuis le fichier principal (Phase 1.2). Couleurs via _t().
+# ════════════════════════════════════════════════════════════════════════════
+def sentry(parent, var, **kw):
+    """Styled Entry widget bound to var."""
+    return tk.Entry(parent, textvariable=var, font=FONT_MONO, bg=_t("BG3"), fg=_t("TEXT"),
+                    insertbackground=_t("ORANGE"), relief="flat", bd=0, highlightthickness=1,
+                    highlightbackground=_t("BORDER"), highlightcolor=_t("ORANGE"), **kw)
+
+def scombo(parent, var, values, width=15):
+    """Read-only Combobox bound to var."""
+    return ttk.Combobox(parent, textvariable=var, values=values, font=FONT_SM, state="readonly", width=width)
+
+def mlabel(parent, text, **kw):
+    """Muted-colour small label for field names and secondary text."""
+    return tk.Label(parent, text=text, font=FONT_SM, fg=_t("MUTED"), bg=_t("BG2"), **kw)
+
+def flabel(parent, text, **kw):
+    """Filter name label — slightly brighter than mlabel to distinguish filter names."""
+    return tk.Label(parent, text=text, font=FONT_SM, fg=_t("TEXT"), bg=_t("BG2"), **kw)
+
+def slabel(parent, text, **kw):
+    """Subcategory section header label — accent-coloured to visually separate sections."""
+    return tk.Label(parent, text=text, font=(FONT_SM[0], FONT_SM[1], "bold"),
+                    fg=_t("ORANGE"), bg=_t("BG2"), **kw)
+
+def _safe_trace_remove(var, mode, tid):
+    """Remove a tkinter variable trace silently — safe to call even if already removed."""
+    try:
+        var.trace_remove(mode, tid)
+    except tk.TclError:
+        pass
+
+
+def _make_highlight_toggle(widget, var, is_active_fn):
+    """Shared highlight/dim logic for hchk and hradio widgets."""
+    def _update(*args):
+        try:
+            if not widget.winfo_exists():
+                try:
+                    var.trace_remove("write", args[2] if len(args) > 2 else args[0])
+                except Exception:
+                    pass
+                return
+        except Exception:
+            return
+        if is_active_fn():
+            widget.config(bg=_t("ORANGE2"), fg="white",
+                          activebackground=_t("ORANGE"), activeforeground="white",
+                          selectcolor=_t("ORANGE2"))
+        else:
+            widget.config(bg=_t("BG3"), fg=_t("MUTED"),
+                          activebackground=_t("BG3"), activeforeground=_t("ORANGE"),
+                          selectcolor=_t("BG3"))
+    _tid = var.trace_add("write", _update)
+    _update()
+    widget.bind("<Destroy>", lambda e: _safe_trace_remove(var, "write", _tid))
+
+def hchk(parent, text, var, **kw):
+    """Styled Checkbutton with highlight-on-active toggle. Returns the widget."""
+    cb_kw = dict(font=FONT_SM, relief="flat", bd=0, cursor="hand2",
+                 highlightthickness=0, padx=10, pady=4)
+    cb_kw.update(kw)
+    cb = tk.Checkbutton(parent, text=text, variable=var, **cb_kw)
+    _make_highlight_toggle(cb, var, var.get)
+    return cb
+
+def hradio(parent, text, var, value, **kw):
+    """Radiobutton with highlight when selected."""
+    rb_kw = dict(font=FONT_SM, relief="flat", bd=0, cursor="hand2",
+                 highlightthickness=0, padx=10, pady=4)
+    rb_kw.update(kw)
+    rb = tk.Radiobutton(parent, text=text, variable=var, value=value, **rb_kw)
+    _make_highlight_toggle(rb, var, lambda: var.get() == value)
+    return rb
+
+_WRAP_LABELS: list = []   # all labels registered via _bind_wraplength
+
+def _bind_wraplength(lbl):
+    """Debounced <Configure> binding that keeps a label's wraplength = widget width.
+
+    400 ms fallback for OS window resize; sash/in-app drags are flushed
+    immediately via the global <ButtonRelease-1> handler in _build_ui.
+
+    The apply function guards against re-entrancy: it only calls w.config() when
+    the computed value actually differs from the current one, preventing the
+    <Configure> → _apply → <Configure> feedback loop that caused continuous redraws.
+    """
+    _job = [None]
+    def _apply(w=lbl):
+        _job[0] = None
+        try:
+            new_wrap = max(200, w.winfo_width() - 10)
+            if int(w.cget("wraplength") or 0) != new_wrap:
+                w.config(wraplength=new_wrap)
+        except tk.TclError:
+            pass
+    def _schedule(e, w=lbl):
+        if _job[0]:
+            w.after_cancel(_job[0])
+        _job[0] = w.after(400, _apply)
+    lbl.bind("<Configure>", _schedule)
+    _WRAP_LABELS.append((_apply, lbl))
+    lbl.bind("<Destroy>", lambda e, a=_apply, w=lbl: _WRAP_LABELS.remove((a, w))
+             if (a, w) in _WRAP_LABELS else None)
+
+def desc_label(parent, text):
+    """Return a muted descriptive Label with automatic wraplength binding."""
+    lbl = tk.Label(parent, text=text, font=FONT_DESC, fg=_t("DESC_COLOR"), bg=_t("BG2"),
+                   anchor="w", justify="left")
+    _bind_wraplength(lbl)
+    return lbl
+
+def _sep(parent, pady=(6, 4), padx=0):
+    """Horizontal rule between UI sub-sections."""
+    tk.Frame(parent, height=1, bg=_t("BORDER")).pack(fill="x", pady=pady, padx=padx)
+
+def _chk_tip(parent, label, var, tip, anchor="w", pady=2, **kw):
+    """hchk + pack + add_tip in one call."""
+    cb = hchk(parent, label, var, **kw)
+    cb.pack(anchor=anchor, pady=pady)
+    if tip:
+        add_tip(cb, tip)
+    return cb
+
+# ═══════════════════════════════════════════════════════
+#  Lightweight tooltip — replaces inline desc_labels
+# ═══════════════════════════════════════════════════════
+class Tooltip:
+    """Hover tooltip widget. Use add_tip(widget, text)."""
+    def __init__(self, widget, text):
+        self._widget = widget
+        self._text   = text
+        self._tip    = None
+        widget.bind("<Enter>",  self._show, add="+")
+        widget.bind("<Leave>",  self._hide, add="+")
+        widget.bind("<Destroy>", lambda e: self._hide(), add="+")
+
+    def _show(self, event=None):
+        if self._tip or not self._text:
+            return
+        x = self._widget.winfo_rootx() + self._widget.winfo_width() + 4
+        y = self._widget.winfo_rooty()
+        self._tip = tw = tk.Toplevel(self._widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_geometry(f"+{x}+{y}")
+        tw.attributes("-topmost", True)
+        tk.Label(tw, text=self._text, font=("Consolas", 8), fg=_t("TEXT"),
+                 bg="#2a2a2a", relief="flat", bd=0,
+                 padx=8, pady=4, wraplength=340, justify="left").pack()
+
+    def _hide(self, event=None):
+        if self._tip:
+            try:
+                self._tip.destroy()
+            except tk.TclError:
+                pass
+            self._tip = None
+
+def add_tip(widget, text):
+    """Attach a tooltip to widget if text is non-empty."""
+    if text:
+        Tooltip(widget, text)
+
+def dp2_badge(parent):
+    """Blue 'demoparser2' label with a shared tooltip — attach with .pack()."""
+    lbl = tk.Label(parent, text="demoparser2", font=FONT_DESC, fg=_t("BLUE"), bg=_t("BG2"))
+    add_tip(lbl, "Requires: pip install demoparser2")
+    return lbl
