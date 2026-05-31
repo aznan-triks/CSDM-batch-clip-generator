@@ -9,9 +9,25 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — internal restructuring (no behaviour change)
+## [v205]
 
-### Changed: split the single-file monolith into a `csdm/` package (Phase 1.1)
+### Fixed: theme switch kept stale colours when leaving a collided theme (e.g. AMOLED)
+
+Switching away from a theme whose roles shared the same colour (AMOLED has
+background, secondary background and log background all at `#000000`) left some
+widgets stuck on the old colour.
+
+**Root cause:** the runtime re-paint maps *old colour → new colour* by value. When
+several roles share one value the mapping is ambiguous, so those widgets were
+skipped on purpose and kept their old (black) colour.
+
+**Fix:** `_build_theme()` now guarantees every colour in a theme is unique, nudging
+exact duplicates by an imperceptible amount (`#000000` → `#000001`). AMOLED still
+looks pure black, but each role is now distinct, so the re-paint is never ambiguous
+and every widget updates correctly. Added `_nudge_hex` / `_ensure_unique_hex` in
+`csdm/theme.py`, covered by new tests.
+
+### Changed: split the single-file monolith into a `csdm/` package (Phase 1.1–1.2)
 
 The application is being reorganised from one ~12.6k-line file into a small
 package, one module per responsibility. No user-facing behaviour changes; the
@@ -20,9 +36,11 @@ moved name so all call sites keep working.
 
 - `csdm/static_data.py` — kill-filter registry + weapon/codec/resolution/match-type tables
 - `csdm/config.py` — `DEFAULT_CONFIG`, preset groups, JSON load/save helpers
-- `csdm/theme.py` — theme palettes + `_build_theme()` factory (live theme globals stay in the main file)
+- `csdm/theme.py` — theme palettes, `_build_theme()`, and the live shared `_THEME` + `_t()` accessor
+- `csdm/ui_kit.py` — fonts, spacing constants, shared `_CHK_KW`/`_BTN_KW` styles
+- `csdm/widgets.py` — reusable Tk widgets (`ScrollableFrame`, `WrapRow` so far)
 
-Main file reduced from 12,621 to ~11,855 lines so far. Test suite green (11/11).
+Main file reduced from 12,621 to ~11,694 lines so far. Test suite grown to 50 tests, all green.
 
 ---
 

@@ -204,6 +204,42 @@ class DateHelperTests(unittest.TestCase):
 
 
 # ════════════════════════════════════════════════════════════════════════════
+#  Theme : valeurs uniques (corrige le bug "couleurs collees" au changement)
+# ════════════════════════════════════════════════════════════════════════════
+from csdm import theme as th
+
+
+class ThemeUniquenessTests(unittest.TestCase):
+    def test_every_theme_combo_has_unique_values(self):
+        # Le re-paint runtime mappe ancienne couleur -> nouvelle PAR VALEUR :
+        # deux roles avec la meme valeur rendent le mapping ambigu. On garantit
+        # donc l'unicite pour CHAQUE combinaison fond x accent.
+        for bg in th._BG_PRESETS:
+            for ac in th._ACCENT_PRESETS:
+                t = th._build_theme(bg, ac)
+                vals = [v.lower() for v in t.values()]
+                self.assertEqual(len(vals), len(set(vals)),
+                                 f"valeurs dupliquees dans le theme {bg}/{ac}")
+
+    def test_amoled_backgrounds_distinct_but_still_black(self):
+        t = th._build_theme("amoled", "green")
+        # Les 3 fonds amoled etaient tous #000000 -> maintenant distincts...
+        self.assertNotEqual(t["BG"], t["BG2"])
+        self.assertNotEqual(t["BG"], t["LOG_BG"])
+        self.assertNotEqual(t["BG2"], t["LOG_BG"])
+        # ... mais toujours visuellement noirs (decalage imperceptible).
+        for k in ("BG", "BG2", "LOG_BG"):
+            self.assertLess(int(t[k].lstrip("#"), 16), 0x10, k)
+
+    def test_first_occurrence_keeps_exact_value(self):
+        # Le premier role garde sa valeur canonique ; seuls les doublons bougent.
+        self.assertEqual(th._build_theme("amoled", "green")["BG"], "#000000")
+
+    def test_custom_hex_accent_is_preserved(self):
+        self.assertEqual(th._build_theme("dark", "#abcdef")["ORANGE"], "#abcdef")
+
+
+# ════════════════════════════════════════════════════════════════════════════
 #  Assistants purs de App (testes sur une instance nue, sans Tk ni DB)
 # ════════════════════════════════════════════════════════════════════════════
 class AppPureHelperTests(unittest.TestCase):

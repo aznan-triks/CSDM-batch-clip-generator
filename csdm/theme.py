@@ -51,10 +51,44 @@ _STATUS_COLOURS_LIGHT = {
     "BLUE":   "#1d4ed8",
 }
 
+def _nudge_hex(hex_str: str) -> str:
+    """Return a hex colour differing by 1 unit — visually imperceptible.
+
+    Used to break exact duplicates within a theme. +1 normally; -1 at the
+    very top (#ffffff) so the result is always a valid, different colour.
+    """
+    n = int(hex_str.lstrip("#"), 16)
+    n = n + 1 if (n & 0xFF) < 0xFF else n - 1
+    return f"#{n:06x}"
+
+
+def _ensure_unique_hex(theme: dict) -> dict:
+    """Guarantee every value in the theme is unique (in place) and return it.
+
+    Why this matters: the runtime re-paint maps OLD colour -> NEW colour by
+    value. If two roles share the same value (e.g. amoled BG == BG2 == LOG_BG
+    == #000000), the map is ambiguous when LEAVING that theme, so those
+    widgets are skipped and keep the old colour. Nudging duplicates by an
+    imperceptible amount keeps every role distinct, so the map is never
+    ambiguous. The first occurrence keeps its exact value; only later
+    duplicates are nudged.
+    """
+    seen: set = set()
+    for key, val in theme.items():
+        v = val.lower()
+        while v in seen:
+            v = _nudge_hex(v)
+        seen.add(v)
+        theme[key] = v
+    return theme
+
+
 def _build_theme(bg_name: str, accent_name_or_hex: str) -> dict:
     """Build a complete theme dict from a bg-preset name and accent name or raw hex.
 
-    Returns a flat dict with all colour keys used throughout the UI.
+    Returns a flat dict with all colour keys used throughout the UI. All values
+    are guaranteed unique (see _ensure_unique_hex) so runtime theme switches
+    re-paint every widget reliably.
     """
     bg = _BG_PRESETS.get(bg_name, _BG_PRESETS["dark"])
     if accent_name_or_hex in _ACCENT_PRESETS:
@@ -73,7 +107,7 @@ def _build_theme(bg_name: str, accent_name_or_hex: str) -> dict:
         except Exception:
             accent2 = accent
     sc = _STATUS_COLOURS_LIGHT if bg.get("_is_light") else _STATUS_COLOURS
-    return {
+    assembled = {
         "BG":        bg["BG"],
         "BG2":       bg["BG2"],
         "BG3":       bg["BG3"],
@@ -89,6 +123,7 @@ def _build_theme(bg_name: str, accent_name_or_hex: str) -> dict:
         "YELLOW":    sc["YELLOW"],
         "BLUE":      sc["BLUE"],
     }
+    return _ensure_unique_hex(assembled)
 
 
 # ── Theme VIVANT, partage entre modules ─────────────────────────────────────
