@@ -40,3 +40,17 @@ _CHK_KW = dict(font=FONT_SM, bg=_t("BG2"), fg=_t("MUTED"), activebackground=_t("
                relief="flat", bd=0, cursor="hand2", highlightthickness=0)
 _BTN_KW = dict(relief="flat", bd=0, cursor="hand2", highlightthickness=0,
                activebackground=_t("BORDER"), activeforeground=_t("ORANGE"))
+
+
+def _contrast_fg(hex_color: str) -> str:
+    """Return black or white — whichever is readable on the given background.
+
+    Pure utility (no theme dependency): used for tag-colour previews and any
+    swatch whose foreground must stay legible regardless of the chosen colour.
+    """
+    try:
+        h = hex_color.lstrip("#")
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        return "#000000" if (0.299 * r + 0.587 * g + 0.114 * b) > 140 else "#ffffff"
+    except Exception:
+        return "#ffffff"
