@@ -104,7 +104,7 @@ def _build_theme(bg_name: str, accent_name_or_hex: str) -> dict:
             r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
             r2, g2, b2 = int(r * 0.72), int(g * 0.72), int(b * 0.72)
             accent2 = f"#{r2:02x}{g2:02x}{b2:02x}"
-        except Exception:
+        except ValueError:
             accent2 = accent
     sc = _STATUS_COLOURS_LIGHT if bg.get("_is_light") else _STATUS_COLOURS
     assembled = {

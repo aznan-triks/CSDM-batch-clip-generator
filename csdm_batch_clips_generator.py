@@ -1362,13 +1362,13 @@ class App(tk.Tk):
                     try:
                         if lbl.winfo_exists():
                             apply_fn()
-                    except Exception:
+                    except tk.TclError:
                         pass
                 for wr in list(_WRAP_ROWS):
                     try:
                         if wr.winfo_exists():
                             wr._relayout()
-                    except Exception:
+                    except tk.TclError:
                         pass
             self.after(50, _flush)
         self.bind_all("<ButtonRelease-1>", _on_release)
@@ -1462,13 +1462,13 @@ class App(tk.Tk):
                 try:
                     if lbl.winfo_exists():
                         apply_fn()
-                except Exception:
+                except tk.TclError:
                     pass
             for wr in list(_WRAP_ROWS):
                 try:
                     if wr.winfo_exists():
                         wr._relayout()
-                except Exception:
+                except tk.TclError:
                     pass
         nb.bind("<<NotebookTabChanged>>", _on_tab_changed)
 
@@ -2470,7 +2470,7 @@ class App(tk.Tk):
                       *[c for c in _clutch_size_row.winfo_children()]):
                 try:
                     w.config(state=st)
-                except Exception:
+                except tk.TclError:
                     pass
         self.v["clutch_enabled"].trace_add("write", _clutch_toggle_state)
         _clutch_toggle_state()
@@ -2694,7 +2694,7 @@ class App(tk.Tk):
             self._picker_count_lbl.config(
                 text=f"{n_on}/{n_tot} selected",
                 fg=ORANGE if n_on < n_tot else MUTED)
-        except Exception:
+        except tk.TclError:
             pass
 
     def _demo_picker_clear(self):
@@ -2703,7 +2703,7 @@ class App(tk.Tk):
         try:
             self._demo_tree.delete(*self._demo_tree.get_children())
             self._picker_count_lbl.config(text="— all demos (run Preview to filter)", fg=MUTED)
-        except Exception:
+        except tk.TclError:
             pass
 
     def _on_demo_tree_click(self, event):
@@ -2731,7 +2731,7 @@ class App(tk.Tk):
             self._picker_count_lbl.config(
                 text=f"{n_on}/{n_tot} selected",
                 fg=ORANGE if n_on < n_tot else MUTED)
-        except Exception:
+        except tk.TclError:
             pass
 
     def _demo_picker_set_all(self, value):
@@ -3319,7 +3319,7 @@ class App(tk.Tk):
             # fires <Configure> on every pane → re-triggers all ScrollableFrame
             # reflows 400 ms later, producing the "momentum" drag feel.
             # Sash snapping happens only on actual sash-drag via the outer binding.
-        except Exception:
+        except tk.TclError:
             pass
 
     def _on_recsys_change(self, *_):
@@ -3388,18 +3388,18 @@ class App(tk.Tk):
         try:
             for w in self._def_radios:
                 w.config(state=state_struct)
-        except Exception:
+        except tk.TclError:
             pass
         try:
             for w in self._ratio_radios:
                 w.config(state=state_struct)
-        except Exception:
+        except tk.TclError:
             pass
         # Enable/disable manual input fields
         try:
             self._res_w_entry.config(state=state_manual)
             self._res_h_entry.config(state=state_manual)
-        except Exception:
+        except tk.TclError:
             pass
         if not custom:
             # Recompute from selectors
@@ -3413,7 +3413,7 @@ class App(tk.Tk):
             h = self.v["height"].get()
             self._res_preview_lbl.config(text=f"{w} × {h} px")
             self.v["resolution"].set(f"{w}x{h}")
-        except Exception:
+        except tk.TclError:
             pass
 
     def _on_vcodec(self, e=None):
@@ -5950,7 +5950,7 @@ class App(tk.Tk):
             try:
                 for child in widget.winfo_children():
                     _walk(child)
-            except Exception:
+            except tk.TclError:
                 pass
 
         _walk(root)
@@ -6654,7 +6654,7 @@ class App(tk.Tk):
                 self._log_err_lbl.config(text=f"E:{e}" if e else "")
             if self._log_warn_lbl and self._log_warn_lbl.winfo_exists():
                 self._log_warn_lbl.config(text=f"W:{w}" if w else "")
-        except Exception:
+        except tk.TclError:
             pass
 
     def _toggle_log_timestamps(self, event=None):
@@ -10270,7 +10270,7 @@ class App(tk.Tk):
                         self._picker_count_lbl.config(
                             text=f"{n_on}/{n_tot} selected",
                             fg=ORANGE if n_on < n_tot else MUTED)
-                    except Exception:
+                    except tk.TclError:
                         pass
 
                 if choice is None:

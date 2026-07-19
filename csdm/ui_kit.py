@@ -52,5 +52,5 @@ def _contrast_fg(hex_color: str) -> str:
         h = hex_color.lstrip("#")
         r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
         return "#000000" if (0.299 * r + 0.587 * g + 0.114 * b) > 140 else "#ffffff"
-    except Exception:
+    except (ValueError, TypeError, AttributeError):
         return "#ffffff"

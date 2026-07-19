@@ -215,10 +215,10 @@ def _make_highlight_toggle(widget, var, is_active_fn):
             if not widget.winfo_exists():
                 try:
                     var.trace_remove("write", args[2] if len(args) > 2 else args[0])
-                except Exception:
+                except tk.TclError:
                     pass
                 return
-        except Exception:
+        except tk.TclError:
             return
         if is_active_fn():
             widget.config(bg=_t("ORANGE2"), fg="white",
@@ -1102,7 +1102,7 @@ class PlayerSearchWidget(tk.Frame):
                         return datetime.strptime(s[:len(fmt)], fmt).timestamp()
                     except ValueError:
                         continue
-            except Exception:
+            except (ValueError, TypeError, OverflowError, OSError):
                 pass
             return 0
 
