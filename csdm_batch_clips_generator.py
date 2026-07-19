@@ -124,12 +124,8 @@ from csdm.static_data import (
 )
 
 
-# ── Delayed-effect weapons ────────────────────────────────────────────────────
-# DB tick = throw/impact; death may occur much later.  Extra BEFORE time added.
-DELAYED_EFFECT_WEAPONS = {
-    "hegrenade", "incgrenade", "molotov", "inferno",
-    "he grenade", "incendiary grenade",
-}
+# ── Delayed-effect / suicide weapons — deplaces dans csdm/static_data.py ─────
+from csdm.static_data import DELAYED_EFFECT_WEAPONS, SUICIDE_WEAPONS
 
 # ── Configuration : defauts, presets, persistance (Phase 1.1) ──────────────
 #  Extraits dans csdm/config.py. Importes ici pour conserver les memes noms.
@@ -6942,29 +6938,234 @@ class App(tk.Tk):
         self._col_cache[key] = result
         return result
 
+    # ── _query_events helpers (Phase 1.3 — one clause builder per concern) ──
+
+    @staticmethod
+    def _qe_epoch_bounds(cfg):
+        """Epoch bounds (ts_from, ts_to) for the post-query Python date filter."""
+        ts_from = None
+        ts_to   = None
+        if cfg.get("date_from", ""):
+            try:
+                ts_from = int(datetime.strptime(cfg["date_from"], "%Y-%m-%d")
+                              .replace(hour=0, minute=0, second=0).timestamp())
+            except ValueError:
+                pass
+        if cfg.get("date_to", ""):
+            try:
+                ts_to = int((datetime.strptime(cfg["date_to"], "%Y-%m-%d")
+                             .replace(hour=23, minute=59, second=59)).timestamp())
+            except ValueError:
+                pass
+        return ts_from, ts_to
+
+    def _qe_match_type_sql(self, cfg):
+        """Match-type WHERE fragment: "" or (clause_str, [param values])."""
+        if not cfg.get("match_type_filter_enabled"):
+            return ""
+        _gm_col = self._find_col("matches", ["game_mode_str", "game_mode"])
+        if not _gm_col:
+            self._async_log("⚠ Match type filter: game_mode_str column not found — filter ignored.", "warn")
+            return ""
+        selected_db_vals = [
+            db_v
+            for cfg_k in _MATCH_TYPE_CFG_KEYS
+            if cfg.get(cfg_k)
+            for db_v in _MATCH_TYPE_KEY_TO_DB[cfg_k]
+        ]
+        if not selected_db_vals:
+            return ""  # none checked = no filter
+        ph = ",".join(["%s"] * len(selected_db_vals))
+        return (f' AND m."{_gm_col}" IN ({ph})', selected_db_vals)
+
+    def _qe_headshot_sql(self, cfg):
+        """Headshot WHERE fragment. Returns (hs_col, clause)."""
+        _hsmode = cfg.get("headshots_mode", "all")
+        headshots_only    = (_hsmode == "only")
+        headshots_exclude = (_hsmode == "exclude")
+        hc = self._find_col("kills", ["is_headshot", "headshot", "is_hs", "hs"])
+        hsql = ""
+        if (headshots_only or headshots_exclude) and not hc:
+            self._async_log("⚠ Headshots filter: column not found in kills — filter ignored.", "warn")
+        elif headshots_only and hc:
+            hsql = f' AND k."{hc}" = TRUE'
+        elif headshots_exclude and hc:
+            hsql = f' AND k."{hc}" = FALSE'
+
+        # One Tap kills are by definition headshots — force HS filter at SQL level
+        if cfg.get("kill_mod_one_tap") and hc and not headshots_exclude and not headshots_only:
+            hsql = f' AND k."{hc}" = TRUE'
+        elif cfg.get("kill_mod_one_tap") and not hc:
+            self._async_log("⚠ One Tap: headshot column not found — HS enforcement skipped.", "warn")
+        return hc, hsql
+
+    def _qe_teamkill_sql(self, cfg):
+        """Teamkill include/exclude/only WHERE fragment."""
+        _tkmode = cfg.get("teamkills_mode", "include")
+        include_teamkills = (_tkmode != "exclude")
+        teamkills_only    = (_tkmode == "only")
+        tkc_k = self._find_col("kills", ["killer_team_name", "killer_side", "killer_team"])
+        tkc_v = self._find_col("kills", ["victim_team_name", "victim_side", "victim_team"])
+        if teamkills_only:
+            if tkc_k and tkc_v:
+                return f' AND k."{tkc_k}" = k."{tkc_v}"'
+            self._async_log("⚠ Teamkills only: team columns not found — filter ignored.", "warn")
+        elif not include_teamkills:
+            if tkc_k and tkc_v:
+                return f' AND k."{tkc_k}" != k."{tkc_v}"'
+            self._async_log("⚠ Exclude teamkills: team columns not found — filter ignored.", "warn")
+        return ""
+
+    @staticmethod
+    def _qe_suicide_sql(cfg, weapon_col):
+        """Suicide WHERE fragment (params = SUICIDE_WEAPONS appended by caller)."""
+        _sm = cfg.get("suicides_mode", "include")
+        if _sm == "include" or not weapon_col:
+            return ""
+        ph = ",".join(["%s"] * len(SUICIDE_WEAPONS))
+        if _sm == "exclude":
+            return f' AND k."{weapon_col}" NOT IN ({ph})'
+        if _sm == "only":
+            return f' AND k."{weapon_col}" IN ({ph})'
+        return ""
+
+    @staticmethod
+    def _mod_sql_expr(mod_key, col, positive=True):
+        """SQL expression for one mod column.
+        penetrated_objects is an integer — use > 0 / = 0.
+        All other mod columns are boolean — use = TRUE / IS NOT TRUE.
+        """
+        if mod_key == "kill_mod_wall_bang" and col == "penetrated_objects":
+            if positive:
+                return f'k."{col}" > 0'
+            return f'(k."{col}" IS NULL OR k."{col}" = 0)'
+        if positive:
+            return f'k."{col}" = TRUE'
+        return f'k."{col}" IS NOT TRUE'
+
+    def _qe_mod_sql(self, cfg):
+        """SQL-mod filter fragment.
+
+        Returns (modsql, active_mods, return_empty) — return_empty is True when
+        every checked modifier is absent from the DB and no dp2 OR-union can
+        rescue the query (caller must return no results rather than all clips).
+        """
+        _MOD_COLS = KILL_FILTER_SQL_COLS  # derived from KILL_FILTER_REGISTRY
+        active_mods   = [k for k in _MOD_COLS if cfg.get(k, False)]
+        excluded_mods = [k for k in _MOD_COLS if cfg.get(f"{k}_exclude", False)]
+        modsql = ""
+        _mods_dp2_or_any = self._mods_dp2_global_any_union_enabled(cfg)
+
+        # Build exclusion SQL first — these are always AND NOT
+        excl_clauses = []
+        for mod_key in excluded_mods:
+            col = self._find_col("kills", _MOD_COLS[mod_key])
+            if col:
+                excl_clauses.append(self._mod_sql_expr(mod_key, col, positive=False))
+        excl_sql = (" AND " + " AND ".join(excl_clauses)) if excl_clauses else ""
+
+        if active_mods:
+            mod_clauses = []
+            missing_mods = []
+            for mod_key in active_mods:
+                col = self._find_col("kills", _MOD_COLS[mod_key])
+                if col:
+                    mod_clauses.append(self._mod_sql_expr(mod_key, col, positive=True))
+                else:
+                    missing_mods.append(mod_key)
+            if missing_mods:
+                missing_set = frozenset(missing_mods)
+                if not mod_clauses:
+                    # All checked modifiers absent from DB →
+                    # cannot filter, return empty rather than all clips
+                    if missing_set != self._warned_missing_mods:
+                        missing_labels = ", ".join(
+                            m.replace("kill_mod_", "").replace("_", " ")
+                            for m in missing_mods)
+                        self._async_log(
+                            f"⛔ Modifiers not found in DB: {missing_labels}. "
+                            f"No clips returned — uncheck these modifiers or check the schema.",
+                            "err")
+                        self._warned_missing_mods = missing_set
+                    if not _mods_dp2_or_any:
+                        return "", active_mods, True
+                else:
+                    # Some columns absent — warn once per unique missing set
+                    if missing_set != self._warned_missing_mods:
+                        missing_labels = ", ".join(
+                            m.replace("kill_mod_", "").replace("_", " ")
+                            for m in missing_mods)
+                        self._async_log(
+                            f"⚠ Modifiers not found in DB: {missing_labels} — ignored. "
+                            f"Only the others are applied.",
+                            "warn")
+                        self._warned_missing_mods = missing_set
+            if mod_clauses:
+                if not _mods_dp2_or_any:
+                    _mods_logic = cfg.get("kill_mod_logic_mods", "any")
+                    if _mods_logic == "all":
+                        modsql = " AND (" + " AND ".join(mod_clauses) + ")"
+                    elif _mods_logic == "mixed":
+                        _key_clause = []
+                        _mi = 0
+                        for mod_key in active_mods:
+                            col = self._find_col("kills", _MOD_COLS[mod_key])
+                            if col:
+                                _key_clause.append((mod_key, mod_clauses[_mi]))
+                                _mi += 1
+                        req_clauses = [c for k, c in _key_clause if cfg.get(f"{k}_req", False)]
+                        if req_clauses:
+                            modsql = " AND (" + " AND ".join(req_clauses) + ")"
+                    else:
+                        modsql = " AND (" + " OR ".join(mod_clauses) + ")"
+
+        modsql += excl_sql   # excluded mods are always AND NOT, appended last
+        return modsql, active_mods, False
+
+    def _qe_detect_date_col(self):
+        """Return the matches date column, auto-detecting and caching it once."""
+        date_col = self._date_col
+        if date_col or not self._db_schema.get("matches"):
+            return date_col
+        _m_types = self._db_col_types.get("matches", {})
+        _DATE_TYPES = {
+            "date", "timestamp", "timestamp with time zone",
+            "timestamp without time zone", "timestamptz",
+        }
+        date_col = next(
+            (c for c, t in _m_types.items() if t.lower() in _DATE_TYPES), None)
+        if not date_col:
+            _HINTS = ("played_at","match_date","game_date","start_date",
+                      "started_at","date","match_timestamp")
+            date_col = next(
+                (c for c in self._db_schema["matches"] if c.lower() in _HINTS), None)
+        if not date_col:
+            date_col = next(
+                (c for c in self._db_schema["matches"]
+                 if "date" in c.lower() and "analyze" not in c.lower()), None)
+        if date_col:
+            self._date_col      = date_col
+            self._date_col_type = _m_types.get(date_col, "").lower()
+        return date_col
+
+    def _qe_map_filter_sql(self, cfg):
+        """Map-filter WHERE fragment. Returns (clause, raw DB values as params)."""
+        _mf_raw: list = []
+        if cfg.get("map_filter_enabled") and self._map_col:
+            _mf_sel = set(cfg.get("map_filter", []))
+            if _mf_sel:
+                _mf_raw = [rv for dk, rvs in self._db_maps for rv in rvs if dk in _mf_sel]
+                if _mf_raw:
+                    return (f' AND {self._map_alias}."{self._map_col}" IN '
+                            f'({",".join(["%s"]*len(_mf_raw))})'), _mf_raw
+        return "", _mf_raw
+
     def _query_events(self, cfg):
         sids = self._get_sids(cfg)
         if not sids:
             return {}
 
-        date_from_iso = cfg.get("date_from", "")
-        date_to_iso   = cfg.get("date_to", "")
-
-        # Pre-compute epoch bounds for the post-query Python date filter
-        ts_from = None
-        ts_to   = None
-        if date_from_iso:
-            try:
-                ts_from = int(datetime.strptime(date_from_iso, "%Y-%m-%d")
-                              .replace(hour=0, minute=0, second=0).timestamp())
-            except Exception:
-                pass
-        if date_to_iso:
-            try:
-                ts_to = int((datetime.strptime(date_to_iso, "%Y-%m-%d")
-                             .replace(hour=23, minute=59, second=59)).timestamp())
-            except Exception:
-                pass
+        ts_from, ts_to = self._qe_epoch_bounds(cfg)
 
         def _demo_passes_date_filter(demo_path):
             if ts_from is None and ts_to is None:
@@ -7008,194 +7209,21 @@ class App(tk.Tk):
                 deaths_on = cfg.get("events_deaths", False)
                 weapons   = cfg.get("weapons", [])
 
-                # ── Match type filter ──────────────────────────────────────────
-                # Only applied when at least one type checkbox is checked.
-                mtsql = ""
-                if cfg.get("match_type_filter_enabled"):
-                    _gm_col = self._find_col("matches", ["game_mode_str", "game_mode"])
-                    if _gm_col:
-                        selected_db_vals = [
-                            db_v
-                            for cfg_k in _MATCH_TYPE_CFG_KEYS
-                            if cfg.get(cfg_k)
-                            for db_v in _MATCH_TYPE_KEY_TO_DB[cfg_k]
-                        ]
-                        if selected_db_vals:
-                            ph = ",".join(["%s"] * len(selected_db_vals))
-                            mtsql = (f' AND m."{_gm_col}" IN ({ph})', selected_db_vals)
-                        else:
-                            mtsql = ""  # none checked = no filter
-                    else:
-                        self._async_log("⚠ Match type filter: game_mode_str column not found — filter ignored.", "warn")
-                # Resolve headshots_mode — force ONLY only when logic guarantees HS-only output
-                _hsmode = cfg.get("headshots_mode", "all")
-                # HS mode is user-controlled; no automatic lock
-                headshots_only   = (_hsmode == "only")
-                headshots_exclude = (_hsmode == "exclude")
-                _tkmode = cfg.get("teamkills_mode", "include")
-                include_teamkills = (_tkmode != "exclude")
-                teamkills_only    = (_tkmode == "only")
+                # ── WHERE fragments, one named builder per concern (Phase 1.3) ─
+                mtsql       = self._qe_match_type_sql(cfg)
+                hc, hsql    = self._qe_headshot_sql(cfg)
+                tksql       = self._qe_teamkill_sql(cfg)
+                suicidesql  = self._qe_suicide_sql(cfg, wc)
+                modsql, active_mods, _mods_empty = self._qe_mod_sql(cfg)
+                if _mods_empty:
+                    return {}
+                headshots_only = (cfg.get("headshots_mode", "all") == "only")
+                _MOD_COLS = KILL_FILTER_SQL_COLS
 
-                # Headshot column (optional)
-                hc = self._find_col("kills", ["is_headshot", "headshot", "is_hs", "hs"])
-                hsql = ""
-                if (headshots_only or headshots_exclude) and not hc:
-                    self._async_log("⚠ Headshots filter: column not found in kills — filter ignored.", "warn")
-                elif headshots_only and hc:
-                    hsql = f' AND k."{hc}" = TRUE'
-                elif headshots_exclude and hc:
-                    hsql = f' AND k."{hc}" = FALSE'
-
-                # One Tap kills are by definition headshots — force HS filter at SQL level
-                if cfg.get("kill_mod_one_tap") and hc and not headshots_exclude and not headshots_only:
-                    hsql = f' AND k."{hc}" = TRUE'
-                elif cfg.get("kill_mod_one_tap") and not hc:
-                    self._async_log("⚠ One Tap: headshot column not found — HS enforcement skipped.", "warn")
-
-                tkc_k = self._find_col("kills", ["killer_team_name", "killer_side", "killer_team"])
-                tkc_v = self._find_col("kills", ["victim_team_name", "victim_side", "victim_team"])
-                tksql = ""
-                if teamkills_only:
-                    if tkc_k and tkc_v:
-                        tksql = f' AND k."{tkc_k}" = k."{tkc_v}"'
-                    else:
-                        self._async_log("⚠ Teamkills only: team columns not found — filter ignored.", "warn")
-                elif not include_teamkills:
-                    if tkc_k and tkc_v:
-                        tksql = f' AND k."{tkc_k}" != k."{tkc_v}"'
-                    else:
-                        self._async_log("⚠ Exclude teamkills: team columns not found — filter ignored.", "warn")
-
-                # Suicide filter — weapon_name IN ('world','suicide','world_entity',...)
-                SUICIDE_WEAPONS = ("world", "suicide", "world_entity", "trigger_hurt",
-                                   "fall", "env_fire", "planted_c4")
-                suicidesql = ""
-                _sm = cfg.get("suicides_mode", "include")
-                if _sm != "include" and wc:
-                    ph = ",".join(["%s"] * len(SUICIDE_WEAPONS))
-                    if _sm == "exclude":
-                        suicidesql = f' AND k."{wc}" NOT IN ({ph})'
-                    elif _sm == "only":
-                        suicidesql = f' AND k."{wc}" IN ({ph})'
-
-                _MOD_COLS = KILL_FILTER_SQL_COLS  # derived from KILL_FILTER_REGISTRY
-                active_mods   = [k for k in _MOD_COLS if cfg.get(k, False)]
-                excluded_mods = [k for k in _MOD_COLS if cfg.get(f"{k}_exclude", False)]
-                modsql = ""
-                _mods_dp2_or_any = self._mods_dp2_global_any_union_enabled(cfg)
-
-                def _mod_sql_expr(mod_key, col, positive=True):
-                    """Return the SQL expression for one mod column.
-                    penetrated_objects is an integer — use > 0 / = 0.
-                    All other mod columns are boolean — use = TRUE / IS NOT TRUE.
-                    """
-                    if mod_key == "kill_mod_wall_bang" and col == "penetrated_objects":
-                        if positive:
-                            return f'k."{col}" > 0'
-                        return f'(k."{col}" IS NULL OR k."{col}" = 0)'
-                    if positive:
-                        return f'k."{col}" = TRUE'
-                    return f'k."{col}" IS NOT TRUE'
-
-                # Build exclusion SQL first — these are always AND NOT
-                excl_clauses = []
-                for mod_key in excluded_mods:
-                    col = self._find_col("kills", _MOD_COLS[mod_key])
-                    if col:
-                        excl_clauses.append(_mod_sql_expr(mod_key, col, positive=False))
-                excl_sql = (" AND " + " AND ".join(excl_clauses)) if excl_clauses else ""
-
-                if active_mods:
-                    mod_clauses = []
-                    missing_mods = []
-                    for mod_key in active_mods:
-                        col = self._find_col("kills", _MOD_COLS[mod_key])
-                        if col:
-                            mod_clauses.append(_mod_sql_expr(mod_key, col, positive=True))
-                        else:
-                            missing_mods.append(mod_key)
-                    if missing_mods:
-                        missing_set = frozenset(missing_mods)
-                        if not mod_clauses:
-                            # All checked modifiers absent from DB →
-                            # cannot filter, return empty rather than all clips
-                            if missing_set != self._warned_missing_mods:
-                                missing_labels = ", ".join(
-                                    m.replace("kill_mod_", "").replace("_", " ")
-                                    for m in missing_mods)
-                                self._async_log(
-                                    f"⛔ Modifiers not found in DB: {missing_labels}. "
-                                    f"No clips returned — uncheck these modifiers or check the schema.",
-                                    "err")
-                                self._warned_missing_mods = missing_set
-                            if not _mods_dp2_or_any:
-                                conn.close()
-                                return {}
-                        else:
-                            # Some columns absent — warn once per unique missing set
-                            if missing_set != self._warned_missing_mods:
-                                missing_labels = ", ".join(
-                                    m.replace("kill_mod_", "").replace("_", " ")
-                                    for m in missing_mods)
-                                self._async_log(
-                                    f"⚠ Modifiers not found in DB: {missing_labels} — ignored. "
-                                    f"Only the others are applied.",
-                                    "warn")
-                                self._warned_missing_mods = missing_set
-                    if mod_clauses:
-                        if not _mods_dp2_or_any:
-                            _mods_logic = cfg.get("kill_mod_logic_mods", "any")
-                            if _mods_logic == "all":
-                                modsql = " AND (" + " AND ".join(mod_clauses) + ")"
-                            elif _mods_logic == "mixed":
-                                _key_clause = []
-                                _mi = 0
-                                for mod_key in active_mods:
-                                    col = self._find_col("kills", _MOD_COLS[mod_key])
-                                    if col:
-                                        _key_clause.append((mod_key, mod_clauses[_mi]))
-                                        _mi += 1
-                                req_clauses = [c for k, c in _key_clause if cfg.get(f"{k}_req", False)]
-                                if req_clauses:
-                                    modsql = " AND (" + " AND ".join(req_clauses) + ")"
-                            else:
-                                modsql = " AND (" + " OR ".join(mod_clauses) + ")"
-
-                modsql += excl_sql   # excluded mods are always AND NOT, appended last
-
-                date_col = self._date_col   # may be None → auto-detected below
-                if not date_col and self._db_schema.get("matches"):
-                    _m_types = self._db_col_types.get("matches", {})
-                    _DATE_TYPES = {
-                        "date", "timestamp", "timestamp with time zone",
-                        "timestamp without time zone", "timestamptz",
-                    }
-                    date_col = next(
-                        (c for c, t in _m_types.items() if t.lower() in _DATE_TYPES), None)
-                    if not date_col:
-                        _HINTS = ("played_at","match_date","game_date","start_date",
-                                  "started_at","date","match_timestamp")
-                        date_col = next(
-                            (c for c in self._db_schema["matches"] if c.lower() in _HINTS), None)
-                    if not date_col:
-                        date_col = next(
-                            (c for c in self._db_schema["matches"]
-                             if "date" in c.lower() and "analyze" not in c.lower()), None)
-                    if date_col:
-                        self._date_col      = date_col
-                        self._date_col_type = _m_types.get(date_col, "").lower()
+                date_col = self._qe_detect_date_col()
 
                 # ── Build SELECT (map_sel uses _map_col detected at connect time) ──────
-                # Map filter WHERE clause (empty when filter disabled or no map col)
-                _mf_sql  = ""
-                _mf_raw: list = []
-                if cfg.get("map_filter_enabled") and self._map_col:
-                    _mf_sel = set(cfg.get("map_filter", []))
-                    if _mf_sel:
-                        _mf_raw = [rv for dk, rvs in self._db_maps for rv in rvs if dk in _mf_sel]
-                        if _mf_raw:
-                            _mf_sql = (f' AND {self._map_alias}."{self._map_col}" IN '
-                                       f'({",".join(["%s"]*len(_mf_raw))})')
+                _mf_sql, _mf_raw = self._qe_map_filter_sql(cfg)
 
                 # Empty _build_dsql: date filter applied in Python post-query
                 def _build_dsql(base_params):

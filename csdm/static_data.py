@@ -316,6 +316,19 @@ SPRAY_TRANSFER_WEAPONS_LOWER: set = {w.lower() for w in SPRAY_TRANSFER_WEAPONS}
 SPRAY_MAX_GAP_TICKS = 22
 
 
+# ── Delayed-effect weapons ────────────────────────────────────────────────────
+# DB tick = throw/impact; death may occur much later.  Extra BEFORE time added.
+DELAYED_EFFECT_WEAPONS: set = {
+    "hegrenade", "incgrenade", "molotov", "inferno",
+    "he grenade", "incendiary grenade",
+}
+
+# ── Suicide "weapons" ─────────────────────────────────────────────────────────
+# weapon_name values the DB uses for suicide deaths (world/fall damage/etc).
+SUICIDE_WEAPONS = ("world", "suicide", "world_entity", "trigger_hurt",
+                   "fall", "env_fire", "planted_c4")
+
+
 # ── Tag colour presets ────────────────────────────────────────────────────────
 TAG_PRESET_COLORS = [
     "#f97316", "#ef4444", "#eab308", "#22c55e", "#3b82f6",
