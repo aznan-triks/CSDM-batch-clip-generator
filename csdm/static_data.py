@@ -224,6 +224,10 @@ VIDEO_CODECS_INFO = {
 }
 VIDEO_CODECS = list(VIDEO_CODECS_INFO.keys())
 
+# CPU codecs honour FFmpeg's -preset flag; GPU codecs (NVENC/AMF) ignore it.
+CPU_VIDEO_CODECS: set = {"libx264", "libx265", "libsvtav1", "libaom-av1",
+                         "libvpx-vp9", "prores_ks", "utvideo"}
+
 AUDIO_CODECS_INFO = {
     "libmp3lame": "MP3 — Compatible everywhere.",
     "aac":        "AAC — Better than MP3, modern standard.",

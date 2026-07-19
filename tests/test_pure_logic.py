@@ -397,5 +397,131 @@ class MapColumnDetectionTests(unittest.TestCase):
         self.assertEqual(App._detect_map_col(schema), (None, "m", ""))
 
 
+# ════════════════════════════════════════════════════════════════════════════
+#  Camera builders (statiques depuis Phase 1.3 — coeur du fix v194)
+# ════════════════════════════════════════════════════════════════════════════
+def _seq(events, start=100, end=900):
+    return {"start_tick": start, "end_tick": end, "events": events}
+
+
+def _kill(tick, killer, victim, **extra):
+    return {"tick": tick, "type": "kill",
+            "killer_sid": killer, "victim_sid": victim, **extra}
+
+
+class CameraBuilderTests(unittest.TestCase):
+    ACTIVE = {"111"}
+    PRIMARY = "111"
+
+    def test_killer_single_kill_one_cam_on_killer(self):
+        seq = _seq([_kill(300, "111", "222")])
+        cams = App._build_cams_killer(seq, self.ACTIVE, self.PRIMARY)
+        self.assertEqual(cams, [{"tick": 100, "playerSteamId": "111",
+                                 "playerName": ""}])
+
+    def test_killer_change_adds_switch_entry(self):
+        active = {"111", "333"}
+        seq = _seq([_kill(300, "111", "222"), _kill(500, "333", "444")])
+        cams = App._build_cams_killer(seq, active, "111")
+        self.assertEqual([c["playerSteamId"] for c in cams], ["111", "333"])
+        self.assertEqual(cams[1]["tick"], 500)
+
+    def test_killer_same_killer_no_duplicate_entries(self):
+        seq = _seq([_kill(300, "111", "222"), _kill(500, "111", "444")])
+        cams = App._build_cams_killer(seq, self.ACTIVE, self.PRIMARY)
+        self.assertEqual(len(cams), 1)
+
+    def test_killer_no_active_kill_falls_back_to_primary(self):
+        seq = _seq([_kill(300, "999", "888")])
+        cams = App._build_cams_killer(seq, self.ACTIVE, self.PRIMARY)
+        self.assertEqual(cams[0]["playerSteamId"], "111")
+
+    def test_victim_follows_first_victim(self):
+        seq = _seq([_kill(300, "111", "222")])
+        cams = App._build_cams_victim(seq, self.ACTIVE, self.PRIMARY, {})
+        self.assertEqual(cams, [{"tick": 100, "playerSteamId": "222",
+                                 "playerName": ""}])
+
+    def test_victim_our_death_follows_us(self):
+        seq = _seq([{"tick": 300, "type": "death",
+                     "killer_sid": "999", "victim_sid": "111"}])
+        cams = App._build_cams_victim(seq, self.ACTIVE, self.PRIMARY, {})
+        self.assertEqual(cams[0]["playerSteamId"], "111")
+
+    def test_victim_mate_pov_overrides_victim(self):
+        seq = _seq([_kill(300, "111", "222", _mate_pov_sid="555")])
+        cams = App._build_cams_victim(seq, self.ACTIVE, self.PRIMARY,
+                                      {"kill_mod_mate_pov": True})
+        self.assertEqual(cams[0]["playerSteamId"], "555")
+
+    def test_victim_mate_pov_ignored_when_disabled(self):
+        seq = _seq([_kill(300, "111", "222", _mate_pov_sid="555")])
+        cams = App._build_cams_victim(seq, self.ACTIVE, self.PRIMARY, {})
+        self.assertEqual(cams[0]["playerSteamId"], "222")
+
+    def test_both_starts_on_killer_then_switches_to_victim(self):
+        tickrate, pre_ticks = 64, 2 * 64
+        seq = _seq([_kill(500, "111", "222")], start=100, end=900)
+        cams = App._build_cams_both(seq, self.ACTIVE, self.PRIMARY, {},
+                                    tickrate, pre_ticks)
+        # Before the switch tick (500-128=372) the camera is on the killer,
+        # from 372 onwards it is on the victim.
+        for c in cams:
+            expected = "111" if c["tick"] < 372 else "222"
+            self.assertEqual(c["playerSteamId"], expected,
+                             f"tick {c['tick']}")
+
+    def test_both_our_death_follows_us_whole_sequence(self):
+        seq = _seq([{"tick": 500, "type": "death",
+                     "killer_sid": "999", "victim_sid": "111"}])
+        cams = App._build_cams_both(seq, self.ACTIVE, self.PRIMARY, {}, 64, 128)
+        self.assertTrue(all(c["playerSteamId"] == "111" for c in cams))
+
+    def test_anchor_prefers_active_killer_over_active_victim(self):
+        active = {"111", "222"}
+        seq = _seq([_kill(300, "999", "222"), _kill(400, "111", "888")])
+        self.assertEqual(App._seq_anchor_sid(seq, active, "222"), "111")
+
+
+class BuildJsonHelperTests(unittest.TestCase):
+    def test_output_params_injects_preset_for_cpu_codec(self):
+        cfg = {"video_codec": "libx264", "video_preset": "slow",
+               "ffmpeg_output_params": ""}
+        self.assertEqual(App._bj_output_params(cfg), "-preset slow")
+
+    def test_output_params_no_preset_for_gpu_codec(self):
+        cfg = {"video_codec": "h264_nvenc", "video_preset": "slow",
+               "ffmpeg_output_params": "-b:v 20M"}
+        self.assertEqual(App._bj_output_params(cfg), "-b:v 20M")
+
+    def test_output_params_user_preset_wins(self):
+        cfg = {"video_codec": "libx264", "video_preset": "slow",
+               "ffmpeg_output_params": "-preset fast"}
+        self.assertEqual(App._bj_output_params(cfg), "-preset fast")
+
+    def test_players_options_killer_mode_shows_cam_target(self):
+        seq = _seq([_kill(300, "111", "222")])
+        cams = [{"tick": 100, "playerSteamId": "111", "playerName": ""}]
+        opts = App._bj_players_options(
+            seq, cams, "killer", {"111"}, ["111"],
+            lambda sid: {"111": "Us", "222": "Them"}.get(str(sid), ""), "")
+        by_sid = {o["steamId"]: o for o in opts}
+        self.assertTrue(by_sid["111"]["showKill"])
+        self.assertTrue(by_sid["111"]["highlightKill"])
+        self.assertEqual(by_sid["111"]["playerName"], "Us")
+        self.assertIn("222", by_sid)          # victim listed
+        self.assertFalse(by_sid["222"]["highlightKill"])
+
+    def test_players_options_name_override_applies_to_active_only(self):
+        seq = _seq([_kill(300, "111", "222")])
+        cams = [{"tick": 100, "playerSteamId": "111", "playerName": ""}]
+        opts = App._bj_players_options(
+            seq, cams, "killer", {"111"}, ["111"],
+            lambda sid: "DemoName", "Forced")
+        by_sid = {o["steamId"]: o for o in opts}
+        self.assertEqual(by_sid["111"]["playerName"], "Forced")
+        self.assertEqual(by_sid["222"]["playerName"], "DemoName")
+
+
 if __name__ == "__main__":
     unittest.main()

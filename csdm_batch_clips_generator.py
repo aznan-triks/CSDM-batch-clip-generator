@@ -114,7 +114,7 @@ from csdm.static_data import (
     FilterDef, KILL_FILTER_REGISTRY,
     KILL_FILTER_KEYS_ALL, KILL_FILTER_KEYS, KILL_FILTER_LABELS, KILL_FILTER_SQL_COLS,
     _FILTER_CONFIG_DEFAULTS, _NO_AUTO_EXCLUDE, _FILTER_BOOL_KEYS, _FILTER_PRESET_PLAYER_KEYS,
-    VIDEO_CODECS_INFO, VIDEO_CODECS, AUDIO_CODECS_INFO, AUDIO_CODECS,
+    VIDEO_CODECS_INFO, VIDEO_CODECS, CPU_VIDEO_CODECS, AUDIO_CODECS_INFO, AUDIO_CODECS,
     RESOLUTIONS, FRAMERATES, DEFINITIONS, ASPECT_RATIOS,
     TROIS_SHOT_THRESHOLDS, CSDM_TO_DP2_WEAPON, DP2_TICK_WINDOW,
     SPRAY_TRANSFER_WEAPONS, SPRAY_TRANSFER_WEAPONS_LOWER, SPRAY_MAX_GAP_TICKS,
@@ -8431,6 +8431,214 @@ class App(tk.Tk):
             hlae_options["extraArgs"] = " ".join(tokens)
         return hlae_options
 
+    # ── _build_json helpers (Phase 1.3) — camera builders are static and take
+    #    explicit parameters so they can be unit-tested without an App instance.
+
+    @staticmethod
+    def _seq_anchor_sid(seq, sids_active, primary_sid):
+        """First active killer in the sequence, else first active victim, else primary."""
+        sorted_evts = sorted(seq["events"], key=lambda e: e["tick"])
+        for e in sorted_evts:
+            ks = str(e.get("killer_sid") or "")
+            if ks in sids_active:
+                return ks
+        for e in sorted_evts:
+            vs = str(e.get("victim_sid") or "")
+            if vs in sids_active:
+                return vs
+        return primary_sid
+
+    @staticmethod
+    def _build_cams_killer(seq, sids_active, primary_sid):
+        """Killer mode: follow each active killer. One entry per killer change."""
+        kill_evts = sorted(
+            [e for e in seq["events"] if e.get("killer_sid") in sids_active],
+            key=lambda e: e["tick"]
+        )
+        if not kill_evts:
+            anchor = (primary_sid if primary_sid in sids_active
+                      else App._seq_anchor_sid(seq, sids_active, primary_sid))
+            return [{"tick": seq["start_tick"], "playerSteamId": anchor,
+                     "playerName": ""}]
+        # Start at sequence start pointing to the first killer
+        first_ks = kill_evts[0]["killer_sid"]
+        cams = [{"tick": seq["start_tick"], "playerSteamId": first_ks,
+                 "playerName": ""}]
+        # Add a switch entry each time the killer changes
+        prev_ks = first_ks
+        for ev in kill_evts[1:]:
+            ks = ev["killer_sid"]
+            if ks != prev_ks:
+                cams.append({"tick": ev["tick"], "playerSteamId": ks,
+                             "playerName": ""})
+                prev_ks = ks
+        return cams
+
+    @staticmethod
+    def _build_cams_victim(seq, sids_active, primary_sid, cfg):
+        """Victim mode: camera fixed on the victim of the first kill by our player.
+        If the event is our player's death, the camera follows our player.
+        If kill_mod_mate_pov is on and a mate SID was stamped, use that instead.
+        No camera switch during the whole sequence."""
+        sorted_evts = sorted(
+            [e for e in seq["events"] if e.get("killer_sid") in sids_active
+             or e.get("victim_sid") in sids_active],
+            key=lambda e: e["tick"]
+        )
+
+        # Determine the single camera target for the whole sequence
+        target_sid = App._seq_anchor_sid(seq, sids_active, primary_sid)
+        if sorted_evts:
+            first_ev = sorted_evts[0]
+            if first_ev.get("type") == "death" and first_ev.get("victim_sid") in sids_active:
+                # Our player dies: follow them
+                target_sid = first_ev["victim_sid"]
+            elif first_ev.get("victim_sid"):
+                # Our player kills: follow victim (or their best-angle teammate).
+                mate_sid   = first_ev.get("_mate_pov_sid") if cfg.get("kill_mod_mate_pov") else None
+                target_sid = mate_sid or first_ev["victim_sid"]
+
+        # A single camera point at start_tick is enough — CSDM holds the target
+        return [{"tick": seq["start_tick"], "playerSteamId": target_sid,
+                 "playerName": ""}]
+
+    @staticmethod
+    def _build_cams_both(seq, sids_active, primary_sid, cfg, tickrate, victim_pre_ticks):
+        """Both mode: camera on the killer from the start of the sequence,
+        switches to victim victim_pre_ticks before the kill.
+        Sequence already extended by victim_pre_s via _effective_before,
+        so the switch is guaranteed inside the clip."""
+        sorted_evts = sorted(
+            [e for e in seq["events"] if e.get("killer_sid") in sids_active
+             or e.get("victim_sid") in sids_active],
+            key=lambda e: e["tick"]
+        )
+        if not sorted_evts:
+            return [{"tick": seq["start_tick"], "playerSteamId": primary_sid,
+                     "playerName": ""}]
+
+        # initial_sid = first relevant active player — used as camera default
+        # for any tick before the first timeline entry.  Do NOT put this into
+        # the timeline itself: doing so (and dedup-overwriting with later kills)
+        # was the root cause of the wrong-POV bug in multi-kill sequences.
+        initial_sid = App._seq_anchor_sid(seq, sids_active, primary_sid)
+
+        # timeline maps tick → target_sid for SWITCH events only.
+        # First-write wins at any given tick (don't overwrite with later events
+        # that happen to share the same tick).
+        timeline: dict = {}
+
+        for i, ev in enumerate(sorted_evts):
+            ev_tick = ev["tick"]
+
+            if ev.get("type") == "death" and ev.get("victim_sid") in sids_active:
+                # Our player dies — follow them from the very start.
+                initial_sid = ev["victim_sid"]
+                timeline.clear()
+                break
+
+            ksid = ev.get("killer_sid") or primary_sid
+            # In mate_pov mode, switch to the best-angle teammate instead of victim.
+            mate_sid   = ev.get("_mate_pov_sid") if cfg.get("kill_mod_mate_pov") else None
+            victim_cam = ev.get("victim_sid") or primary_sid
+            vsid = mate_sid or victim_cam
+
+            # If there was a previous kill, return to this kill's killer right
+            # after that kill so the viewer sees the correct attacker.
+            if i > 0:
+                prev_ev = sorted_evts[i - 1]
+                if prev_ev.get("victim_sid") not in sids_active:
+                    back_tick = prev_ev["tick"] + 1
+                    if back_tick not in timeline:
+                        timeline[back_tick] = ksid
+
+            # Switch to victim (or mate) victim_pre_ticks before this kill.
+            switch_tick = max(seq["start_tick"], ev_tick - victim_pre_ticks)
+            timeline[switch_tick] = vsid
+
+        sorted_timeline = sorted(timeline.items())
+
+        cam_ticks = build_camera_ticks(seq, tickrate)
+        cams = []
+        for t in cam_ticks:
+            target = initial_sid
+            for tl_tick, tl_sid in sorted_timeline:
+                if tl_tick <= t:
+                    target = tl_sid
+                else:
+                    break
+            cams.append({"tick": t, "playerSteamId": target,
+                         "playerName": ""})
+        return cams
+
+    @staticmethod
+    def _bj_players_options(seq, cams, perspective, sids_active, sids_active_list,
+                            name_for, name_override):
+        """Per-sequence playersOptions list (who is shown/highlighted in deathnotices)."""
+        cam_sids = {c["playerSteamId"] for c in cams if c.get("playerSteamId")}
+        if perspective in ("victim", "both"):
+            for ev in seq["events"]:
+                vsid = ev.get("victim_sid")
+                if vsid:
+                    cam_sids.add(vsid)
+
+        # Collect killers and victims for the sequence
+        seq_killer_sids = {ev.get("killer_sid") for ev in seq["events"] if ev.get("killer_sid")}
+        seq_victim_sids  = {ev.get("victim_sid")  for ev in seq["events"] if ev.get("victim_sid")}
+        all_seq_sids = (cam_sids | seq_killer_sids | seq_victim_sids) - {None, ""}
+
+        players_opts = []
+        seen_opts = set()
+        # Active players first, then other SIDs in the sequence
+        ordered = list(sids_active_list) + sorted(all_seq_sids - sids_active)
+        # In victim mode, camera-target SIDs must have showKill:true
+        # otherwise CSDM ignores the camera switch
+        cam_target_sids = {c["playerSteamId"] for c in cams if c.get("playerSteamId")}
+
+        for psid in ordered:
+            if not psid or psid in seen_opts:
+                continue
+            seen_opts.add(psid)
+            is_our    = psid in sids_active
+            pname = (name_override if is_our and name_override else name_for(psid))
+            is_killer = psid in seq_killer_sids
+            is_cam_target = psid in cam_target_sids
+
+            if perspective in ("killer", "victim"):
+                show = is_our or is_killer or is_cam_target
+                hi   = is_cam_target or (is_our and not cam_target_sids)
+            else:  # both
+                show = True
+                hi   = is_cam_target or is_our
+
+            players_opts.append({"steamId": psid, "playerName": pname,
+                                 "showKill": show, "highlightKill": hi,
+                                 "isVoiceEnabled": True})
+        return players_opts
+
+    @staticmethod
+    def _bj_output_dir(demo_path, cfg):
+        """Resolve (and create) the clip output folder for this demo."""
+        _clips_dir = (cfg.get("output_dir_clips") or cfg.get("output_dir") or "").strip()
+        od = os.path.abspath(_clips_dir) if _clips_dir else ""
+        if cfg.get("subfolder_per_demo", True) and od:
+            od = os.path.join(od, safe_folder_name(Path(demo_path).name))
+            os.makedirs(od, exist_ok=True)
+        return od
+
+    @staticmethod
+    def _bj_output_params(cfg):
+        """FFmpeg output parameters, with -preset injected for CPU codecs only.
+        GPU codecs (NVENC/AMF) ignore -preset from libx264/libx265."""
+        video_codec = cfg.get("video_codec", "libx264")
+        video_preset = cfg.get("video_preset", "medium").strip()
+        user_out_params = cfg.get("ffmpeg_output_params", "").strip()
+        # Only inject preset if: CPU codec + non-empty preset + not already in params
+        if (video_codec in CPU_VIDEO_CODECS and video_preset
+                and "-preset" not in user_out_params):
+            return (f"-preset {video_preset} " + user_out_params).strip()
+        return user_out_params
+
     def _build_json(self, demo_path, sequences, cfg):
         # In multi-player, sid = first SID (JSON compat), but we determine
         # the "owner" of each event dynamically from killer_sid/victim_sid.
@@ -8462,189 +8670,19 @@ class App(tk.Tk):
         victim_pre_s = cfg.get("victim_pre_s", 2)
         victim_pre_ticks = max(0, int(victim_pre_s) * tickrate)
 
-        def _seq_anchor_sid(seq):
-            sorted_evts = sorted(seq["events"], key=lambda e: e["tick"])
-            for e in sorted_evts:
-                ks = str(e.get("killer_sid") or "")
-                if ks in sids_active:
-                    return ks
-            for e in sorted_evts:
-                vs = str(e.get("victim_sid") or "")
-                if vs in sids_active:
-                    return vs
-            return primary_sid
-
-        def _build_cams_killer(seq):
-            """Killer mode: follow each active killer. One entry per killer change."""
-            kill_evts = sorted(
-                [e for e in seq["events"] if e.get("killer_sid") in sids_active],
-                key=lambda e: e["tick"]
-            )
-            if not kill_evts:
-                anchor = primary_sid if primary_sid in sids_active else _seq_anchor_sid(seq)
-                return [{"tick": seq["start_tick"], "playerSteamId": anchor,
-                         "playerName": ""}]
-            # Start at sequence start pointing to the first killer
-            first_ks = kill_evts[0]["killer_sid"]
-            cams = [{"tick": seq["start_tick"], "playerSteamId": first_ks,
-                     "playerName": ""}]
-            # Add a switch entry each time the killer changes
-            prev_ks = first_ks
-            for ev in kill_evts[1:]:
-                ks = ev["killer_sid"]
-                if ks != prev_ks:
-                    cams.append({"tick": ev["tick"], "playerSteamId": ks,
-                                 "playerName": ""})
-                    prev_ks = ks
-            return cams
-
-        def _build_cams_victim(seq):
-            """Victim mode: camera fixed on the victim of the first kill by our player.
-            If the event is our player's death, the camera follows our player.
-            If kill_mod_mate_pov is on and a mate SID was stamped, use that instead.
-            No camera switch during the whole sequence."""
-            sorted_evts = sorted(
-                [e for e in seq["events"] if e.get("killer_sid") in sids_active
-                 or e.get("victim_sid") in sids_active],
-                key=lambda e: e["tick"]
-            )
-
-            # Determine the single camera target for the whole sequence
-            target_sid = _seq_anchor_sid(seq)
-            if sorted_evts:
-                first_ev = sorted_evts[0]
-                if first_ev.get("type") == "death" and first_ev.get("victim_sid") in sids_active:
-                    # Our player dies: follow them
-                    target_sid = first_ev["victim_sid"]
-                elif first_ev.get("victim_sid"):
-                    # Our player kills: follow victim (or their best-angle teammate).
-                    mate_sid   = first_ev.get("_mate_pov_sid") if cfg.get("kill_mod_mate_pov") else None
-                    target_sid = mate_sid or first_ev["victim_sid"]
-
-            # A single camera point at start_tick is enough — CSDM holds the target
-            return [{"tick": seq["start_tick"], "playerSteamId": target_sid,
-                     "playerName": ""}]
-
-        def _build_cams_both(seq):
-            """Both mode: camera on the killer from the start of the sequence,
-            switches to victim victim_pre_ticks before the kill.
-            Sequence already extended by victim_pre_s via _effective_before,
-            so the switch is guaranteed inside the clip."""
-            sorted_evts = sorted(
-                [e for e in seq["events"] if e.get("killer_sid") in sids_active
-                 or e.get("victim_sid") in sids_active],
-                key=lambda e: e["tick"]
-            )
-            if not sorted_evts:
-                return [{"tick": seq["start_tick"], "playerSteamId": primary_sid,
-                         "playerName": ""}]
-
-            # initial_sid = first relevant active player — used as camera default
-            # for any tick before the first timeline entry.  Do NOT put this into
-            # the timeline itself: doing so (and dedup-overwriting with later kills)
-            # was the root cause of the wrong-POV bug in multi-kill sequences.
-            initial_sid = _seq_anchor_sid(seq)
-
-            # timeline maps tick → target_sid for SWITCH events only.
-            # First-write wins at any given tick (don't overwrite with later events
-            # that happen to share the same tick).
-            timeline: dict = {}
-
-            for i, ev in enumerate(sorted_evts):
-                ev_tick = ev["tick"]
-
-                if ev.get("type") == "death" and ev.get("victim_sid") in sids_active:
-                    # Our player dies — follow them from the very start.
-                    initial_sid = ev["victim_sid"]
-                    timeline.clear()
-                    break
-
-                ksid = ev.get("killer_sid") or primary_sid
-                # In mate_pov mode, switch to the best-angle teammate instead of victim.
-                mate_sid   = ev.get("_mate_pov_sid") if cfg.get("kill_mod_mate_pov") else None
-                victim_cam = ev.get("victim_sid") or primary_sid
-                vsid = mate_sid or victim_cam
-
-                # If there was a previous kill, return to this kill's killer right
-                # after that kill so the viewer sees the correct attacker.
-                if i > 0:
-                    prev_ev = sorted_evts[i - 1]
-                    if prev_ev.get("victim_sid") not in sids_active:
-                        back_tick = prev_ev["tick"] + 1
-                        if back_tick not in timeline:
-                            timeline[back_tick] = ksid
-
-                # Switch to victim (or mate) victim_pre_ticks before this kill.
-                switch_tick = max(seq["start_tick"], ev_tick - victim_pre_ticks)
-                timeline[switch_tick] = vsid
-
-            sorted_timeline = sorted(timeline.items())
-
-            cam_ticks = build_camera_ticks(seq, tickrate)
-            cams = []
-            for t in cam_ticks:
-                target = initial_sid
-                for tl_tick, tl_sid in sorted_timeline:
-                    if tl_tick <= t:
-                        target = tl_sid
-                    else:
-                        break
-                cams.append({"tick": t, "playerSteamId": target,
-                             "playerName": ""})
-            return cams
-
         seqs = []
         for idx, seq in enumerate(sequences, 1):
             if perspective == "both":
-                cams = _build_cams_both(seq)
+                cams = self._build_cams_both(seq, sids_active, primary_sid, cfg,
+                                             tickrate, victim_pre_ticks)
             elif perspective == "victim":
-                cams = _build_cams_victim(seq)
+                cams = self._build_cams_victim(seq, sids_active, primary_sid, cfg)
             else:
-                cams = _build_cams_killer(seq)
+                cams = self._build_cams_killer(seq, sids_active, primary_sid)
 
-            cam_sids = {c["playerSteamId"] for c in cams if c.get("playerSteamId")}
-            if perspective in ("victim", "both"):
-                for ev in seq["events"]:
-                    vsid = ev.get("victim_sid")
-                    if vsid:
-                        cam_sids.add(vsid)
-
-
-            # Collect killers and victims for the sequence
-            seq_killer_sids = {ev.get("killer_sid") for ev in seq["events"] if ev.get("killer_sid")}
-            seq_victim_sids  = {ev.get("victim_sid")  for ev in seq["events"] if ev.get("victim_sid")}
-            all_seq_sids = (cam_sids | seq_killer_sids | seq_victim_sids) - {None, ""}
-
-            players_opts = []
-            seen_opts = set()
-            # Active players first, then other SIDs in the sequence
-            ordered = list(sids_active_list) + sorted(all_seq_sids - sids_active)
-            # In victim mode, camera-target SIDs must have showKill:true
-            # otherwise CSDM ignores the camera switch
-            cam_target_sids = {c["playerSteamId"] for c in cams if c.get("playerSteamId")}
-
-            for psid in ordered:
-                if not psid or psid in seen_opts:
-                    continue
-                seen_opts.add(psid)
-                is_our    = psid in sids_active
-                pname = (_name_override if is_our and _name_override else _name(psid))
-                is_killer = psid in seq_killer_sids
-                is_cam_target = psid in cam_target_sids
-
-                if perspective == "killer":
-                    show = is_our or is_killer or is_cam_target
-                    hi   = is_cam_target or (is_our and not cam_target_sids)
-                elif perspective == "victim":
-                    show = is_our or is_killer or is_cam_target
-                    hi   = is_cam_target or (is_our and not cam_target_sids)
-                else:  # both
-                    show = True
-                    hi   = is_cam_target or is_our
-
-                players_opts.append({"steamId": psid, "playerName": pname,
-                                     "showKill": show, "highlightKill": hi,
-                                     "isVoiceEnabled": True})
+            players_opts = self._bj_players_options(
+                seq, cams, perspective, sids_active, sids_active_list,
+                _name, _name_override)
 
             seqs.append({
                 "number": idx,
@@ -8661,29 +8699,13 @@ class App(tk.Tk):
                 "playersOptions": players_opts,
             })
 
-        _clips_dir = (cfg.get("output_dir_clips") or cfg.get("output_dir") or "").strip()
-        od = os.path.abspath(_clips_dir) if _clips_dir else ""
-        if cfg.get("subfolder_per_demo", True) and od:
-            od = os.path.join(od, safe_folder_name(Path(demo_path).name))
-            os.makedirs(od, exist_ok=True)
+        od = self._bj_output_dir(demo_path, cfg)
 
         shared_injection = self._common_cs2_injection(cfg)
         hlae_options = self._inject_hlae_extra_args(cfg, shared_injection) if recsys == "HLAE" else {}
 
-        # Encoding preset — injected into outputParameters for CPU codecs only
-        # GPU codecs (NVENC/AMF) ignore -preset from libx264/libx265
-        _CPU_CODECS = {"libx264", "libx265", "libsvtav1", "libaom-av1", "libvpx-vp9",
-                       "prores_ks", "utvideo"}
+        out_params = self._bj_output_params(cfg)
         video_codec = cfg.get("video_codec", "libx264")
-        video_preset = cfg.get("video_preset", "medium").strip()
-        user_out_params = cfg.get("ffmpeg_output_params", "").strip()
-        # Only inject preset if: CPU codec + non-empty preset + not already in paramsr
-        if (video_codec in _CPU_CODECS and video_preset
-                and "-preset" not in user_out_params):
-            preset_injection = f"-preset {video_preset}"
-            out_params = (preset_injection + " " + user_out_params).strip()
-        else:
-            out_params = user_out_params
 
         out = {
             "demoPath": os.path.abspath(demo_path),
