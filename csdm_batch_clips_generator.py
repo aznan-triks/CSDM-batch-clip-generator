@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CSDM Batch Clips Generator v204"""
+"""CSDM Batch Clips Generator — version courante : voir APP_VERSION ci-dessous."""
 
 
 import tkinter as tk
@@ -31,8 +31,6 @@ except ImportError:
 # ═══════════════════════════════════════════════════════
 APP_VERSION = "v205"
 
-# ═══════════════════════════════════════════════════════
-#  Theme
 # ═══════════════════════════════════════════════════════
 #  Theme system
 # ═══════════════════════════════════════════════════════
@@ -3433,13 +3431,6 @@ class App(tk.Tk):
         v = str(value or "").strip().upper()
         return "CS" if v == "CS" else "HLAE"
 
-    def _on_res(self, e=None):
-        for l, w, h in RESOLUTIONS:
-            if l == self.v["resolution"].get():
-                self.v["width"].set(w)
-                self.v["height"].set(h)
-                break
-
     # ── v60: structured resolution selectors ─────────────────────────────────
     def _on_perspective_change(self, *_):
         """Show/hide the 'Switch delay' slider, total-before hint, and Mate POV row."""
@@ -6475,9 +6466,6 @@ class App(tk.Tk):
         f = tk.Frame(p, bg=BG2)
         hchk(f, text, var, **kw).pack()
         return f
-
-    def _radio(self, p, text, var, val):
-        return hradio(p, text, var, val)
 
     def _slider(self, p, label, var, mn, mx, row, col):
         """Slider widget. row/col kept for backward-compat but layout is pack-based."""
