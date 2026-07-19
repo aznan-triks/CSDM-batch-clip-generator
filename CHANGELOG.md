@@ -9,6 +9,41 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v206]
+
+### Changed: refactor pass — Phase 1.3 + 2.1 of the improvement plan (no user-facing changes)
+
+**Code structure:**
+- `csdm/core_utils.py` — pure helpers extracted (date conversion, duration/folder
+  formatting, camera ticks, id generation, ffmpeg detection). Main file re-imports
+  every name; all call sites unchanged.
+- `_query_events` split from 462 to 270 lines: one named builder per WHERE concern
+  (`_qe_epoch_bounds`, `_qe_match_type_sql`, `_qe_headshot_sql`, `_qe_teamkill_sql`,
+  `_qe_suicide_sql`, `_qe_mod_sql`, `_qe_detect_date_col`, `_qe_map_filter_sql`).
+- `_build_json` split: camera builders (`_build_cams_killer` / `_build_cams_victim` /
+  `_build_cams_both`, `_seq_anchor_sid`) promoted from closures to static methods with
+  explicit parameters — now unit-testable without a running app. `playersOptions`,
+  output dir and FFmpeg output-params extracted to named helpers.
+- `SUICIDE_WEAPONS`, `DELAYED_EFFECT_WEAPONS`, `CPU_VIDEO_CODECS` moved to
+  `csdm/static_data.py` (pure data, single source of truth).
+
+**Fail Fast (Phase 2.1, targeted):** 20 broad `except Exception` handlers narrowed to
+precise types (Tk widget lifecycle → `tk.TclError`, hex/date parsing → `ValueError` etc.).
+
+**Cleanup:** stale `v204` docstring now defers to `APP_VERSION`; dead methods
+`_on_res` / `_radio` removed; unused imports and dead local variables removed
+(pyflakes-clean); stray `conn.close()` removed on the all-mods-missing path (the
+DB connection is persistent by design — `_pg()` reopens it anyway).
+
+**Tests:** 68 → 84. New coverage locks in the v194 camera behaviour (killer switch
+entries, victim/mate-POV override, Both-mode timeline, death override) and the
+`_build_json` helpers (preset injection per codec class, playersOptions flags,
+name override).
+
+**Docs:** README still said "Tools" tab — renamed to "Settings" (actual tab name since v164).
+
+---
+
 ## [v205]
 
 ### Fixed: theme switch kept stale colours when leaving a collided theme (e.g. AMOLED)
