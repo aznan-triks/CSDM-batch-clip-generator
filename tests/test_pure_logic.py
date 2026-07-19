@@ -11,7 +11,6 @@ Ils couvrent :
 But : grossir le filet AVANT de decouper le coeur metier (DB / dp2 / recording),
 pour qu'une regression saute aux yeux.
 """
-import json
 import tempfile
 import unittest
 from pathlib import Path

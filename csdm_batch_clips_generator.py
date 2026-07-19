@@ -6,9 +6,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, simpledialog, colorchooser
 import subprocess, threading, json, os, tempfile, time, shutil, re, uuid, random, shlex
 import bisect, concurrent.futures, math
-from functools import lru_cache
 from collections import Counter, defaultdict
-import calendar as cal_mod
 from datetime import datetime, timedelta, date
 from pathlib import Path
 
@@ -2892,13 +2890,13 @@ class App(tk.Tk):
         sec_asm = Sec(p, "FINAL ASSEMBLY")
         sec_asm.pack(fill="x")
 
-        _asm_cb1 = _chk_tip(sec_asm, "Assemble all clips at the end", self.v["assemble_after"],
+        _chk_tip(sec_asm, "Assemble all clips at the end", self.v["assemble_after"],
                             "After batch, concatenate all clips into a single file.\n"
                             "Video copied without re-encoding (-c:v copy) — fast, lossless.\n"
                             "Audio re-encoded to AAC to fix drift.\n"
                             "Requires the same codec and resolution on all clips.",
                             pady=(4, 2))
-        _asm_cb2 = _chk_tip(sec_asm, "Delete source clips after assembly", self.v["delete_after_assemble"],
+        _chk_tip(sec_asm, "Delete source clips after assembly", self.v["delete_after_assemble"],
                             "Deletes source files (and their folders) after successful assembly.\n"
                             "⚠ Incompatible with Concatenate sequences — automatically disables that option.")
         _asm_cb3 = _chk_tip(sec_asm, "Concatenate sequences", self.v["concatenate_sequences"],
@@ -5403,7 +5401,6 @@ class App(tk.Tk):
                     self._tag_search_status.config(text="No demos.", fg=YELLOW)
                     return
                 total_evt = sum(ne for _, ne, _ in found)
-                total_seq = sum(ns for _, _, ns in found)
                 for dp, ne, ns in found:
                     self._tag_demo_lb.insert("end",
                         f"{Path(dp).name}  ({ne} events → {ns} seq)")
@@ -5470,7 +5467,7 @@ class App(tk.Tk):
 
             if not demos:
                 self.after(0, lambda: (
-                    self._async_log(f"[TAGS/range] No demos with these tags.", "warn"),
+                    self._async_log("[TAGS/range] No demos with these tags.", "warn"),
                     self._plage_lbl.config(text="No tagged demos.", fg=YELLOW)))
                 return
 
@@ -7362,7 +7359,6 @@ class App(tk.Tk):
                         params = params + _mf_raw
                     cur.execute(sql, params)
                     sids_set = set(sids)
-                    _map_offset = (1 if date_col else 0)   # extra columns before `extra`
                     for row in cur.fetchall():
                         dp, tick, chk = row[0], row[1], row[2]
                         if not dp or tick is None:
@@ -7529,7 +7525,6 @@ class App(tk.Tk):
             return results
 
         logic_and   = cfg.get("kill_mod_logic_db", "any") == "all"
-        n_active    = sum(1 for f in active_flags if f)
 
         multi_n = max(2, int(cfg.get("kill_mod_multi_kill_n", 3)))
         multi_s = max(1, int(cfg.get("kill_mod_multi_kill_s", 12)))
@@ -9802,7 +9797,6 @@ class App(tk.Tk):
                     and k not in _NO_AUTO_EXCLUDE]
         if excl_dp2:
             excluded_sigs: set = set()
-            non_kill_excl = [e for e in events if e.get("type") != "kill"]
             for ex_key, ex_fn, ex_label in excl_dp2:
                 matched = ex_fn(dp, events, cfg)
                 for e in matched:
@@ -10640,7 +10634,7 @@ class App(tk.Tk):
                             (chk, tag_id))
                         conn.commit()
                         _rolled_back += 1
-                except Exception as _e:
+                except Exception:
                     _rb_fail += 1
             msg = f"  ↩ Rolled back {_rolled_back} tag(s)"
             if _rb_fail:
