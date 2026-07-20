@@ -20,7 +20,7 @@ from csdm import config as cfgmod
 from csdm_batch_clips_generator import (
     App, iso_to_display, display_to_iso,
     fmt_duration, safe_folder_name, build_camera_ticks,
-    _generate_id_for_type, _count_kills,
+    _generate_id_for_type, _count_kills, progress_bar,
 )
 
 
@@ -315,6 +315,16 @@ class CoreUtilTests(unittest.TestCase):
     def test_safe_folder_name_drops_extension(self):
         # Path.stem -> extension removed.
         self.assertEqual(safe_folder_name("match_2026.dem"), "match_2026")
+
+    def test_progress_bar_full_and_empty(self):
+        self.assertEqual(progress_bar(0, 4, width=4), "▱▱▱▱ 0/4")
+        self.assertEqual(progress_bar(4, 4, width=4), "▰▰▰▰ 4/4")
+        self.assertEqual(progress_bar(2, 4, width=4), "▰▰▱▱ 2/4")
+
+    def test_progress_bar_clamps_and_guards_zero(self):
+        self.assertEqual(progress_bar(9, 4, width=4), "▰▰▰▰ 4/4")   # clampe
+        self.assertEqual(progress_bar(-3, 4, width=4), "▱▱▱▱ 0/4")  # clampe bas
+        self.assertEqual(progress_bar(0, 0), "0/0")                 # total <= 0
 
     def test_safe_folder_name_truncates_to_100(self):
         self.assertEqual(len(safe_folder_name("x" * 200)), 100)

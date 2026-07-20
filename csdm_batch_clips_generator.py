@@ -143,7 +143,7 @@ from csdm.config import (
 from csdm.core_utils import (
     iso_to_display, display_to_iso, ensure_csdm_dirs, check_ffmpeg_available,
     fmt_duration, safe_folder_name, build_camera_ticks,
-    _generate_id_for_type, _count_kills,
+    _generate_id_for_type, _count_kills, progress_bar,
 )
 
 # ── Calendrier, dialogues et champ de date (Phase 1.2) ──────────────────────
@@ -292,7 +292,7 @@ class App(tk.Tk):
             for _, rw, rh in ASPECT_RATIOS
         ) and any(h == _h0 for _, h in DEFINITIONS)
         self.v["res_custom"] = tk.BooleanVar(value=not _known)
-        self.db_status = tk.StringVar(value="Not connected")
+        self.db_status = tk.StringVar(value="[DB:OFFLINE]")
         self.sel_events = {e: tk.BooleanVar(value=(e in self.cfg.get("events", []))) for e in EVENTS}
         self.sel_weapons = {}
         for w in self.cfg.get("weapons", []):
@@ -359,6 +359,7 @@ class App(tk.Tk):
         self.after(60, self._update_res_preview)
 
         self._auto_save()
+        self.after(80, self._apply_dark_titlebar)
         self.after(200, self._preflight)
         if HAS_PG:
             self.after(500, self._connect_and_load)
@@ -562,7 +563,7 @@ class App(tk.Tk):
         return None, "m", ""
 
     def _connect_and_load(self):
-        self.db_status.set("Connecting...")
+        self.db_status.set("[DB:...]")
         self.db_status_lbl.config(fg=YELLOW)
 
         def task():
@@ -830,8 +831,8 @@ class App(tk.Tk):
             self._async_log("⚠ Date column not detected in matches — date filter disabled", "warn")
 
         self.db_status.set(
-            f"OK — {len(players)} players, {len(tags_data)} tags"
-            + ("" if dc else "  ⚠ date ?"))
+            f"[DB:OK] {len(players)}P·{len(tags_data)}T"
+            + ("" if dc else " ⚠date?"))
         self.db_status_lbl.config(fg=GREEN)
 
         # Deferred restoration (preset loaded before DB was ready)
@@ -851,7 +852,7 @@ class App(tk.Tk):
             self._pending_restore_tags = []
 
     def _on_load_fail(self, err):
-        self.db_status.set(f"Error: {err}")
+        self.db_status.set(f"[DB:ERR] {err}")
         self.db_status_lbl.config(fg=RED)
 
     # ═══════════════════════════════════════════════════
@@ -1413,7 +1414,7 @@ class App(tk.Tk):
                   relief="flat", bd=0, cursor="hand2", highlightthickness=0,
                   activeforeground=ORANGE,
                   command=self._quick_preset_save).pack(side="left", padx=(4, 0))
-        tk.Label(db_area, text="DB ", font=FONT_DESC, bg=BG2, fg=MUTED).pack(side="left")
+        # Statut DB deja bracktee (ex: [DB:OK]) -> pas de prefixe "DB " redondant.
         self.db_status_lbl = tk.Label(db_area, textvariable=self.db_status,
                                       font=FONT_SM_B, bg=BG2, fg=YELLOW)
         self.db_status_lbl.pack(side="left")
@@ -1421,6 +1422,8 @@ class App(tk.Tk):
                   relief="flat", bd=0, cursor="hand2", highlightthickness=0,
                   activeforeground=ORANGE,
                   command=self._connect_and_load).pack(side="left", padx=(4, 0))
+        tk.Label(db_area, text=f"[{APP_VERSION}]", font=FONT_DESC, bg=BG2,
+                 fg=MUTED).pack(side="left", padx=(8, 0))
 
         _sep(self, pady=0)
 
@@ -5763,6 +5766,23 @@ class App(tk.Tk):
     # ── TAB TOOLS ──
     # ── Theme application ──────────────────────────────────────────────────
 
+    def _apply_dark_titlebar(self):
+        """Barre de titre sombre sous Windows (best-effort). Suit le theme
+        clair/sombre. Silencieux si l'API DWM est absente (autres OS / vieux
+        Windows). Les attributs 20/19 sont des constantes de protocole DWM.
+        """
+        try:
+            import ctypes
+            self.update_idletasks()
+            hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
+            dark = ctypes.c_int(0 if _THEME.get("_is_light") else 1)
+            DWMWA_DARK_MODE, DWMWA_DARK_MODE_OLD = 20, 19
+            for attr in (DWMWA_DARK_MODE, DWMWA_DARK_MODE_OLD):
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd, attr, ctypes.byref(dark), ctypes.sizeof(dark))
+        except Exception:
+            pass  # non-Windows / API absente -> barre standard
+
     def _change_theme(self, bg_name: str | None = None, accent: str | None = None):
         """Change theme at runtime. Pass None to keep the current value.
 
@@ -5798,6 +5818,7 @@ class App(tk.Tk):
         # Retrigger hchk/hradio closures so they pick up the new _t() colours
         self._retrigger_toggle_vars()
 
+        self._apply_dark_titlebar()   # suit le nouveau fond clair/sombre
         self._auto_save()
 
     def _reapply_ttk_styles(self):
@@ -6609,9 +6630,9 @@ class App(tk.Tk):
         try:
             e, w = self._log_err_count, self._log_warn_count
             if self._log_err_lbl and self._log_err_lbl.winfo_exists():
-                self._log_err_lbl.config(text=f"E:{e}" if e else "")
+                self._log_err_lbl.config(text=f"[E:{e}]" if e else "")
             if self._log_warn_lbl and self._log_warn_lbl.winfo_exists():
-                self._log_warn_lbl.config(text=f"W:{w}" if w else "")
+                self._log_warn_lbl.config(text=f"[W:{w}]" if w else "")
         except tk.TclError:
             pass
 
@@ -9049,7 +9070,7 @@ class App(tk.Tk):
                 # or on the last one to avoid flooding the event queue.
                 if done == total or done % 5 == 0:
                     self.after(0, lambda d=done, t=total:
-                               self.progress_lbl.config(text=f"Pre-parse {d}/{t}"))
+                               self.progress_lbl.config(text=f"PRE-PARSE {progress_bar(d, t)}"))
 
         cached_total = n_cached + done
         self._async_log(
@@ -10301,7 +10322,7 @@ class App(tk.Tk):
             ad = os.path.abspath(dp)
             self._current_demo = dn
             date_str = self._format_demo_date(dp)
-            self.after(0, lambda lbl=f"{i}/{len(demo_list)}":
+            self.after(0, lambda lbl=progress_bar(i, len(demo_list)):
                        self.progress_lbl.config(text=lbl))
             _timing_str = ""
             if t_dp2 > 0.01 or t_seq > 0.001:

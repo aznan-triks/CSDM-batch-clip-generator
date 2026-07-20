@@ -72,6 +72,19 @@ def fmt_duration(seconds):
     return f"{s // 3600}:{(s % 3600) // 60:02d}:{s % 60:02d}"
 
 
+def progress_bar(done, total, width=12, full="▰", empty="▱"):
+    """Barre de progression texte facon terminal : "▰▰▰▱▱ 12/17".
+
+    Pure : aucune dependance. width = nombre de blocs. Robuste aux bornes
+    (done clampe dans [0, total]) et a total <= 0 (retourne juste "done/total").
+    """
+    if total <= 0:
+        return f"{done}/{total}"
+    done = max(0, min(done, total))
+    filled = round(width * done / total)
+    return f"{full * filled}{empty * (width - filled)} {done}/{total}"
+
+
 def safe_folder_name(name):
     name = Path(name).stem
     name = re.sub(r'[<>:"/\\|?*]', '_', name)

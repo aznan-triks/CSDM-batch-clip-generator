@@ -983,12 +983,16 @@ class PlayerSearchWidget(tk.Frame):
 
         self._active_lbl.config(text=text, fg=fg)
 
-        # Mirror the exact same text to the header label
+        # Header : forme HUD bracketee compacte [PLAYER:NAME] / [PLAYERS:N].
+        if n == 0:
+            hud = ""
+        elif n == 1:
+            hud = f"[PLAYER:{self._active_names.get(next(iter(self._active_sids)), '').upper()}]"
+        else:
+            hud = f"[PLAYERS:{n}]"
         try:
             app = self.winfo_toplevel()
-            app._hdr_player_lbl.config(
-                text=text if n > 0 else "",
-                fg=fg)
+            app._hdr_player_lbl.config(text=hud, fg=fg)
         except tk.TclError:
             pass
 
