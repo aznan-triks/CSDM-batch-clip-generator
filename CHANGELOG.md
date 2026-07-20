@@ -11,34 +11,34 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [v207]
 
-### Added / Changed: refonte visuelle « terminal / HUD »
+### Added / Changed: "terminal / HUD" visual overhaul
 
-**What changed:** L'interface a un nouveau look plus dense, façon terminal industriel : grille à traits fins, coins carrés, tout en police à chasse fixe, libellés en majuscules. Aucune fonctionnalité n'a bougé — c'est purement l'apparence.
+**What changed:** The interface has a new, denser look — industrial-terminal style: thin-line grid, square corners, everything in a monospace font, uppercase labels. No feature changed — this is purely appearance.
 
-**Police :**
-- L'appli choisit automatiquement la plus belle police à chasse fixe installée (JetBrains Mono → Fira Code → Cascadia Mono → Consolas). Un réglage `ui_font_family` permet d'en forcer une.
-- Techniquement : `FONT_MONO/SM/DESC` sont maintenant des polices Tk *nommées* construites par `init_fonts()` ; une trentaine de tailles écrites en dur ont été centralisées. Un piège de ramasse-miettes qui supprimait les polices nommées a été corrigé (références conservées dans `_FONTS`).
+**Font:**
+- The app now auto-picks the best installed monospace font (JetBrains Mono → Fira Code → Cascadia Mono → Consolas). A `ui_font_family` setting can force a specific one.
+- Technical: `FONT_MONO/SM/DESC` are now *named* Tk fonts built by `init_fonts()`; ~30 hard-coded font tuples were centralised. Fixed a garbage-collection trap that deleted the named fonts (strong refs kept in `_FONTS`).
 
-**Fin des coins arrondis :**
-- Onglets, menus déroulants, barres de défilement et liste des démos étaient dessinés par Windows avec des coins arrondis. Ils sont désormais plats et carrés.
-- `apply_ttk_style()` (thème `clam`) centralise tout le style ttk en un seul endroit, appelé au démarrage et à chaque changement de thème — remplace deux blocs dupliqués.
+**No more rounded corners:**
+- Tabs, comboboxes, scrollbars and the demo list were drawn by Windows with rounded corners. They are now flat and square.
+- `apply_ttk_style()` (`clam` theme) centralises all ttk styling in one place, called at startup and on every theme change — replaces two duplicated blocks.
 
-**Grille & bordures :**
-- Chaque carte de section a un cadre fin complet (au lieu d'un simple trait sous le titre) et se lit comme une cellule de grille. Barre d'accent 3→1px, flèches `▾/▸` → `[-]/[+]`.
-- La barre du bouton RUN et la console sont encadrées d'un trait fin.
-- Nouveau conteneur `BentoGrid` : l'onglet Réglages passe en 2 colonnes quand la fenêtre est assez large (au-delà de 720px de panneau ; sinon 1 colonne — donc rien ne change à taille normale). Video et Capture restent en 1 colonne.
+**Grid & borders:**
+- Each section card now has a full thin border (instead of a single line under the title) and reads like a grid cell. Accent stripe 3→1px, arrows `▾/▸` → `[-]/[+]`.
+- The RUN-button bar and the console are framed with a thin border.
+- New `BentoGrid` container: the Settings tab switches to 2 columns when the pane is wide enough (over 720px; otherwise 1 column — so nothing changes at normal size). Video and Capture stay single-column.
 
-**Typographie & densité :**
-- Libellés de champ, onglets (CAPTURE/TAGS/VIDEO/SETTINGS) et boutons (RUN/PREVIEW/STOP/KILL) en majuscules. Marges et espacements resserrés. Descriptions préfixées `// `.
-- Nouveau thème de fond « Terminal » (noir bleuté) à côté de Dark / AMOLED / Deep Blue / White.
+**Typography & density:**
+- Field labels, tabs (CAPTURE/TAGS/VIDEO/SETTINGS) and buttons (RUN/PREVIEW/STOP/KILL) are uppercase. Tighter margins and spacing. Descriptions prefixed with `// `.
+- New "Terminal" background theme (bluish black) alongside Dark / AMOLED / Deep Blue / White.
 
-**Éléments HUD :**
-- En-tête en segments : `[DB:OK] 12P·5T`, `[PLAYER:NOM]`, `[v207]`. Compteurs de logs `[E:2] [W:5]`. Progression du batch en barre de blocs `▰▰▰▱▱ 12/17`.
-- Barre de titre de la fenêtre sombre sous Windows (suit le thème ; silencieux ailleurs).
+**HUD elements:**
+- Bracketed header segments: `[DB:OK] 12P·5T`, `[PLAYER:NAME]`, `[v207]`. Log counters `[E:2] [W:5]`. Batch progress as a block bar `▰▰▰▱▱ 12/17`.
+- Dark window title bar on Windows (follows the theme; silent elsewhere).
 
-**Non fait :** les boutons « touches de terminal » (T3.3) — le dictionnaire de style censé les alimenter (`_BTN_KW`) n'était en réalité branché sur aucun widget, donc sans effet.
+**Not done:** the "terminal key" buttons (T3.3) — the style dict meant to drive them (`_BTN_KW`) was in fact never applied to any widget, so it would have no effect.
 
-**Tests :** 84 → 86, tous verts (nouveau helper `progress_bar` couvert). Nouvelles constantes de style dans `csdm/ui_kit.py`, preset `terminal` dans `csdm/theme.py`.
+**Tests:** 84 → 86, all green (new `progress_bar` helper covered). New style constants in `csdm/ui_kit.py`, `terminal` preset in `csdm/theme.py`.
 
 ---
 
