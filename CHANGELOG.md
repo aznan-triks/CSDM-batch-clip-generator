@@ -9,6 +9,136 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v207]
+
+### Added / Changed: refonte visuelle « terminal / HUD »
+
+**What changed:** L'interface a un nouveau look plus dense, façon terminal industriel : grille à traits fins, coins carrés, tout en police à chasse fixe, libellés en majuscules. Aucune fonctionnalité n'a bougé — c'est purement l'apparence.
+
+**Police :**
+- L'appli choisit automatiquement la plus belle police à chasse fixe installée (JetBrains Mono → Fira Code → Cascadia Mono → Consolas). Un réglage `ui_font_family` permet d'en forcer une.
+- Techniquement : `FONT_MONO/SM/DESC` sont maintenant des polices Tk *nommées* construites par `init_fonts()` ; une trentaine de tailles écrites en dur ont été centralisées. Un piège de ramasse-miettes qui supprimait les polices nommées a été corrigé (références conservées dans `_FONTS`).
+
+**Fin des coins arrondis :**
+- Onglets, menus déroulants, barres de défilement et liste des démos étaient dessinés par Windows avec des coins arrondis. Ils sont désormais plats et carrés.
+- `apply_ttk_style()` (thème `clam`) centralise tout le style ttk en un seul endroit, appelé au démarrage et à chaque changement de thème — remplace deux blocs dupliqués.
+
+**Grille & bordures :**
+- Chaque carte de section a un cadre fin complet (au lieu d'un simple trait sous le titre) et se lit comme une cellule de grille. Barre d'accent 3→1px, flèches `▾/▸` → `[-]/[+]`.
+- La barre du bouton RUN et la console sont encadrées d'un trait fin.
+- Nouveau conteneur `BentoGrid` : l'onglet Réglages passe en 2 colonnes quand la fenêtre est assez large (au-delà de 720px de panneau ; sinon 1 colonne — donc rien ne change à taille normale). Video et Capture restent en 1 colonne.
+
+**Typographie & densité :**
+- Libellés de champ, onglets (CAPTURE/TAGS/VIDEO/SETTINGS) et boutons (RUN/PREVIEW/STOP/KILL) en majuscules. Marges et espacements resserrés. Descriptions préfixées `// `.
+- Nouveau thème de fond « Terminal » (noir bleuté) à côté de Dark / AMOLED / Deep Blue / White.
+
+**Éléments HUD :**
+- En-tête en segments : `[DB:OK] 12P·5T`, `[PLAYER:NOM]`, `[v207]`. Compteurs de logs `[E:2] [W:5]`. Progression du batch en barre de blocs `▰▰▰▱▱ 12/17`.
+- Barre de titre de la fenêtre sombre sous Windows (suit le thème ; silencieux ailleurs).
+
+**Non fait :** les boutons « touches de terminal » (T3.3) — le dictionnaire de style censé les alimenter (`_BTN_KW`) n'était en réalité branché sur aucun widget, donc sans effet.
+
+**Tests :** 84 → 86, tous verts (nouveau helper `progress_bar` couvert). Nouvelles constantes de style dans `csdm/ui_kit.py`, preset `terminal` dans `csdm/theme.py`.
+
+---
+
+## [v206]
+
+### Changed: code cleanup and refactor pass (Phase 1.3 + 2.1)
+
+**What changed:** Nothing visible. Same app, same behaviour. The code is just better organised, and the safety net is bigger.
+
+**Cleanup:**
+- First line of the file said v204. Real version was v205. Now it points to `APP_VERSION`. One source of truth.
+- Two dead methods removed (`_on_res`, `_radio`). Nothing called them.
+- Unused imports and dead local variables removed. pyflakes is clean.
+
+**Big functions split into small named pieces:**
+- `_query_events` (the SQL query builder): 462 → 270 lines. Each filter now has its own small builder — match type, headshots, teamkills, suicides, mods, date column, map filter.
+- `_build_json` (the CSDM recording file): camera builders are now standalone static methods. Before they were closures locked inside the function — impossible to test alone. Now they are tested.
+- Weapon lists (`SUICIDE_WEAPONS`, `DELAYED_EFFECT_WEAPONS`) and the CPU codec list moved to `csdm/static_data.py`. Pure data lives in one place.
+- Pure helpers (date conversion, duration format, folder names, camera ticks) moved to new `csdm/core_utils.py`.
+
+**Fail Fast:** 20 catch-all `except Exception` narrowed to precise types (dead-widget errors → `TclError`, bad hex/date → `ValueError`). A real bug in these spots now crashes loud instead of hiding.
+
+**Small fix:** one code path closed the persistent DB connection by mistake. Removed — the connection is meant to stay open.
+
+**Tests:** 68 → 84, all green. New tests lock the v194 camera logic (killer switches, victim POV, mate POV, Both-mode timeline) so it can never silently break again.
+
+**Docs:** README said "Tools" tab. Real name is "Settings" since v164. Fixed.
+
+---
+
+## [v205]
+
+### Fixed: theme switch kept stale colours when leaving a collided theme (e.g. AMOLED)
+
+Switching away from a theme whose roles shared the same colour (AMOLED has
+background, secondary background and log background all at `#000000`) left some
+widgets stuck on the old colour.
+
+**Root cause:** the runtime re-paint maps *old colour → new colour* by value. When
+several roles share one value the mapping is ambiguous, so those widgets were
+skipped on purpose and kept their old (black) colour.
+
+**Fix:** `_build_theme()` now guarantees every colour in a theme is unique, nudging
+exact duplicates by an imperceptible amount (`#000000` → `#000001`). AMOLED still
+looks pure black, but each role is now distinct, so the re-paint is never ambiguous
+and every widget updates correctly. Added `_nudge_hex` / `_ensure_unique_hex` in
+`csdm/theme.py`, covered by new tests.
+
+### Changed: split the single-file monolith into a `csdm/` package (Phase 1.1–1.2)
+
+The application is being reorganised from one ~12.6k-line file into a small
+package, one module per responsibility. No user-facing behaviour changes; the
+entry point is still `csdm_batch_clips_generator.py`, which re-imports every
+moved name so all call sites keep working.
+
+- `csdm/static_data.py` — kill-filter registry + weapon/codec/resolution/match-type tables
+- `csdm/config.py` — `DEFAULT_CONFIG`, preset groups, JSON load/save helpers
+- `csdm/theme.py` — theme palettes, `_build_theme()`, and the live shared `_THEME` + `_t()` accessor
+- `csdm/ui_kit.py` — fonts, spacing constants, shared `_CHK_KW`/`_BTN_KW` styles
+- `csdm/widgets.py` — reusable Tk widgets (`ScrollableFrame`, `WrapRow` so far)
+
+Main file reduced from 12,621 to ~11,694 lines so far. Test suite grown to 50 tests, all green.
+
+---
+
+## [v204]
+
+### Improved: Mate POV — replace body-point loop with single eye check; tighten max dist
+
+**Body-point loop removed.** At ≤550 u the angular spread from head to legs is under 6°, so testing 3 separate points added no filtering value over a single centre check. Replaced with one check against the victim's eye position (`Z + 54`, CS2 standing eye height). Simpler, equally accurate.
+
+**Max dist 3000 → 550 u.** Beyond ~550 Hammer units, the probability of a clear same-floor LOS drops sharply. Tight engagement range only.
+
+**Constants removed:** `_MATE_POV_BODY_HEIGHTS`, `_MATE_POV_MIN_VISIBLE`
+**Constant added:** `_MATE_POV_EYE_HEIGHT = 54`
+
+---
+
+## [v203]
+
+### Fixed: Mate POV — obstacle/floor filtering to reject blocked LOS
+
+Mate POV was accepting teammates on different floors, looking through ceilings, or barely glancing toward the victim — producing useless clips.
+
+**Root cause:** LOS check was purely angle-based with very loose parameters. No geometry filter existed for floor/ceiling blocking.
+
+**Changes:**
+
+- `_MATE_POV_FOV_HALF_DEG` tightened: `45°` → `20°` — victim must be clearly in the mate's view, not at the edge
+- `_MATE_POV_MIN_VISIBLE` raised: `2` → `3` — all three body points (head/chest/legs) must be inside the FOV cone
+- `_MATE_POV_MAX_DIST` reduced: `5000` → `3000` Hammer units — distant mates almost always have walls between them
+- `_MATE_POV_MIN_DIST = 80` (new) — reject mates clipping into or directly on top of the victim
+- `_MATE_POV_MAX_Z_DELTA = 300` (new) — reject if height difference > 300 units (≈ 2.5 player heights); filters different-floor mates where a ceiling/floor would block LOS
+- `_MATE_POV_MAX_ELEVATION = 30.0°` (new) — reject if the required elevation angle to look from mate to victim exceeds 30°; steep angles strongly indicate the mate is on a different level
+- `health` added to `parse_ticks` columns — dead players (health ≤ 0) are now excluded from mate candidates; health column absence (older demos) is handled gracefully
+
+**Note:** BSP ray-casting is not available via demoparser2. These geometric filters eliminate the most common false-positive cases (different floors, extreme distances, glancing angles) but cannot detect walls on the same level.
+
+---
+
 ## [v202]
 
 ### Fixed: map column detection — `map_name` lives in `demos` table, not `matches`

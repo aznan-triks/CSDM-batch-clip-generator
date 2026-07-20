@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-"""CSDM Batch Clips Generator v197"""
+"""CSDM Batch Clips Generator — version courante : voir APP_VERSION ci-dessous."""
 
 
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, simpledialog, colorchooser
 import subprocess, threading, json, os, tempfile, time, shutil, re, uuid, random, shlex
 import bisect, concurrent.futures, math
-from functools import lru_cache
 from collections import Counter, defaultdict
-import calendar as cal_mod
 from datetime import datetime, timedelta, date
 from pathlib import Path
 
@@ -29,103 +27,18 @@ except ImportError:
 # ═══════════════════════════════════════════════════════
 #  Version
 # ═══════════════════════════════════════════════════════
-APP_VERSION = "v202"
+APP_VERSION = "v207"
 
-# ═══════════════════════════════════════════════════════
-#  Theme
 # ═══════════════════════════════════════════════════════
 #  Theme system
 # ═══════════════════════════════════════════════════════
 
-# Background presets — each defines the full bg family
-_BG_PRESETS = {
-    "dark":    {"BG": "#0e0e0e", "BG2": "#141414", "BG3": "#1a1a1a",
-                "BORDER": "#252525", "TEXT": "#e0e0e0", "MUTED": "#999999",
-                "DESC_COLOR": "#888888", "LOG_BG": "#090909"},
-    "amoled":  {"BG": "#000000", "BG2": "#000000", "BG3": "#0a0a0a",
-                "BORDER": "#1a1a1a", "TEXT": "#e0e0e0", "MUTED": "#888888",
-                "DESC_COLOR": "#777777", "LOG_BG": "#000000"},
-    "deepblue":{"BG": "#0a0f1e", "BG2": "#0d1526", "BG3": "#111d35",
-                "BORDER": "#1a2a4a", "TEXT": "#cdd6f4", "MUTED": "#7a8fba",
-                "DESC_COLOR": "#6a7faa", "LOG_BG": "#080d18"},
-    "white":   {"BG": "#f0f0f0", "BG2": "#f8f8f8", "BG3": "#e4e4e4",
-                "BORDER": "#cccccc", "TEXT": "#1a1a1a", "MUTED": "#555555",
-                "DESC_COLOR": "#666666", "LOG_BG": "#fafafa", "_is_light": True},
-}
-
-# Semantic accent colours — accent + darker shade
-_ACCENT_PRESETS = {
-    "green":    {"ACCENT": "#22c55e", "ACCENT2": "#16a34a"},
-    "blue":     {"ACCENT": "#3b82f6", "ACCENT2": "#2563eb"},
-    "orange":   {"ACCENT": "#f97316", "ACCENT2": "#ea580c"},
-    "purple":   {"ACCENT": "#a855f7", "ACCENT2": "#9333ea"},
-    "red":      {"ACCENT": "#ef4444", "ACCENT2": "#dc2626"},
-    "cyan":     {"ACCENT": "#06b6d4", "ACCENT2": "#0891b2"},
-    "pink":     {"ACCENT": "#ec4899", "ACCENT2": "#db2777"},
-    "yellow":   {"ACCENT": "#eab308", "ACCENT2": "#ca8a04"},
-}
-
-# Status colours — dark-mode variants (pastels readable on dark bg)
-_STATUS_COLOURS = {
-    "GREEN":  "#86efac",
-    "RED":    "#f87171",
-    "YELLOW": "#fde68a",
-    "BLUE":   "#93c5fd",
-}
-
-# Light-mode variants — saturated/dark enough for contrast on white
-_STATUS_COLOURS_LIGHT = {
-    "GREEN":  "#15803d",
-    "RED":    "#b91c1c",
-    "YELLOW": "#b45309",
-    "BLUE":   "#1d4ed8",
-}
-
-def _build_theme(bg_name: str, accent_name_or_hex: str) -> dict:
-    """Build a complete theme dict from a bg-preset name and accent name or raw hex.
-
-    Returns a flat dict with all colour keys used throughout the UI.
-    """
-    bg = _BG_PRESETS.get(bg_name, _BG_PRESETS["dark"])
-    if accent_name_or_hex in _ACCENT_PRESETS:
-        ac = _ACCENT_PRESETS[accent_name_or_hex]
-        accent  = ac["ACCENT"]
-        accent2 = ac["ACCENT2"]
-    else:
-        # Raw hex from custom colour picker
-        accent  = accent_name_or_hex if accent_name_or_hex.startswith("#") else "#22c55e"
-        # Derive darker shade: darken by ~20%
-        try:
-            h = accent.lstrip("#")
-            r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-            r2, g2, b2 = int(r * 0.72), int(g * 0.72), int(b * 0.72)
-            accent2 = f"#{r2:02x}{g2:02x}{b2:02x}"
-        except Exception:
-            accent2 = accent
-    sc = _STATUS_COLOURS_LIGHT if bg.get("_is_light") else _STATUS_COLOURS
-    return {
-        "BG":        bg["BG"],
-        "BG2":       bg["BG2"],
-        "BG3":       bg["BG3"],
-        "BORDER":    bg["BORDER"],
-        "TEXT":      bg["TEXT"],
-        "MUTED":     bg["MUTED"],
-        "DESC_COLOR":bg["DESC_COLOR"],
-        "LOG_BG":    bg["LOG_BG"],
-        "ORANGE":    accent,
-        "ORANGE2":   accent2,
-        "GREEN":     sc["GREEN"],
-        "RED":       sc["RED"],
-        "YELLOW":    sc["YELLOW"],
-        "BLUE":      sc["BLUE"],
-    }
-
-# Active theme — populated at startup and updated on theme change
-_THEME: dict = _build_theme("dark", "green")
-
-def _t(key: str) -> str:
-    """Return the current theme colour for a given key."""
-    return _THEME[key]
+# ── Palettes + theme VIVANT partage (Phase 1.1 / 1.2) ───────────────────────
+#  Les couleurs courantes vivent dans csdm/theme.py (_THEME mute en place +
+#  accesseur _t). On les importe ici. Les ~640 lectures du fichier utilisent
+#  encore les globales BG/BG2/... ci-dessous : on les garde synchronisees a
+#  partir du dict partage. Les futurs modules de widgets, eux, utilisent _t().
+from csdm.theme import _build_theme, _ACCENT_PRESETS, _THEME, _t, apply_theme as _apply_theme_dict
 
 # Apply the initial theme to module-level globals for backward compat
 BG       = _THEME["BG"]
@@ -154,8 +67,9 @@ def _apply_theme_globals(bg_name: str, accent: str):
     After this, any new widget creation will use the updated globals.
     Existing widgets are updated by App._apply_theme_to_widgets().
     """
-    global _THEME
-    _THEME = _build_theme(bg_name, accent)
+    # Mute le theme PARTAGE en place (csdm/theme._THEME) — pas de reassignation,
+    # sinon les autres modules garderaient l'ancien dictionnaire.
+    _apply_theme_dict(bg_name, accent)
     g = globals()
     for name in _THEME_GLOBAL_NAMES:
         g[name] = _THEME[name]
@@ -168,39 +82,18 @@ def _apply_theme_globals(bg_name: str, accent: str):
                    selectcolor=_THEME["BG3"])
     _BTN_KW.update(activebackground=_THEME["BORDER"], activeforeground=_THEME["ORANGE"])
 
-FONT_MONO = ("Consolas", 10)
-FONT_SM = ("Consolas", 9)
-FONT_DESC = ("Consolas", 8)
+# ── Boite a outils UI : polices, espacements, styles (Phase 1.2) ────────────
+#  Extraits dans csdm/ui_kit.py. _CHK_KW/_BTN_KW sont les MEMES objets dict
+#  que ceux mis a jour en place par _apply_theme_globals ci-dessus.
+from csdm.ui_kit import (
+    FONT_MONO, FONT_MONO_B, FONT_SM, FONT_SM_B, FONT_DESC, FONT_TITLE_B,
+    init_fonts, apply_ttk_style,
+    UI_TAB_PAD, UI_SEC_PADX, UI_SEC_PADY, UI_SEC_GAP, UI_ROW_PAD,
+    UI_BTN_IPADX, UI_BTN_IPADY, UI_ENTRY_IPAD,
+    UI_PANE_LEFT_MIN, UI_PANE_RIGHT_MIN,
+    _CHK_KW, _BTN_KW, _contrast_fg,
+)
 
-# ── UI spacing constants — single source of truth ───────────────────────────
-#  All padx / pady / ipadx / ipady values that appear in more than one place
-#  are derived from these. Change here → changes everywhere.
-UI_TAB_PAD    = 10   # outer padding of scrollable tab inner frame (top/bottom/left/right)
-UI_SEC_PADX   = 14   # horizontal body padding inside every Sec card
-UI_SEC_PADY   = 8    # vertical body padding inside every Sec card
-UI_SEC_GAP    = 6    # vertical gap between consecutive Sec cards
-UI_ROW_PAD    = 4    # standard vertical gap between rows inside a section
-UI_BTN_IPADX  = 8    # standard horizontal inner padding for action buttons
-UI_BTN_IPADY  = 4    # standard vertical inner padding for action buttons
-UI_ENTRY_IPAD = 6    # inner padding for text Entry fields
-# Minimum pixel widths for the two PanedWindow panes.  The sash is clamped to
-# these limits on release so neither panel can ever be completely squeezed away.
-UI_PANE_LEFT_MIN  = 380   # categories / notebook panel
-UI_PANE_RIGHT_MIN = 200   # console / log panel
-
-# Shared kwargs for flat checkbox/radio widgets
-_CHK_KW = dict(font=FONT_SM, bg=BG2, fg=MUTED, activebackground=BG2,
-               activeforeground=ORANGE, selectcolor=BG3,
-               relief="flat", bd=0, cursor="hand2", highlightthickness=0)
-_BTN_KW = dict(relief="flat", bd=0, cursor="hand2", highlightthickness=0,
-               activebackground=BORDER, activeforeground=ORANGE)
-
-CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "csdm_config.json")
-PRESETS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "csdm_presets.json")
-PLAYERS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "csdm_players.json")
-ASM_NAMES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "csdm_asm_names.json")
-# ── Static data: filter registry, weapon data, codec/resolution tables ────────
-from typing import NamedTuple, Optional, List as _List
 
 # ── Runtime-injection CFG constants ──────────────────────────────────────────
 CSDM_RUNTIME_CFG_NAME   = "csdm_batch_runtime.cfg"
@@ -215,2002 +108,64 @@ VIDEO_CONTAINERS = ["mp4", "avi", "mkv", "mov", "webm"]
 PERSP_LABELS     = {"killer": "POV Killer", "victim": "POV Victim", "both": "Both"}
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  Kill Filter Registry — single source of truth
-# ═══════════════════════════════════════════════════════════════════════════════
-#
-# Every kill modifier is declared exactly ONCE here.
-# All other structures (DEFAULT_CONFIG entries, bool_keys,
-# PRESET_KEYS, _FILTER_BADGE_DEFS, _DP2_FILTER_DEFS, _MOD_COLS,
-# needs_dp2, and UI rows) are DERIVED from this registry.
-#
-# To ADD a filter:  add one FilterDef entry.
-# To REMOVE one:   delete its entry.
-# To CHANGE it:    edit its entry — nothing else needs updating.
-
-class FilterDef(NamedTuple):
-    key:          str
-    label:        str            # UI label (flabel), e.g. "💨 SMOKE:"
-    badge:        str            # short badge text, e.g. "💨 SMOKE"
-    category:     str            # "mods" | "dp2" | "db"
-    tip:          str            # tooltip
-    sql_cols:     Optional[list] = None  # mods: candidate DB columns
-    dp2_filter:   Optional[str]  = None  # dp2: per-demo App method name
-    dp2_apply:    Optional[str]  = None  # dp2: dict-level App method name
-    dp2_log:      Optional[str]  = None  # dp2: log prefix
-    dp2_result:   Optional[str]  = None  # dp2: log result word
-    dp2_skip:     Optional[str]  = None  # dp2: log skip word
-    special:      Optional[str]  = None  # "trois_shot"|"trois_tap"|"one_tap"|"high_velocity"
-    hide_ui:      bool           = False # True → no standalone row (rendered by another)
-    extra_config: Optional[dict] = None  # extra DEFAULT_CONFIG entries for this filter
-    camera_fn:    Optional[str]  = None  # App method: (demo_path, event, cfg) → override camera SID or None
-
-
-KILL_FILTER_REGISTRY: _List[FilterDef] = [
-    # ── SQL-backed Mods ──────────────────────────────────────────────────
-    FilterDef("kill_mod_through_smoke",  "💨 SMOKE:",         "💨 SMOKE",      "mods",
-        "Kill through a smoke grenade (DB column — fast, no demoparser2 needed).",
-        sql_cols=["is_through_smoke", "through_smoke"]),
-    FilterDef("kill_mod_no_scope",       "🔭 NO-SCOPE:",      "🔭 NOSCOPE",    "mods",
-        "No-scope kill — sniper only (DB column).",
-        sql_cols=["is_no_scope", "no_scope"]),
-    FilterDef("kill_mod_assisted_flash", "⚡ VICTIM FLASHED:","⚡ VIC.FLASH",  "mods",
-        "Victim was blinded by a flashbang (DB column).",
-        sql_cols=["is_assisted_flash", "assisted_flash"]),
-    # ── DB-backed mods (CSDM stores these columns in the kills table) ────
-    FilterDef("kill_mod_wall_bang",      "🧱 WALLBANG:",      "🧱 WALLBANG",   "mods",
-        ("Kill where the bullet penetrated at least one obstacle.\n"
-         "Uses kills.penetrated_objects > 0  or  kills.has_penetrated / kills.penetrated.\n"
-         "Falls back to demoparser2 if no matching column is found in the DB."),
-        sql_cols=["penetrated_objects", "has_penetrated", "penetrated"],
-        dp2_filter="_wall_bang_dp2_filter",     dp2_apply="_apply_wall_bang_dp2_to_events",
-        dp2_log="🧱 WALLBANG",  dp2_result="wallbang",    dp2_skip="0 WALLBANG"),
-    FilterDef("kill_mod_attacker_blind", "😵 BLIND FIRE:",    "😵 BLIND",      "mods",
-        ("Bullet fired while the killer was blinded by a flashbang.\n"
-         "Uses kills.attacker_blinded / kills.is_attacker_blinded / kills.attacker_blind.\n"
-         "Falls back to demoparser2 if no matching column is found in the DB."),
-        sql_cols=["attacker_blinded", "is_attacker_blinded", "attacker_blind",
-                  "is_blinded", "attackerblind"],
-        dp2_filter="_attacker_blind_dp2_filter",dp2_apply="_apply_attacker_blind_dp2_to_events",
-        dp2_log="😵 BLIND FIRE",dp2_result="blind fire",  dp2_skip="0 BLIND FIRE"),
-    # ── dp2-only — no DB equivalent ──────────────────────────────────────
-    FilterDef("kill_mod_airborne",       "🪂 AIRBORNE:",      "🪂 AIR",        "dp2",
-        ("Bullet fired while the killer was in the air (not on ground).\n"
-         "Uses player_death.attackerinair — demoparser2 required, not stored in CSDM DB."),
-        dp2_filter="_airborne_dp2_filter",      dp2_apply="_apply_airborne_dp2_to_events",
-        dp2_log="🪂 AIRBORNE",  dp2_result="airborne",    dp2_skip="0 AIRBORNE"),
-    FilterDef("kill_mod_collateral",     "🎯 COLLATERAL:",    "🎯 COLLAT.",    "dp2",
-        ("Single bullet penetrated and killed multiple players in the same shot chain.\n"
-         "Uses player_death.penetrated + shot grouping via demoparser2."),
-        dp2_filter="_collateral_dp2_filter",    dp2_apply="_apply_collateral_dp2_to_events",
-        dp2_log="🎯 COLLATERAL",dp2_result="collateral",  dp2_skip="0 COLLATERAL"),
-    # ── dp2 — weapon_fire-based filters ─────────────────────────────────
-    FilterDef("kill_mod_trois_shot",     "🎲 TROIS SHOT:",    "🎲 TROIS SHOT", "dp2",
-        ("Lucky kills on precision weapons — detected via demoparser2.\n\n"
-         "Per-weapon logic:\n"
-         "  Deagle / R8   bloom > 0.015 (not a stationary aimed shot)\n"
-         "  AWP / SSG 08  unscoped at shot time\n"
-         "  SCAR-20 / G3SG1  unscoped OR bloom > 0.010 OR moving\n\n"
-         "Enable = keep only lucky kills. Exclude = keep only precise kills on these weapons.\n"
-         "⚠ Enable and Exclude are mutually exclusive."),
-        dp2_filter="_trois_shot_filter",        dp2_apply="_apply_trois_shot_to_events",
-        dp2_log="🎲 TROIS SHOT",dp2_result="TROIS SHOT",  dp2_skip="0 TROIS SHOT",
-        special="trois_shot"),
-    FilterDef("kill_mod_no_trois_shot",  "🚫🎲 EXCLUDE:",     "🚫🎲 Exclude",  "dp2",
-        ("Inverse of TROIS SHOT — removes lucky kills on these weapons.\n"
-         "When combined with other dp2 filters, acts as an exclusion gate first."),
-        dp2_filter="_no_trois_shot_filter",     dp2_apply="_apply_no_trois_shot_to_events",
-        dp2_log="🚫🎲 Exclude", dp2_result="precise",     dp2_skip="0 EXCLUDE",
-        hide_ui=True),  # rendered inside TROIS SHOT row
-    FilterDef("kill_mod_trois_tap",      "🎯🎲 TROIS TAP:",   "🎯🎲 TROIS TAP","dp2",
-        ("TROIS SHOT + ONE TAP: lucky isolated headshot.\n"
-         "Must be a headshot, qualify as lucky, and have no other shot within 2s.\n"
-         "HS is auto-forced only when active logic guarantees HS-only output."),
-        dp2_filter=None, dp2_apply=None,   # always exclusive, handled separately
-        dp2_log="🎯🎲 TROIS TAP",dp2_result="TROIS TAP",  dp2_skip="0 TROIS TAP",
-        special="trois_tap"),
-    FilterDef("kill_mod_one_tap",        "🎯 ONE TAP:",       "🎯 ONE TAP",    "dp2",
-        ("Isolated single-shot headshot — no other shot within N seconds before or after.\n"
-         "HS is auto-forced only when active logic guarantees HS-only output."),
-        dp2_filter="_one_tap_filter",           dp2_apply="_apply_one_tap_to_events",
-        dp2_log="🎯 ONE TAP",   dp2_result="one tap",     dp2_skip="0 ONE TAP",
-        special="one_tap",
-        extra_config={"kill_mod_one_tap_s": 2}),
-    FilterDef("kill_mod_spray_transfer", "🔫 SPRAY TRANSFER:","🔫 SPRAY",      "dp2",
-        ("≥2 enemies killed in one continuous spray (no trigger release).\n"
-         "Auto weapons only: AK-47, M4A4/M4A1-S, Galil AR, FAMAS, SG 553, AUG, SMGs, M249, Negev, CZ75."),
-        dp2_filter="_spray_transfer_filter",    dp2_apply="_apply_spray_transfer_to_events",
-        dp2_log="🔫 SPRAY",     dp2_result="spray transfer",dp2_skip="0 SPRAY"),
-    FilterDef("kill_mod_high_velocity",  "🏎 FERRARI PEEK:",  "🏎 FERRARI",    "dp2",
-        ("Moving peek that kills on a single shot then immediately resumes.\n"
-         "Approach speed ≥ threshold, one shot, resumes movement within 2s.\n"
-         "CS2 run speeds: knife 250 · pistols 240 · AK-47 215 · AWP 200 u/s"),
-        dp2_filter="_high_velocity_filter",     dp2_apply="_apply_high_velocity_to_events",
-        dp2_log="🏎 FERRARI PEEK",dp2_result="counter-strafe",dp2_skip="0 FERRARI PEEK",
-        special="high_velocity",
-        extra_config={"kill_mod_hv_one_shot": True, "kill_mod_high_vel_thr": 100}),
-    FilterDef("kill_mod_flick",          "↩ FLICK:",          "↩ FLICK",       "dp2",
-        ("Kill preceded by a large view-angle change (~0.5s before kill tick).\n"
-         "Default: 50°. Lower = catch smaller corrections, raise = extreme flicks only."),
-        dp2_filter="_flick_filter",             dp2_apply="_apply_flick_to_events",
-        dp2_log="↩ FLICK",      dp2_result="flick",       dp2_skip="0 FLICK",
-        extra_config={"kill_mod_flick_deg": 50}),
-    FilterDef("kill_mod_savior",        "🛡 SAVIOR:",        "🛡 SAVIOR",     "dp2",
-        ("Kill an enemy who was actively damaging a teammate in the ~2s prior.\n"
-         "Captures last-second rescues."),
-        dp2_filter="_savior_filter",           dp2_apply="_apply_savior_to_events",
-        dp2_log="🛡 SAVIOR",    dp2_result="savior",      dp2_skip="0 SAVIOR"),
-    # ── DB post-filters ──────────────────────────────────────────────────
-    FilterDef("kill_mod_entry_frag",     "🚀 ENTRY FRAG:",    "🚀 ENTRY",      "db",
-        "First kill of the round (earliest tick), regardless of side."),
-    FilterDef("kill_mod_ace",            "🃏 ACE:",           "🃏 ACE",         "db",
-        "Rounds where the player eliminated all 5 opponents alone."),
-    FilterDef("kill_mod_multi_kill",     "⚡ MULTI-KILL:",    "⚡ MULTI",       "db",
-        "N or more kills in one round within the time window.",
-        extra_config={"kill_mod_multi_kill_n": 3, "kill_mod_multi_kill_s": 12}),
-    FilterDef("kill_mod_bully",       "💀 BULLY:",         "💀 BULLY",       "db",
-        ("Kill the same opponent for the Nth time in the match.\n"
-         "e.g. From kill #3 = captured from the 3rd time you kill the same player."),
-        extra_config={"kill_mod_bully_n": 3}),
-    FilterDef("kill_mod_eco_frag",       "💰 ECO FRAG:",      "💰 ECO",         "db",
-        ("Pistol kill against a full-buy opponent (rifle / sniper / LMG).\n"
-         "Falls back to all pistol kills if victim_weapon column is missing.")),
-    # ── Camera modifier — not a kill filter, rendered in Capture & Timing ────
-    FilterDef("kill_mod_mate_pov",       "👥 MATE POV:",      "👥 MATE POV",   "dp2",
-        ("Record from the victim's teammate who has the best angular view of the kill.\n"
-         "Uses demoparser2 player positions + view angles at kill tick.\n"
-         "⚠ LOS is angle-based (no BSP ray-cast). At least 2 of 3 body points must be\n"
-         "within the teammate's field of view.\n"
-         "★ Must = skip clips with no qualifying teammate."),
-        dp2_filter="_mate_pov_filter",
-        dp2_apply=None,
-        dp2_log="👥 MATE POV", dp2_result="mate pov", dp2_skip="0 mate POV",
-        camera_fn="_mate_pov_camera_sid",
-        hide_ui=True),   # rendered in Capture & Timing, not in Kill Filters
-]
-
-# ── Derived structures (auto-generated — DO NOT EDIT, edit KILL_FILTER_REGISTRY) ──
-
-# All registry keys (including hide_ui entries)
-KILL_FILTER_KEYS_ALL: _List[str] = [f.key for f in KILL_FILTER_REGISTRY]
-# Primary keys (visible in UI)
-KILL_FILTER_KEYS: _List[str] = [f.key for f in KILL_FILTER_REGISTRY if not f.hide_ui]
-# Short display labels dict
-KILL_FILTER_LABELS: dict = {f.key: f.badge for f in KILL_FILTER_REGISTRY}
-# SQL-backed mod candidate columns dict
-KILL_FILTER_SQL_COLS: dict = {f.key: f.sql_cols
-    for f in KILL_FILTER_REGISTRY if f.category == "mods" and f.sql_cols}
-# DEFAULT_CONFIG additions (auto-built from registry)
-_FILTER_CONFIG_DEFAULTS: dict = {}
-# Keys that must NOT get an auto-generated _exclude entry
-_NO_AUTO_EXCLUDE = {"kill_mod_no_trois_shot", "kill_mod_trois_tap"}
-for _f in KILL_FILTER_REGISTRY:
-    _FILTER_CONFIG_DEFAULTS[_f.key] = False
-    _FILTER_CONFIG_DEFAULTS[f"{_f.key}_req"] = False
-    if _f.key not in _NO_AUTO_EXCLUDE and not _f.hide_ui:
-        _FILTER_CONFIG_DEFAULTS[f"{_f.key}_exclude"] = False
-    if _f.extra_config:
-        _FILTER_CONFIG_DEFAULTS.update(_f.extra_config)
-# bool_keys additions (all filter enable + _req + _exclude flags + bool extra_config sub-keys)
-_FILTER_BOOL_KEYS: _List[str] = []
-for _f in KILL_FILTER_REGISTRY:
-    _FILTER_BOOL_KEYS.append(_f.key)
-    _FILTER_BOOL_KEYS.append(f"{_f.key}_req")
-    if _f.key not in _NO_AUTO_EXCLUDE and not _f.hide_ui:
-        _FILTER_BOOL_KEYS.append(f"{_f.key}_exclude")
-    if _f.extra_config:
-        for _ek, _ev in _f.extra_config.items():
-            if isinstance(_ev, bool) and _ek not in _FILTER_BOOL_KEYS:
-                _FILTER_BOOL_KEYS.append(_ek)
-# PRESET_KEYS player additions
-_FILTER_PRESET_PLAYER_KEYS: _List[str] = list(_FILTER_BOOL_KEYS)
-for _f in KILL_FILTER_REGISTRY:
-    if _f.extra_config:
-        for _k in _f.extra_config:
-            if _k not in _FILTER_PRESET_PLAYER_KEYS:
-                _FILTER_PRESET_PLAYER_KEYS.append(_k)
-
-
-# ── Video / Audio codecs ──────────────────────────────────────────────────────
-VIDEO_CODECS_INFO = {
-    "libx264":    "H.264 CPU — Universal, compatible everywhere.",
-    "libx265":    "H.265/HEVC CPU — Better compression, slower.",
-    "libsvtav1":  "AV1 CPU (SVT) — Modern, excellent compression.",
-    "libaom-av1": "AV1 CPU (ref) — Very slow but max quality.",
-    "h264_nvenc": "H.264 GPU NVIDIA — Ultra-fast.",
-    "hevc_nvenc": "HEVC GPU NVIDIA — H.265 accelerated.",
-    "av1_nvenc":  "AV1 GPU NVIDIA — RTX 40xx+.",
-    "h264_amf":   "H.264 GPU AMD — Fast (RX 5000+).",
-    "hevc_amf":   "HEVC GPU AMD — H.265 accelerated.",
-    "av1_amf":    "AV1 GPU AMD — RX 7000+.",
-    "libvpx-vp9": "VP9 CPU — Good quality, slow.",
-    "prores_ks":  "ProRes — Large files, pro quality.",
-    "utvideo":    "UT Video — Lightweight lossless.",
-    "rawvideo":   "Raw — Uncompressed raw.",
-}
-VIDEO_CODECS = list(VIDEO_CODECS_INFO.keys())
-
-AUDIO_CODECS_INFO = {
-    "libmp3lame": "MP3 — Compatible everywhere.",
-    "aac":        "AAC — Better than MP3, modern standard.",
-    "pcm_s16le":  "PCM WAV — Raw uncompressed.",
-    "libopus":    "Opus — Excellent, especially streaming/voice.",
-    "flac":       "FLAC — Compressed lossless.",
-}
-AUDIO_CODECS = list(AUDIO_CODECS_INFO.keys())
-
-
-# ── Resolutions / Framerates / Definitions ───────────────────────────────────
-RESOLUTIONS = [
-    ("1280x720", 1280, 720), ("1920x1080", 1920, 1080),
-    ("2560x1440", 2560, 1440), ("3840x2160", 3840, 2160),
-]
-FRAMERATES = [30, 60, 120, 240, 300]
-
-DEFINITIONS = [
-    ("720p",  720),
-    ("1080p", 1080),
-    ("1440p", 1440),
-    ("4K",    2160),
-]
-
-ASPECT_RATIOS = [
-    ("16:9",  16, 9),
-    ("4:3",   4,  3),
-    ("21:9",  21, 9),
-    ("16:10", 16, 10),
-    ("1:1",   1,  1),
-]
-
-
-# ── TROIS SHOT thresholds ─────────────────────────────────────────────────────
-# Thresholds calibrated from real demoparser2 data (accuracy_penalty in Source2 radians):
-#   precise stationary shot  ≈ 0.004
-#   shot while moving        ≈ 0.010–0.025
-#   spam (2nd+ rapid shot)   ≈ 0.030–0.050
-#
-# Per-weapon logic:
-#   Deagle / R8   : lucky if acc > 0.015  (not first stationary shot)
-#   AWP / SSG 08  : lucky if NOT scoped  (is_scoped False at shot tick)
-#   SCAR-20/G3SG1 : lucky if vel > 100 u/s OR acc > 0.012 OR not scoped
-TROIS_SHOT_THRESHOLDS = {
-    "weapon_deagle":   {"acc": 0.015, "scope": False, "vel": False},
-    "weapon_revolver": {"acc": 0.015, "scope": False, "vel": False},
-    "weapon_awp":      {"acc": 0.010, "scope": True,  "vel": False},
-    "weapon_scar20":   {"acc": 0.010, "scope": True,  "vel": True},
-    "weapon_g3sg1":    {"acc": 0.010, "scope": True,  "vel": True},
-    "weapon_ssg08":    {"acc": 0.010, "scope": True,  "vel": False},
-}
-
-# Mapping CSDM weapon names (lowercase) → demoparser2 internal name
-CSDM_TO_DP2_WEAPON = {
-    "deagle":         "weapon_deagle",
-    "desert eagle":   "weapon_deagle",
-    "revolver":       "weapon_revolver",
-    "r8 revolver":    "weapon_revolver",
-    "awp":            "weapon_awp",
-    "scar-20":        "weapon_scar20",
-    "scar20":         "weapon_scar20",
-    "g3sg1":          "weapon_g3sg1",
-    "ssg 08":         "weapon_ssg08",
-    "ssg08":          "weapon_ssg08",
-    "ssg-08":         "weapon_ssg08",
-}
-
-# Tick window for demoparser2 shot matching (~1 second at CS2 64 tick/s)
-DP2_TICK_WINDOW = 128
-
-
-# ── SPRAY TRANSFER ────────────────────────────────────────────────────────────
-# Automatic weapons eligible for spray transfer detection.
-# A spray transfer = player kills ≥2 victims in one continuous burst
-# (no trigger release — no gap > SPRAY_MAX_GAP ticks between weapon_fire events).
-SPRAY_TRANSFER_WEAPONS: set = {
-    # Rifles (fully automatic)
-    "ak47", "m4a1", "m4a1_silencer", "galilar", "famas", "sg556", "aug",
-    "ak-47", "m4a4", "m4a1-s", "galil ar", "sg 553",
-    # SMGs
-    "mac10", "mp9", "mp7", "mp5sd", "ump45", "p90", "bizon",
-    "mac-10", "mp5-sd", "ump-45", "pp-bizon",
-    # Heavy auto
-    "m249", "negev",
-    # CZ75 (only full-auto pistol)
-    "cz75a", "cz75-auto",
-}
-SPRAY_TRANSFER_WEAPONS_LOWER: set = {w.lower() for w in SPRAY_TRANSFER_WEAPONS}
-# ~0.34s at 64tick — generous to handle peeks/lag
-SPRAY_MAX_GAP_TICKS = 22
-
-
-# ── Tag colour presets ────────────────────────────────────────────────────────
-TAG_PRESET_COLORS = [
-    "#f97316", "#ef4444", "#eab308", "#22c55e", "#3b82f6",
-    "#8b5cf6", "#ec4899", "#14b8a6", "#f43f5e", "#6366f1",
-    "#0ea5e9", "#84cc16", "#d946ef", "#f59e0b", "#10b981",
-    "#6b7280", "#a855f7", "#e11d48", "#0891b2", "#65a30d",
-]
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-#  Weapon Categories for CS2
-# ═══════════════════════════════════════════════════════════════════════════════
-WEAPON_CATEGORIES = {
-    "Pistols": [
-        "usp_silencer", "hkp2000", "glock", "p250", "fiveseven",
-        "cz75a", "cz75_auto", "tec9", "elite", "deagle", "revolver",
-        "usp-s", "p2000", "glock-18", "five-seven", "cz75-auto",
-        "tec-9", "dual berettas", "desert eagle", "r8 revolver",
-        "USP-S", "P2000", "Glock-18", "P250", "Five-SeveN",
-        "CZ75-Auto", "Tec-9", "Dual Berettas", "Desert Eagle", "R8 Revolver",
-    ],
-    "SMGs": [
-        "mac10", "mp9", "mp7", "mp5sd", "ump45", "p90", "bizon",
-        "mac-10", "mp5-sd", "ump-45", "pp-bizon",
-        "MAC-10", "MP9", "MP7", "MP5-SD", "UMP-45", "P90", "PP-Bizon",
-    ],
-    "Rifles": [
-        "ak47", "m4a1", "m4a1_silencer", "galilar", "famas", "sg556", "aug",
-        "ak-47", "m4a4", "m4a1-s", "galil ar", "sg 553",
-        "AK-47", "M4A4", "M4A1-S", "Galil AR", "FAMAS", "SG 553", "AUG",
-    ],
-    "Snipers": [
-        "awp", "ssg08", "scar20", "g3sg1",
-        "ssg 08", "scar-20",
-        "AWP", "SSG 08", "SCAR-20", "G3SG1",
-    ],
-    "Heavy": [
-        "nova", "xm1014", "mag7", "sawedoff", "m249", "negev",
-        "mag-7", "sawed-off",
-        "Nova", "XM1014", "MAG-7", "Sawed-Off", "M249", "Negev",
-    ],
-    "Knives": [
-        "knife", "knife_t", "knife_karambit", "knife_m9_bayonet", "knife_butterfly",
-        "knife_push", "knife_tactical", "knife_falchion", "knife_survival_bowie",
-        "knife_ursus", "knife_gypsy_jackknife", "knife_stiletto", "knife_widowmaker",
-        "knife_skeleton", "knifegg",
-        "Knife",
-    ],
-    "Grenades & Utility": [
-        "hegrenade", "incgrenade", "molotov", "inferno",
-        "flashbang", "smokegrenade", "decoy",
-        "he grenade", "incendiary grenade", "decoy grenade",
-        "smoke grenade", "flash",
-        "HE Grenade", "Incendiary Grenade", "Molotov", "Decoy Grenade",
-        "Flashbang", "Smoke Grenade",
-        "weapon_hegrenade", "weapon_incgrenade", "weapon_molotov", "weapon_inferno",
-        "weapon_flashbang", "weapon_smokegrenade", "weapon_decoy",
-        "SmokeGrenade", "HeGrenade", "IncGrenade",
-        "smoke_grenade", "he_grenade", "inc_grenade",
-        "frag grenade", "fire bomb", "diversion device", "emp grenade",
-    ],
-    "C4 / World": [
-        "c4", "world", "suicide", "world_entity",
-        "C4",
-    ],
-    "Misc": [
-        "taser",
-        "Zeus x27",
-    ],
-}
-
-WEAPON_ICONS = {
-    'Pistols': '🔫', 'SMGs': '🔫', 'Rifles': '🎯', 'Snipers': '🎯',
-    'Heavy': '💥', 'Knives': '🔪', 'Grenades & Utility': '💣',
-    'C4 / World': '💥', 'Misc': '⚡', 'Other': '❓',
-}
-
-# Flat lookup built once at load time — O(1) instead of O(n²).
-# Also indexes the "weapon_" prefixed form so internal names resolve without extra stripping.
-_WEAPON_LOOKUP: dict = {}
-for _cat, _weapons in WEAPON_CATEGORIES.items():
-    for _w in _weapons:
-        _k = _w.lower()
-        _WEAPON_LOOKUP[_k] = _cat
-        if not _k.startswith("weapon_"):
-            _WEAPON_LOOKUP["weapon_" + _k] = _cat
-
-# Substring → category fallback for weapons whose DB name varies (e.g. "CZ75 Auto",
-# "weapon_cz75a", "cz75_auto" …).  Checked only when the exact lookup misses.
-_WEAPON_SUBSTR_FALLBACK: list = [
-    # (substring, category)  — checked in order, first match wins
-    ("cz75",    "Pistols"),
-    ("glock",   "Pistols"),
-    ("deagle",  "Pistols"),
-    ("desert",  "Pistols"),   # "desert eagle"
-    ("revolver","Pistols"),
-    ("usp",     "Pistols"),
-    ("p2000",   "Pistols"),
-    ("fiveseven","Pistols"),
-    ("tec",     "Pistols"),
-    ("elite",   "Pistols"),
-    ("p250",    "Pistols"),
-    ("ak",      "Rifles"),
-    ("m4",      "Rifles"),
-    ("awp",     "Snipers"),
-    ("knife",   "Knives"),
-    ("grenade", "Grenades & Utility"),
-    ("molotov", "Grenades & Utility"),
-    ("smoke",   "Grenades & Utility"),
-    ("flash",   "Grenades & Utility"),
-]
-
-def _weapon_category(weapon_name: str) -> str:
-    key = weapon_name.lower().strip()
-    # Strip common "weapon_" prefix used internally
-    if key.startswith("weapon_"):
-        key = key[7:]
-    cat = _WEAPON_LOOKUP.get(key)
-    if cat:
-        return cat
-    # Substring fallback — catches variant spellings not in the exact lookup
-    for substr, fallback_cat in _WEAPON_SUBSTR_FALLBACK:
-        if substr in key:
-            return fallback_cat
-    return "Other"
-
-
-# ── Match type / game mode filter ─────────────────────────────────────────────
-# Tuple shape: (db_values, cfg_key, ui_label)
-MATCH_TYPE_DEFS: list = [
-    (["premier"],                              "match_type_premier",       "🏆 Premier"),
-    (["scrimcomp5v5", "competitive"],          "match_type_competitive",   "🎯 Competitive"),
-    (["scrimcomp2v2", "wingman"],              "match_type_wingman",       "🤝 Wingman"),
-    (["casual"],                               "match_type_casual",        "🎮 Casual"),
-    (["deathmatch"],                           "match_type_deathmatch",    "💀 Deathmatch"),
-    (["training"],                             "match_type_training",      "🎓 Training"),
-    (["new_user_training"],                    "match_type_new_user",      "🎓 New User"),
-    (["armsrace"],                             "match_type_armsrace",      "🔫 Arms Race"),
-    (["gungameprogressive"],                   "match_type_armsrace_alt",  "🔫 Arms Race (alt)"),
-    (["gungametrbomb"],                        "match_type_demolition",    "💣 Demolition"),
-    (["cooperative"],                          "match_type_coop",          "🤖 Co-op"),
-    (["skirmish"],                             "match_type_skirmish",      "⚡ Skirmish"),
-    (["retake"],                               "match_type_retake",        "↩ Retakes"),
-]
-_MATCH_TYPE_KEY_TO_DB: dict  = {cfg_k: db_vals for db_vals, cfg_k, _ in MATCH_TYPE_DEFS}
-_MATCH_TYPE_CFG_KEYS:  list  = [cfg_k for _, cfg_k, _ in MATCH_TYPE_DEFS]
-
-
-# ── Delayed-effect weapons ────────────────────────────────────────────────────
-# DB tick = throw/impact; death may occur much later.  Extra BEFORE time added.
-DELAYED_EFFECT_WEAPONS = {
-    "hegrenade", "incgrenade", "molotov", "inferno",
-    "he grenade", "incendiary grenade",
-}
-
-DEFAULT_CONFIG = {
-    "pg_host": "127.0.0.1", "pg_port": "5432",
-    "pg_user": "postgres", "pg_pass": "", "pg_db": "csdm",
-    "csdm_exe": r"C:\Users\Trois\AppData\Local\Programs\cs-demo-manager\csdm.CMD",
-    "output_dir": r"H:\CS\CSVideos\Raws",
-    "output_dir_clips":    r"H:\CS\CSVideos\Raws",   # raw clips per demo
-    "output_dir_concat":   "",   # concatenated clips (empty = same as raw)
-    "output_dir_assembled": "",  # final assembled file (empty = same as raw)
-    "cs2_cfg_dir": "",
-    "ui_window_w": 1600,
-    "ui_window_h": 900,
-    "ui_split_pct": 60,
-    "ui_remember_layout": True,
-    "theme_bg": "dark",      # background preset: dark | amoled | deepblue | white
-    "theme_accent": "green", # accent preset or custom hex: green | blue | orange | purple | red | cyan | pink | yellow | #rrggbb
-    "steam_id": "", "player_name": "", "player_name_override": "",
-    "events": ["Kills"], "weapons": [],
-    "date_from": "", "date_to": "",
-    "before": 3, "after": 5,
-    "encoder": "FFmpeg", "recsys": "HLAE",
-    "tickrate": 64,
-    "use_config_file_mode": True, "close_game_after": True,
-    "subfolder_per_demo": True,
-    "width": 1920, "height": 1080, "framerate": 60,
-    "crf": 18, "video_codec": "libx264", "audio_codec": "libmp3lame",
-    "audio_bitrate": 256, "video_container": "mp4",
-    "ffmpeg_input_params": "", "ffmpeg_output_params": "",
-    "death_notices_duration": 5, "show_only_death_notices": True,
-    "concatenate_sequences": False, "true_view": True,
-    "tag_on_export": "", "tag_enabled": False,
-    "retry_count": 2, "retry_delay": 15, "delay_between_demos": 3,
-    "recording_timeout": 0,   # minutes; 0 = disabled (kill CS2 + retry if exceeded)
-    # Final assembly of all clips after batch
-    "assemble_after": False,      # concatenate all clips after batch
-    "delete_after_assemble": False,  # delete source clips after assembly
-    "assemble_output": "assembled.mp4",
-    # Perspective / POV
-    "perspective": "killer",   # "killer" | "victim" | "both"
-    # In victim/both mode: duration (s) to follow killer before switching to victim
-    "victim_pre_s": 2,
-    # Clip recording order
-    "clip_order": "chrono",    # "chrono" | "random"
-    # Headshot filter — independent of kill-mod logic
-    # "all" = include all kills  |  "only" = headshots only  |  "exclude" = non-headshots only
-    "headshots_mode": "all",
-    "teamkills_mode": "include",
-    "suicides_mode": "include",  # "include" | "exclude" | "only"
-    # Kill modifiers — auto-populated from KILL_FILTER_REGISTRY
-    # Logic mode keys kept for backward compat
-    "kill_mod_logic_mods": "mixed",
-    "kill_mod_logic_dp2":  "mixed",
-    "kill_mod_logic_db":   "mixed",
-    # All filter enable/req/extra_config keys are injected below at startup
-    **_FILTER_CONFIG_DEFAULTS,
-        # Clutch — player is last alive on his team, facing ≥1 opponent(s)
-    "clutch_enabled":   False,   # master toggle
-    "clutch_wins_only": False,   # only keep rounds the player won
-    "clutch_mode":      "kills_only",  # "kills_only" | "full_clutch"
-    # 1vX size filter — which opponent counts are included (all False = all sizes)
-    "clutch_1v1": False,
-    "clutch_1v2": False,
-    "clutch_1v3": False,
-    "clutch_1v4": False,
-    "clutch_1v5": False,
-    # Match type filter — all False = include every type (no filter applied)
-    # Populated dynamically from MATCH_TYPE_DEFS; all default False
-    **{cfg_k: False for _, cfg_k, _ in MATCH_TYPE_DEFS},
-    # When True, *only* checked types pass; when False, all types pass (no filter).
-    "match_type_filter_enabled": False,
-    "map_filter_enabled": False,
-    "map_filter": [],          # list of display-key strings (stripped prefix, lowercased)
-    # Sequence options
-    "show_xray": True,
-    # Encoding preset (libx264/libx265/libsvtav1 only — no effect on GPU)
-    "video_preset": "medium",
-    # HLAE options (used when recsys == "HLAE")
-    "hlae_fov": 90,
-    "hlae_slow_motion": 100,   # game speed multiplier in % (100 = normal, 200 = 2x)
-    "hlae_afx_stream": False,  # record separate HLAE AFX streams
-    "hlae_no_spectator_ui": True,
-    "hlae_fix_scope_fov": True,   # mirv_fov handleZoom enabled 1 — fixes scope FOV zoom override
-    "hlae_extra_args": "",
-
-    # CS2 physics (injected as console commands via extraArgs)
-    "phys_ragdoll_gravity": 600,       # cl_ragdoll_gravity (default 600, negative = float)
-    "phys_ragdoll_scale": 1.0,         # ragdoll_gravity_scale (default 1.0)
-    "phys_ragdoll_enable": True,       # cl_ragdoll_physics_enable
-    "phys_sv_gravity": 800,            # sv_gravity (default 800)
-    "phys_blood": True,                # violence_hblood
-    "phys_dynamic_lighting": True,     # r_dynamic
-    # CS2 window mode injected as Launch Option
-    "cs2_window_mode": "none",   # "none" | "fullscreen" | "windowed" | "noborder"
-    # Send CS2 behind all windows on launch (requires pywin32)
-    "cs2_send_to_back": False,
-    # demoparser2 performance
-    "dp2_threads": min(8, max(2, os.cpu_count() or 4)),  # auto-scaled to CPU count (1–8)
-}
-
-PRESET_CATEGORIES = {
-    "full": "All (full config)",
-    "player": "Player + events + weapons",
-    "video": "Video/encoding settings",
-    "timing": "Timing + robustness",
-}
-PRESET_KEYS = {
-    "full":        None,
-    # ── Capture group ──────────────────────────────────────────────────────────
-    "players":     ["steam_id", "player_name", "player_name_override"],
-    "date":        ["date_from", "date_to"],
-    "filters":     ["events", "weapons", "perspective", "victim_pre_s",
-                    "headshots_mode", "suicides_mode", "teamkills_mode",
-                    "kill_mod_logic_mods", "kill_mod_logic_dp2", "kill_mod_logic_db",
-                    *_FILTER_PRESET_PLAYER_KEYS,
-                    "clip_order", "show_xray",
-                    "clutch_enabled", "clutch_wins_only", "clutch_mode",
-                    "clutch_1v1", "clutch_1v2", "clutch_1v3", "clutch_1v4", "clutch_1v5",
-                    "map_filter_enabled", "map_filter"],
-    # ── Video group ────────────────────────────────────────────────────────────
-    "mode":        ["recsys", "encoder"],
-    "output_name": ["assemble_output", "output_dir_clips", "output_dir_concat",
-                    "output_dir_assembled"],
-    "encoding":    ["width", "height", "framerate", "crf", "video_codec", "video_preset",
-                    "audio_codec", "audio_bitrate", "video_container",
-                    "ffmpeg_input_params", "ffmpeg_output_params",
-                    "death_notices_duration", "show_only_death_notices",
-                    "concatenate_sequences", "subfolder_per_demo", "true_view"],
-    "hlae_opts":   ["hlae_fov", "hlae_slow_motion", "hlae_afx_stream",
-                    "hlae_no_spectator_ui", "hlae_fix_scope_fov",
-                    "hlae_extra_args"],
-    "physics":     ["phys_ragdoll_gravity", "phys_ragdoll_scale", "phys_ragdoll_enable",
-                    "phys_sv_gravity", "phys_blood", "phys_dynamic_lighting"],
-    # ── Timing group ───────────────────────────────────────────────────────────
-    "timing":      ["before", "after", "close_game_after",
-                    "retry_count", "retry_delay", "delay_between_demos", "recording_timeout"],
-    # ── Backward-compat aliases (old format → new granular keys) ───────────────
-    "player":      ["steam_id", "player_name", "events", "weapons", "date_from", "date_to",
-                    "perspective", "victim_pre_s", "headshots_mode", "suicides_mode",
-                    "teamkills_mode", "kill_mod_logic_mods", "kill_mod_logic_dp2",
-                    "kill_mod_logic_db", *_FILTER_PRESET_PLAYER_KEYS, "clip_order",
-                    "show_xray", "clutch_enabled", "clutch_wins_only", "clutch_mode",
-                    "clutch_1v1", "clutch_1v2", "clutch_1v3", "clutch_1v4", "clutch_1v5"],
-    "video":       ["encoder", "recsys", "width", "height", "framerate",
-                    "crf", "video_codec", "video_preset", "audio_codec", "audio_bitrate",
-                    "video_container", "ffmpeg_input_params", "ffmpeg_output_params",
-                    "death_notices_duration", "show_only_death_notices",
-                    "concatenate_sequences", "subfolder_per_demo", "true_view",
-                    "hlae_fov", "hlae_slow_motion", "hlae_afx_stream",
-                    "hlae_no_spectator_ui", "hlae_fix_scope_fov",
-                    "hlae_extra_args",
-                    "phys_ragdoll_gravity", "phys_ragdoll_scale", "phys_ragdoll_enable",
-                    "phys_sv_gravity", "phys_blood", "phys_dynamic_lighting"],
-}
-
-# Canonical new categories (used by the UI tab selector)
-_PRESET_TAB_GROUPS = [
-    ("CAPTURE", [
-        ("players",  "Active players"),
-        ("date",     "Date range"),
-        ("filters",  "Filters"),
-    ]),
-    ("VIDEO", [
-        ("mode",        "Mode  (HLAE / CS)"),
-        ("output_name", "Output name"),
-        ("encoding",    "Encoding"),
-        ("hlae_opts",   "HLAE options"),
-        ("physics",     "Physics"),
-    ]),
-    ("TIMING", [
-        ("timing", "Timing & retry"),
-    ]),
-]
-_PRESET_ALL_CATS = [k for _, items in _PRESET_TAB_GROUPS for k, _ in items]
-
-# ═══════════════════════════════════════════════════════
-#  Persistence
-# ═══════════════════════════════════════════════════════
-def _load_json(path, default_factory=dict):
-    if os.path.exists(path):
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (OSError, ValueError):
-            pass
-    return default_factory()
-
-def _save_json(path, data):
-    try:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-    except OSError:
-        pass
-
-def load_presets():
-    return _load_json(PRESETS_FILE)
-
-def save_presets(presets):
-    _save_json(PRESETS_FILE, presets)
-
-def load_saved_players():
-    return _load_json(PLAYERS_FILE, list)
-
-def save_saved_players(players):
-    _save_json(PLAYERS_FILE, players)
-
-def load_asm_names():
-    return _load_json(ASM_NAMES_FILE, list)
-
-def save_asm_names(names):
-    _save_json(ASM_NAMES_FILE, names)
-
-def _migrate_config(saved: dict, cfg: dict) -> None:
-    """Apply all backward-compatibility migrations from a saved config dict into cfg.
-
-    Each block handles one historical rename or type change. Add new migrations at the
-    bottom — oldest first — so that chained renames work correctly.
-
-    Args:
-        saved: the raw dict read from disk (may be an old schema)
-        cfg:   the target dict (already pre-populated from DEFAULT_CONFIG + saved)
-    """
-    # headshots_only bool → headshots_mode enum  (pre-v140)
-    if "headshots_only" in saved and "headshots_mode" not in saved:
-        cfg["headshots_mode"] = "only" if saved["headshots_only"] else "all"
-
-    # cs2_minimize → cs2_send_to_back  (pre-v155)
-    if "cs2_minimize" in saved and "cs2_send_to_back" not in saved:
-        cfg["cs2_send_to_back"] = bool(saved["cs2_minimize"])
-
-    # include_suicides bool → suicides_mode enum  (pre-v160)
-    if "include_suicides" in saved and "suicides_mode" not in saved:
-        cfg["suicides_mode"] = "include" if saved["include_suicides"] else "exclude"
-
-    # French kill-mod names → English  (pre-v162)
-    for _fr, _en in [("kill_mod_sauveur",   "kill_mod_savior"),
-                     ("kill_mod_bourreau",   "kill_mod_bully"),
-                     ("kill_mod_bourreau_n", "kill_mod_bully_n")]:
-        if _fr in saved and _en not in saved:
-            cfg[_en] = saved[_fr]
-        for _sfx in ("_req", "_exclude"):
-            if f"{_fr}{_sfx}" in saved and f"{_en}{_sfx}" not in saved:
-                cfg[f"{_en}{_sfx}"] = saved[f"{_fr}{_sfx}"]
-
-
-def load_config():
-    saved = _load_json(CONFIG_FILE)
-    if not saved:
-        return DEFAULT_CONFIG.copy()
-    cfg = DEFAULT_CONFIG.copy()
-    cfg.update(saved)
-    _migrate_config(saved, cfg)
-    return cfg
-
-def save_config(cfg):
-    _save_json(CONFIG_FILE, cfg)
-
-# ═══════════════════════════════════════════════════════
-#  Date helpers  DD-MM-YYYY <-> YYYY-MM-DD
-# ═══════════════════════════════════════════════════════
-def iso_to_display(iso_str):
-    if not iso_str:
-        return ""
-    try:
-        return datetime.strptime(iso_str.strip(), "%Y-%m-%d").strftime("%d-%m-%Y")
-    except ValueError:
-        try:
-            datetime.strptime(iso_str.strip(), "%d-%m-%Y")
-            return iso_str.strip()
-        except ValueError:
-            return iso_str
-
-def display_to_iso(disp_str):
-    if not disp_str or not disp_str.strip():
-        return ""
-    s = disp_str.strip()
-    try:
-        return datetime.strptime(s, "%d-%m-%Y").strftime("%Y-%m-%d")
-    except ValueError:
-        try:
-            datetime.strptime(s, "%Y-%m-%d")
-            return s
-        except ValueError:
-            return ""
-
-# ═══════════════════════════════════════════════════════
-#  Utilities
-# ═══════════════════════════════════════════════════════
-def ensure_csdm_dirs():
-    home = Path.home(); created = []
-    for sub in ("", "virtualdub", "hlae", "ffmpeg"):
-        d = home / ".csdm" / sub if sub else home / ".csdm"
-        if not d.exists():
-            d.mkdir(parents=True, exist_ok=True); created.append(str(d))
-    return created
-
-def check_ffmpeg_available():
-    w = shutil.which("ffmpeg")
-    if w:
-        return True, w
-    for name in ("ffmpeg.exe", "ffmpeg"):
-        c = Path.home() / ".csdm" / "ffmpeg" / name
-        if c.exists():
-            return True, str(c)
-    return False, None
-
-def fmt_duration(seconds):
-    s = int(seconds)
-    if s < 3600:
-        return f"{s // 60}:{s % 60:02d}"
-    return f"{s // 3600}:{(s % 3600) // 60:02d}:{s % 60:02d}"
-
-def safe_folder_name(name):
-    name = Path(name).stem
-    name = re.sub(r'[<>:"/\\|?*]', '_', name)
-    return name[:100]
-
-def build_camera_ticks(seq, tickrate):
-    pre_offset = max(1, tickrate // 2)
-    post_offset = max(1, tickrate // 8)
-    ticks = {seq["start_tick"]}
-    for e in seq["events"]:
-        et = e["tick"]
-        ticks.add(max(seq["start_tick"], et - pre_offset))
-        ticks.add(min(seq["end_tick"], et + post_offset))
-    return sorted(ticks)
-
-def _generate_id_for_type(data_type):
-    dt = (data_type or "").lower().strip()
-    for it in ("bigint", "integer", "int", "int4", "int8", "smallint",
-               "int2", "serial", "bigserial", "smallserial"):
-        if it in dt:
-            return random.randint(100_000_000, 9_999_999_999)
-    if "uuid" in dt:
-        return str(uuid.uuid4())
-    if any(t in dt for t in ("text", "char", "varchar", "character")):
-        return str(uuid.uuid4())
-    return random.randint(100_000_000, 9_999_999_999)
-
-def _contrast_fg(hex_color):
-    try:
-        h = hex_color.lstrip("#")
-        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-        return "#000000" if (0.299 * r + 0.587 * g + 0.114 * b) > 140 else "#ffffff"
-    except Exception:
-        return "#ffffff"
-
-# ═══════════════════════════════════════════════════════
-#  Calendar Popup
-# ═══════════════════════════════════════════════════════
-
-def _count_kills(events):
-    """Count kill-type events in a list."""
-    return sum(1 for e in events if e.get("type") == "kill")
-
-class CalendarPopup(tk.Toplevel):
-    def __init__(self, parent, callback, initial_date=None):
-        super().__init__(parent)
-        self.overrideredirect(True)
-        self.configure(bg=BORDER)
-        self.callback = callback
-        self.attributes("-topmost", True)
-        today = date.today()
-        self._year = initial_date.year if initial_date else today.year
-        self._month = initial_date.month if initial_date else today.month
-        self._today = today
-        inner = tk.Frame(self, bg=BG2, padx=6, pady=6)
-        inner.pack(padx=1, pady=1)
-        nav = tk.Frame(inner, bg=BG2)
-        nav.pack(fill="x", pady=(0, 6))
-        tk.Button(nav, text="◀", font=FONT_DESC, bg=BG3, fg=TEXT, relief="flat",
-                  bd=0, cursor="hand2", width=3, command=self._prev).pack(side="left")
-        self._title = tk.Label(nav, text="", font=("Consolas", 9, "bold"), bg=BG2, fg=ORANGE)
-        self._title.pack(side="left", fill="x", expand=True)
-        tk.Button(nav, text="▶", font=FONT_DESC, bg=BG3, fg=TEXT, relief="flat",
-                  bd=0, cursor="hand2", width=3, command=self._next).pack(side="right")
-        hdr = tk.Frame(inner, bg=BG2)
-        hdr.pack(fill="x")
-        for d in ("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"):
-            tk.Label(hdr, text=d, font=FONT_DESC, fg=MUTED, bg=BG2, width=4).pack(side="left")
-        self._grid = tk.Frame(inner, bg=BG2)
-        self._grid.pack(fill="x")
-        self._draw()
-        qr = tk.Frame(inner, bg=BG2)
-        qr.pack(fill="x", pady=(6, 0))
-        tk.Button(qr, text="Today", font=FONT_DESC, bg=BG3, fg=GREEN, relief="flat",
-                  bd=0, cursor="hand2", command=lambda: self._select(today)).pack(side="left", padx=2)
-        tk.Button(qr, text="Clear", font=FONT_DESC, bg=BG3, fg=RED, relief="flat",
-                  bd=0, cursor="hand2", command=lambda: self._select(None)).pack(side="right", padx=2)
-        self.bind("<FocusOut>", lambda e: self.after(100, self._check_focus))
-        self.focus_set()
-        self.update_idletasks()
-        self.geometry(f"+{parent.winfo_rootx()}+{parent.winfo_rooty() + parent.winfo_height()}")
-
-    def _check_focus(self):
-        try:
-            if self.focus_get() is None or not str(self.focus_get()).startswith(str(self)):
-                self.destroy()
-        except tk.TclError:
-            pass
-
-    def _prev(self):
-        self._month -= 1
-        if self._month < 1:
-            self._month = 12; self._year -= 1
-        self._draw()
-
-    def _next(self):
-        self._month += 1
-        if self._month > 12:
-            self._month = 1; self._year += 1
-        self._draw()
-
-    def _draw(self):
-        for w in self._grid.winfo_children():
-            w.destroy()
-        MFR = ["", "January", "February", "March", "April", "May", "June",
-               "July", "August", "September", "October", "November", "December"]
-        self._title.config(text=f"{MFR[self._month]} {self._year}")
-        for ri, week in enumerate(cal_mod.monthcalendar(self._year, self._month)):
-            for ci, day in enumerate(week):
-                if day == 0:
-                    tk.Label(self._grid, text="", width=4, bg=BG2).grid(row=ri, column=ci)
-                else:
-                    d = date(self._year, self._month, day)
-                    is_t = d == self._today
-                    tk.Button(self._grid, text=str(day), width=4, font=FONT_DESC,
-                              bg=ORANGE if is_t else BG3, fg="white" if is_t else TEXT,
-                              relief="flat", bd=0, cursor="hand2",
-                              activebackground=ORANGE2, activeforeground="white",
-                              command=lambda dd=d: self._select(dd)).grid(row=ri, column=ci, padx=1, pady=1)
-
-    def _select(self, d):
-        self.callback(d)
-        self.destroy()
-
-# ═══════════════════════════════════════════════════════
-#  Color Picker Dialog
-# ═══════════════════════════════════════════════════════
-class ColorPickerDialog(tk.Toplevel):
-    def __init__(self, parent, initial_color="#f97316"):
-        super().__init__(parent)
-        self.title("Choose a color")
-        self.configure(bg=BG2)
-        self.resizable(False, False)
-        self.transient(parent)
-        self.grab_set()
-        self.result = None
-        self._color = initial_color
-        mlabel(self, "Quick colors").pack(anchor="w", padx=12, pady=(12, 4))
-        gf = tk.Frame(self, bg=BG2)
-        gf.pack(padx=12)
-        for i, c in enumerate(TAG_PRESET_COLORS):
-            tk.Button(gf, bg=c, width=3, height=1, relief="flat", bd=0, cursor="hand2",
-                      activebackground=c, highlightthickness=2, highlightbackground=BG2,
-                      command=lambda cc=c: self._pick(cc)).grid(row=i // 5, column=i % 5, padx=2, pady=2)
-        _sep(self, pady=8, padx=12)
-        pr = tk.Frame(self, bg=BG2)
-        pr.pack(fill="x", padx=12)
-        mlabel(pr, "Preview:").pack(side="left")
-        self._preview = tk.Label(pr, text="  TAG  ", font=("Consolas", 10, "bold"),
-                                 bg=initial_color, fg=_contrast_fg(initial_color), padx=12, pady=4)
-        self._preview.pack(side="left", padx=(8, 0))
-        self._hex_var = tk.StringVar(value=initial_color)
-        self._hex_var.trace_add("write", self._on_hex)
-        tk.Entry(pr, textvariable=self._hex_var, font=FONT_MONO, bg=BG3, fg=TEXT, width=10,
-                 insertbackground=ORANGE, relief="flat", highlightthickness=1,
-                 highlightbackground=BORDER, highlightcolor=ORANGE).pack(side="left", padx=(8, 0), ipady=4)
-        br = tk.Frame(self, bg=BG2)
-        br.pack(fill="x", padx=12, pady=(10, 12))
-        tk.Button(br, text="System picker...", font=FONT_SM, bg=BG3, fg=BLUE, relief="flat",
-                  bd=0, cursor="hand2", command=self._sys).pack(side="left")
-        tk.Button(br, text="  OK  ", font=FONT_SM, bg=ORANGE, fg="white", relief="flat",
-                  bd=0, cursor="hand2", activebackground=ORANGE2,
-                  command=self._ok).pack(side="right", ipady=4, ipadx=8)
-        tk.Button(br, text="Cancel", font=FONT_SM, bg=BG3, fg=MUTED, relief="flat",
-                  bd=0, cursor="hand2", command=self.destroy).pack(side="right", padx=(0, 8), ipady=4, ipadx=8)
-        self.update_idletasks()
-        self.geometry(
-            f"+{parent.winfo_rootx() + parent.winfo_width() // 2 - self.winfo_width() // 2}+{parent.winfo_rooty() + 50}")
-        self.wait_window()
-
-    def _pick(self, c):
-        self._color = c; self._hex_var.set(c); self._upd()
-
-    def _on_hex(self, *_):
-        v = self._hex_var.get().strip()
-        if re.match(r'^#[0-9a-fA-F]{6}$', v):
-            self._color = v; self._upd()
-
-    def _upd(self):
-        try:
-            self._preview.config(bg=self._color, fg=_contrast_fg(self._color))
-        except tk.TclError:
-            pass
-
-    def _sys(self):
-        r = colorchooser.askcolor(color=self._color, parent=self, title="Color")
-        if r and r[1]:
-            self._color = r[1]; self._hex_var.set(r[1]); self._upd()
-
-    def _ok(self):
-        self.result = self._color; self.destroy()
-
-class TagImportMissingDialog(tk.Toplevel):
-    """Lists tags that exist in the import file but are absent from the current DB.
-    User can choose which ones to create (pre-checked by default) before import proceeds.
-
-    result:
-      None        → user cancelled (abort import)
-      set of str  → tag names to create (empty set = create none, continue import)
-    """
-    def __init__(self, parent, missing_names, tag_defs):
-        super().__init__(parent)
-        self.result = None
-        self.title("Missing tags — import")
-        self.configure(bg=BG2)
-        self.resizable(False, False)
-        self.transient(parent)
-        self.grab_set()
-
-        mlabel(self,
-               f"{len(missing_names)} tag(s) not found in this database:").pack(
-            anchor="w", padx=12, pady=(12, 4))
-
-        sf = tk.Frame(self, bg=BG2)
-        sf.pack(fill="x", padx=12, pady=(0, 4))
-
-        self._checks = {}
-        for name in sorted(missing_names):
-            color = (tag_defs.get(name) or {}).get("color") or "#f97316"
-            var = tk.BooleanVar(value=True)
-            self._checks[name] = var
-            row = tk.Frame(sf, bg=BG2)
-            row.pack(fill="x", pady=2)
-            tk.Checkbutton(row, variable=var, bg=BG2, fg=TEXT,
-                           activebackground=BG2, activeforeground=TEXT,
-                           selectcolor=BG3).pack(side="left")
-            tk.Label(row, bg=color, width=2, height=1,
-                     relief="flat").pack(side="left", padx=(4, 0))
-            tk.Label(row, text=name, font=FONT_SM, bg=BG2,
-                     fg=TEXT).pack(side="left", padx=(6, 0))
-            tk.Label(row, text=color, font=FONT_DESC, bg=BG2,
-                     fg=MUTED).pack(side="left", padx=(4, 0))
-
-        _sep(self, pady=6, padx=12)
-
-        br = tk.Frame(self, bg=BG2)
-        br.pack(fill="x", padx=12, pady=(0, 12))
-        tk.Button(br, text="Create selected", font=FONT_SM, bg=GREEN, fg="#000000",
-                  relief="flat", bd=0, cursor="hand2", activebackground="#6ee7b7",
-                  command=self._ok).pack(side="left", ipady=4, ipadx=8)
-        tk.Button(br, text="Skip all", font=FONT_SM, bg=BG3, fg=MUTED,
-                  relief="flat", bd=0, cursor="hand2",
-                  command=self._skip).pack(side="left", padx=(8, 0), ipady=4, ipadx=8)
-        tk.Button(br, text="Cancel import", font=FONT_SM, bg=RED, fg="white",
-                  relief="flat", bd=0, cursor="hand2", activebackground="#fca5a5",
-                  command=self.destroy).pack(side="right", ipady=4, ipadx=8)
-
-        self.update_idletasks()
-        self.geometry(
-            f"+{parent.winfo_rootx() + parent.winfo_width() // 2 - self.winfo_reqwidth() // 2}"
-            f"+{parent.winfo_rooty() + 80}")
-        self.wait_window()
-
-    def _ok(self):
-        self.result = {n for n, v in self._checks.items() if v.get()}
-        self.destroy()
-
-    def _skip(self):
-        self.result = set()
-        self.destroy()
-
-# ═══════════════════════════════════════════════════════
-#  Widgets
-# ═══════════════════════════════════════════════════════
-class DateField(tk.Frame):
-    def __init__(self, parent, label, var, **kw):
-        super().__init__(parent, bg=BG2, **kw)
-        mlabel(self, label).pack(fill="x")
-        row = tk.Frame(self, bg=BG2)
-        row.pack(fill="x", pady=(3, 0))
-        self._var = var
-        self._entry = tk.Entry(row, textvariable=var, font=FONT_MONO, bg=BG3, fg=TEXT,
-                               insertbackground=ORANGE, relief="flat", bd=0, highlightthickness=1,
-                               highlightbackground=BORDER, highlightcolor=ORANGE, width=14)
-        self._entry.pack(side="left", ipady=5, ipadx=6)
-        tk.Button(row, text="\U0001f4c5", font=FONT_SM, bg=BG3, fg=ORANGE, relief="flat",
-                  bd=0, cursor="hand2", activebackground=BORDER, activeforeground=ORANGE,
-                  highlightthickness=0, command=self._open).pack(side="left", padx=(4, 0), ipady=4, ipadx=4)
-
-    def _open(self):
-        init = None
-        s = self._var.get().strip()
-        if s:
-            try:
-                init = datetime.strptime(s, "%d-%m-%Y").date()
-            except ValueError:
-                pass
-        CalendarPopup(self._entry, self._cb, initial_date=init)
-
-    def _cb(self, d):
-        self._var.set("" if d is None else d.strftime("%d-%m-%Y"))
-
-class PlayerSearchWidget(tk.Frame):
-    """
-    Player system v26 — multi-selection:
-    • Saved accounts are the source of truth.
-    • Click an account to toggle it. Multiple accounts can be active
-      simultaneously — all their kills/deaths are included in the query.
-    • The DB list below is only for finding and registering players.
-    """
-
-    def __init__(self, parent, on_change=None, **kw):
-        super().__init__(parent, bg=BG2, **kw)
-        self._all_players   = []          # [(label, sid, name, last_seen), …] — base DB
-        self._filtered      = []
-        self._sort_key      = "name"      # "name" | "date"
-        self._sort_rev      = False
-        self._lb_sid        = ""
-        self._lb_name       = ""
-        self._lb_label      = ""
-        self._saved_players = load_saved_players()
-        self._active_sids   = set()       # source of truth (may contain multiple)
-        self._active_names  = {}          # {sid: name}
-        self._on_change     = on_change
-        self._PAGE_SIZE     = 8           # rows visible at once in the DB list
-        self._page          = 0           # current page index
-
-        # Enable all saved accounts by default
-        for p in self._saved_players:
-            self._active_sids.add(p["steam_id"])
-            self._active_names[p["steam_id"]] = p["name"]
-
-        sp_frame = tk.LabelFrame(
-            self,
-            text="  ★ REGISTERED ACCOUNTS — click to enable/disable  ",
-            bg=BG2, fg=ORANGE, font=("Consolas", 9, "bold"),
-            relief="flat", bd=1, highlightthickness=1,
-            highlightbackground=BORDER, padx=8, pady=6)
-        sp_frame.pack(fill="x", pady=(0, 6))
-
-        self._saved_frame = tk.Frame(sp_frame, bg=BG2)
-        self._saved_frame.pack(fill="x")
-
-        self._active_lbl = tk.Label(sp_frame, text="", font=FONT_DESC,
-                                     fg=MUTED, bg=BG2, anchor="w")
-        self._active_lbl.pack(fill="x", pady=(5, 0))
-
-        sp_btns = tk.Frame(sp_frame, bg=BG2)
-        sp_btns.pack(fill="x", pady=(4, 0))
-        tk.Button(sp_btns,
-                  text="★ Register selection below",
-                  font=FONT_DESC, bg=BG3, fg=GREEN, relief="flat",
-                  cursor="hand2", bd=0, highlightthickness=0,
-                  activeforeground=ORANGE, activebackground=BG3,
-                  command=self._save_lb_selection).pack(side="left")
-
-        self._refresh_saved_display()
-
-        tk.Frame(self, bg=BORDER, height=1).pack(fill="x", pady=(6, 4))
-        tk.Label(self,
-                 text="DB SEARCH  —  select then ★ to register",
-                 font=FONT_DESC, fg=DESC_COLOR, bg=BG2, anchor="w").pack(fill="x")
-
-        sr = tk.Frame(self, bg=BG2)
-        sr.pack(fill="x", pady=(4, 0))
-        self._placeholder = "Search by name or Steam ID…"
-        self._search_entry = tk.Entry(
-            sr, font=FONT_MONO, bg=BG3, fg=MUTED,
-            insertbackground=ORANGE, relief="flat", bd=0,
-            highlightthickness=1, highlightbackground=BORDER, highlightcolor=ORANGE)
-        self._search_entry.pack(side="left", fill="x", expand=True, ipady=7, ipadx=8)
-        self._search_entry.insert(0, self._placeholder)
-        self._search_entry.bind("<FocusIn>",    self._on_search_focus_in)
-        self._search_entry.bind("<FocusOut>",   self._on_search_focus_out)
-        self._search_entry.bind("<KeyRelease>", self._on_search_key)
-        self._count_lbl = tk.Label(sr, text="", font=FONT_DESC, bg=BG2, fg=MUTED)
-        self._count_lbl.pack(side="right", padx=(6, 0))
-
-        # Sort + page controls
-        ctrl_row = tk.Frame(self, bg=BG2)
-        ctrl_row.pack(fill="x", pady=(3, 0))
-        mlabel(ctrl_row, "Sort:").pack(side="left")
-        self._sort_name_btn = tk.Button(
-            ctrl_row, text="Name ↑", font=FONT_DESC, bg=BG3, fg=ORANGE,
-            relief="flat", bd=0, cursor="hand2", highlightthickness=0,
-            activebackground=BORDER, activeforeground=ORANGE,
-            command=lambda: self._set_sort("name"))
-        self._sort_name_btn.pack(side="left", padx=(4, 0), ipady=2, ipadx=4)
-        self._sort_date_btn = tk.Button(
-            ctrl_row, text="Date", font=FONT_DESC, bg=BG3, fg=MUTED,
-            relief="flat", bd=0, cursor="hand2", highlightthickness=0,
-            activebackground=BORDER, activeforeground=ORANGE,
-            command=lambda: self._set_sort("date"))
-        self._sort_date_btn.pack(side="left", padx=(4, 0), ipady=2, ipadx=4)
-        add_tip(self._sort_date_btn, "Sort by last match date (most recent first).")
-
-        # Pagination controls (right side of same row)
-        # Layout (right-to-left pack): ▶▶  ▶  [entry]  ◀  ◀◀  label
-        self._pg_lbl = tk.Label(ctrl_row, text="", font=FONT_DESC, bg=BG2, fg=MUTED)
-        self._pg_lbl.pack(side="right", padx=(4, 0))
-
-        # Last page
-        self._pg_last_btn = tk.Button(
-            ctrl_row, text="▶▶", font=FONT_DESC, bg=BG3, fg=MUTED,
-            relief="flat", bd=0, cursor="hand2", highlightthickness=0,
-            activebackground=BORDER, activeforeground=ORANGE,
-            command=self._page_last)
-        self._pg_last_btn.pack(side="right", padx=(2, 0), ipady=2, ipadx=4)
-
-        # Next page
-        self._pg_next_btn = tk.Button(
-            ctrl_row, text="▶", font=FONT_DESC, bg=BG3, fg=MUTED,
-            relief="flat", bd=0, cursor="hand2", highlightthickness=0,
-            activebackground=BORDER, activeforeground=ORANGE,
-            command=self._page_next)
-        self._pg_next_btn.pack(side="right", padx=(2, 0), ipady=2, ipadx=4)
-
-        # Direct page entry
-        self._pg_entry_var = tk.StringVar(value="1")
-        self._pg_entry = tk.Entry(
-            ctrl_row, textvariable=self._pg_entry_var,
-            font=FONT_DESC, bg=BG3, fg=TEXT,
-            insertbackground=ORANGE, relief="flat", bd=0,
-            highlightthickness=1, highlightbackground=BORDER,
-            highlightcolor=ORANGE, width=3, justify="center")
-        self._pg_entry.pack(side="right", padx=(2, 0), ipady=2)
-        self._pg_entry.bind("<Return>", self._page_jump)
-        self._pg_entry.bind("<FocusOut>", self._page_jump)
-        add_tip(self._pg_entry, "Type a page number and press Enter to jump directly.")
-
-        # Previous page
-        self._pg_prev_btn = tk.Button(
-            ctrl_row, text="◀", font=FONT_DESC, bg=BG3, fg=MUTED,
-            relief="flat", bd=0, cursor="hand2", highlightthickness=0,
-            activebackground=BORDER, activeforeground=ORANGE,
-            command=self._page_prev)
-        self._pg_prev_btn.pack(side="right", padx=(2, 0), ipady=2, ipadx=4)
-
-        # First page
-        self._pg_first_btn = tk.Button(
-            ctrl_row, text="◀◀", font=FONT_DESC, bg=BG3, fg=MUTED,
-            relief="flat", bd=0, cursor="hand2", highlightthickness=0,
-            activebackground=BORDER, activeforeground=ORANGE,
-            command=self._page_first)
-        self._pg_first_btn.pack(side="right", padx=(2, 0), ipady=2, ipadx=4)
-
-        self._lb = tk.Listbox(
-            self, font=FONT_MONO, bg=BG3, fg=MUTED,
-            selectbackground=BG3, selectforeground=TEXT,
-            activestyle="none", relief="flat", bd=0,
-            highlightthickness=1, highlightbackground=BORDER,
-            height=self._PAGE_SIZE,
-            exportselection=False)
-        self._lb.pack(fill="x", pady=(4, 0))
-        self._lb.bind("<<ListboxSelect>>", self._on_lb_select)
-
-        self._lb_sel_lbl = tk.Label(
-            self, text="", font=FONT_DESC, fg=MUTED, bg=BG2, anchor="w")
-        self._lb_sel_lbl.pack(fill="x", pady=(4, 0))
-
-    def _refresh_saved_display(self):
-        for w in self._saved_frame.winfo_children():
-            w.destroy()
-        if not self._saved_players:
-            tk.Label(self._saved_frame,
-                     text="No registered account. Search below then ★",
-                     font=FONT_DESC, fg=MUTED, bg=BG2).pack(anchor="w")
-            self._update_active_lbl()
-            return
-        n = len(self._saved_players)
-        for i, p in enumerate(self._saved_players):
-            active = p["steam_id"] in self._active_sids
-            row_bg = BG3 if active else BG2
-            row = tk.Frame(self._saved_frame, bg=row_bg,
-                           highlightthickness=1,
-                           highlightbackground=ORANGE if active else BORDER)
-            row.pack(fill="x", pady=2, ipadx=2, ipady=1)
-            # ▲▼ buttons to reorder
-            arr = tk.Frame(row, bg=row_bg)
-            arr.pack(side="left", padx=(2, 0))
-            tk.Button(arr, text="▲", font=FONT_DESC, bg=row_bg, fg=MUTED,
-                      relief="flat", bd=0, cursor="hand2",
-                      activebackground=BORDER, activeforeground=ORANGE,
-                      state="normal" if i > 0 else "disabled",
-                      command=lambda idx=i: self._move_saved(idx, -1)
-                      ).pack(side="top", pady=(0, 1))
-            tk.Button(arr, text="▼", font=FONT_DESC, bg=row_bg, fg=MUTED,
-                      relief="flat", bd=0, cursor="hand2",
-                      activebackground=BORDER, activeforeground=ORANGE,
-                      state="normal" if i < n - 1 else "disabled",
-                      command=lambda idx=i: self._move_saved(idx, +1)
-                      ).pack(side="top")
-            prefix = "✓  " if active else "○  "
-            tk.Button(
-                row,
-                text=f"{prefix}{p['name']}  ({p['steam_id']})",
-                font=("Consolas", 9, "bold" if active else "normal"),
-                bg=row_bg, fg=ORANGE if active else TEXT,
-                relief="flat", cursor="hand2", bd=0, anchor="w",
-                activebackground=BG3, activeforeground=ORANGE,
-                command=lambda pp=p: self._toggle_saved(pp)
-            ).pack(side="left", fill="x", expand=True, ipady=4, ipadx=6)
-            tk.Button(
-                row, text="✕", font=FONT_DESC,
-                bg=row_bg, fg=RED, relief="flat", bd=0, cursor="hand2",
-                activebackground=BORDER, activeforeground=RED,
-                command=lambda idx=i: self._remove_saved(idx)
-            ).pack(side="right", padx=(4, 2))
-        self._update_active_lbl()
-
-    def _update_active_lbl(self):
-        n = len(self._active_sids)
-        if n == 0:
-            text = "⚠  No active account — check a player above."
-            fg   = RED
-        elif n == 1:
-            sid  = next(iter(self._active_sids))
-            name = self._active_names.get(sid, sid)
-            text = f"Active: {name}  ({sid})"
-            fg   = GREEN
-        else:
-            names = ", ".join(self._active_names.get(s, s) for s in sorted(self._active_sids))
-            text  = f"{n} active: {names}"
-            fg    = GREEN
-
-        self._active_lbl.config(text=text, fg=fg)
-
-        # Mirror the exact same text to the header label
-        try:
-            app = self.winfo_toplevel()
-            app._hdr_player_lbl.config(
-                text=text if n > 0 else "",
-                fg=fg)
-        except tk.TclError:
-            pass
-
-    def _toggle_saved(self, p):
-        sid = p["steam_id"]
-        if sid in self._active_sids:
-            self._active_sids.discard(sid)
-        else:
-            self._active_sids.add(sid)
-            self._active_names[sid] = p["name"]
-        self._refresh_saved_display()
-        if self._on_change:
-            self._on_change(p["name"], sid)
-
-    def _save_lb_selection(self):
-        if not self._lb_sid:
-            messagebox.showinfo("Players",
-                "Select a player from the search list first.")
-            return
-        for p in self._saved_players:
-            if p["steam_id"] == self._lb_sid:
-                messagebox.showinfo("Players", "This player is already registered.")
-                return
-        self._saved_players.append({
-            "steam_id": self._lb_sid,
-            "name":     self._lb_name,
-            "label":    self._lb_label,
-        })
-        save_saved_players(self._saved_players)
-        # Auto-activate if it's the first
-        if len(self._saved_players) == 1:
-            self._active_sids.add(self._lb_sid)
-            self._active_names[self._lb_sid] = self._lb_name
-            if self._on_change:
-                self._on_change(self._lb_name, self._lb_sid)
-        self._refresh_saved_display()
-
-    def _remove_saved(self, idx):
-        if not (0 <= idx < len(self._saved_players)):
-            return
-        removed_sid = self._saved_players[idx]["steam_id"]
-        self._saved_players.pop(idx)
-        save_saved_players(self._saved_players)
-        self._active_sids.discard(removed_sid)
-        self._active_names.pop(removed_sid, None)
-        self._refresh_saved_display()
-        if self._on_change:
-            self._on_change("", removed_sid)
-
-    def _move_saved(self, idx, direction):
-        new_idx = idx + direction
-        if not (0 <= new_idx < len(self._saved_players)):
-            return
-        lst = self._saved_players
-        lst[idx], lst[new_idx] = lst[new_idx], lst[idx]
-        save_saved_players(lst)
-        self._refresh_saved_display()
-
-    def _is_placeholder(self):
-        return self._search_entry.cget("fg") == MUTED
-
-    def _on_search_focus_in(self, *_):
-        if self._is_placeholder():
-            self._search_entry.delete(0, "end")
-            self._search_entry.config(fg=TEXT)
-
-    def _on_search_focus_out(self, *_):
-        if self._search_entry.get().strip() == "":
-            self._search_entry.delete(0, "end")
-            self._search_entry.insert(0, self._placeholder)
-            self._search_entry.config(fg=MUTED)
-
-    def _on_search_key(self, *_):
-        q = "" if self._is_placeholder() else self._search_entry.get()
-        self._refresh(q)
-
-    def set_players(self, data, restore_steam_id=""):
-        # data: [(label, sid, name, last_seen), ...] — last_seen may be None
-        self._all_players = data
-        self._refresh("")
-        self._count_lbl.config(text=f"{len(data)} players")
-        if restore_steam_id:
-            for p in self._saved_players:
-                if p["steam_id"] == restore_steam_id:
-                    if restore_steam_id not in self._active_sids:
-                        self._active_sids.add(restore_steam_id)
-                        self._active_names[restore_steam_id] = p["name"]
-                    self._refresh_saved_display()
-                    return
-
-    def _set_sort(self, key):
-        if self._sort_key == key:
-            self._sort_rev = not self._sort_rev
-        else:
-            self._sort_key = key
-            self._sort_rev = (key == "date")  # date defaults to newest first
-        self._update_sort_buttons()
-        q = "" if self._is_placeholder() else self._search_entry.get()
-        self._refresh(q)
-
-    def _update_sort_buttons(self):
-        arrow = "↓" if self._sort_rev else "↑"
-        try:
-            self._sort_name_btn.config(
-                text=f"Name {arrow if self._sort_key == 'name' else ''}".strip(),
-                fg=ORANGE if self._sort_key == "name" else MUTED)
-            self._sort_date_btn.config(
-                text=f"Date {arrow if self._sort_key == 'date' else ''}".strip(),
-                fg=ORANGE if self._sort_key == "date" else MUTED)
-        except tk.TclError:
-            pass
-
-    def _refresh(self, query=""):
-        q = query.strip().lower()
-        self._filtered = []
-
-        def _last_seen(entry):
-            last = entry[3] if len(entry) > 3 else None
-            if last is None:
-                return 0
-            try:
-                if hasattr(last, "timestamp"):
-                    return last.timestamp()
-                if isinstance(last, (int, float)):
-                    v = int(last)
-                    return v / 1000 if v > 4_000_000_000 else v
-                s = str(last).strip()
-                for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
-                    try:
-                        return datetime.strptime(s[:len(fmt)], fmt).timestamp()
-                    except ValueError:
-                        continue
-            except Exception:
-                pass
-            return 0
-
-        candidates = [
-            e for e in self._all_players
-            if not q or q in e[0].lower() or q in e[1].lower()
-        ]
-
-        if self._sort_key == "date":
-            candidates.sort(key=_last_seen, reverse=self._sort_rev)
-        else:
-            candidates.sort(key=lambda e: e[2].lower(), reverse=self._sort_rev)
-
-        self._filtered = candidates
-        self._page = 0
-        self._render_page()
-
-    def _page_count(self):
-        return max(1, (len(self._filtered) + self._PAGE_SIZE - 1) // self._PAGE_SIZE)
-
-    def _render_page(self):
-        """Repopulate the listbox with the current page of _filtered."""
-        ps = self._PAGE_SIZE
-        total = len(self._filtered)
-        n_pages = self._page_count()
-        self._page = max(0, min(self._page, n_pages - 1))
-        start = self._page * ps
-        page_entries = self._filtered[start:start + ps]
-
-        self._lb.delete(0, "end")
-        for entry in page_entries:
-            self._lb.insert("end", entry[0])
-
-        # Update pagination controls
-        if total == 0:
-            pg_txt = "0 results"
-        elif n_pages == 1:
-            pg_txt = f"{total} player{'s' if total != 1 else ''}"
-        else:
-            pg_txt = f"/ {n_pages}  ({total})"
-        try:
-            self._pg_lbl.config(text=pg_txt)
-            # Sync the page entry box (avoid triggering FocusOut → _page_jump loop)
-            self._pg_entry_var.set(str(self._page + 1))
-            at_first = self._page == 0
-            at_last  = self._page >= n_pages - 1
-            for btn, disabled in [
-                (self._pg_first_btn, at_first),
-                (self._pg_prev_btn,  at_first),
-                (self._pg_next_btn,  at_last),
-                (self._pg_last_btn,  at_last),
-            ]:
-                btn.config(
-                    fg=MUTED if disabled else ORANGE,
-                    state="disabled" if disabled else "normal")
-        except tk.TclError:
-            pass
-
-    def _page_first(self):
-        self._page = 0
-        self._render_page()
-
-    def _page_prev(self):
-        if self._page > 0:
-            self._page -= 1
-            self._render_page()
-
-    def _page_next(self):
-        if self._page < self._page_count() - 1:
-            self._page += 1
-            self._render_page()
-
-    def _page_last(self):
-        self._page = self._page_count() - 1
-        self._render_page()
-
-    def _page_jump(self, *_):
-        """Jump to the page number typed in the entry field."""
-        try:
-            target = int(self._pg_entry_var.get().strip()) - 1
-            self._page = max(0, min(target, self._page_count() - 1))
-            self._render_page()
-        except ValueError:
-            self._render_page()
-
-    def _on_lb_select(self, *_):
-        sel = self._lb.curselection()
-        if not sel:
-            return
-        abs_idx = self._page * self._PAGE_SIZE + sel[0]
-        if abs_idx >= len(self._filtered):
-            return
-        entry = self._filtered[abs_idx]
-        label, sid, name = entry[0], entry[1], entry[2]
-        self._lb_label, self._lb_sid, self._lb_name = label, sid, name
-        self._lb_sel_lbl.config(
-            text=f"Selected: {name}  ({sid})  ← ★ to register",
-            fg=YELLOW)
-
-    def get_steam_ids(self):
-        return list(self._active_sids)
-
-    def get_steam_id(self):
-        if not self._active_sids:
-            return ""
-        # Priority: registration order
-        for p in self._saved_players:
-            if p["steam_id"] in self._active_sids:
-                return p["steam_id"]
-        return next(iter(self._active_sids))
-
-    def get_name(self):
-        sid = self.get_steam_id()
-        return self._active_names.get(sid, "")
-
-    def get_label(self):
-        sid = self.get_steam_id()
-        for p in self._saved_players:
-            if p["steam_id"] == sid:
-                return p.get("label", f"{p['name']}  ({sid})")
-        return f"{self._active_names.get(sid, '')}  ({sid})" if sid else ""
-
-# Registry of all live ScrollableFrame instances — used by the global wheel dispatcher.
-_SCROLL_FRAMES: list = []
-
-class ScrollableFrame(tk.Frame):
-    """A vertically scrollable frame.
-
-    Registers itself in _SCROLL_FRAMES so the single application-level
-    <MouseWheel> handler (installed once in _build_ui) can scroll the frame
-    that is currently under the cursor — no per-widget Enter/Leave machinery.
-    """
-    def __init__(self, parent, **kw):
-        super().__init__(parent, **kw)
-        self._c = tk.Canvas(self, bg=BG, highlightthickness=0, bd=0, height=1)
-        sb = ttk.Scrollbar(self, orient="vertical", command=self._c.yview)
-        self.inner = tk.Frame(self._c, bg=BG)
-        # Use event dimensions directly — avoids the expensive bbox("all") traversal.
-        self.inner.bind("<Configure>",
-                        lambda e: self._c.configure(scrollregion=(0, 0, e.width, e.height)))
-        self._win_id = self._c.create_window((0, 0), window=self.inner, anchor="nw")
-        # Debounce width sync: defer inner reflow to 50 ms after the last resize event.
-        # This prevents the full widget cascade (inner + all children) from running on
-        # every pixel during window resize or sash drag.
-        self._width_job = None
-        self._pending_width = None
-        self._c.bind("<Configure>", self._on_canvas_configure)
-        self._c.configure(yscrollcommand=sb.set)
-        self._c.pack(side="left", fill="both", expand=True)
-        sb.pack(side="right", fill="y")
-        _SCROLL_FRAMES.append(self)
-        self.bind("<Destroy>", self._on_destroy)
-
-    def _on_canvas_configure(self, event):
-        self._pending_width = event.width
-        # Reschedule: 400 ms fallback for OS-level window resize where no
-        # ButtonRelease reaches Tkinter. Sash drags are flushed immediately
-        # via _on_release() bound to <ButtonRelease-1> in _build_ui.
-        if self._width_job:
-            self.after_cancel(self._width_job)
-        self._width_job = self.after(400, self._apply_width)
-
-    def _apply_width(self):
-        if self._width_job:
-            self.after_cancel(self._width_job)
-            self._width_job = None
-        if self._pending_width is not None:
-            self._c.itemconfigure(self._win_id, width=self._pending_width)
-
-    def _on_destroy(self, _event=None):
-        try:
-            _SCROLL_FRAMES.remove(self)
-        except ValueError:
-            pass
-
-    def apply_theme(self):
-        """Explicitly repaint canvas and inner frame with current BG — bypasses
-        colour_map so it works even when old BG collides with another key (e.g. amoled)."""
-        try:
-            self._c.configure(bg=_t("BG"))
-        except tk.TclError:
-            pass
-        try:
-            self.inner.configure(bg=_t("BG"))
-        except tk.TclError:
-            pass
-
-    def scroll(self, delta):
-        self._c.yview_scroll(-1 * (delta // 120), "units")
-
-    def contains_point(self, x_root, y_root):
-        """True when screen point (x_root, y_root) is inside this canvas AND it is visible."""
-        try:
-            if not self._c.winfo_viewable():
-                return False
-            cx, cy = self._c.winfo_rootx(), self._c.winfo_rooty()
-            return cx <= x_root < cx + self._c.winfo_width() and \
-                   cy <= y_root < cy + self._c.winfo_height()
-        except tk.TclError:
-            return False
-
-class WrapRow(tk.Frame):
-    """Horizontal list of widgets that wraps into new rows based on available width.
-
-    Children must be created with this WrapRow as their parent.
-    Do NOT call .pack() / .grid() on the children — just call row.add(widget)
-    and WrapRow positions them via place() in a wrapping layout.
-
-    Usage:
-        row = WrapRow(parent, bg=BG2)
-        row.pack(fill="x", pady=(4, 0))
-        btn = tk.Button(row, text="...", ...)
-        row.add(btn)
-
-    WrapRow sets its own height automatically and registers with _WRAP_ROWS so
-    the global flush in _on_release also triggers a relayout.
-    """
-
-    def __init__(self, parent, gap_x=6, gap_y=4, **kw):
-        kw.setdefault("bg", BG2)
-        super().__init__(parent, **kw)
-        self.pack_propagate(False)   # height is managed manually via configure()
-        self._gap_x  = gap_x
-        self._gap_y  = gap_y
-        self._items  = []            # ordered child widgets
-        self._job    = None
-        self.bind("<Configure>", self._schedule)
-        self.bind("<Destroy>",   self._on_destroy)
-        _WRAP_ROWS.append(self)
-
-    def add(self, widget):
-        """Register widget for wrapping layout. Returns widget for chaining."""
-        self._items.append(widget)
-        self._schedule()
-        return widget
-
-    def _schedule(self, _event=None):
-        if self._job:
-            self.after_cancel(self._job)
-        self._job = self.after(16, self._relayout)
-
-    def _relayout(self, *_):
-        self._job = None
-        avail = self.winfo_width()
-        if avail < 10:
-            return
-        x, y, row_h = 0, 0, 0
-        for w in self._items:
-            w.update_idletasks()
-            rw = w.winfo_reqwidth()
-            rh = w.winfo_reqheight()
-            if x + rw > avail and x > 0:
-                x = 0
-                y += row_h + self._gap_y
-                row_h = 0
-            w.place(x=x, y=y, height=rh)
-            x  += rw + self._gap_x
-            row_h = max(row_h, rh)
-        total = (y + row_h) if self._items else 1
-        self.configure(height=total)
-
-    def _on_destroy(self, _e=None):
-        try:
-            _WRAP_ROWS.remove(self)
-        except ValueError:
-            pass
-
-
-class Sec(tk.Frame):
-    """Collapsible section card — drop-in replacement for the old LabelFrame Sec.
-
-    Children packed/gridded into a Sec instance go into the body (content area).
-    The header with toggle arrow is a sibling frame managed internally.
-
-    Usage is identical to the old Sec:
-        sec = Sec(parent, "MY SECTION")
-        sec.pack(fill="x")
-        tk.Label(sec, text="hello").pack()   # goes into the body, correct
-    """
-
-    def __init__(self, parent, title, collapsed=False, **kw):
-        # _wrapper holds the header + this body frame
-        self._wrapper = tk.Frame(parent, bg=_t("BG"), bd=0)
-
-        # ── Header ────────────────────────────────────────────────────────────
-        self._hdr = tk.Frame(self._wrapper, bg=_t("BG2"), cursor="hand2")
-        self._hdr.pack(fill="x")
-
-        self._stripe = tk.Frame(self._hdr, width=3, bg=_t("ORANGE"))
-        self._stripe.pack(side="left", fill="y")
-
-        self._arrow = tk.Label(self._hdr, text="▾",
-                               font=("Consolas", 9, "bold"),
-                               bg=_t("BG2"), fg=_t("ORANGE"),
-                               padx=UI_SEC_PADX // 2, pady=5)
-        self._arrow.pack(side="left")
-
-        self._title_lbl = tk.Label(self._hdr, text=title.upper(),
-                                   font=("Consolas", 9, "bold"),
-                                   bg=_t("BG2"), fg=_t("ORANGE"),
-                                   anchor="w", pady=5)
-        self._title_lbl.pack(side="left", fill="x", expand=True)
-
-        self._sep = tk.Frame(self._wrapper, height=1, bg=_t("BORDER"))
-        self._sep.pack(fill="x")
-
-        # ── Body = this Frame ─────────────────────────────────────────────────
-        kw.setdefault("bg", _t("BG2"))
-        kw.setdefault("padx", UI_SEC_PADX)
-        kw.setdefault("pady", UI_SEC_PADY)
-        super().__init__(self._wrapper, **kw)
-        tk.Frame.pack(self, fill="x")   # pack body into wrapper
-
-        self._open = not collapsed
-        self._title = title
-
-        # Bind header click to toggle
-        for w in (self._hdr, self._arrow, self._title_lbl, self._stripe):
-            w.bind("<Button-1>", self._toggle)
-
-        if collapsed:
-            self._collapse_now()
-
-    # ── Pack / grid / place — proxy to wrapper ────────────────────────────────
-
-    def pack(self, **kw):
-        kw.setdefault("pady", (0, UI_SEC_GAP))
-        self._wrapper.pack(**kw)
-
-    def pack_forget(self):
-        self._wrapper.pack_forget()
-
-    def grid(self, **kw):
-        self._wrapper.grid(**kw)
-
-    def grid_forget(self):
-        self._wrapper.grid_forget()
-
-    def place(self, **kw):
-        self._wrapper.place(**kw)
-
-    # ── Collapse / expand ─────────────────────────────────────────────────────
-
-    def _toggle(self, *_):
-        if self._open:
-            self._collapse_now()
-        else:
-            self._expand_now()
-
-    def _collapse_now(self):
-        self._open = False
-        self._arrow.config(text="▸")
-        self._sep.pack_forget()
-        tk.Frame.pack_forget(self)
-
-    def _expand_now(self):
-        self._open = True
-        self._arrow.config(text="▾")
-        self._sep.pack(fill="x")
-        tk.Frame.pack(self, fill="x")
-
-    # ── Theme update ──────────────────────────────────────────────────────────
-
-    def apply_theme(self):
-        try: self._wrapper.config(bg=_t("BG"))
-        except tk.TclError: pass
-        try: self._hdr.config(bg=_t("BG2"))
-        except tk.TclError: pass
-        try: self._stripe.config(bg=_t("ORANGE"))
-        except tk.TclError: pass
-        try: self._arrow.config(bg=_t("BG2"), fg=_t("ORANGE"))
-        except tk.TclError: pass
-        try: self._title_lbl.config(bg=_t("BG2"), fg=_t("ORANGE"))
-        except tk.TclError: pass
-        try: self._sep.config(bg=_t("BORDER"))
-        except tk.TclError: pass
-        try: self.config(bg=_t("BG2"))
-        except tk.TclError: pass
-
-class PathField(tk.Frame):
-    def __init__(self, parent, label, desc, var, mode="file"):
-        super().__init__(parent, bg=BG2)
-        mlabel(self, label, anchor="w").pack(fill="x")
-        if desc:
-            tk.Label(self, text=desc, font=FONT_DESC, fg=DESC_COLOR, bg=BG2, anchor="w").pack(fill="x")
-        row = tk.Frame(self, bg=BG2)
-        row.pack(fill="x", pady=(3, 0))
-        tk.Entry(row, textvariable=var, font=FONT_MONO, bg=BG3, fg=TEXT, insertbackground=ORANGE,
-                 relief="flat", bd=0, highlightthickness=1, highlightbackground=BORDER,
-                 highlightcolor=ORANGE).pack(side="left", fill="x", expand=True, ipady=6, ipadx=8)
-
-        def browse():
-            p = (filedialog.askopenfilename(filetypes=[("Exe", "*.exe;*.cmd"), ("All files", "*.*")])
-                 if mode == "file" else filedialog.askdirectory())
-            if p:
-                var.set(p)
-
-        tk.Button(row, text=" ... ", command=browse, font=FONT_SM, bg=BG3, fg=MUTED, relief="flat",
-                  cursor="hand2", activebackground=BORDER, activeforeground=ORANGE,
-                  highlightthickness=0, bd=0).pack(side="left", padx=(4, 0), ipady=6, ipadx=4)
-
-def sentry(parent, var, **kw):
-    """Styled Entry widget bound to var."""
-    return tk.Entry(parent, textvariable=var, font=FONT_MONO, bg=BG3, fg=TEXT,
-                    insertbackground=ORANGE, relief="flat", bd=0, highlightthickness=1,
-                    highlightbackground=BORDER, highlightcolor=ORANGE, **kw)
-
-def scombo(parent, var, values, width=15):
-    """Read-only Combobox bound to var."""
-    return ttk.Combobox(parent, textvariable=var, values=values, font=FONT_SM, state="readonly", width=width)
-
-def mlabel(parent, text, **kw):
-    """Muted-colour small label for field names and secondary text."""
-    return tk.Label(parent, text=text, font=FONT_SM, fg=MUTED, bg=BG2, **kw)
-
-def flabel(parent, text, **kw):
-    """Filter name label — slightly brighter than mlabel to distinguish filter names."""
-    return tk.Label(parent, text=text, font=FONT_SM, fg=TEXT, bg=BG2, **kw)
-
-def slabel(parent, text, **kw):
-    """Subcategory section header label — accent-coloured to visually separate sections."""
-    return tk.Label(parent, text=text, font=(FONT_SM[0], FONT_SM[1], "bold"),
-                    fg=ORANGE, bg=BG2, **kw)
-
-def _safe_trace_remove(var, mode, tid):
-    """Remove a tkinter variable trace silently — safe to call even if already removed."""
-    try:
-        var.trace_remove(mode, tid)
-    except tk.TclError:
-        pass
-
-
-def _make_highlight_toggle(widget, var, is_active_fn):
-    """Shared highlight/dim logic for hchk and hradio widgets."""
-    def _update(*args):
-        try:
-            if not widget.winfo_exists():
-                try:
-                    var.trace_remove("write", args[2] if len(args) > 2 else args[0])
-                except Exception:
-                    pass
-                return
-        except Exception:
-            return
-        if is_active_fn():
-            widget.config(bg=_t("ORANGE2"), fg="white",
-                          activebackground=_t("ORANGE"), activeforeground="white",
-                          selectcolor=_t("ORANGE2"))
-        else:
-            widget.config(bg=_t("BG3"), fg=_t("MUTED"),
-                          activebackground=_t("BG3"), activeforeground=_t("ORANGE"),
-                          selectcolor=_t("BG3"))
-    _tid = var.trace_add("write", _update)
-    _update()
-    widget.bind("<Destroy>", lambda e: _safe_trace_remove(var, "write", _tid))
-
-def hchk(parent, text, var, **kw):
-    """Styled Checkbutton with highlight-on-active toggle. Returns the widget."""
-    cb_kw = dict(font=FONT_SM, relief="flat", bd=0, cursor="hand2",
-                 highlightthickness=0, padx=10, pady=4)
-    cb_kw.update(kw)
-    cb = tk.Checkbutton(parent, text=text, variable=var, **cb_kw)
-    _make_highlight_toggle(cb, var, var.get)
-    return cb
-
-def hradio(parent, text, var, value, **kw):
-    """Radiobutton with highlight when selected."""
-    rb_kw = dict(font=FONT_SM, relief="flat", bd=0, cursor="hand2",
-                 highlightthickness=0, padx=10, pady=4)
-    rb_kw.update(kw)
-    rb = tk.Radiobutton(parent, text=text, variable=var, value=value, **rb_kw)
-    _make_highlight_toggle(rb, var, lambda: var.get() == value)
-    return rb
-
-_WRAP_LABELS: list = []   # all labels registered via _bind_wraplength
-_WRAP_ROWS:  list = []   # all live WrapRow instances
-
-def _bind_wraplength(lbl):
-    """Debounced <Configure> binding that keeps a label's wraplength = widget width.
-
-    400 ms fallback for OS window resize; sash/in-app drags are flushed
-    immediately via the global <ButtonRelease-1> handler in _build_ui.
-
-    The apply function guards against re-entrancy: it only calls w.config() when
-    the computed value actually differs from the current one, preventing the
-    <Configure> → _apply → <Configure> feedback loop that caused continuous redraws.
-    """
-    _job = [None]
-    def _apply(w=lbl):
-        _job[0] = None
-        try:
-            new_wrap = max(200, w.winfo_width() - 10)
-            if int(w.cget("wraplength") or 0) != new_wrap:
-                w.config(wraplength=new_wrap)
-        except tk.TclError:
-            pass
-    def _schedule(e, w=lbl):
-        if _job[0]:
-            w.after_cancel(_job[0])
-        _job[0] = w.after(400, _apply)
-    lbl.bind("<Configure>", _schedule)
-    _WRAP_LABELS.append((_apply, lbl))
-    lbl.bind("<Destroy>", lambda e, a=_apply, w=lbl: _WRAP_LABELS.remove((a, w))
-             if (a, w) in _WRAP_LABELS else None)
-
-def desc_label(parent, text):
-    """Return a muted descriptive Label with automatic wraplength binding."""
-    lbl = tk.Label(parent, text=text, font=FONT_DESC, fg=DESC_COLOR, bg=BG2,
-                   anchor="w", justify="left")
-    _bind_wraplength(lbl)
-    return lbl
-
-def _sep(parent, pady=(6, 4), padx=0):
-    """Horizontal rule between UI sub-sections."""
-    tk.Frame(parent, height=1, bg=BORDER).pack(fill="x", pady=pady, padx=padx)
-
-def _chk_tip(parent, label, var, tip, anchor="w", pady=2, **kw):
-    """hchk + pack + add_tip in one call."""
-    cb = hchk(parent, label, var, **kw)
-    cb.pack(anchor=anchor, pady=pady)
-    if tip:
-        add_tip(cb, tip)
-    return cb
-
-# ═══════════════════════════════════════════════════════
-#  Lightweight tooltip — replaces inline desc_labels
-# ═══════════════════════════════════════════════════════
-class Tooltip:
-    """Hover tooltip widget. Use add_tip(widget, text)."""
-    def __init__(self, widget, text):
-        self._widget = widget
-        self._text   = text
-        self._tip    = None
-        widget.bind("<Enter>",  self._show, add="+")
-        widget.bind("<Leave>",  self._hide, add="+")
-        widget.bind("<Destroy>", lambda e: self._hide(), add="+")
-
-    def _show(self, event=None):
-        if self._tip or not self._text:
-            return
-        x = self._widget.winfo_rootx() + self._widget.winfo_width() + 4
-        y = self._widget.winfo_rooty()
-        self._tip = tw = tk.Toplevel(self._widget)
-        tw.wm_overrideredirect(True)
-        tw.wm_geometry(f"+{x}+{y}")
-        tw.attributes("-topmost", True)
-        tk.Label(tw, text=self._text, font=("Consolas", 8), fg=TEXT,
-                 bg="#2a2a2a", relief="flat", bd=0,
-                 padx=8, pady=4, wraplength=340, justify="left").pack()
-
-    def _hide(self, event=None):
-        if self._tip:
-            try:
-                self._tip.destroy()
-            except tk.TclError:
-                pass
-            self._tip = None
-
-def add_tip(widget, text):
-    """Attach a tooltip to widget if text is non-empty."""
-    if text:
-        Tooltip(widget, text)
-
-def dp2_badge(parent):
-    """Blue 'demoparser2' label with a shared tooltip — attach with .pack()."""
-    lbl = tk.Label(parent, text="demoparser2", font=FONT_DESC, fg=BLUE, bg=BG2)
-    add_tip(lbl, "Requires: pip install demoparser2")
-    return lbl
+# ── Donnees de reference statiques (registre de filtres, armes, codecs, …) ──
+#  Extraites dans csdm/static_data.py (Phase 1.1). Importees ici pour que tout
+#  le reste du fichier continue d'y acceder par les memes noms qu'avant.
+from csdm.static_data import (
+    FilterDef, KILL_FILTER_REGISTRY,
+    KILL_FILTER_KEYS_ALL, KILL_FILTER_KEYS, KILL_FILTER_LABELS, KILL_FILTER_SQL_COLS,
+    _FILTER_CONFIG_DEFAULTS, _NO_AUTO_EXCLUDE, _FILTER_BOOL_KEYS, _FILTER_PRESET_PLAYER_KEYS,
+    VIDEO_CODECS_INFO, VIDEO_CODECS, CPU_VIDEO_CODECS, AUDIO_CODECS_INFO, AUDIO_CODECS,
+    RESOLUTIONS, FRAMERATES, DEFINITIONS, ASPECT_RATIOS,
+    TROIS_SHOT_THRESHOLDS, CSDM_TO_DP2_WEAPON, DP2_TICK_WINDOW,
+    SPRAY_TRANSFER_WEAPONS, SPRAY_TRANSFER_WEAPONS_LOWER, SPRAY_MAX_GAP_TICKS,
+    TAG_PRESET_COLORS, WEAPON_CATEGORIES, WEAPON_ICONS, _WEAPON_LOOKUP,
+    _WEAPON_SUBSTR_FALLBACK, _weapon_category,
+    MATCH_TYPE_DEFS, _MATCH_TYPE_KEY_TO_DB, _MATCH_TYPE_CFG_KEYS,
+)
+
+
+# ── Delayed-effect / suicide weapons — deplaces dans csdm/static_data.py ─────
+from csdm.static_data import DELAYED_EFFECT_WEAPONS, SUICIDE_WEAPONS
+
+# ── Configuration : defauts, presets, persistance (Phase 1.1) ──────────────
+#  Extraits dans csdm/config.py. Importes ici pour conserver les memes noms.
+from csdm.config import (
+    CONFIG_FILE, PRESETS_FILE, PLAYERS_FILE, ASM_NAMES_FILE,
+    DEFAULT_CONFIG, PRESET_CATEGORIES, PRESET_KEYS, _PRESET_TAB_GROUPS, _PRESET_ALL_CATS,
+    _load_json, _save_json,
+    load_presets, save_presets, load_saved_players, save_saved_players,
+    load_asm_names, save_asm_names,
+    _migrate_config, load_config, save_config,
+)
+
+# ── Helpers purs (Phase 1.1) — deplaces dans csdm/core_utils.py ─────────────
+from csdm.core_utils import (
+    iso_to_display, display_to_iso, ensure_csdm_dirs, check_ffmpeg_available,
+    fmt_duration, safe_folder_name, build_camera_ticks,
+    _generate_id_for_type, _count_kills, progress_bar,
+)
+
+# ── Calendrier, dialogues et champ de date (Phase 1.2) ──────────────────────
+from csdm.widgets import CalendarPopup, ColorPickerDialog, TagImportMissingDialog, DateField
+from csdm.widgets import PlayerSearchWidget
+
+# ── Composants Tkinter reutilisables (Phase 1.2) ────────────────────────────
+#  ScrollableFrame, WrapRow et leurs registres d'instances vivent dans
+#  csdm/widgets.py. Importes ici sous les memes noms qu'avant. Les registres
+#  sont les MEMES objets que ceux remplis par les widgets — les handlers de App
+#  iterent dessus normalement.
+from csdm.widgets import ScrollableFrame, WrapRow, BentoGrid, _SCROLL_FRAMES, _WRAP_ROWS
+# ── Carte de section pliable + champ de chemin (Phase 1.2) ──────────────────
+from csdm.widgets import Sec, PathField
+
+# ── Assistants d'affichage + info-bulle (Phase 1.2) ─────────────────────────
+#  Deplaces dans csdm/widgets.py. Importes ici sous les memes noms qu'avant.
+from csdm.widgets import (
+    sentry, scombo, mlabel, flabel, slabel,
+    hchk, hradio, _bind_wraplength, _WRAP_LABELS,
+    desc_label, _sep, _chk_tip, Tooltip, add_tip, dp2_badge,
+)
 
 # ═══════════════════════════════════════════════════════
 #  App
@@ -2219,6 +174,8 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.cfg = load_config()
+        # Polices nommees Tk : creees maintenant (root pret), AVANT tout widget.
+        init_fonts(self, self.cfg.get("ui_font_family", "auto"))
         # Apply theme from config before building any widgets
         _apply_theme_globals(
             self.cfg.get("theme_bg", "dark"),
@@ -2232,11 +189,8 @@ class App(tk.Tk):
         _h = max(600, min(2160, _h))
         self.geometry(f"{_w}x{_h}")
         self.minsize(1000, 600)
-        self.option_add('*TCombobox*Listbox.background', BG3)
-        self.option_add('*TCombobox*Listbox.foreground', TEXT)
-        self.option_add('*TCombobox*Listbox.selectBackground', ORANGE)
-        self.option_add('*TCombobox*Listbox.selectForeground', "white")
-        self.option_add('*TCombobox*Listbox.font', FONT_SM)
+        # Options TCombobox Listbox : centralisees dans apply_ttk_style (appele
+        # au debut de _build_ui, avant l'ouverture de toute liste deroulante).
 
         self.presets = load_presets()
         self._player_names = {}
@@ -2338,7 +292,7 @@ class App(tk.Tk):
             for _, rw, rh in ASPECT_RATIOS
         ) and any(h == _h0 for _, h in DEFINITIONS)
         self.v["res_custom"] = tk.BooleanVar(value=not _known)
-        self.db_status = tk.StringVar(value="Not connected")
+        self.db_status = tk.StringVar(value="[DB:OFFLINE]")
         self.sel_events = {e: tk.BooleanVar(value=(e in self.cfg.get("events", []))) for e in EVENTS}
         self.sel_weapons = {}
         for w in self.cfg.get("weapons", []):
@@ -2405,6 +359,7 @@ class App(tk.Tk):
         self.after(60, self._update_res_preview)
 
         self._auto_save()
+        self.after(80, self._apply_dark_titlebar)
         self.after(200, self._preflight)
         if HAS_PG:
             self.after(500, self._connect_and_load)
@@ -2608,7 +563,7 @@ class App(tk.Tk):
         return None, "m", ""
 
     def _connect_and_load(self):
-        self.db_status.set("Connecting...")
+        self.db_status.set("[DB:...]")
         self.db_status_lbl.config(fg=YELLOW)
 
         def task():
@@ -2876,8 +831,8 @@ class App(tk.Tk):
             self._async_log("⚠ Date column not detected in matches — date filter disabled", "warn")
 
         self.db_status.set(
-            f"OK — {len(players)} players, {len(tags_data)} tags"
-            + ("" if dc else "  ⚠ date ?"))
+            f"[DB:OK] {len(players)}P·{len(tags_data)}T"
+            + ("" if dc else " ⚠date?"))
         self.db_status_lbl.config(fg=GREEN)
 
         # Deferred restoration (preset loaded before DB was ready)
@@ -2897,7 +852,7 @@ class App(tk.Tk):
             self._pending_restore_tags = []
 
     def _on_load_fail(self, err):
-        self.db_status.set(f"Error: {err}")
+        self.db_status.set(f"[DB:ERR] {err}")
         self.db_status_lbl.config(fg=RED)
 
     # ═══════════════════════════════════════════════════
@@ -2951,7 +906,7 @@ class App(tk.Tk):
             hdr.pack(fill="x")
             _icon = WEAPON_ICONS.get(cat, "")
             _cat_cb = tk.Checkbutton(hdr, text=f"{_icon} {cat}  ({len(cat_weapons)})", variable=cat_var,
-                           **{**_CHK_KW, "font": ("Consolas", 9, "bold"), "fg": ORANGE},
+                           **{**_CHK_KW, "font": FONT_SM_B, "fg": ORANGE},
                            command=lambda c=cat: self._toggle_category(c))
             _cat_cb.pack(side="left")
 
@@ -3373,6 +1328,9 @@ class App(tk.Tk):
     #  UI
     # ═══════════════════════════════════════════════════
     def _build_ui(self):
+        # Style ttk plat (clam) — source unique, avant tout widget ttk.
+        apply_ttk_style(self)
+
         # ── Global MouseWheel dispatcher ──────────────────────────────────────
         # One handler for all tabs. Scrolls the ScrollableFrame under the cursor;
         # yields to Text/Listbox/Treeview which handle their own wheel events.
@@ -3408,13 +1366,13 @@ class App(tk.Tk):
                     try:
                         if lbl.winfo_exists():
                             apply_fn()
-                    except Exception:
+                    except tk.TclError:
                         pass
                 for wr in list(_WRAP_ROWS):
                     try:
                         if wr.winfo_exists():
                             wr._relayout()
-                    except Exception:
+                    except tk.TclError:
                         pass
             self.after(50, _flush)
         self.bind_all("<ButtonRelease-1>", _on_release)
@@ -3429,9 +1387,9 @@ class App(tk.Tk):
         inner_hdr = tk.Frame(hdr, bg=BG2)
         inner_hdr.pack(side="left", fill="x", expand=True, padx=(10, 10), pady=7)
 
-        tk.Label(inner_hdr, text="CSDM", font=("Consolas", 13, "bold"),
+        tk.Label(inner_hdr, text="CSDM", font=FONT_TITLE_B,
                  bg=BG2, fg=TEXT).pack(side="left")
-        tk.Label(inner_hdr, text=f" Batch {APP_VERSION}", font=("Consolas", 13, "bold"),
+        tk.Label(inner_hdr, text=f" Batch {APP_VERSION}", font=FONT_TITLE_B,
                  bg=BG2, fg=ORANGE).pack(side="left")
 
         self._hdr_player_lbl = tk.Label(inner_hdr, text="", font=FONT_SM, bg=BG2, fg=MUTED)
@@ -3456,31 +1414,18 @@ class App(tk.Tk):
                   relief="flat", bd=0, cursor="hand2", highlightthickness=0,
                   activeforeground=ORANGE,
                   command=self._quick_preset_save).pack(side="left", padx=(4, 0))
-        tk.Label(db_area, text="DB ", font=FONT_DESC, bg=BG2, fg=MUTED).pack(side="left")
+        # Statut DB deja bracktee (ex: [DB:OK]) -> pas de prefixe "DB " redondant.
         self.db_status_lbl = tk.Label(db_area, textvariable=self.db_status,
-                                      font=("Consolas", 9, "bold"), bg=BG2, fg=YELLOW)
+                                      font=FONT_SM_B, bg=BG2, fg=YELLOW)
         self.db_status_lbl.pack(side="left")
         tk.Button(db_area, text=" ↺ ", font=FONT_DESC, bg=BG2, fg=MUTED,
                   relief="flat", bd=0, cursor="hand2", highlightthickness=0,
                   activeforeground=ORANGE,
                   command=self._connect_and_load).pack(side="left", padx=(4, 0))
+        tk.Label(db_area, text=f"[{APP_VERSION}]", font=FONT_DESC, bg=BG2,
+                 fg=MUTED).pack(side="left", padx=(8, 0))
 
         _sep(self, pady=0)
-
-        s = ttk.Style()
-        s.theme_use("default")
-        s.configure("TNotebook", background=BG, borderwidth=0, tabmargins=0)
-        s.configure("TNotebook.Tab", background=BG3, foreground=MUTED,
-                    font=("Consolas", 9, "bold"), padding=[12, 7], borderwidth=0)
-        s.map("TNotebook.Tab", background=[("selected", BG2)], foreground=[("selected", ORANGE)])
-        s.configure("TCombobox", fieldbackground=BG3, background=BG3, foreground=TEXT,
-                    arrowcolor=ORANGE, bordercolor=BORDER, lightcolor=BORDER, darkcolor=BORDER,
-                    selectbackground=ORANGE, selectforeground="white")
-        s.map("TCombobox", fieldbackground=[("readonly", BG3), ("disabled", BG)],
-              foreground=[("readonly", TEXT), ("disabled", MUTED)],
-              background=[("readonly", BG3)], arrowcolor=[("readonly", ORANGE)])
-        s.configure("TPanedwindow", background=BORDER)
-        s.configure("Vertical.TPanedwindow", background=BORDER)
 
         # Gauche : notebook config (poids 5)
         # Right: run bar + vertical PanedWindow (notebook | log)
@@ -3496,7 +1441,7 @@ class App(tk.Tk):
         for title, builder in [("Capture", self._tab_capturer), ("Tags", self._tab_tags),
                                 ("Video", self._tab_video), ("Settings", self._tab_outils)]:
             f = tk.Frame(nb, bg=BG)
-            nb.add(f, text=f"  {title}  ")
+            nb.add(f, text=f"  {title.upper()}  ")
             builder(f)
 
         def _on_tab_changed(_event=None):
@@ -3508,13 +1453,13 @@ class App(tk.Tk):
                 try:
                     if lbl.winfo_exists():
                         apply_fn()
-                except Exception:
+                except tk.TclError:
                     pass
             for wr in list(_WRAP_ROWS):
                 try:
                     if wr.winfo_exists():
                         wr._relayout()
-                except Exception:
+                except tk.TclError:
                     pass
         nb.bind("<<NotebookTabChanged>>", _on_tab_changed)
 
@@ -3524,18 +1469,21 @@ class App(tk.Tk):
         right_frame.columnconfigure(0, weight=1)
 
         # ── Run bar ───────────────────────────────────────────────────────────
-        run_bar = tk.Frame(right_frame, bg=BG2)
+        # Cadre 1px comme les cartes Sec (cellule de grille).
+        run_bar = tk.Frame(right_frame, bg=BG2,
+                           highlightthickness=1, highlightbackground=BORDER,
+                           highlightcolor=BORDER)
         run_bar.grid(row=0, column=0, sticky="ew")
 
         # Top accent line on run bar
-        tk.Frame(run_bar, height=2, bg=ORANGE).pack(fill="x")
+        tk.Frame(run_bar, height=1, bg=ORANGE).pack(fill="x")
 
         ctrl = tk.Frame(run_bar, bg=BG2)
         ctrl.pack(fill="x", padx=10, pady=(6, 4))
 
         # Primary action buttons — RUN gets accent colour, others are muted
         self.run_btn = tk.Button(
-            ctrl, text="▶  RUN", font=("Consolas", 10, "bold"),
+            ctrl, text="▶  RUN", font=FONT_MONO_B,
             bg=ORANGE, fg="white", relief="flat", cursor="hand2", bd=0,
             highlightthickness=0, activebackground=ORANGE2, activeforeground="white",
             command=self._run)
@@ -3544,7 +1492,7 @@ class App(tk.Tk):
         tk.Frame(ctrl, width=1, bg=BORDER).pack(side="left", fill="y", padx=6)
 
         tk.Button(
-            ctrl, text="🔍 Preview", font=("Consolas", 9, "bold"), bg=BG3, fg=BLUE,
+            ctrl, text="🔍 PREVIEW", font=FONT_SM_B, bg=BG3, fg=BLUE,
             relief="flat", cursor="hand2", bd=0, highlightthickness=0,
             activebackground=BORDER, activeforeground=BLUE,
             command=self._dry_run).pack(side="left", ipady=5, ipadx=8)
@@ -3552,7 +1500,7 @@ class App(tk.Tk):
         tk.Frame(ctrl, width=1, bg=BORDER).pack(side="left", fill="y", padx=6)
 
         self.stop_btn = tk.Button(
-            ctrl, text="⏸ Stop", font=("Consolas", 9, "bold"),
+            ctrl, text="⏸ STOP", font=FONT_SM_B,
             bg=BG3, fg=MUTED, relief="flat", cursor="hand2", bd=0,
             state="disabled", highlightthickness=0,
             activebackground=BORDER, activeforeground=RED,
@@ -3560,7 +1508,7 @@ class App(tk.Tk):
         self.stop_btn.pack(side="left", ipady=5, ipadx=8)
 
         self.kill_btn = tk.Button(
-            ctrl, text="⛔ Kill", font=("Consolas", 9, "bold"),
+            ctrl, text="⛔ KILL", font=FONT_SM_B,
             bg=BG3, fg=MUTED, relief="flat", cursor="hand2", bd=0,
             state="disabled", highlightthickness=0,
             activebackground=BORDER, activeforeground=RED,
@@ -3618,7 +1566,7 @@ class App(tk.Tk):
         inner_top = tk.Frame(top, bg=BG2)
         inner_top.pack(side="left", fill="x", expand=True, padx=(8, 8), pady=4)
 
-        tk.Label(inner_top, text="LOG", font=("Consolas", 9, "bold"),
+        tk.Label(inner_top, text="LOG", font=FONT_SM_B,
                  fg=ORANGE, bg=BG2).pack(side="left")
 
         self._log_filter = tk.StringVar(value="All")
@@ -3683,12 +1631,15 @@ class App(tk.Tk):
         _export_btn.config(command=_show_export_menu)
         _btn("🗑 Clear",          self._clear_log, fg=RED).pack(side="right", padx=(0, 8), pady=3, ipady=2)
 
-        log_frame = tk.Frame(parent, bg=BG)
+        # Cadre 1px autour de la console (coherence avec les cellules Sec).
+        log_frame = tk.Frame(parent, bg=BG,
+                             highlightthickness=1, highlightbackground=BORDER,
+                             highlightcolor=BORDER)
         log_frame.grid(row=2, column=0, sticky="nsew")
         log_frame.rowconfigure(0, weight=1)
         log_frame.columnconfigure(0, weight=1)
 
-        self.log = tk.Text(log_frame, font=("Consolas", 9), bg=_t("LOG_BG"), fg=TEXT,
+        self.log = tk.Text(log_frame, font=FONT_SM, bg=_t("LOG_BG"), fg=TEXT,
                            relief="flat", bd=0, insertbackground=ORANGE,
                            highlightthickness=0, state="disabled", wrap="word",
                            selectbackground=ORANGE2, selectforeground="white")
@@ -3971,17 +1922,7 @@ class App(tk.Tk):
         # Treeview: columns = checkbox-state (not real col) + date + name
         tree_frame = tk.Frame(sec, bg=BG2)
         tree_frame.pack(fill="x", pady=(4, 0))
-        style = ttk.Style()
-        style.configure("DemoPicker.Treeview",
-                        background=BG3, fieldbackground=BG3,
-                        foreground=TEXT, rowheight=18,
-                        font=FONT_SM)
-        style.configure("DemoPicker.Treeview.Heading",
-                        background=BG2, foreground=MUTED,
-                        font=FONT_DESC, relief="flat")
-        style.map("DemoPicker.Treeview",
-                  background=[("selected", BORDER)],
-                  foreground=[("selected", ORANGE)])
+        # Style "DemoPicker.Treeview" defini dans apply_ttk_style (source unique).
         self._demo_tree = ttk.Treeview(
             tree_frame, style="DemoPicker.Treeview",
             columns=("sel", "date", "map", "name"), show="headings", height=7,
@@ -4033,7 +1974,7 @@ class App(tk.Tk):
             tw.attributes("-topmost", True)
             tw.wm_geometry(f"+{event.x_root + 12}+{event.y_root + 12}")
             tk.Label(tw, text=f"⚠ {brk}\n{tip}",
-                     font=("Consolas", 8), fg=TEXT, bg="#2a2a2a",
+                     font=FONT_DESC, fg=TEXT, bg="#2a2a2a",
                      relief="flat", bd=0, padx=8, pady=4,
                      justify="left").pack()
             tw._iid = iid
@@ -4107,7 +2048,7 @@ class App(tk.Tk):
 
         def _make_event_toggle(parent, label, var, tip):
             """Styled toggle button for event types."""
-            btn = tk.Button(parent, text=f"  {label}  ", font=("Consolas", 9, "bold"),
+            btn = tk.Button(parent, text=f"  {label}  ", font=FONT_SM_B,
                             relief="flat", bd=0, cursor="hand2", highlightthickness=0,
                             padx=6, pady=3)
             def _refresh(*_):
@@ -4192,8 +2133,8 @@ class App(tk.Tk):
         _mp_lbl.pack(side="left")
         add_tip(_mp_lbl,
                 "Record from the best-angle teammate of the victim instead of the victim.\n"
-                "Uses demoparser2 player positions + view angles at kill tick.\n"
-                "⚠ LOS is angle-based (no BSP ray-cast).\n"
+                "Requires: victim eye clearly in view (±20°), alive mate, same floor,\n"
+                "elevation ≤30°, distance 80–550 u. No BSP — walls not detected.\n"
                 "Only applies in Victim / Both perspective modes.")
         _mp_en = hchk(self._mate_pov_row, "Enable", self.v["kill_mod_mate_pov"])
         _mp_en.pack(side="left", padx=(4, 0))
@@ -4516,7 +2457,7 @@ class App(tk.Tk):
                       *[c for c in _clutch_size_row.winfo_children()]):
                 try:
                     w.config(state=st)
-                except Exception:
+                except tk.TclError:
                     pass
         self.v["clutch_enabled"].trace_add("write", _clutch_toggle_state)
         _clutch_toggle_state()
@@ -4740,7 +2681,7 @@ class App(tk.Tk):
             self._picker_count_lbl.config(
                 text=f"{n_on}/{n_tot} selected",
                 fg=ORANGE if n_on < n_tot else MUTED)
-        except Exception:
+        except tk.TclError:
             pass
 
     def _demo_picker_clear(self):
@@ -4749,7 +2690,7 @@ class App(tk.Tk):
         try:
             self._demo_tree.delete(*self._demo_tree.get_children())
             self._picker_count_lbl.config(text="— all demos (run Preview to filter)", fg=MUTED)
-        except Exception:
+        except tk.TclError:
             pass
 
     def _on_demo_tree_click(self, event):
@@ -4777,7 +2718,7 @@ class App(tk.Tk):
             self._picker_count_lbl.config(
                 text=f"{n_on}/{n_tot} selected",
                 fg=ORANGE if n_on < n_tot else MUTED)
-        except Exception:
+        except tk.TclError:
             pass
 
     def _demo_picker_set_all(self, value):
@@ -4849,13 +2790,13 @@ class App(tk.Tk):
         sec_asm = Sec(p, "FINAL ASSEMBLY")
         sec_asm.pack(fill="x")
 
-        _asm_cb1 = _chk_tip(sec_asm, "Assemble all clips at the end", self.v["assemble_after"],
+        _chk_tip(sec_asm, "Assemble all clips at the end", self.v["assemble_after"],
                             "After batch, concatenate all clips into a single file.\n"
                             "Video copied without re-encoding (-c:v copy) — fast, lossless.\n"
                             "Audio re-encoded to AAC to fix drift.\n"
                             "Requires the same codec and resolution on all clips.",
                             pady=(4, 2))
-        _asm_cb2 = _chk_tip(sec_asm, "Delete source clips after assembly", self.v["delete_after_assemble"],
+        _chk_tip(sec_asm, "Delete source clips after assembly", self.v["delete_after_assemble"],
                             "Deletes source files (and their folders) after successful assembly.\n"
                             "⚠ Incompatible with Concatenate sequences — automatically disables that option.")
         _asm_cb3 = _chk_tip(sec_asm, "Concatenate sequences", self.v["concatenate_sequences"],
@@ -5365,7 +3306,7 @@ class App(tk.Tk):
             # fires <Configure> on every pane → re-triggers all ScrollableFrame
             # reflows 400 ms later, producing the "momentum" drag feel.
             # Sash snapping happens only on actual sash-drag via the outer binding.
-        except Exception:
+        except tk.TclError:
             pass
 
     def _on_recsys_change(self, *_):
@@ -5387,13 +3328,6 @@ class App(tk.Tk):
     def _normalize_recsys(value):
         v = str(value or "").strip().upper()
         return "CS" if v == "CS" else "HLAE"
-
-    def _on_res(self, e=None):
-        for l, w, h in RESOLUTIONS:
-            if l == self.v["resolution"].get():
-                self.v["width"].set(w)
-                self.v["height"].set(h)
-                break
 
     # ── v60: structured resolution selectors ─────────────────────────────────
     def _on_perspective_change(self, *_):
@@ -5441,18 +3375,18 @@ class App(tk.Tk):
         try:
             for w in self._def_radios:
                 w.config(state=state_struct)
-        except Exception:
+        except tk.TclError:
             pass
         try:
             for w in self._ratio_radios:
                 w.config(state=state_struct)
-        except Exception:
+        except tk.TclError:
             pass
         # Enable/disable manual input fields
         try:
             self._res_w_entry.config(state=state_manual)
             self._res_h_entry.config(state=state_manual)
-        except Exception:
+        except tk.TclError:
             pass
         if not custom:
             # Recompute from selectors
@@ -5466,7 +3400,7 @@ class App(tk.Tk):
             h = self.v["height"].get()
             self._res_preview_lbl.config(text=f"{w} × {h} px")
             self.v["resolution"].set(f"{w}x{h}")
-        except Exception:
+        except tk.TclError:
             pass
 
     def _on_vcodec(self, e=None):
@@ -6393,10 +4327,12 @@ class App(tk.Tk):
     #   3. camera_fn="_mate_pov_camera_sid" lets _build_json look it up generically.
     # LOS is angle-based only (no BSP ray-cast available via demoparser2).
 
-    _MATE_POV_BODY_HEIGHTS = (64, 40, 10)   # head / chest / legs (units above feet)
-    _MATE_POV_FOV_HALF_DEG = 45.0           # half-angle: point must be within ±45° to count
-    _MATE_POV_MIN_VISIBLE   = 2             # body points in FOV required ("≥50% visible")
-    _MATE_POV_MAX_DIST      = 5000          # ignore mates further than this (Hammer units)
+    _MATE_POV_EYE_HEIGHT     = 54           # eye-level offset above feet (CS2 standing)
+    _MATE_POV_FOV_HALF_DEG   = 20.0         # half-angle: victim must be clearly in view
+    _MATE_POV_MAX_DIST       = 550          # ignore mates beyond 550 u — walls very likely
+    _MATE_POV_MIN_DIST       = 80           # ignore mates clipping into / directly on victim
+    _MATE_POV_MAX_Z_DELTA    = 300          # reject if height diff > 300 u — different floors
+    _MATE_POV_MAX_ELEVATION  = 30.0         # reject if elevation angle > 30° — through floor/ceil
     # demoparser2 stores SteamIDs with the lower 3 bits zeroed (CS2 entity handle
     # encoding).  float64 precision loss on 17-digit SteamID64 values can produce
     # a rounding error of up to 16 units at the magnitudes involved (~7.6×10^16).
@@ -6423,7 +4359,7 @@ class App(tk.Tk):
         try:
             from demoparser2 import DemoParser
             parser = DemoParser(demo_path)
-            df = parser.parse_ticks(["X", "Y", "Z", "pitch", "yaw", "team_num"], ticks=needed)
+            df = parser.parse_ticks(["X", "Y", "Z", "pitch", "yaw", "team_num", "health"], ticks=needed)
         except Exception as e:
             self._async_log(f"  ⚠ Mate POV parse_ticks error: {e}", "warn")
             return cached
@@ -6443,13 +4379,14 @@ class App(tk.Tk):
             def _fc(name):
                 return next((c for c in cols if c.lower() == name.lower()), None)
 
-            col_tick = _fc("tick")
-            col_x    = _fc("X")
-            col_y    = _fc("Y")
-            col_z    = _fc("Z")
-            col_yaw  = _fc("yaw")
-            col_pit  = _fc("pitch")
-            col_team = _fc("team_num")
+            col_tick   = _fc("tick")
+            col_x      = _fc("X")
+            col_y      = _fc("Y")
+            col_z      = _fc("Z")
+            col_yaw    = _fc("yaw")
+            col_pit    = _fc("pitch")
+            col_team   = _fc("team_num")
+            col_health = _fc("health")
 
             if not (col_tick and col_x and col_y and col_z):
                 self._async_log(f"  ⚠ Mate POV: missing columns tick/X/Y/Z in {cols}", "warn")
@@ -6470,13 +4407,15 @@ class App(tk.Tk):
 
             # Numeric columns → float64 numpy (fine for positions/angles)
             num_cols = [c for c in [col_tick, col_x, col_y, col_z,
-                                    col_yaw, col_pit, col_team] if c]
+                                    col_yaw, col_pit, col_team, col_health] if c]
             arr = df[num_cols].to_numpy()
 
             base = 4   # tick, X, Y, Z are always present → indices 0-3
-            yaw_i  = base     if col_yaw  else None
-            pit_i  = base + (1 if col_yaw else 0) if col_pit  else None
-            team_i = base + (1 if col_yaw else 0) + (1 if col_pit else 0) if col_team else None
+            offset = 0
+            yaw_i    = (base + offset) if col_yaw    else None; offset += (1 if col_yaw    else 0)
+            pit_i    = (base + offset) if col_pit    else None; offset += (1 if col_pit    else 0)
+            team_i   = (base + offset) if col_team   else None; offset += (1 if col_team   else 0)
+            health_i = (base + offset) if col_health else None
 
             def _fv(v):
                 if v is None: return 0.0
@@ -6497,12 +4436,13 @@ class App(tk.Tk):
                     continue
 
                 cached.setdefault(t, {})[sid] = {
-                    "X":    _fv(row[1]),
-                    "Y":    _fv(row[2]),
-                    "Z":    _fv(row[3]),
-                    "yaw":  _fv(row[yaw_i])  if yaw_i  is not None else 0.0,
-                    "pitch":_fv(row[pit_i])  if pit_i  is not None else 0.0,
-                    "team": int(_fv(row[team_i])) if team_i is not None else 0,
+                    "X":      _fv(row[1]),
+                    "Y":      _fv(row[2]),
+                    "Z":      _fv(row[3]),
+                    "yaw":    _fv(row[yaw_i])    if yaw_i    is not None else 0.0,
+                    "pitch":  _fv(row[pit_i])    if pit_i    is not None else 0.0,
+                    "team":   int(_fv(row[team_i]))   if team_i   is not None else 0,
+                    "health": int(_fv(row[health_i])) if health_i is not None else -1,
                 }
         except Exception as e:
             self._async_log(f"  ⚠ Mate POV: position parse failed: {e}", "warn")
@@ -6616,10 +4556,31 @@ class App(tk.Tk):
             if self._fuzzy_sid_in_set(sid, sids_active):
                 continue                                  # skip the active (our) player(s)
 
+            # Dead player — health==-1 means column absent (unknown), allow those through
+            hp = pd.get("health", -1)
+            if hp != -1 and hp <= 0:
+                continue
+
             dx   = vx - pd["X"]
             dy   = vy - pd["Y"]
+            dz   = vz - pd["Z"]
             dist = math.sqrt(dx * dx + dy * dy)
+
+            if dist < self._MATE_POV_MIN_DIST:
+                continue                                  # clipping / on top of victim
             if dist > self._MATE_POV_MAX_DIST:
+                continue                                  # too far — walls likely
+
+            # Different-floor filter: large Z delta means ceiling/floor between them
+            if abs(dz) > self._MATE_POV_MAX_Z_DELTA:
+                continue
+
+            # Elevation angle filter: steep look-up/down angle = different levels
+            dist3d = math.sqrt(dist * dist + dz * dz)
+            if dist3d < 1:
+                continue
+            elevation = math.degrees(math.asin(max(-1.0, min(1.0, dz / dist3d))))
+            if abs(elevation) > self._MATE_POV_MAX_ELEVATION:
                 continue
 
             # View direction from yaw / pitch
@@ -6629,26 +4590,19 @@ class App(tk.Tk):
             ly =  math.cos(pitch_r) * math.sin(yaw_r)
             lz = -math.sin(pitch_r)
 
-            # Test body points (head / chest / legs) — ≥ _MATE_POV_MIN_VISIBLE must qualify
-            visible   = 0
-            angle_sum = 0.0
-            for bz_off in self._MATE_POV_BODY_HEIGHTS:
-                bdx  = vx - pd["X"]
-                bdy  = vy - pd["Y"]
-                bdz  = (vz + bz_off) - pd["Z"]
-                blen = math.sqrt(bdx * bdx + bdy * bdy + bdz * bdz)
-                if blen < 1:
-                    continue
-                dot = (lx * bdx + ly * bdy + lz * bdz) / blen
-                ang = math.degrees(math.acos(max(-1.0, min(1.0, dot))))
-                if ang <= self._MATE_POV_FOV_HALF_DEG:
-                    visible   += 1
-                    angle_sum += ang
-
-            if visible < self._MATE_POV_MIN_VISIBLE:
+            # Single eye-point check — at ≤550 u the angular spread across the body
+            # is <6°, so multi-point sampling adds no value over one centre check.
+            bdx  = vx - pd["X"]
+            bdy  = vy - pd["Y"]
+            bdz  = (vz + self._MATE_POV_EYE_HEIGHT) - pd["Z"]
+            blen = math.sqrt(bdx * bdx + bdy * bdy + bdz * bdz)
+            if blen < 1:
                 continue
-
-            score = angle_sum / visible   # average angle — lower = more centred
+            dot = (lx * bdx + ly * bdy + lz * bdz) / blen
+            score = math.degrees(math.acos(max(-1.0, min(1.0, dot))))
+            if score > self._MATE_POV_FOV_HALF_DEG:
+                continue
+            # score = angle to victim eye — lower = more centred
             if score < best_score:
                 best_score = score
                 best_sid   = sid
@@ -7227,7 +5181,7 @@ class App(tk.Tk):
                 tk.Button(
                     row,
                     text=f"{prefix}{tname}",
-                    font=("Consolas", 9, "bold" if active else "normal"),
+                    font=FONT_SM_B if active else FONT_SM,
                     bg=bg_c if active else BG3,
                     fg=fg_c if active else TEXT,
                     relief="flat", cursor="hand2", bd=0, anchor="w",
@@ -7347,7 +5301,6 @@ class App(tk.Tk):
                     self._tag_search_status.config(text="No demos.", fg=YELLOW)
                     return
                 total_evt = sum(ne for _, ne, _ in found)
-                total_seq = sum(ns for _, _, ns in found)
                 for dp, ne, ns in found:
                     self._tag_demo_lb.insert("end",
                         f"{Path(dp).name}  ({ne} events → {ns} seq)")
@@ -7414,7 +5367,7 @@ class App(tk.Tk):
 
             if not demos:
                 self.after(0, lambda: (
-                    self._async_log(f"[TAGS/range] No demos with these tags.", "warn"),
+                    self._async_log("[TAGS/range] No demos with these tags.", "warn"),
                     self._plage_lbl.config(text="No tagged demos.", fg=YELLOW)))
                 return
 
@@ -7813,6 +5766,23 @@ class App(tk.Tk):
     # ── TAB TOOLS ──
     # ── Theme application ──────────────────────────────────────────────────
 
+    def _apply_dark_titlebar(self):
+        """Barre de titre sombre sous Windows (best-effort). Suit le theme
+        clair/sombre. Silencieux si l'API DWM est absente (autres OS / vieux
+        Windows). Les attributs 20/19 sont des constantes de protocole DWM.
+        """
+        try:
+            import ctypes
+            self.update_idletasks()
+            hwnd = ctypes.windll.user32.GetParent(self.winfo_id())
+            dark = ctypes.c_int(0 if _THEME.get("_is_light") else 1)
+            DWMWA_DARK_MODE, DWMWA_DARK_MODE_OLD = 20, 19
+            for attr in (DWMWA_DARK_MODE, DWMWA_DARK_MODE_OLD):
+                ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                    hwnd, attr, ctypes.byref(dark), ctypes.sizeof(dark))
+        except Exception:
+            pass  # non-Windows / API absente -> barre standard
+
     def _change_theme(self, bg_name: str | None = None, accent: str | None = None):
         """Change theme at runtime. Pass None to keep the current value.
 
@@ -7848,38 +5818,12 @@ class App(tk.Tk):
         # Retrigger hchk/hradio closures so they pick up the new _t() colours
         self._retrigger_toggle_vars()
 
+        self._apply_dark_titlebar()   # suit le nouveau fond clair/sombre
         self._auto_save()
 
     def _reapply_ttk_styles(self):
-        """Reapply ttk styles with current theme colours."""
-        s = ttk.Style()
-        s.configure("TNotebook", background=BG, borderwidth=0, tabmargins=0)
-        s.configure("TNotebook.Tab", background=BG3, foreground=MUTED,
-                    font=("Consolas", 9, "bold"), padding=[12, 7], borderwidth=0)
-        s.map("TNotebook.Tab",
-              background=[("selected", BG2)],
-              foreground=[("selected", ORANGE)])
-        s.configure("TCombobox",
-                    fieldbackground=BG3, background=BG3, foreground=TEXT,
-                    arrowcolor=ORANGE, bordercolor=BORDER,
-                    lightcolor=BORDER, darkcolor=BORDER,
-                    selectbackground=ORANGE, selectforeground="white")
-        s.map("TCombobox",
-              fieldbackground=[("readonly", BG3), ("disabled", BG)],
-              foreground=[("readonly", TEXT), ("disabled", MUTED)],
-              background=[("readonly", BG3)],
-              arrowcolor=[("readonly", ORANGE)])
-        s.configure("TPanedwindow", background=BORDER)
-        s.configure("Vertical.TPanedwindow", background=BORDER)
-        s.configure("DemoPicker.Treeview",
-                    background=BG3, fieldbackground=BG3,
-                    foreground=TEXT, rowheight=18, font=FONT_SM)
-        s.configure("DemoPicker.Treeview.Heading",
-                    background=BG2, foreground=MUTED,
-                    font=FONT_DESC, relief="flat")
-        s.map("DemoPicker.Treeview",
-              background=[("selected", BORDER)],
-              foreground=[("selected", ORANGE)])
+        """Reapply ttk styles with current theme colours (source unique: ui_kit)."""
+        apply_ttk_style(self)
         # Re-configure log tags
         try:
             for tag, c in [("ok", GREEN), ("err", RED), ("info", ORANGE),
@@ -7957,7 +5901,7 @@ class App(tk.Tk):
                 return  # skip — fixed-colour widget (e.g. accent preset buttons)
             # Sec and ScrollableFrame have apply_theme() that sets colours via _t()
             # directly — reliable even when colour_map has ambiguous entries.
-            if isinstance(widget, (Sec, ScrollableFrame)):
+            if isinstance(widget, (Sec, ScrollableFrame, BentoGrid)):
                 try:
                     widget.apply_theme()
                 except Exception:
@@ -7984,16 +5928,20 @@ class App(tk.Tk):
             try:
                 for child in widget.winfo_children():
                     _walk(child)
-            except Exception:
+            except tk.TclError:
                 pass
 
         _walk(root)
 
     def _tab_outils(self, parent):
         p = self._make_tab_scroll(parent)
+        # Bento : sections independantes -> grille 2 colonnes quand la place le
+        # permet (onglet le moins risque, aucun etat croise). Opt-in ici.
+        bento = BentoGrid(p)
+        bento.pack(fill="both", expand=True)
 
-        sec = Sec(p, "PATHS")
-        sec.pack(fill="x")
+        sec = Sec(bento, "PATHS")
+        bento.add(sec)
         PathField(sec, "CSDM Executable", "csdm.CMD or csdm.exe",
                   self.v["csdm_exe"], "file").pack(fill="x", pady=4)
         _pf_cfg = PathField(sec, "CS2 cfg folder",
@@ -8025,8 +5973,8 @@ class App(tk.Tk):
         _sub_cb.pack(anchor="w", pady=(4, 0))
         add_tip(_sub_cb, "Creates a folder per demo in the raw clips folder.")
 
-        sec = Sec(p, "UI THEME")
-        sec.pack(fill="x")
+        sec = Sec(bento, "UI THEME")
+        bento.add(sec)
 
         # ── Background row ────────────────────────────────────────────────────
         bg_row = tk.Frame(sec, bg=BG2)
@@ -8037,6 +5985,7 @@ class App(tk.Tk):
             ("amoled",   "AMOLED",    TEXT),
             ("deepblue", "Deep Blue", "#7a9fda"),
             ("white",    "White",     "#555555"),
+            ("terminal", "Terminal",  "#6f8a78"),
         ]
         for _bg_key, _bg_lbl, _bg_fg in _BG_BTN_DEFS:
             def _make_bg_cmd(k=_bg_key):
@@ -8096,8 +6045,8 @@ class App(tk.Tk):
         self._theme_preview_lbl.pack(side="left", padx=(4, 0))
         add_tip(self._theme_preview_lbl, "Current accent colour preview.")
 
-        sec = Sec(p, "UI LAYOUT")
-        sec.pack(fill="x")
+        sec = Sec(bento, "UI LAYOUT")
+        bento.add(sec)
         row = tk.Frame(sec, bg=BG2)
         row.pack(fill="x", pady=(6, 0))
         mlabel(row, "Window").pack(side="left")
@@ -8125,8 +6074,8 @@ class App(tk.Tk):
         _rem.pack(side="left", padx=(12, 0))
         add_tip(_rem, "When enabled, manual window resize and splitter moves are saved automatically.")
 
-        sec = Sec(p, "POSTGRESQL CONNECTION")
-        sec.pack(fill="x")
+        sec = Sec(bento, "POSTGRESQL CONNECTION")
+        bento.add(sec)
         pg = tk.Frame(sec, bg=BG2)
         pg.pack(fill="x", pady=(6, 0))
         for i in range(5):
@@ -8145,11 +6094,11 @@ class App(tk.Tk):
         tk.Button(br, text="  Test & Reload", font=FONT_SM, bg=ORANGE, fg="white",
                   relief="flat", cursor="hand2", bd=0, activebackground=ORANGE2,
                   command=self._connect_and_load).pack(side="left", ipady=6, ipadx=8)
-        tk.Label(br, textvariable=self.db_status, font=("Consolas", 9, "bold"), bg=BG2,
+        tk.Label(br, textvariable=self.db_status, font=FONT_SM_B, bg=BG2,
                  fg=YELLOW).pack(side="left", padx=(12, 0))
 
-        sec_perf = Sec(p, "PERFORMANCE")
-        sec_perf.pack(fill="x")
+        sec_perf = Sec(bento, "PERFORMANCE")
+        bento.add(sec_perf)
 
         dp2_row = tk.Frame(sec_perf, bg=BG2)
         dp2_row.pack(fill="x", pady=(6, 0))
@@ -8173,8 +6122,8 @@ class App(tk.Tk):
                 "Default auto-scales to your CPU count (capped at 8).\n"
                 "Higher = faster pre-parse on multi-core CPUs.  Set to 1 to disable.")
 
-        sec_inj = Sec(p, "INJECTION PREVIEW")
-        sec_inj.pack(fill="x")
+        sec_inj = Sec(bento, "INJECTION PREVIEW")
+        bento.add(sec_inj)
         desc_label(sec_inj,
                    "Live preview of args injected into CS2 for the current config. "
                    "Updates automatically when settings change.").pack(
@@ -8195,8 +6144,8 @@ class App(tk.Tk):
             anchor="w", pady=(6, 0), ipady=3, ipadx=6)
         self.after(200, self._refresh_injection_preview)
 
-        sec_pre = Sec(p, "SAVE A PRESET")
-        sec_pre.pack(fill="x")
+        sec_pre = Sec(bento, "SAVE A PRESET")
+        bento.add(sec_pre)
 
         self._preset_name_var = tk.StringVar()
         nr = tk.Frame(sec_pre, bg=BG2)
@@ -8253,8 +6202,8 @@ class App(tk.Tk):
                   activebackground=ORANGE2, command=self._save_preset).pack(
             anchor="w", pady=(10, 0), ipady=6, ipadx=8)
 
-        sec_load = Sec(p, "LOAD / DELETE")
-        sec_load.pack(fill="x")
+        sec_load = Sec(bento, "LOAD / DELETE")
+        bento.add(sec_load)
         self._preset_list_frame = tk.Frame(sec_load, bg=BG2)
         self._preset_list_frame.pack(fill="x", pady=(6, 0))
         self._refresh_preset_list()
@@ -8411,9 +6360,6 @@ class App(tk.Tk):
         hchk(f, text, var, **kw).pack()
         return f
 
-    def _radio(self, p, text, var, val):
-        return hradio(p, text, var, val)
-
     def _slider(self, p, label, var, mn, mx, row, col):
         """Slider widget. row/col kept for backward-compat but layout is pack-based."""
         f = tk.Frame(p, bg=BG2)
@@ -8423,7 +6369,7 @@ class App(tk.Tk):
         hdr.pack(fill="x")
         mlabel(hdr, label).pack(side="left")
         val_lbl = tk.Label(hdr, text=f"{var.get()}s",
-                           font=("Consolas", 9, "bold"), fg=ORANGE, bg=BG2,
+                           font=FONT_SM_B, fg=ORANGE, bg=BG2,
                            width=3, anchor="e")
         val_lbl.pack(side="right")
         tk.Scale(f, from_=mn, to=mx, variable=var, orient="horizontal",
@@ -8688,10 +6634,10 @@ class App(tk.Tk):
         try:
             e, w = self._log_err_count, self._log_warn_count
             if self._log_err_lbl and self._log_err_lbl.winfo_exists():
-                self._log_err_lbl.config(text=f"E:{e}" if e else "")
+                self._log_err_lbl.config(text=f"[E:{e}]" if e else "")
             if self._log_warn_lbl and self._log_warn_lbl.winfo_exists():
-                self._log_warn_lbl.config(text=f"W:{w}" if w else "")
-        except Exception:
+                self._log_warn_lbl.config(text=f"[W:{w}]" if w else "")
+        except tk.TclError:
             pass
 
     def _toggle_log_timestamps(self, event=None):
@@ -8975,29 +6921,234 @@ class App(tk.Tk):
         self._col_cache[key] = result
         return result
 
+    # ── _query_events helpers (Phase 1.3 — one clause builder per concern) ──
+
+    @staticmethod
+    def _qe_epoch_bounds(cfg):
+        """Epoch bounds (ts_from, ts_to) for the post-query Python date filter."""
+        ts_from = None
+        ts_to   = None
+        if cfg.get("date_from", ""):
+            try:
+                ts_from = int(datetime.strptime(cfg["date_from"], "%Y-%m-%d")
+                              .replace(hour=0, minute=0, second=0).timestamp())
+            except ValueError:
+                pass
+        if cfg.get("date_to", ""):
+            try:
+                ts_to = int((datetime.strptime(cfg["date_to"], "%Y-%m-%d")
+                             .replace(hour=23, minute=59, second=59)).timestamp())
+            except ValueError:
+                pass
+        return ts_from, ts_to
+
+    def _qe_match_type_sql(self, cfg):
+        """Match-type WHERE fragment: "" or (clause_str, [param values])."""
+        if not cfg.get("match_type_filter_enabled"):
+            return ""
+        _gm_col = self._find_col("matches", ["game_mode_str", "game_mode"])
+        if not _gm_col:
+            self._async_log("⚠ Match type filter: game_mode_str column not found — filter ignored.", "warn")
+            return ""
+        selected_db_vals = [
+            db_v
+            for cfg_k in _MATCH_TYPE_CFG_KEYS
+            if cfg.get(cfg_k)
+            for db_v in _MATCH_TYPE_KEY_TO_DB[cfg_k]
+        ]
+        if not selected_db_vals:
+            return ""  # none checked = no filter
+        ph = ",".join(["%s"] * len(selected_db_vals))
+        return (f' AND m."{_gm_col}" IN ({ph})', selected_db_vals)
+
+    def _qe_headshot_sql(self, cfg):
+        """Headshot WHERE fragment. Returns (hs_col, clause)."""
+        _hsmode = cfg.get("headshots_mode", "all")
+        headshots_only    = (_hsmode == "only")
+        headshots_exclude = (_hsmode == "exclude")
+        hc = self._find_col("kills", ["is_headshot", "headshot", "is_hs", "hs"])
+        hsql = ""
+        if (headshots_only or headshots_exclude) and not hc:
+            self._async_log("⚠ Headshots filter: column not found in kills — filter ignored.", "warn")
+        elif headshots_only and hc:
+            hsql = f' AND k."{hc}" = TRUE'
+        elif headshots_exclude and hc:
+            hsql = f' AND k."{hc}" = FALSE'
+
+        # One Tap kills are by definition headshots — force HS filter at SQL level
+        if cfg.get("kill_mod_one_tap") and hc and not headshots_exclude and not headshots_only:
+            hsql = f' AND k."{hc}" = TRUE'
+        elif cfg.get("kill_mod_one_tap") and not hc:
+            self._async_log("⚠ One Tap: headshot column not found — HS enforcement skipped.", "warn")
+        return hc, hsql
+
+    def _qe_teamkill_sql(self, cfg):
+        """Teamkill include/exclude/only WHERE fragment."""
+        _tkmode = cfg.get("teamkills_mode", "include")
+        include_teamkills = (_tkmode != "exclude")
+        teamkills_only    = (_tkmode == "only")
+        tkc_k = self._find_col("kills", ["killer_team_name", "killer_side", "killer_team"])
+        tkc_v = self._find_col("kills", ["victim_team_name", "victim_side", "victim_team"])
+        if teamkills_only:
+            if tkc_k and tkc_v:
+                return f' AND k."{tkc_k}" = k."{tkc_v}"'
+            self._async_log("⚠ Teamkills only: team columns not found — filter ignored.", "warn")
+        elif not include_teamkills:
+            if tkc_k and tkc_v:
+                return f' AND k."{tkc_k}" != k."{tkc_v}"'
+            self._async_log("⚠ Exclude teamkills: team columns not found — filter ignored.", "warn")
+        return ""
+
+    @staticmethod
+    def _qe_suicide_sql(cfg, weapon_col):
+        """Suicide WHERE fragment (params = SUICIDE_WEAPONS appended by caller)."""
+        _sm = cfg.get("suicides_mode", "include")
+        if _sm == "include" or not weapon_col:
+            return ""
+        ph = ",".join(["%s"] * len(SUICIDE_WEAPONS))
+        if _sm == "exclude":
+            return f' AND k."{weapon_col}" NOT IN ({ph})'
+        if _sm == "only":
+            return f' AND k."{weapon_col}" IN ({ph})'
+        return ""
+
+    @staticmethod
+    def _mod_sql_expr(mod_key, col, positive=True):
+        """SQL expression for one mod column.
+        penetrated_objects is an integer — use > 0 / = 0.
+        All other mod columns are boolean — use = TRUE / IS NOT TRUE.
+        """
+        if mod_key == "kill_mod_wall_bang" and col == "penetrated_objects":
+            if positive:
+                return f'k."{col}" > 0'
+            return f'(k."{col}" IS NULL OR k."{col}" = 0)'
+        if positive:
+            return f'k."{col}" = TRUE'
+        return f'k."{col}" IS NOT TRUE'
+
+    def _qe_mod_sql(self, cfg):
+        """SQL-mod filter fragment.
+
+        Returns (modsql, active_mods, return_empty) — return_empty is True when
+        every checked modifier is absent from the DB and no dp2 OR-union can
+        rescue the query (caller must return no results rather than all clips).
+        """
+        _MOD_COLS = KILL_FILTER_SQL_COLS  # derived from KILL_FILTER_REGISTRY
+        active_mods   = [k for k in _MOD_COLS if cfg.get(k, False)]
+        excluded_mods = [k for k in _MOD_COLS if cfg.get(f"{k}_exclude", False)]
+        modsql = ""
+        _mods_dp2_or_any = self._mods_dp2_global_any_union_enabled(cfg)
+
+        # Build exclusion SQL first — these are always AND NOT
+        excl_clauses = []
+        for mod_key in excluded_mods:
+            col = self._find_col("kills", _MOD_COLS[mod_key])
+            if col:
+                excl_clauses.append(self._mod_sql_expr(mod_key, col, positive=False))
+        excl_sql = (" AND " + " AND ".join(excl_clauses)) if excl_clauses else ""
+
+        if active_mods:
+            mod_clauses = []
+            missing_mods = []
+            for mod_key in active_mods:
+                col = self._find_col("kills", _MOD_COLS[mod_key])
+                if col:
+                    mod_clauses.append(self._mod_sql_expr(mod_key, col, positive=True))
+                else:
+                    missing_mods.append(mod_key)
+            if missing_mods:
+                missing_set = frozenset(missing_mods)
+                if not mod_clauses:
+                    # All checked modifiers absent from DB →
+                    # cannot filter, return empty rather than all clips
+                    if missing_set != self._warned_missing_mods:
+                        missing_labels = ", ".join(
+                            m.replace("kill_mod_", "").replace("_", " ")
+                            for m in missing_mods)
+                        self._async_log(
+                            f"⛔ Modifiers not found in DB: {missing_labels}. "
+                            f"No clips returned — uncheck these modifiers or check the schema.",
+                            "err")
+                        self._warned_missing_mods = missing_set
+                    if not _mods_dp2_or_any:
+                        return "", active_mods, True
+                else:
+                    # Some columns absent — warn once per unique missing set
+                    if missing_set != self._warned_missing_mods:
+                        missing_labels = ", ".join(
+                            m.replace("kill_mod_", "").replace("_", " ")
+                            for m in missing_mods)
+                        self._async_log(
+                            f"⚠ Modifiers not found in DB: {missing_labels} — ignored. "
+                            f"Only the others are applied.",
+                            "warn")
+                        self._warned_missing_mods = missing_set
+            if mod_clauses:
+                if not _mods_dp2_or_any:
+                    _mods_logic = cfg.get("kill_mod_logic_mods", "any")
+                    if _mods_logic == "all":
+                        modsql = " AND (" + " AND ".join(mod_clauses) + ")"
+                    elif _mods_logic == "mixed":
+                        _key_clause = []
+                        _mi = 0
+                        for mod_key in active_mods:
+                            col = self._find_col("kills", _MOD_COLS[mod_key])
+                            if col:
+                                _key_clause.append((mod_key, mod_clauses[_mi]))
+                                _mi += 1
+                        req_clauses = [c for k, c in _key_clause if cfg.get(f"{k}_req", False)]
+                        if req_clauses:
+                            modsql = " AND (" + " AND ".join(req_clauses) + ")"
+                    else:
+                        modsql = " AND (" + " OR ".join(mod_clauses) + ")"
+
+        modsql += excl_sql   # excluded mods are always AND NOT, appended last
+        return modsql, active_mods, False
+
+    def _qe_detect_date_col(self):
+        """Return the matches date column, auto-detecting and caching it once."""
+        date_col = self._date_col
+        if date_col or not self._db_schema.get("matches"):
+            return date_col
+        _m_types = self._db_col_types.get("matches", {})
+        _DATE_TYPES = {
+            "date", "timestamp", "timestamp with time zone",
+            "timestamp without time zone", "timestamptz",
+        }
+        date_col = next(
+            (c for c, t in _m_types.items() if t.lower() in _DATE_TYPES), None)
+        if not date_col:
+            _HINTS = ("played_at","match_date","game_date","start_date",
+                      "started_at","date","match_timestamp")
+            date_col = next(
+                (c for c in self._db_schema["matches"] if c.lower() in _HINTS), None)
+        if not date_col:
+            date_col = next(
+                (c for c in self._db_schema["matches"]
+                 if "date" in c.lower() and "analyze" not in c.lower()), None)
+        if date_col:
+            self._date_col      = date_col
+            self._date_col_type = _m_types.get(date_col, "").lower()
+        return date_col
+
+    def _qe_map_filter_sql(self, cfg):
+        """Map-filter WHERE fragment. Returns (clause, raw DB values as params)."""
+        _mf_raw: list = []
+        if cfg.get("map_filter_enabled") and self._map_col:
+            _mf_sel = set(cfg.get("map_filter", []))
+            if _mf_sel:
+                _mf_raw = [rv for dk, rvs in self._db_maps for rv in rvs if dk in _mf_sel]
+                if _mf_raw:
+                    return (f' AND {self._map_alias}."{self._map_col}" IN '
+                            f'({",".join(["%s"]*len(_mf_raw))})'), _mf_raw
+        return "", _mf_raw
+
     def _query_events(self, cfg):
         sids = self._get_sids(cfg)
         if not sids:
             return {}
 
-        date_from_iso = cfg.get("date_from", "")
-        date_to_iso   = cfg.get("date_to", "")
-
-        # Pre-compute epoch bounds for the post-query Python date filter
-        ts_from = None
-        ts_to   = None
-        if date_from_iso:
-            try:
-                ts_from = int(datetime.strptime(date_from_iso, "%Y-%m-%d")
-                              .replace(hour=0, minute=0, second=0).timestamp())
-            except Exception:
-                pass
-        if date_to_iso:
-            try:
-                ts_to = int((datetime.strptime(date_to_iso, "%Y-%m-%d")
-                             .replace(hour=23, minute=59, second=59)).timestamp())
-            except Exception:
-                pass
+        ts_from, ts_to = self._qe_epoch_bounds(cfg)
 
         def _demo_passes_date_filter(demo_path):
             if ts_from is None and ts_to is None:
@@ -9041,194 +7192,21 @@ class App(tk.Tk):
                 deaths_on = cfg.get("events_deaths", False)
                 weapons   = cfg.get("weapons", [])
 
-                # ── Match type filter ──────────────────────────────────────────
-                # Only applied when at least one type checkbox is checked.
-                mtsql = ""
-                if cfg.get("match_type_filter_enabled"):
-                    _gm_col = self._find_col("matches", ["game_mode_str", "game_mode"])
-                    if _gm_col:
-                        selected_db_vals = [
-                            db_v
-                            for cfg_k in _MATCH_TYPE_CFG_KEYS
-                            if cfg.get(cfg_k)
-                            for db_v in _MATCH_TYPE_KEY_TO_DB[cfg_k]
-                        ]
-                        if selected_db_vals:
-                            ph = ",".join(["%s"] * len(selected_db_vals))
-                            mtsql = (f' AND m."{_gm_col}" IN ({ph})', selected_db_vals)
-                        else:
-                            mtsql = ""  # none checked = no filter
-                    else:
-                        self._async_log("⚠ Match type filter: game_mode_str column not found — filter ignored.", "warn")
-                # Resolve headshots_mode — force ONLY only when logic guarantees HS-only output
-                _hsmode = cfg.get("headshots_mode", "all")
-                # HS mode is user-controlled; no automatic lock
-                headshots_only   = (_hsmode == "only")
-                headshots_exclude = (_hsmode == "exclude")
-                _tkmode = cfg.get("teamkills_mode", "include")
-                include_teamkills = (_tkmode != "exclude")
-                teamkills_only    = (_tkmode == "only")
+                # ── WHERE fragments, one named builder per concern (Phase 1.3) ─
+                mtsql       = self._qe_match_type_sql(cfg)
+                hc, hsql    = self._qe_headshot_sql(cfg)
+                tksql       = self._qe_teamkill_sql(cfg)
+                suicidesql  = self._qe_suicide_sql(cfg, wc)
+                modsql, active_mods, _mods_empty = self._qe_mod_sql(cfg)
+                if _mods_empty:
+                    return {}
+                headshots_only = (cfg.get("headshots_mode", "all") == "only")
+                _MOD_COLS = KILL_FILTER_SQL_COLS
 
-                # Headshot column (optional)
-                hc = self._find_col("kills", ["is_headshot", "headshot", "is_hs", "hs"])
-                hsql = ""
-                if (headshots_only or headshots_exclude) and not hc:
-                    self._async_log("⚠ Headshots filter: column not found in kills — filter ignored.", "warn")
-                elif headshots_only and hc:
-                    hsql = f' AND k."{hc}" = TRUE'
-                elif headshots_exclude and hc:
-                    hsql = f' AND k."{hc}" = FALSE'
-
-                # One Tap kills are by definition headshots — force HS filter at SQL level
-                if cfg.get("kill_mod_one_tap") and hc and not headshots_exclude and not headshots_only:
-                    hsql = f' AND k."{hc}" = TRUE'
-                elif cfg.get("kill_mod_one_tap") and not hc:
-                    self._async_log("⚠ One Tap: headshot column not found — HS enforcement skipped.", "warn")
-
-                tkc_k = self._find_col("kills", ["killer_team_name", "killer_side", "killer_team"])
-                tkc_v = self._find_col("kills", ["victim_team_name", "victim_side", "victim_team"])
-                tksql = ""
-                if teamkills_only:
-                    if tkc_k and tkc_v:
-                        tksql = f' AND k."{tkc_k}" = k."{tkc_v}"'
-                    else:
-                        self._async_log("⚠ Teamkills only: team columns not found — filter ignored.", "warn")
-                elif not include_teamkills:
-                    if tkc_k and tkc_v:
-                        tksql = f' AND k."{tkc_k}" != k."{tkc_v}"'
-                    else:
-                        self._async_log("⚠ Exclude teamkills: team columns not found — filter ignored.", "warn")
-
-                # Suicide filter — weapon_name IN ('world','suicide','world_entity',...)
-                SUICIDE_WEAPONS = ("world", "suicide", "world_entity", "trigger_hurt",
-                                   "fall", "env_fire", "planted_c4")
-                suicidesql = ""
-                _sm = cfg.get("suicides_mode", "include")
-                if _sm != "include" and wc:
-                    ph = ",".join(["%s"] * len(SUICIDE_WEAPONS))
-                    if _sm == "exclude":
-                        suicidesql = f' AND k."{wc}" NOT IN ({ph})'
-                    elif _sm == "only":
-                        suicidesql = f' AND k."{wc}" IN ({ph})'
-
-                _MOD_COLS = KILL_FILTER_SQL_COLS  # derived from KILL_FILTER_REGISTRY
-                active_mods   = [k for k in _MOD_COLS if cfg.get(k, False)]
-                excluded_mods = [k for k in _MOD_COLS if cfg.get(f"{k}_exclude", False)]
-                modsql = ""
-                _mods_dp2_or_any = self._mods_dp2_global_any_union_enabled(cfg)
-
-                def _mod_sql_expr(mod_key, col, positive=True):
-                    """Return the SQL expression for one mod column.
-                    penetrated_objects is an integer — use > 0 / = 0.
-                    All other mod columns are boolean — use = TRUE / IS NOT TRUE.
-                    """
-                    if mod_key == "kill_mod_wall_bang" and col == "penetrated_objects":
-                        if positive:
-                            return f'k."{col}" > 0'
-                        return f'(k."{col}" IS NULL OR k."{col}" = 0)'
-                    if positive:
-                        return f'k."{col}" = TRUE'
-                    return f'k."{col}" IS NOT TRUE'
-
-                # Build exclusion SQL first — these are always AND NOT
-                excl_clauses = []
-                for mod_key in excluded_mods:
-                    col = self._find_col("kills", _MOD_COLS[mod_key])
-                    if col:
-                        excl_clauses.append(_mod_sql_expr(mod_key, col, positive=False))
-                excl_sql = (" AND " + " AND ".join(excl_clauses)) if excl_clauses else ""
-
-                if active_mods:
-                    mod_clauses = []
-                    missing_mods = []
-                    for mod_key in active_mods:
-                        col = self._find_col("kills", _MOD_COLS[mod_key])
-                        if col:
-                            mod_clauses.append(_mod_sql_expr(mod_key, col, positive=True))
-                        else:
-                            missing_mods.append(mod_key)
-                    if missing_mods:
-                        missing_set = frozenset(missing_mods)
-                        if not mod_clauses:
-                            # All checked modifiers absent from DB →
-                            # cannot filter, return empty rather than all clips
-                            if missing_set != self._warned_missing_mods:
-                                missing_labels = ", ".join(
-                                    m.replace("kill_mod_", "").replace("_", " ")
-                                    for m in missing_mods)
-                                self._async_log(
-                                    f"⛔ Modifiers not found in DB: {missing_labels}. "
-                                    f"No clips returned — uncheck these modifiers or check the schema.",
-                                    "err")
-                                self._warned_missing_mods = missing_set
-                            if not _mods_dp2_or_any:
-                                conn.close()
-                                return {}
-                        else:
-                            # Some columns absent — warn once per unique missing set
-                            if missing_set != self._warned_missing_mods:
-                                missing_labels = ", ".join(
-                                    m.replace("kill_mod_", "").replace("_", " ")
-                                    for m in missing_mods)
-                                self._async_log(
-                                    f"⚠ Modifiers not found in DB: {missing_labels} — ignored. "
-                                    f"Only the others are applied.",
-                                    "warn")
-                                self._warned_missing_mods = missing_set
-                    if mod_clauses:
-                        if not _mods_dp2_or_any:
-                            _mods_logic = cfg.get("kill_mod_logic_mods", "any")
-                            if _mods_logic == "all":
-                                modsql = " AND (" + " AND ".join(mod_clauses) + ")"
-                            elif _mods_logic == "mixed":
-                                _key_clause = []
-                                _mi = 0
-                                for mod_key in active_mods:
-                                    col = self._find_col("kills", _MOD_COLS[mod_key])
-                                    if col:
-                                        _key_clause.append((mod_key, mod_clauses[_mi]))
-                                        _mi += 1
-                                req_clauses = [c for k, c in _key_clause if cfg.get(f"{k}_req", False)]
-                                if req_clauses:
-                                    modsql = " AND (" + " AND ".join(req_clauses) + ")"
-                            else:
-                                modsql = " AND (" + " OR ".join(mod_clauses) + ")"
-
-                modsql += excl_sql   # excluded mods are always AND NOT, appended last
-
-                date_col = self._date_col   # may be None → auto-detected below
-                if not date_col and self._db_schema.get("matches"):
-                    _m_types = self._db_col_types.get("matches", {})
-                    _DATE_TYPES = {
-                        "date", "timestamp", "timestamp with time zone",
-                        "timestamp without time zone", "timestamptz",
-                    }
-                    date_col = next(
-                        (c for c, t in _m_types.items() if t.lower() in _DATE_TYPES), None)
-                    if not date_col:
-                        _HINTS = ("played_at","match_date","game_date","start_date",
-                                  "started_at","date","match_timestamp")
-                        date_col = next(
-                            (c for c in self._db_schema["matches"] if c.lower() in _HINTS), None)
-                    if not date_col:
-                        date_col = next(
-                            (c for c in self._db_schema["matches"]
-                             if "date" in c.lower() and "analyze" not in c.lower()), None)
-                    if date_col:
-                        self._date_col      = date_col
-                        self._date_col_type = _m_types.get(date_col, "").lower()
+                date_col = self._qe_detect_date_col()
 
                 # ── Build SELECT (map_sel uses _map_col detected at connect time) ──────
-                # Map filter WHERE clause (empty when filter disabled or no map col)
-                _mf_sql  = ""
-                _mf_raw: list = []
-                if cfg.get("map_filter_enabled") and self._map_col:
-                    _mf_sel = set(cfg.get("map_filter", []))
-                    if _mf_sel:
-                        _mf_raw = [rv for dk, rvs in self._db_maps for rv in rvs if dk in _mf_sel]
-                        if _mf_raw:
-                            _mf_sql = (f' AND {self._map_alias}."{self._map_col}" IN '
-                                       f'({",".join(["%s"]*len(_mf_raw))})')
+                _mf_sql, _mf_raw = self._qe_map_filter_sql(cfg)
 
                 # Empty _build_dsql: date filter applied in Python post-query
                 def _build_dsql(base_params):
@@ -9309,7 +7287,6 @@ class App(tk.Tk):
                         params = params + _mf_raw
                     cur.execute(sql, params)
                     sids_set = set(sids)
-                    _map_offset = (1 if date_col else 0)   # extra columns before `extra`
                     for row in cur.fetchall():
                         dp, tick, chk = row[0], row[1], row[2]
                         if not dp or tick is None:
@@ -9476,7 +7453,6 @@ class App(tk.Tk):
             return results
 
         logic_and   = cfg.get("kill_mod_logic_db", "any") == "all"
-        n_active    = sum(1 for f in active_flags if f)
 
         multi_n = max(2, int(cfg.get("kill_mod_multi_kill_n", 3)))
         multi_s = max(1, int(cfg.get("kill_mod_multi_kill_s", 12)))
@@ -10438,6 +8414,214 @@ class App(tk.Tk):
             hlae_options["extraArgs"] = " ".join(tokens)
         return hlae_options
 
+    # ── _build_json helpers (Phase 1.3) — camera builders are static and take
+    #    explicit parameters so they can be unit-tested without an App instance.
+
+    @staticmethod
+    def _seq_anchor_sid(seq, sids_active, primary_sid):
+        """First active killer in the sequence, else first active victim, else primary."""
+        sorted_evts = sorted(seq["events"], key=lambda e: e["tick"])
+        for e in sorted_evts:
+            ks = str(e.get("killer_sid") or "")
+            if ks in sids_active:
+                return ks
+        for e in sorted_evts:
+            vs = str(e.get("victim_sid") or "")
+            if vs in sids_active:
+                return vs
+        return primary_sid
+
+    @staticmethod
+    def _build_cams_killer(seq, sids_active, primary_sid):
+        """Killer mode: follow each active killer. One entry per killer change."""
+        kill_evts = sorted(
+            [e for e in seq["events"] if e.get("killer_sid") in sids_active],
+            key=lambda e: e["tick"]
+        )
+        if not kill_evts:
+            anchor = (primary_sid if primary_sid in sids_active
+                      else App._seq_anchor_sid(seq, sids_active, primary_sid))
+            return [{"tick": seq["start_tick"], "playerSteamId": anchor,
+                     "playerName": ""}]
+        # Start at sequence start pointing to the first killer
+        first_ks = kill_evts[0]["killer_sid"]
+        cams = [{"tick": seq["start_tick"], "playerSteamId": first_ks,
+                 "playerName": ""}]
+        # Add a switch entry each time the killer changes
+        prev_ks = first_ks
+        for ev in kill_evts[1:]:
+            ks = ev["killer_sid"]
+            if ks != prev_ks:
+                cams.append({"tick": ev["tick"], "playerSteamId": ks,
+                             "playerName": ""})
+                prev_ks = ks
+        return cams
+
+    @staticmethod
+    def _build_cams_victim(seq, sids_active, primary_sid, cfg):
+        """Victim mode: camera fixed on the victim of the first kill by our player.
+        If the event is our player's death, the camera follows our player.
+        If kill_mod_mate_pov is on and a mate SID was stamped, use that instead.
+        No camera switch during the whole sequence."""
+        sorted_evts = sorted(
+            [e for e in seq["events"] if e.get("killer_sid") in sids_active
+             or e.get("victim_sid") in sids_active],
+            key=lambda e: e["tick"]
+        )
+
+        # Determine the single camera target for the whole sequence
+        target_sid = App._seq_anchor_sid(seq, sids_active, primary_sid)
+        if sorted_evts:
+            first_ev = sorted_evts[0]
+            if first_ev.get("type") == "death" and first_ev.get("victim_sid") in sids_active:
+                # Our player dies: follow them
+                target_sid = first_ev["victim_sid"]
+            elif first_ev.get("victim_sid"):
+                # Our player kills: follow victim (or their best-angle teammate).
+                mate_sid   = first_ev.get("_mate_pov_sid") if cfg.get("kill_mod_mate_pov") else None
+                target_sid = mate_sid or first_ev["victim_sid"]
+
+        # A single camera point at start_tick is enough — CSDM holds the target
+        return [{"tick": seq["start_tick"], "playerSteamId": target_sid,
+                 "playerName": ""}]
+
+    @staticmethod
+    def _build_cams_both(seq, sids_active, primary_sid, cfg, tickrate, victim_pre_ticks):
+        """Both mode: camera on the killer from the start of the sequence,
+        switches to victim victim_pre_ticks before the kill.
+        Sequence already extended by victim_pre_s via _effective_before,
+        so the switch is guaranteed inside the clip."""
+        sorted_evts = sorted(
+            [e for e in seq["events"] if e.get("killer_sid") in sids_active
+             or e.get("victim_sid") in sids_active],
+            key=lambda e: e["tick"]
+        )
+        if not sorted_evts:
+            return [{"tick": seq["start_tick"], "playerSteamId": primary_sid,
+                     "playerName": ""}]
+
+        # initial_sid = first relevant active player — used as camera default
+        # for any tick before the first timeline entry.  Do NOT put this into
+        # the timeline itself: doing so (and dedup-overwriting with later kills)
+        # was the root cause of the wrong-POV bug in multi-kill sequences.
+        initial_sid = App._seq_anchor_sid(seq, sids_active, primary_sid)
+
+        # timeline maps tick → target_sid for SWITCH events only.
+        # First-write wins at any given tick (don't overwrite with later events
+        # that happen to share the same tick).
+        timeline: dict = {}
+
+        for i, ev in enumerate(sorted_evts):
+            ev_tick = ev["tick"]
+
+            if ev.get("type") == "death" and ev.get("victim_sid") in sids_active:
+                # Our player dies — follow them from the very start.
+                initial_sid = ev["victim_sid"]
+                timeline.clear()
+                break
+
+            ksid = ev.get("killer_sid") or primary_sid
+            # In mate_pov mode, switch to the best-angle teammate instead of victim.
+            mate_sid   = ev.get("_mate_pov_sid") if cfg.get("kill_mod_mate_pov") else None
+            victim_cam = ev.get("victim_sid") or primary_sid
+            vsid = mate_sid or victim_cam
+
+            # If there was a previous kill, return to this kill's killer right
+            # after that kill so the viewer sees the correct attacker.
+            if i > 0:
+                prev_ev = sorted_evts[i - 1]
+                if prev_ev.get("victim_sid") not in sids_active:
+                    back_tick = prev_ev["tick"] + 1
+                    if back_tick not in timeline:
+                        timeline[back_tick] = ksid
+
+            # Switch to victim (or mate) victim_pre_ticks before this kill.
+            switch_tick = max(seq["start_tick"], ev_tick - victim_pre_ticks)
+            timeline[switch_tick] = vsid
+
+        sorted_timeline = sorted(timeline.items())
+
+        cam_ticks = build_camera_ticks(seq, tickrate)
+        cams = []
+        for t in cam_ticks:
+            target = initial_sid
+            for tl_tick, tl_sid in sorted_timeline:
+                if tl_tick <= t:
+                    target = tl_sid
+                else:
+                    break
+            cams.append({"tick": t, "playerSteamId": target,
+                         "playerName": ""})
+        return cams
+
+    @staticmethod
+    def _bj_players_options(seq, cams, perspective, sids_active, sids_active_list,
+                            name_for, name_override):
+        """Per-sequence playersOptions list (who is shown/highlighted in deathnotices)."""
+        cam_sids = {c["playerSteamId"] for c in cams if c.get("playerSteamId")}
+        if perspective in ("victim", "both"):
+            for ev in seq["events"]:
+                vsid = ev.get("victim_sid")
+                if vsid:
+                    cam_sids.add(vsid)
+
+        # Collect killers and victims for the sequence
+        seq_killer_sids = {ev.get("killer_sid") for ev in seq["events"] if ev.get("killer_sid")}
+        seq_victim_sids  = {ev.get("victim_sid")  for ev in seq["events"] if ev.get("victim_sid")}
+        all_seq_sids = (cam_sids | seq_killer_sids | seq_victim_sids) - {None, ""}
+
+        players_opts = []
+        seen_opts = set()
+        # Active players first, then other SIDs in the sequence
+        ordered = list(sids_active_list) + sorted(all_seq_sids - sids_active)
+        # In victim mode, camera-target SIDs must have showKill:true
+        # otherwise CSDM ignores the camera switch
+        cam_target_sids = {c["playerSteamId"] for c in cams if c.get("playerSteamId")}
+
+        for psid in ordered:
+            if not psid or psid in seen_opts:
+                continue
+            seen_opts.add(psid)
+            is_our    = psid in sids_active
+            pname = (name_override if is_our and name_override else name_for(psid))
+            is_killer = psid in seq_killer_sids
+            is_cam_target = psid in cam_target_sids
+
+            if perspective in ("killer", "victim"):
+                show = is_our or is_killer or is_cam_target
+                hi   = is_cam_target or (is_our and not cam_target_sids)
+            else:  # both
+                show = True
+                hi   = is_cam_target or is_our
+
+            players_opts.append({"steamId": psid, "playerName": pname,
+                                 "showKill": show, "highlightKill": hi,
+                                 "isVoiceEnabled": True})
+        return players_opts
+
+    @staticmethod
+    def _bj_output_dir(demo_path, cfg):
+        """Resolve (and create) the clip output folder for this demo."""
+        _clips_dir = (cfg.get("output_dir_clips") or cfg.get("output_dir") or "").strip()
+        od = os.path.abspath(_clips_dir) if _clips_dir else ""
+        if cfg.get("subfolder_per_demo", True) and od:
+            od = os.path.join(od, safe_folder_name(Path(demo_path).name))
+            os.makedirs(od, exist_ok=True)
+        return od
+
+    @staticmethod
+    def _bj_output_params(cfg):
+        """FFmpeg output parameters, with -preset injected for CPU codecs only.
+        GPU codecs (NVENC/AMF) ignore -preset from libx264/libx265."""
+        video_codec = cfg.get("video_codec", "libx264")
+        video_preset = cfg.get("video_preset", "medium").strip()
+        user_out_params = cfg.get("ffmpeg_output_params", "").strip()
+        # Only inject preset if: CPU codec + non-empty preset + not already in params
+        if (video_codec in CPU_VIDEO_CODECS and video_preset
+                and "-preset" not in user_out_params):
+            return (f"-preset {video_preset} " + user_out_params).strip()
+        return user_out_params
+
     def _build_json(self, demo_path, sequences, cfg):
         # In multi-player, sid = first SID (JSON compat), but we determine
         # the "owner" of each event dynamically from killer_sid/victim_sid.
@@ -10469,189 +8653,19 @@ class App(tk.Tk):
         victim_pre_s = cfg.get("victim_pre_s", 2)
         victim_pre_ticks = max(0, int(victim_pre_s) * tickrate)
 
-        def _seq_anchor_sid(seq):
-            sorted_evts = sorted(seq["events"], key=lambda e: e["tick"])
-            for e in sorted_evts:
-                ks = str(e.get("killer_sid") or "")
-                if ks in sids_active:
-                    return ks
-            for e in sorted_evts:
-                vs = str(e.get("victim_sid") or "")
-                if vs in sids_active:
-                    return vs
-            return primary_sid
-
-        def _build_cams_killer(seq):
-            """Killer mode: follow each active killer. One entry per killer change."""
-            kill_evts = sorted(
-                [e for e in seq["events"] if e.get("killer_sid") in sids_active],
-                key=lambda e: e["tick"]
-            )
-            if not kill_evts:
-                anchor = primary_sid if primary_sid in sids_active else _seq_anchor_sid(seq)
-                return [{"tick": seq["start_tick"], "playerSteamId": anchor,
-                         "playerName": ""}]
-            # Start at sequence start pointing to the first killer
-            first_ks = kill_evts[0]["killer_sid"]
-            cams = [{"tick": seq["start_tick"], "playerSteamId": first_ks,
-                     "playerName": ""}]
-            # Add a switch entry each time the killer changes
-            prev_ks = first_ks
-            for ev in kill_evts[1:]:
-                ks = ev["killer_sid"]
-                if ks != prev_ks:
-                    cams.append({"tick": ev["tick"], "playerSteamId": ks,
-                                 "playerName": ""})
-                    prev_ks = ks
-            return cams
-
-        def _build_cams_victim(seq):
-            """Victim mode: camera fixed on the victim of the first kill by our player.
-            If the event is our player's death, the camera follows our player.
-            If kill_mod_mate_pov is on and a mate SID was stamped, use that instead.
-            No camera switch during the whole sequence."""
-            sorted_evts = sorted(
-                [e for e in seq["events"] if e.get("killer_sid") in sids_active
-                 or e.get("victim_sid") in sids_active],
-                key=lambda e: e["tick"]
-            )
-
-            # Determine the single camera target for the whole sequence
-            target_sid = _seq_anchor_sid(seq)
-            if sorted_evts:
-                first_ev = sorted_evts[0]
-                if first_ev.get("type") == "death" and first_ev.get("victim_sid") in sids_active:
-                    # Our player dies: follow them
-                    target_sid = first_ev["victim_sid"]
-                elif first_ev.get("victim_sid"):
-                    # Our player kills: follow victim (or their best-angle teammate).
-                    mate_sid   = first_ev.get("_mate_pov_sid") if cfg.get("kill_mod_mate_pov") else None
-                    target_sid = mate_sid or first_ev["victim_sid"]
-
-            # A single camera point at start_tick is enough — CSDM holds the target
-            return [{"tick": seq["start_tick"], "playerSteamId": target_sid,
-                     "playerName": ""}]
-
-        def _build_cams_both(seq):
-            """Both mode: camera on the killer from the start of the sequence,
-            switches to victim victim_pre_ticks before the kill.
-            Sequence already extended by victim_pre_s via _effective_before,
-            so the switch is guaranteed inside the clip."""
-            sorted_evts = sorted(
-                [e for e in seq["events"] if e.get("killer_sid") in sids_active
-                 or e.get("victim_sid") in sids_active],
-                key=lambda e: e["tick"]
-            )
-            if not sorted_evts:
-                return [{"tick": seq["start_tick"], "playerSteamId": primary_sid,
-                         "playerName": ""}]
-
-            # initial_sid = first relevant active player — used as camera default
-            # for any tick before the first timeline entry.  Do NOT put this into
-            # the timeline itself: doing so (and dedup-overwriting with later kills)
-            # was the root cause of the wrong-POV bug in multi-kill sequences.
-            initial_sid = _seq_anchor_sid(seq)
-
-            # timeline maps tick → target_sid for SWITCH events only.
-            # First-write wins at any given tick (don't overwrite with later events
-            # that happen to share the same tick).
-            timeline: dict = {}
-
-            for i, ev in enumerate(sorted_evts):
-                ev_tick = ev["tick"]
-
-                if ev.get("type") == "death" and ev.get("victim_sid") in sids_active:
-                    # Our player dies — follow them from the very start.
-                    initial_sid = ev["victim_sid"]
-                    timeline.clear()
-                    break
-
-                ksid = ev.get("killer_sid") or primary_sid
-                # In mate_pov mode, switch to the best-angle teammate instead of victim.
-                mate_sid   = ev.get("_mate_pov_sid") if cfg.get("kill_mod_mate_pov") else None
-                victim_cam = ev.get("victim_sid") or primary_sid
-                vsid = mate_sid or victim_cam
-
-                # If there was a previous kill, return to this kill's killer right
-                # after that kill so the viewer sees the correct attacker.
-                if i > 0:
-                    prev_ev = sorted_evts[i - 1]
-                    if prev_ev.get("victim_sid") not in sids_active:
-                        back_tick = prev_ev["tick"] + 1
-                        if back_tick not in timeline:
-                            timeline[back_tick] = ksid
-
-                # Switch to victim (or mate) victim_pre_ticks before this kill.
-                switch_tick = max(seq["start_tick"], ev_tick - victim_pre_ticks)
-                timeline[switch_tick] = vsid
-
-            sorted_timeline = sorted(timeline.items())
-
-            cam_ticks = build_camera_ticks(seq, tickrate)
-            cams = []
-            for t in cam_ticks:
-                target = initial_sid
-                for tl_tick, tl_sid in sorted_timeline:
-                    if tl_tick <= t:
-                        target = tl_sid
-                    else:
-                        break
-                cams.append({"tick": t, "playerSteamId": target,
-                             "playerName": ""})
-            return cams
-
         seqs = []
         for idx, seq in enumerate(sequences, 1):
             if perspective == "both":
-                cams = _build_cams_both(seq)
+                cams = self._build_cams_both(seq, sids_active, primary_sid, cfg,
+                                             tickrate, victim_pre_ticks)
             elif perspective == "victim":
-                cams = _build_cams_victim(seq)
+                cams = self._build_cams_victim(seq, sids_active, primary_sid, cfg)
             else:
-                cams = _build_cams_killer(seq)
+                cams = self._build_cams_killer(seq, sids_active, primary_sid)
 
-            cam_sids = {c["playerSteamId"] for c in cams if c.get("playerSteamId")}
-            if perspective in ("victim", "both"):
-                for ev in seq["events"]:
-                    vsid = ev.get("victim_sid")
-                    if vsid:
-                        cam_sids.add(vsid)
-
-
-            # Collect killers and victims for the sequence
-            seq_killer_sids = {ev.get("killer_sid") for ev in seq["events"] if ev.get("killer_sid")}
-            seq_victim_sids  = {ev.get("victim_sid")  for ev in seq["events"] if ev.get("victim_sid")}
-            all_seq_sids = (cam_sids | seq_killer_sids | seq_victim_sids) - {None, ""}
-
-            players_opts = []
-            seen_opts = set()
-            # Active players first, then other SIDs in the sequence
-            ordered = list(sids_active_list) + sorted(all_seq_sids - sids_active)
-            # In victim mode, camera-target SIDs must have showKill:true
-            # otherwise CSDM ignores the camera switch
-            cam_target_sids = {c["playerSteamId"] for c in cams if c.get("playerSteamId")}
-
-            for psid in ordered:
-                if not psid or psid in seen_opts:
-                    continue
-                seen_opts.add(psid)
-                is_our    = psid in sids_active
-                pname = (_name_override if is_our and _name_override else _name(psid))
-                is_killer = psid in seq_killer_sids
-                is_cam_target = psid in cam_target_sids
-
-                if perspective == "killer":
-                    show = is_our or is_killer or is_cam_target
-                    hi   = is_cam_target or (is_our and not cam_target_sids)
-                elif perspective == "victim":
-                    show = is_our or is_killer or is_cam_target
-                    hi   = is_cam_target or (is_our and not cam_target_sids)
-                else:  # both
-                    show = True
-                    hi   = is_cam_target or is_our
-
-                players_opts.append({"steamId": psid, "playerName": pname,
-                                     "showKill": show, "highlightKill": hi,
-                                     "isVoiceEnabled": True})
+            players_opts = self._bj_players_options(
+                seq, cams, perspective, sids_active, sids_active_list,
+                _name, _name_override)
 
             seqs.append({
                 "number": idx,
@@ -10668,29 +8682,13 @@ class App(tk.Tk):
                 "playersOptions": players_opts,
             })
 
-        _clips_dir = (cfg.get("output_dir_clips") or cfg.get("output_dir") or "").strip()
-        od = os.path.abspath(_clips_dir) if _clips_dir else ""
-        if cfg.get("subfolder_per_demo", True) and od:
-            od = os.path.join(od, safe_folder_name(Path(demo_path).name))
-            os.makedirs(od, exist_ok=True)
+        od = self._bj_output_dir(demo_path, cfg)
 
         shared_injection = self._common_cs2_injection(cfg)
         hlae_options = self._inject_hlae_extra_args(cfg, shared_injection) if recsys == "HLAE" else {}
 
-        # Encoding preset — injected into outputParameters for CPU codecs only
-        # GPU codecs (NVENC/AMF) ignore -preset from libx264/libx265
-        _CPU_CODECS = {"libx264", "libx265", "libsvtav1", "libaom-av1", "libvpx-vp9",
-                       "prores_ks", "utvideo"}
+        out_params = self._bj_output_params(cfg)
         video_codec = cfg.get("video_codec", "libx264")
-        video_preset = cfg.get("video_preset", "medium").strip()
-        user_out_params = cfg.get("ffmpeg_output_params", "").strip()
-        # Only inject preset if: CPU codec + non-empty preset + not already in paramsr
-        if (video_codec in _CPU_CODECS and video_preset
-                and "-preset" not in user_out_params):
-            preset_injection = f"-preset {video_preset}"
-            out_params = (preset_injection + " " + user_out_params).strip()
-        else:
-            out_params = user_out_params
 
         out = {
             "demoPath": os.path.abspath(demo_path),
@@ -11076,7 +9074,7 @@ class App(tk.Tk):
                 # or on the last one to avoid flooding the event queue.
                 if done == total or done % 5 == 0:
                     self.after(0, lambda d=done, t=total:
-                               self.progress_lbl.config(text=f"Pre-parse {d}/{t}"))
+                               self.progress_lbl.config(text=f"PRE-PARSE {progress_bar(d, t)}"))
 
         cached_total = n_cached + done
         self._async_log(
@@ -11749,7 +9747,6 @@ class App(tk.Tk):
                     and k not in _NO_AUTO_EXCLUDE]
         if excl_dp2:
             excluded_sigs: set = set()
-            non_kill_excl = [e for e in events if e.get("type") != "kill"]
             for ex_key, ex_fn, ex_label in excl_dp2:
                 matched = ex_fn(dp, events, cfg)
                 for e in matched:
@@ -12256,7 +10253,7 @@ class App(tk.Tk):
                         self._picker_count_lbl.config(
                             text=f"{n_on}/{n_tot} selected",
                             fg=ORANGE if n_on < n_tot else MUTED)
-                    except Exception:
+                    except tk.TclError:
                         pass
 
                 if choice is None:
@@ -12329,7 +10326,7 @@ class App(tk.Tk):
             ad = os.path.abspath(dp)
             self._current_demo = dn
             date_str = self._format_demo_date(dp)
-            self.after(0, lambda lbl=f"{i}/{len(demo_list)}":
+            self.after(0, lambda lbl=progress_bar(i, len(demo_list)):
                        self.progress_lbl.config(text=lbl))
             _timing_str = ""
             if t_dp2 > 0.01 or t_seq > 0.001:
@@ -12587,7 +10584,7 @@ class App(tk.Tk):
                             (chk, tag_id))
                         conn.commit()
                         _rolled_back += 1
-                except Exception as _e:
+                except Exception:
                     _rb_fail += 1
             msg = f"  ↩ Rolled back {_rolled_back} tag(s)"
             if _rb_fail:

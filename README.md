@@ -37,7 +37,7 @@ Pick your filters → Preview → Run. CSDM handles the actual recording; this t
 python csdm_batch_clips_generator.py
 ```
 
-Open the **Tools** tab → connect to PostgreSQL with the same credentials as CSDM.
+Open the **Settings** tab → connect to PostgreSQL with the same credentials as CSDM.
 
 ---
 
@@ -56,7 +56,7 @@ Open the **Tools** tab → connect to PostgreSQL with the same credentials as CS
 
 ## Presets
 
-Save and load your filter configurations. The **SAVE A PRESET** section in the Tools tab lets you define which settings are included:
+Save and load your filter configurations. The **SAVE A PRESET** section in the Settings tab lets you define which settings are included:
 
 **Categories:**
 - **Capture**: Active players, Date range, Filters
@@ -244,7 +244,7 @@ Two systems available: **HLAE** (recommended) and **CS** (native). The HLAE-spec
 
 ## UI Theme
 
-A **UI THEME** section in the Tools tab lets you change the entire interface colour scheme in real time — no restart needed.
+A **UI THEME** section in the Settings tab lets you change the entire interface colour scheme in real time — no restart needed.
 
 **Background presets:** Dark · AMOLED (pure black) · Deep Blue · White
 
