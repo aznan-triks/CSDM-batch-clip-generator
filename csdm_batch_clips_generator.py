@@ -1438,7 +1438,7 @@ class App(tk.Tk):
         for title, builder in [("Capture", self._tab_capturer), ("Tags", self._tab_tags),
                                 ("Video", self._tab_video), ("Settings", self._tab_outils)]:
             f = tk.Frame(nb, bg=BG)
-            nb.add(f, text=f"  {title}  ")
+            nb.add(f, text=f"  {title.upper()}  ")
             builder(f)
 
         def _on_tab_changed(_event=None):
@@ -1489,7 +1489,7 @@ class App(tk.Tk):
         tk.Frame(ctrl, width=1, bg=BORDER).pack(side="left", fill="y", padx=6)
 
         tk.Button(
-            ctrl, text="🔍 Preview", font=FONT_SM_B, bg=BG3, fg=BLUE,
+            ctrl, text="🔍 PREVIEW", font=FONT_SM_B, bg=BG3, fg=BLUE,
             relief="flat", cursor="hand2", bd=0, highlightthickness=0,
             activebackground=BORDER, activeforeground=BLUE,
             command=self._dry_run).pack(side="left", ipady=5, ipadx=8)
@@ -1497,7 +1497,7 @@ class App(tk.Tk):
         tk.Frame(ctrl, width=1, bg=BORDER).pack(side="left", fill="y", padx=6)
 
         self.stop_btn = tk.Button(
-            ctrl, text="⏸ Stop", font=FONT_SM_B,
+            ctrl, text="⏸ STOP", font=FONT_SM_B,
             bg=BG3, fg=MUTED, relief="flat", cursor="hand2", bd=0,
             state="disabled", highlightthickness=0,
             activebackground=BORDER, activeforeground=RED,
@@ -1505,7 +1505,7 @@ class App(tk.Tk):
         self.stop_btn.pack(side="left", ipady=5, ipadx=8)
 
         self.kill_btn = tk.Button(
-            ctrl, text="⛔ Kill", font=FONT_SM_B,
+            ctrl, text="⛔ KILL", font=FONT_SM_B,
             bg=BG3, fg=MUTED, relief="flat", cursor="hand2", bd=0,
             state="disabled", highlightthickness=0,
             activebackground=BORDER, activeforeground=RED,
@@ -5960,6 +5960,7 @@ class App(tk.Tk):
             ("amoled",   "AMOLED",    TEXT),
             ("deepblue", "Deep Blue", "#7a9fda"),
             ("white",    "White",     "#555555"),
+            ("terminal", "Terminal",  "#6f8a78"),
         ]
         for _bg_key, _bg_lbl, _bg_fg in _BG_BTN_DEFS:
             def _make_bg_cmd(k=_bg_key):

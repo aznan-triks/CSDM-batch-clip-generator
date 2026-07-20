@@ -20,8 +20,9 @@ from csdm.static_data import TAG_PRESET_COLORS
 from csdm.config import load_saved_players, save_saved_players
 from csdm.ui_kit import (
     FONT_MONO, FONT_MONO_B, FONT_SM, FONT_SM_B, FONT_DESC,
-    UI_SEC_PADX, UI_SEC_PADY, UI_SEC_GAP,
-    UI_SEC_STRIPE_W, UI_SEC_GLYPH_OPEN, UI_SEC_GLYPH_CLOSED,
+    UI_SEC_PADX, UI_SEC_PADY, UI_SEC_GAP, UI_SEC_HDR_PADY,
+    UI_SEC_STRIPE_W, UI_SEC_GLYPH_OPEN, UI_SEC_GLYPH_CLOSED, UI_LABEL_UPPER,
+    UI_DESC_PREFIX,
     _contrast_fg,
 )
 
@@ -189,7 +190,13 @@ def scombo(parent, var, values, width=15):
     return ttk.Combobox(parent, textvariable=var, values=values, font=FONT_SM, state="readonly", width=width)
 
 def mlabel(parent, text, **kw):
-    """Muted-colour small label for field names and secondary text."""
+    """Muted-colour small label for field names and secondary text.
+
+    Libelles de champ passes en MAJUSCULES (UI_LABEL_UPPER) pour le look HUD.
+    Les chiffres/symboles sont inchanges par .upper() -> compteurs et unites OK.
+    """
+    if UI_LABEL_UPPER and isinstance(text, str):
+        text = text.upper()
     return tk.Label(parent, text=text, font=FONT_SM, fg=_t("MUTED"), bg=_t("BG2"), **kw)
 
 def flabel(parent, text, **kw):
@@ -282,7 +289,12 @@ def _bind_wraplength(lbl):
              if (a, w) in _WRAP_LABELS else None)
 
 def desc_label(parent, text):
-    """Return a muted descriptive Label with automatic wraplength binding."""
+    """Return a muted descriptive Label with automatic wraplength binding.
+
+    Prefixe // facon commentaire de code (UI_DESC_PREFIX), sans double-prefixe.
+    """
+    if isinstance(text, str) and UI_DESC_PREFIX and not text.startswith(UI_DESC_PREFIX):
+        text = UI_DESC_PREFIX + text
     lbl = tk.Label(parent, text=text, font=FONT_DESC, fg=_t("DESC_COLOR"), bg=_t("BG2"),
                    anchor="w", justify="left")
     _bind_wraplength(lbl)
@@ -380,13 +392,13 @@ class Sec(tk.Frame):
         self._arrow = tk.Label(self._hdr, text=UI_SEC_GLYPH_OPEN,
                                font=FONT_SM_B,
                                bg=_t("BG2"), fg=_t("ORANGE"),
-                               padx=UI_SEC_PADX // 2, pady=5)
+                               padx=UI_SEC_PADX // 2, pady=UI_SEC_HDR_PADY)
         self._arrow.pack(side="left")
 
         self._title_lbl = tk.Label(self._hdr, text=title.upper(),
                                    font=FONT_SM_B,
                                    bg=_t("BG2"), fg=_t("ORANGE"),
-                                   anchor="w", pady=5)
+                                   anchor="w", pady=UI_SEC_HDR_PADY)
         self._title_lbl.pack(side="left", fill="x", expand=True)
 
         self._sep = tk.Frame(self._wrapper, height=1, bg=_t("BORDER"))

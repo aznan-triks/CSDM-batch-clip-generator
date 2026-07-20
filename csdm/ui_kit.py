@@ -156,13 +156,16 @@ def apply_ttk_style(root) -> None:
 #  Tous les padx / pady / ipadx / ipady utilises a plusieurs endroits en
 #  derivent. Changer ici -> change partout.
 UI_TAB_PAD    = 10   # marge exterieure du cadre interne d'onglet scrollable
-UI_SEC_PADX   = 14   # marge horizontale du corps de chaque carte Sec
+UI_SEC_PADX   = 10   # marge horizontale du corps de chaque carte Sec (densifie 14->10)
 UI_SEC_PADY   = 8    # marge verticale du corps de chaque carte Sec
+UI_SEC_HDR_PADY = 3  # padding vertical du header Sec (densifie 5->3)
 UI_SEC_GAP    = 4    # ecart vertical entre cartes Sec (les bordures 1px font la grille)
 UI_SEC_STRIPE_W = 1  # largeur de la bande accent a gauche du header Sec (1px = trait de grille)
 UI_SEC_GLYPH_OPEN   = "[-]"  # glyphe header Sec deplie (facon terminal)
 UI_SEC_GLYPH_CLOSED = "[+]"  # glyphe header Sec replie
-UI_ROW_PAD    = 4    # ecart vertical standard entre lignes d'une section
+UI_LABEL_UPPER = True        # libelles de champ (mlabel) en MAJUSCULES (look HUD)
+UI_DESC_PREFIX = "// "       # prefixe des descriptions longues (facon commentaire de code)
+UI_ROW_PAD    = 3    # ecart vertical standard entre lignes d'une section (densifie 4->3)
 UI_BTN_IPADX  = 8    # marge interne horizontale standard des boutons d'action
 UI_BTN_IPADY  = 4    # marge interne verticale standard des boutons d'action
 UI_ENTRY_IPAD = 6    # marge interne des champs de saisie
@@ -176,7 +179,7 @@ UI_TTK_TAB_PADX  = 12   # padding horizontal d'un onglet Notebook
 UI_TTK_TAB_PADY  = 7    # padding vertical d'un onglet Notebook
 UI_TTK_SCROLL_W  = 8    # largeur des scrollbars plates
 UI_TTK_SASH_W    = 4    # largeur de la poignee de separation (sash)
-UI_TTK_TREE_ROWH = 18   # hauteur de ligne du Treeview (picker de demos)
+UI_TTK_TREE_ROWH = 16   # hauteur de ligne du Treeview (picker de demos, densifie 18->16)
 
 # ── Styles partages (mutes en place par le theme) ───────────────────────────
 # kwargs pour cases a cocher / radios plates

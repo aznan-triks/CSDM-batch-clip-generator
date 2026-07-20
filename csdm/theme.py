@@ -21,6 +21,11 @@ _BG_PRESETS = {
     "white":   {"BG": "#f0f0f0", "BG2": "#f8f8f8", "BG3": "#e4e4e4",
                 "BORDER": "#cccccc", "TEXT": "#1a1a1a", "MUTED": "#555555",
                 "DESC_COLOR": "#666666", "LOG_BG": "#fafafa", "_is_light": True},
+    # Look terminal industriel : noir bleute tres sombre, BORDER contraste pour
+    # que la grille 1px se voie, MUTED verdatre. Accent conseille : green/cyan.
+    "terminal":{"BG": "#0a0c10", "BG2": "#0d1015", "BG3": "#12161c",
+                "BORDER": "#2a3038", "TEXT": "#c8d3cc", "MUTED": "#6f8a78",
+                "DESC_COLOR": "#5c7566", "LOG_BG": "#070a0d"},
 }
 
 # Semantic accent colours — accent + darker shade
