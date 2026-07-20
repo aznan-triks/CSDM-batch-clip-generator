@@ -22,7 +22,7 @@ from csdm.ui_kit import (
     FONT_MONO, FONT_MONO_B, FONT_SM, FONT_SM_B, FONT_DESC,
     UI_SEC_PADX, UI_SEC_PADY, UI_SEC_GAP, UI_SEC_HDR_PADY,
     UI_SEC_STRIPE_W, UI_SEC_GLYPH_OPEN, UI_SEC_GLYPH_CLOSED, UI_LABEL_UPPER,
-    UI_DESC_PREFIX,
+    UI_DESC_PREFIX, UI_BENTO_BREAKPOINT, UI_BENTO_GAP,
     _contrast_fg,
 )
 
@@ -172,6 +172,78 @@ class WrapRow(tk.Frame):
         try:
             _WRAP_ROWS.remove(self)
         except ValueError:
+            pass
+
+
+_BENTO_GRIDS: list = []   # all live BentoGrid instances
+
+
+class BentoGrid(tk.Frame):
+    """Conteneur responsive : dispose ses cartes en grille 1 ou 2 colonnes.
+
+    1 colonne sous UI_BENTO_BREAKPOINT px, 2 colonnes au-dessus (colonnes
+    egales via uniform="bento" -> traits de grille alignes). Re-layout debounce
+    sur <Configure> (meme mecanique que WrapRow/ScrollableFrame). Opt-in par
+    onglet : les cartes Sec gardent leur API (.grid() deja proxifie).
+
+    Usage:
+        bento = BentoGrid(parent)
+        bento.pack(fill="both", expand=True)
+        sec = Sec(bento, "TITLE"); bento.add(sec)
+    """
+
+    def __init__(self, parent, breakpoint_px=UI_BENTO_BREAKPOINT, gap=UI_BENTO_GAP, **kw):
+        kw.setdefault("bg", _t("BG"))
+        super().__init__(parent, **kw)
+        self._cards: list = []
+        self._cols = 0          # nb de colonnes courant (0 = pas encore dispose)
+        self._laid = -1         # nb de cartes lors du dernier layout
+        self._bp = breakpoint_px
+        self._gap = gap
+        self._job = None
+        self.bind("<Configure>", self._schedule)
+        self.bind("<Destroy>", self._on_destroy)
+        _BENTO_GRIDS.append(self)
+
+    def add(self, card):
+        """Enregistre une carte (Sec ou Frame). Retourne la carte pour chainage."""
+        self._cards.append(card)
+        self._schedule()
+        return card
+
+    def _schedule(self, _e=None):
+        if self._job:
+            self.after_cancel(self._job)
+        self._job = self.after(16, self._relayout)
+
+    def _relayout(self, *_):
+        self._job = None
+        avail = self.winfo_width()
+        if avail < 10:
+            return
+        cols = 2 if avail >= self._bp else 1
+        if cols == self._cols and self._laid == len(self._cards):
+            return  # ni la largeur ni le nombre de cartes n'ont change
+        self._cols = cols
+        self._laid = len(self._cards)
+        self.columnconfigure(0, weight=1, uniform="bento")
+        self.columnconfigure(1, weight=(1 if cols == 2 else 0),
+                             uniform=("bento" if cols == 2 else ""))
+        for i, card in enumerate(self._cards):
+            r, c = (divmod(i, 2) if cols == 2 else (i, 0))
+            px = (0, self._gap) if (cols == 2 and c == 0) else (0, 0)
+            card.grid(row=r, column=c, sticky="new", padx=px, pady=(0, self._gap))
+
+    def _on_destroy(self, _e=None):
+        try:
+            _BENTO_GRIDS.remove(self)
+        except ValueError:
+            pass
+
+    def apply_theme(self):
+        try:
+            self.configure(bg=_t("BG"))
+        except tk.TclError:
             pass
 
 

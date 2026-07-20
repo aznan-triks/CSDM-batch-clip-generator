@@ -155,7 +155,7 @@ from csdm.widgets import PlayerSearchWidget
 #  csdm/widgets.py. Importes ici sous les memes noms qu'avant. Les registres
 #  sont les MEMES objets que ceux remplis par les widgets — les handlers de App
 #  iterent dessus normalement.
-from csdm.widgets import ScrollableFrame, WrapRow, _SCROLL_FRAMES, _WRAP_ROWS
+from csdm.widgets import ScrollableFrame, WrapRow, BentoGrid, _SCROLL_FRAMES, _WRAP_ROWS
 # ── Carte de section pliable + champ de chemin (Phase 1.2) ──────────────────
 from csdm.widgets import Sec, PathField
 
@@ -5901,7 +5901,7 @@ class App(tk.Tk):
                 return  # skip — fixed-colour widget (e.g. accent preset buttons)
             # Sec and ScrollableFrame have apply_theme() that sets colours via _t()
             # directly — reliable even when colour_map has ambiguous entries.
-            if isinstance(widget, (Sec, ScrollableFrame)):
+            if isinstance(widget, (Sec, ScrollableFrame, BentoGrid)):
                 try:
                     widget.apply_theme()
                 except Exception:
@@ -5935,9 +5935,13 @@ class App(tk.Tk):
 
     def _tab_outils(self, parent):
         p = self._make_tab_scroll(parent)
+        # Bento : sections independantes -> grille 2 colonnes quand la place le
+        # permet (onglet le moins risque, aucun etat croise). Opt-in ici.
+        bento = BentoGrid(p)
+        bento.pack(fill="both", expand=True)
 
-        sec = Sec(p, "PATHS")
-        sec.pack(fill="x")
+        sec = Sec(bento, "PATHS")
+        bento.add(sec)
         PathField(sec, "CSDM Executable", "csdm.CMD or csdm.exe",
                   self.v["csdm_exe"], "file").pack(fill="x", pady=4)
         _pf_cfg = PathField(sec, "CS2 cfg folder",
@@ -5969,8 +5973,8 @@ class App(tk.Tk):
         _sub_cb.pack(anchor="w", pady=(4, 0))
         add_tip(_sub_cb, "Creates a folder per demo in the raw clips folder.")
 
-        sec = Sec(p, "UI THEME")
-        sec.pack(fill="x")
+        sec = Sec(bento, "UI THEME")
+        bento.add(sec)
 
         # ── Background row ────────────────────────────────────────────────────
         bg_row = tk.Frame(sec, bg=BG2)
@@ -6041,8 +6045,8 @@ class App(tk.Tk):
         self._theme_preview_lbl.pack(side="left", padx=(4, 0))
         add_tip(self._theme_preview_lbl, "Current accent colour preview.")
 
-        sec = Sec(p, "UI LAYOUT")
-        sec.pack(fill="x")
+        sec = Sec(bento, "UI LAYOUT")
+        bento.add(sec)
         row = tk.Frame(sec, bg=BG2)
         row.pack(fill="x", pady=(6, 0))
         mlabel(row, "Window").pack(side="left")
@@ -6070,8 +6074,8 @@ class App(tk.Tk):
         _rem.pack(side="left", padx=(12, 0))
         add_tip(_rem, "When enabled, manual window resize and splitter moves are saved automatically.")
 
-        sec = Sec(p, "POSTGRESQL CONNECTION")
-        sec.pack(fill="x")
+        sec = Sec(bento, "POSTGRESQL CONNECTION")
+        bento.add(sec)
         pg = tk.Frame(sec, bg=BG2)
         pg.pack(fill="x", pady=(6, 0))
         for i in range(5):
@@ -6093,8 +6097,8 @@ class App(tk.Tk):
         tk.Label(br, textvariable=self.db_status, font=FONT_SM_B, bg=BG2,
                  fg=YELLOW).pack(side="left", padx=(12, 0))
 
-        sec_perf = Sec(p, "PERFORMANCE")
-        sec_perf.pack(fill="x")
+        sec_perf = Sec(bento, "PERFORMANCE")
+        bento.add(sec_perf)
 
         dp2_row = tk.Frame(sec_perf, bg=BG2)
         dp2_row.pack(fill="x", pady=(6, 0))
@@ -6118,8 +6122,8 @@ class App(tk.Tk):
                 "Default auto-scales to your CPU count (capped at 8).\n"
                 "Higher = faster pre-parse on multi-core CPUs.  Set to 1 to disable.")
 
-        sec_inj = Sec(p, "INJECTION PREVIEW")
-        sec_inj.pack(fill="x")
+        sec_inj = Sec(bento, "INJECTION PREVIEW")
+        bento.add(sec_inj)
         desc_label(sec_inj,
                    "Live preview of args injected into CS2 for the current config. "
                    "Updates automatically when settings change.").pack(
@@ -6140,8 +6144,8 @@ class App(tk.Tk):
             anchor="w", pady=(6, 0), ipady=3, ipadx=6)
         self.after(200, self._refresh_injection_preview)
 
-        sec_pre = Sec(p, "SAVE A PRESET")
-        sec_pre.pack(fill="x")
+        sec_pre = Sec(bento, "SAVE A PRESET")
+        bento.add(sec_pre)
 
         self._preset_name_var = tk.StringVar()
         nr = tk.Frame(sec_pre, bg=BG2)
@@ -6198,8 +6202,8 @@ class App(tk.Tk):
                   activebackground=ORANGE2, command=self._save_preset).pack(
             anchor="w", pady=(10, 0), ipady=6, ipadx=8)
 
-        sec_load = Sec(p, "LOAD / DELETE")
-        sec_load.pack(fill="x")
+        sec_load = Sec(bento, "LOAD / DELETE")
+        bento.add(sec_load)
         self._preset_list_frame = tk.Frame(sec_load, bg=BG2)
         self._preset_list_frame.pack(fill="x", pady=(6, 0))
         self._refresh_preset_list()
