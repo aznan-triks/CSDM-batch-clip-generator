@@ -86,7 +86,8 @@ def _apply_theme_globals(bg_name: str, accent: str):
 #  Extraits dans csdm/ui_kit.py. _CHK_KW/_BTN_KW sont les MEMES objets dict
 #  que ceux mis a jour en place par _apply_theme_globals ci-dessus.
 from csdm.ui_kit import (
-    FONT_MONO, FONT_SM, FONT_DESC,
+    FONT_MONO, FONT_MONO_B, FONT_SM, FONT_SM_B, FONT_DESC, FONT_TITLE_B,
+    init_fonts, apply_ttk_style,
     UI_TAB_PAD, UI_SEC_PADX, UI_SEC_PADY, UI_SEC_GAP, UI_ROW_PAD,
     UI_BTN_IPADX, UI_BTN_IPADY, UI_ENTRY_IPAD,
     UI_PANE_LEFT_MIN, UI_PANE_RIGHT_MIN,
@@ -173,6 +174,8 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.cfg = load_config()
+        # Polices nommees Tk : creees maintenant (root pret), AVANT tout widget.
+        init_fonts(self, self.cfg.get("ui_font_family", "auto"))
         # Apply theme from config before building any widgets
         _apply_theme_globals(
             self.cfg.get("theme_bg", "dark"),
@@ -186,11 +189,8 @@ class App(tk.Tk):
         _h = max(600, min(2160, _h))
         self.geometry(f"{_w}x{_h}")
         self.minsize(1000, 600)
-        self.option_add('*TCombobox*Listbox.background', BG3)
-        self.option_add('*TCombobox*Listbox.foreground', TEXT)
-        self.option_add('*TCombobox*Listbox.selectBackground', ORANGE)
-        self.option_add('*TCombobox*Listbox.selectForeground', "white")
-        self.option_add('*TCombobox*Listbox.font', FONT_SM)
+        # Options TCombobox Listbox : centralisees dans apply_ttk_style (appele
+        # au debut de _build_ui, avant l'ouverture de toute liste deroulante).
 
         self.presets = load_presets()
         self._player_names = {}
@@ -905,7 +905,7 @@ class App(tk.Tk):
             hdr.pack(fill="x")
             _icon = WEAPON_ICONS.get(cat, "")
             _cat_cb = tk.Checkbutton(hdr, text=f"{_icon} {cat}  ({len(cat_weapons)})", variable=cat_var,
-                           **{**_CHK_KW, "font": ("Consolas", 9, "bold"), "fg": ORANGE},
+                           **{**_CHK_KW, "font": FONT_SM_B, "fg": ORANGE},
                            command=lambda c=cat: self._toggle_category(c))
             _cat_cb.pack(side="left")
 
@@ -1327,6 +1327,9 @@ class App(tk.Tk):
     #  UI
     # ═══════════════════════════════════════════════════
     def _build_ui(self):
+        # Style ttk plat (clam) — source unique, avant tout widget ttk.
+        apply_ttk_style(self)
+
         # ── Global MouseWheel dispatcher ──────────────────────────────────────
         # One handler for all tabs. Scrolls the ScrollableFrame under the cursor;
         # yields to Text/Listbox/Treeview which handle their own wheel events.
@@ -1383,9 +1386,9 @@ class App(tk.Tk):
         inner_hdr = tk.Frame(hdr, bg=BG2)
         inner_hdr.pack(side="left", fill="x", expand=True, padx=(10, 10), pady=7)
 
-        tk.Label(inner_hdr, text="CSDM", font=("Consolas", 13, "bold"),
+        tk.Label(inner_hdr, text="CSDM", font=FONT_TITLE_B,
                  bg=BG2, fg=TEXT).pack(side="left")
-        tk.Label(inner_hdr, text=f" Batch {APP_VERSION}", font=("Consolas", 13, "bold"),
+        tk.Label(inner_hdr, text=f" Batch {APP_VERSION}", font=FONT_TITLE_B,
                  bg=BG2, fg=ORANGE).pack(side="left")
 
         self._hdr_player_lbl = tk.Label(inner_hdr, text="", font=FONT_SM, bg=BG2, fg=MUTED)
@@ -1412,7 +1415,7 @@ class App(tk.Tk):
                   command=self._quick_preset_save).pack(side="left", padx=(4, 0))
         tk.Label(db_area, text="DB ", font=FONT_DESC, bg=BG2, fg=MUTED).pack(side="left")
         self.db_status_lbl = tk.Label(db_area, textvariable=self.db_status,
-                                      font=("Consolas", 9, "bold"), bg=BG2, fg=YELLOW)
+                                      font=FONT_SM_B, bg=BG2, fg=YELLOW)
         self.db_status_lbl.pack(side="left")
         tk.Button(db_area, text=" ↺ ", font=FONT_DESC, bg=BG2, fg=MUTED,
                   relief="flat", bd=0, cursor="hand2", highlightthickness=0,
@@ -1420,21 +1423,6 @@ class App(tk.Tk):
                   command=self._connect_and_load).pack(side="left", padx=(4, 0))
 
         _sep(self, pady=0)
-
-        s = ttk.Style()
-        s.theme_use("default")
-        s.configure("TNotebook", background=BG, borderwidth=0, tabmargins=0)
-        s.configure("TNotebook.Tab", background=BG3, foreground=MUTED,
-                    font=("Consolas", 9, "bold"), padding=[12, 7], borderwidth=0)
-        s.map("TNotebook.Tab", background=[("selected", BG2)], foreground=[("selected", ORANGE)])
-        s.configure("TCombobox", fieldbackground=BG3, background=BG3, foreground=TEXT,
-                    arrowcolor=ORANGE, bordercolor=BORDER, lightcolor=BORDER, darkcolor=BORDER,
-                    selectbackground=ORANGE, selectforeground="white")
-        s.map("TCombobox", fieldbackground=[("readonly", BG3), ("disabled", BG)],
-              foreground=[("readonly", TEXT), ("disabled", MUTED)],
-              background=[("readonly", BG3)], arrowcolor=[("readonly", ORANGE)])
-        s.configure("TPanedwindow", background=BORDER)
-        s.configure("Vertical.TPanedwindow", background=BORDER)
 
         # Gauche : notebook config (poids 5)
         # Right: run bar + vertical PanedWindow (notebook | log)
@@ -1489,7 +1477,7 @@ class App(tk.Tk):
 
         # Primary action buttons — RUN gets accent colour, others are muted
         self.run_btn = tk.Button(
-            ctrl, text="▶  RUN", font=("Consolas", 10, "bold"),
+            ctrl, text="▶  RUN", font=FONT_MONO_B,
             bg=ORANGE, fg="white", relief="flat", cursor="hand2", bd=0,
             highlightthickness=0, activebackground=ORANGE2, activeforeground="white",
             command=self._run)
@@ -1498,7 +1486,7 @@ class App(tk.Tk):
         tk.Frame(ctrl, width=1, bg=BORDER).pack(side="left", fill="y", padx=6)
 
         tk.Button(
-            ctrl, text="🔍 Preview", font=("Consolas", 9, "bold"), bg=BG3, fg=BLUE,
+            ctrl, text="🔍 Preview", font=FONT_SM_B, bg=BG3, fg=BLUE,
             relief="flat", cursor="hand2", bd=0, highlightthickness=0,
             activebackground=BORDER, activeforeground=BLUE,
             command=self._dry_run).pack(side="left", ipady=5, ipadx=8)
@@ -1506,7 +1494,7 @@ class App(tk.Tk):
         tk.Frame(ctrl, width=1, bg=BORDER).pack(side="left", fill="y", padx=6)
 
         self.stop_btn = tk.Button(
-            ctrl, text="⏸ Stop", font=("Consolas", 9, "bold"),
+            ctrl, text="⏸ Stop", font=FONT_SM_B,
             bg=BG3, fg=MUTED, relief="flat", cursor="hand2", bd=0,
             state="disabled", highlightthickness=0,
             activebackground=BORDER, activeforeground=RED,
@@ -1514,7 +1502,7 @@ class App(tk.Tk):
         self.stop_btn.pack(side="left", ipady=5, ipadx=8)
 
         self.kill_btn = tk.Button(
-            ctrl, text="⛔ Kill", font=("Consolas", 9, "bold"),
+            ctrl, text="⛔ Kill", font=FONT_SM_B,
             bg=BG3, fg=MUTED, relief="flat", cursor="hand2", bd=0,
             state="disabled", highlightthickness=0,
             activebackground=BORDER, activeforeground=RED,
@@ -1572,7 +1560,7 @@ class App(tk.Tk):
         inner_top = tk.Frame(top, bg=BG2)
         inner_top.pack(side="left", fill="x", expand=True, padx=(8, 8), pady=4)
 
-        tk.Label(inner_top, text="LOG", font=("Consolas", 9, "bold"),
+        tk.Label(inner_top, text="LOG", font=FONT_SM_B,
                  fg=ORANGE, bg=BG2).pack(side="left")
 
         self._log_filter = tk.StringVar(value="All")
@@ -1642,7 +1630,7 @@ class App(tk.Tk):
         log_frame.rowconfigure(0, weight=1)
         log_frame.columnconfigure(0, weight=1)
 
-        self.log = tk.Text(log_frame, font=("Consolas", 9), bg=_t("LOG_BG"), fg=TEXT,
+        self.log = tk.Text(log_frame, font=FONT_SM, bg=_t("LOG_BG"), fg=TEXT,
                            relief="flat", bd=0, insertbackground=ORANGE,
                            highlightthickness=0, state="disabled", wrap="word",
                            selectbackground=ORANGE2, selectforeground="white")
@@ -1925,17 +1913,7 @@ class App(tk.Tk):
         # Treeview: columns = checkbox-state (not real col) + date + name
         tree_frame = tk.Frame(sec, bg=BG2)
         tree_frame.pack(fill="x", pady=(4, 0))
-        style = ttk.Style()
-        style.configure("DemoPicker.Treeview",
-                        background=BG3, fieldbackground=BG3,
-                        foreground=TEXT, rowheight=18,
-                        font=FONT_SM)
-        style.configure("DemoPicker.Treeview.Heading",
-                        background=BG2, foreground=MUTED,
-                        font=FONT_DESC, relief="flat")
-        style.map("DemoPicker.Treeview",
-                  background=[("selected", BORDER)],
-                  foreground=[("selected", ORANGE)])
+        # Style "DemoPicker.Treeview" defini dans apply_ttk_style (source unique).
         self._demo_tree = ttk.Treeview(
             tree_frame, style="DemoPicker.Treeview",
             columns=("sel", "date", "map", "name"), show="headings", height=7,
@@ -1987,7 +1965,7 @@ class App(tk.Tk):
             tw.attributes("-topmost", True)
             tw.wm_geometry(f"+{event.x_root + 12}+{event.y_root + 12}")
             tk.Label(tw, text=f"⚠ {brk}\n{tip}",
-                     font=("Consolas", 8), fg=TEXT, bg="#2a2a2a",
+                     font=FONT_DESC, fg=TEXT, bg="#2a2a2a",
                      relief="flat", bd=0, padx=8, pady=4,
                      justify="left").pack()
             tw._iid = iid
@@ -2061,7 +2039,7 @@ class App(tk.Tk):
 
         def _make_event_toggle(parent, label, var, tip):
             """Styled toggle button for event types."""
-            btn = tk.Button(parent, text=f"  {label}  ", font=("Consolas", 9, "bold"),
+            btn = tk.Button(parent, text=f"  {label}  ", font=FONT_SM_B,
                             relief="flat", bd=0, cursor="hand2", highlightthickness=0,
                             padx=6, pady=3)
             def _refresh(*_):
@@ -5194,7 +5172,7 @@ class App(tk.Tk):
                 tk.Button(
                     row,
                     text=f"{prefix}{tname}",
-                    font=("Consolas", 9, "bold" if active else "normal"),
+                    font=FONT_SM_B if active else FONT_SM,
                     bg=bg_c if active else BG3,
                     fg=fg_c if active else TEXT,
                     relief="flat", cursor="hand2", bd=0, anchor="w",
@@ -5817,35 +5795,8 @@ class App(tk.Tk):
         self._auto_save()
 
     def _reapply_ttk_styles(self):
-        """Reapply ttk styles with current theme colours."""
-        s = ttk.Style()
-        s.configure("TNotebook", background=BG, borderwidth=0, tabmargins=0)
-        s.configure("TNotebook.Tab", background=BG3, foreground=MUTED,
-                    font=("Consolas", 9, "bold"), padding=[12, 7], borderwidth=0)
-        s.map("TNotebook.Tab",
-              background=[("selected", BG2)],
-              foreground=[("selected", ORANGE)])
-        s.configure("TCombobox",
-                    fieldbackground=BG3, background=BG3, foreground=TEXT,
-                    arrowcolor=ORANGE, bordercolor=BORDER,
-                    lightcolor=BORDER, darkcolor=BORDER,
-                    selectbackground=ORANGE, selectforeground="white")
-        s.map("TCombobox",
-              fieldbackground=[("readonly", BG3), ("disabled", BG)],
-              foreground=[("readonly", TEXT), ("disabled", MUTED)],
-              background=[("readonly", BG3)],
-              arrowcolor=[("readonly", ORANGE)])
-        s.configure("TPanedwindow", background=BORDER)
-        s.configure("Vertical.TPanedwindow", background=BORDER)
-        s.configure("DemoPicker.Treeview",
-                    background=BG3, fieldbackground=BG3,
-                    foreground=TEXT, rowheight=18, font=FONT_SM)
-        s.configure("DemoPicker.Treeview.Heading",
-                    background=BG2, foreground=MUTED,
-                    font=FONT_DESC, relief="flat")
-        s.map("DemoPicker.Treeview",
-              background=[("selected", BORDER)],
-              foreground=[("selected", ORANGE)])
+        """Reapply ttk styles with current theme colours (source unique: ui_kit)."""
+        apply_ttk_style(self)
         # Re-configure log tags
         try:
             for tag, c in [("ok", GREEN), ("err", RED), ("info", ORANGE),
@@ -6111,7 +6062,7 @@ class App(tk.Tk):
         tk.Button(br, text="  Test & Reload", font=FONT_SM, bg=ORANGE, fg="white",
                   relief="flat", cursor="hand2", bd=0, activebackground=ORANGE2,
                   command=self._connect_and_load).pack(side="left", ipady=6, ipadx=8)
-        tk.Label(br, textvariable=self.db_status, font=("Consolas", 9, "bold"), bg=BG2,
+        tk.Label(br, textvariable=self.db_status, font=FONT_SM_B, bg=BG2,
                  fg=YELLOW).pack(side="left", padx=(12, 0))
 
         sec_perf = Sec(p, "PERFORMANCE")
@@ -6386,7 +6337,7 @@ class App(tk.Tk):
         hdr.pack(fill="x")
         mlabel(hdr, label).pack(side="left")
         val_lbl = tk.Label(hdr, text=f"{var.get()}s",
-                           font=("Consolas", 9, "bold"), fg=ORANGE, bg=BG2,
+                           font=FONT_SM_B, fg=ORANGE, bg=BG2,
                            width=3, anchor="e")
         val_lbl.pack(side="right")
         tk.Scale(f, from_=mn, to=mx, variable=var, orient="horizontal",

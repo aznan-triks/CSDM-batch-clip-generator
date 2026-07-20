@@ -19,7 +19,7 @@ from csdm.theme import _t
 from csdm.static_data import TAG_PRESET_COLORS
 from csdm.config import load_saved_players, save_saved_players
 from csdm.ui_kit import (
-    FONT_MONO, FONT_SM, FONT_DESC,
+    FONT_MONO, FONT_MONO_B, FONT_SM, FONT_SM_B, FONT_DESC,
     UI_SEC_PADX, UI_SEC_PADY, UI_SEC_GAP,
     _contrast_fg,
 )
@@ -197,7 +197,7 @@ def flabel(parent, text, **kw):
 
 def slabel(parent, text, **kw):
     """Subcategory section header label — accent-coloured to visually separate sections."""
-    return tk.Label(parent, text=text, font=(FONT_SM[0], FONT_SM[1], "bold"),
+    return tk.Label(parent, text=text, font=FONT_SM_B,
                     fg=_t("ORANGE"), bg=_t("BG2"), **kw)
 
 def _safe_trace_remove(var, mode, tid):
@@ -321,7 +321,7 @@ class Tooltip:
         tw.wm_overrideredirect(True)
         tw.wm_geometry(f"+{x}+{y}")
         tw.attributes("-topmost", True)
-        tk.Label(tw, text=self._text, font=("Consolas", 8), fg=_t("TEXT"),
+        tk.Label(tw, text=self._text, font=FONT_DESC, fg=_t("TEXT"),
                  bg="#2a2a2a", relief="flat", bd=0,
                  padx=8, pady=4, wraplength=340, justify="left").pack()
 
@@ -372,13 +372,13 @@ class Sec(tk.Frame):
         self._stripe.pack(side="left", fill="y")
 
         self._arrow = tk.Label(self._hdr, text="▾",
-                               font=("Consolas", 9, "bold"),
+                               font=FONT_SM_B,
                                bg=_t("BG2"), fg=_t("ORANGE"),
                                padx=UI_SEC_PADX // 2, pady=5)
         self._arrow.pack(side="left")
 
         self._title_lbl = tk.Label(self._hdr, text=title.upper(),
-                                   font=("Consolas", 9, "bold"),
+                                   font=FONT_SM_B,
                                    bg=_t("BG2"), fg=_t("ORANGE"),
                                    anchor="w", pady=5)
         self._title_lbl.pack(side="left", fill="x", expand=True)
@@ -502,7 +502,7 @@ class CalendarPopup(tk.Toplevel):
         nav.pack(fill="x", pady=(0, 6))
         tk.Button(nav, text="◀", font=FONT_DESC, bg=_t("BG3"), fg=_t("TEXT"), relief="flat",
                   bd=0, cursor="hand2", width=3, command=self._prev).pack(side="left")
-        self._title = tk.Label(nav, text="", font=("Consolas", 9, "bold"), bg=_t("BG2"), fg=_t("ORANGE"))
+        self._title = tk.Label(nav, text="", font=FONT_SM_B, bg=_t("BG2"), fg=_t("ORANGE"))
         self._title.pack(side="left", fill="x", expand=True)
         tk.Button(nav, text="▶", font=FONT_DESC, bg=_t("BG3"), fg=_t("TEXT"), relief="flat",
                   bd=0, cursor="hand2", width=3, command=self._next).pack(side="right")
@@ -590,7 +590,7 @@ class ColorPickerDialog(tk.Toplevel):
         pr = tk.Frame(self, bg=_t("BG2"))
         pr.pack(fill="x", padx=12)
         mlabel(pr, "Preview:").pack(side="left")
-        self._preview = tk.Label(pr, text="  TAG  ", font=("Consolas", 10, "bold"),
+        self._preview = tk.Label(pr, text="  TAG  ", font=FONT_MONO_B,
                                  bg=initial_color, fg=_contrast_fg(initial_color), padx=12, pady=4)
         self._preview.pack(side="left", padx=(8, 0))
         self._hex_var = tk.StringVar(value=initial_color)
@@ -772,7 +772,7 @@ class PlayerSearchWidget(tk.Frame):
         sp_frame = tk.LabelFrame(
             self,
             text="  ★ REGISTERED ACCOUNTS — click to enable/disable  ",
-            bg=_t("BG2"), fg=_t("ORANGE"), font=("Consolas", 9, "bold"),
+            bg=_t("BG2"), fg=_t("ORANGE"), font=FONT_SM_B,
             relief="flat", bd=1, highlightthickness=1,
             highlightbackground=_t("BORDER"), padx=8, pady=6)
         sp_frame.pack(fill="x", pady=(0, 6))
@@ -933,7 +933,7 @@ class PlayerSearchWidget(tk.Frame):
             tk.Button(
                 row,
                 text=f"{prefix}{p['name']}  ({p['steam_id']})",
-                font=("Consolas", 9, "bold" if active else "normal"),
+                font=FONT_SM_B if active else FONT_SM,
                 bg=row_bg, fg=_t("ORANGE") if active else _t("TEXT"),
                 relief="flat", cursor="hand2", bd=0, anchor="w",
                 activebackground=_t("BG3"), activeforeground=_t("ORANGE"),

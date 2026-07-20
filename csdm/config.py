@@ -37,6 +37,7 @@ DEFAULT_CONFIG = {
     "ui_remember_layout": True,
     "theme_bg": "dark",      # background preset: dark | amoled | deepblue | white
     "theme_accent": "green", # accent preset or custom hex: green | blue | orange | purple | red | cyan | pink | yellow | #rrggbb
+    "ui_font_family": "auto", # "auto" = premiere police dispo de UI_FONT_STACK ; ou nom force (ex: "JetBrains Mono")
     "steam_id": "", "player_name": "", "player_name_override": "",
     "events": ["Kills"], "weapons": [],
     "date_from": "", "date_to": "",
