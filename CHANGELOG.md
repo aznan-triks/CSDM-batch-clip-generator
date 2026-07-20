@@ -9,6 +9,39 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v207]
+
+### Added / Changed: refonte visuelle « terminal / HUD »
+
+**What changed:** L'interface a un nouveau look plus dense, façon terminal industriel : grille à traits fins, coins carrés, tout en police à chasse fixe, libellés en majuscules. Aucune fonctionnalité n'a bougé — c'est purement l'apparence.
+
+**Police :**
+- L'appli choisit automatiquement la plus belle police à chasse fixe installée (JetBrains Mono → Fira Code → Cascadia Mono → Consolas). Un réglage `ui_font_family` permet d'en forcer une.
+- Techniquement : `FONT_MONO/SM/DESC` sont maintenant des polices Tk *nommées* construites par `init_fonts()` ; une trentaine de tailles écrites en dur ont été centralisées. Un piège de ramasse-miettes qui supprimait les polices nommées a été corrigé (références conservées dans `_FONTS`).
+
+**Fin des coins arrondis :**
+- Onglets, menus déroulants, barres de défilement et liste des démos étaient dessinés par Windows avec des coins arrondis. Ils sont désormais plats et carrés.
+- `apply_ttk_style()` (thème `clam`) centralise tout le style ttk en un seul endroit, appelé au démarrage et à chaque changement de thème — remplace deux blocs dupliqués.
+
+**Grille & bordures :**
+- Chaque carte de section a un cadre fin complet (au lieu d'un simple trait sous le titre) et se lit comme une cellule de grille. Barre d'accent 3→1px, flèches `▾/▸` → `[-]/[+]`.
+- La barre du bouton RUN et la console sont encadrées d'un trait fin.
+- Nouveau conteneur `BentoGrid` : l'onglet Réglages passe en 2 colonnes quand la fenêtre est assez large (au-delà de 720px de panneau ; sinon 1 colonne — donc rien ne change à taille normale). Video et Capture restent en 1 colonne.
+
+**Typographie & densité :**
+- Libellés de champ, onglets (CAPTURE/TAGS/VIDEO/SETTINGS) et boutons (RUN/PREVIEW/STOP/KILL) en majuscules. Marges et espacements resserrés. Descriptions préfixées `// `.
+- Nouveau thème de fond « Terminal » (noir bleuté) à côté de Dark / AMOLED / Deep Blue / White.
+
+**Éléments HUD :**
+- En-tête en segments : `[DB:OK] 12P·5T`, `[PLAYER:NOM]`, `[v207]`. Compteurs de logs `[E:2] [W:5]`. Progression du batch en barre de blocs `▰▰▰▱▱ 12/17`.
+- Barre de titre de la fenêtre sombre sous Windows (suit le thème ; silencieux ailleurs).
+
+**Non fait :** les boutons « touches de terminal » (T3.3) — le dictionnaire de style censé les alimenter (`_BTN_KW`) n'était en réalité branché sur aucun widget, donc sans effet.
+
+**Tests :** 84 → 86, tous verts (nouveau helper `progress_bar` couvert). Nouvelles constantes de style dans `csdm/ui_kit.py`, preset `terminal` dans `csdm/theme.py`.
+
+---
+
 ## [v206]
 
 ### Changed: code cleanup and refactor pass (Phase 1.3 + 2.1)
