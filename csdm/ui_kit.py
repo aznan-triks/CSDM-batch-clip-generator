@@ -158,7 +158,10 @@ def apply_ttk_style(root) -> None:
 UI_TAB_PAD    = 10   # marge exterieure du cadre interne d'onglet scrollable
 UI_SEC_PADX   = 14   # marge horizontale du corps de chaque carte Sec
 UI_SEC_PADY   = 8    # marge verticale du corps de chaque carte Sec
-UI_SEC_GAP    = 6    # ecart vertical entre cartes Sec consecutives
+UI_SEC_GAP    = 4    # ecart vertical entre cartes Sec (les bordures 1px font la grille)
+UI_SEC_STRIPE_W = 1  # largeur de la bande accent a gauche du header Sec (1px = trait de grille)
+UI_SEC_GLYPH_OPEN   = "[-]"  # glyphe header Sec deplie (facon terminal)
+UI_SEC_GLYPH_CLOSED = "[+]"  # glyphe header Sec replie
 UI_ROW_PAD    = 4    # ecart vertical standard entre lignes d'une section
 UI_BTN_IPADX  = 8    # marge interne horizontale standard des boutons d'action
 UI_BTN_IPADY  = 4    # marge interne verticale standard des boutons d'action

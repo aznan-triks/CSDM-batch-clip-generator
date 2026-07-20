@@ -21,6 +21,7 @@ from csdm.config import load_saved_players, save_saved_players
 from csdm.ui_kit import (
     FONT_MONO, FONT_MONO_B, FONT_SM, FONT_SM_B, FONT_DESC,
     UI_SEC_PADX, UI_SEC_PADY, UI_SEC_GAP,
+    UI_SEC_STRIPE_W, UI_SEC_GLYPH_OPEN, UI_SEC_GLYPH_CLOSED,
     _contrast_fg,
 )
 
@@ -361,17 +362,22 @@ class Sec(tk.Frame):
     """
 
     def __init__(self, parent, title, collapsed=False, **kw):
-        # _wrapper holds the header + this body frame
-        self._wrapper = tk.Frame(parent, bg=_t("BG"), bd=0)
+        # _wrapper holds the header + this body frame. Bordure complete 1px
+        # (highlightthickness, sans bd -> aucun decalage de layout) : la carte
+        # se lit comme une cellule de grille.
+        self._wrapper = tk.Frame(parent, bg=_t("BG"), bd=0,
+                                 highlightthickness=1,
+                                 highlightbackground=_t("BORDER"),
+                                 highlightcolor=_t("BORDER"))
 
         # ── Header ────────────────────────────────────────────────────────────
         self._hdr = tk.Frame(self._wrapper, bg=_t("BG2"), cursor="hand2")
         self._hdr.pack(fill="x")
 
-        self._stripe = tk.Frame(self._hdr, width=3, bg=_t("ORANGE"))
+        self._stripe = tk.Frame(self._hdr, width=UI_SEC_STRIPE_W, bg=_t("ORANGE"))
         self._stripe.pack(side="left", fill="y")
 
-        self._arrow = tk.Label(self._hdr, text="▾",
+        self._arrow = tk.Label(self._hdr, text=UI_SEC_GLYPH_OPEN,
                                font=FONT_SM_B,
                                bg=_t("BG2"), fg=_t("ORANGE"),
                                padx=UI_SEC_PADX // 2, pady=5)
@@ -431,20 +437,21 @@ class Sec(tk.Frame):
 
     def _collapse_now(self):
         self._open = False
-        self._arrow.config(text="▸")
+        self._arrow.config(text=UI_SEC_GLYPH_CLOSED)
         self._sep.pack_forget()
         tk.Frame.pack_forget(self)
 
     def _expand_now(self):
         self._open = True
-        self._arrow.config(text="▾")
+        self._arrow.config(text=UI_SEC_GLYPH_OPEN)
         self._sep.pack(fill="x")
         tk.Frame.pack(self, fill="x")
 
     # ── Theme update ──────────────────────────────────────────────────────────
 
     def apply_theme(self):
-        try: self._wrapper.config(bg=_t("BG"))
+        try: self._wrapper.config(bg=_t("BG"), highlightbackground=_t("BORDER"),
+                                  highlightcolor=_t("BORDER"))
         except tk.TclError: pass
         try: self._hdr.config(bg=_t("BG2"))
         except tk.TclError: pass

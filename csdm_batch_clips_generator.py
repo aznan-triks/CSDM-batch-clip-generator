@@ -1466,11 +1466,14 @@ class App(tk.Tk):
         right_frame.columnconfigure(0, weight=1)
 
         # ── Run bar ───────────────────────────────────────────────────────────
-        run_bar = tk.Frame(right_frame, bg=BG2)
+        # Cadre 1px comme les cartes Sec (cellule de grille).
+        run_bar = tk.Frame(right_frame, bg=BG2,
+                           highlightthickness=1, highlightbackground=BORDER,
+                           highlightcolor=BORDER)
         run_bar.grid(row=0, column=0, sticky="ew")
 
         # Top accent line on run bar
-        tk.Frame(run_bar, height=2, bg=ORANGE).pack(fill="x")
+        tk.Frame(run_bar, height=1, bg=ORANGE).pack(fill="x")
 
         ctrl = tk.Frame(run_bar, bg=BG2)
         ctrl.pack(fill="x", padx=10, pady=(6, 4))
@@ -1625,7 +1628,10 @@ class App(tk.Tk):
         _export_btn.config(command=_show_export_menu)
         _btn("🗑 Clear",          self._clear_log, fg=RED).pack(side="right", padx=(0, 8), pady=3, ipady=2)
 
-        log_frame = tk.Frame(parent, bg=BG)
+        # Cadre 1px autour de la console (coherence avec les cellules Sec).
+        log_frame = tk.Frame(parent, bg=BG,
+                             highlightthickness=1, highlightbackground=BORDER,
+                             highlightcolor=BORDER)
         log_frame.grid(row=2, column=0, sticky="nsew")
         log_frame.rowconfigure(0, weight=1)
         log_frame.columnconfigure(0, weight=1)
