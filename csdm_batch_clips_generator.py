@@ -1612,21 +1612,21 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         log_frame.rowconfigure(0, weight=1)
         log_frame.columnconfigure(0, weight=1)
 
-        self.log = tk.Text(log_frame, font=FONT_SM, bg=_t("LOG_BG"), fg=TEXT,
+        self.log_widget = tk.Text(log_frame, font=FONT_SM, bg=_t("LOG_BG"), fg=TEXT,
                            relief="flat", bd=0, insertbackground=ORANGE,
                            highlightthickness=0, state="disabled", wrap="word",
                            selectbackground=ORANGE2, selectforeground="white")
-        self.log.grid(row=0, column=0, sticky="nsew")
-        sb = ttk.Scrollbar(log_frame, orient="vertical", command=self.log.yview)
+        self.log_widget.grid(row=0, column=0, sticky="nsew")
+        sb = ttk.Scrollbar(log_frame, orient="vertical", command=self.log_widget.yview)
         sb.grid(row=0, column=1, sticky="ns")
-        self.log.configure(yscrollcommand=sb.set)
+        self.log_widget.configure(yscrollcommand=sb.set)
 
         for tag, c in [("ok", GREEN), ("err", RED), ("info", ORANGE), ("dim", MUTED),
                         ("warn", YELLOW), ("blue", BLUE)]:
-            self.log.tag_configure(tag, foreground=c)
-        self.log.tag_configure("ts", foreground=_t("MUTED"))
+            self.log_widget.tag_configure(tag, foreground=c)
+        self.log_widget.tag_configure("ts", foreground=_t("MUTED"))
 
-        self.log.bind("<Button-3>", self._log_right_click)
+        self.log_widget.bind("<Button-3>", self._log_right_click)
 
         self._search_bar = tk.Frame(parent, bg=BG2)
         self._search_bar.grid(row=3, column=0, sticky="ew")
@@ -1653,15 +1653,15 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
                   bd=0, cursor="hand2", command=self._log_search_close).pack(side="left", padx=(6, 0))
         self._search_var.trace_add("write", lambda *_: self._log_search_highlight())
         self._search_idx = 0
-        self.log.tag_configure("search_hi",  background=ORANGE2, foreground="white")
-        self.log.tag_configure("search_cur", background=ORANGE,  foreground="white")
-        self.log.tag_configure("badge_kill",   foreground=RED)
-        self.log.tag_configure("badge_warn",   foreground=YELLOW)
-        self.log.tag_configure("badge_safe",   foreground=GREEN)
-        self.log.tag_configure("badge_filter", foreground=BLUE)
+        self.log_widget.tag_configure("search_hi",  background=ORANGE2, foreground="white")
+        self.log_widget.tag_configure("search_cur", background=ORANGE,  foreground="white")
+        self.log_widget.tag_configure("badge_kill",   foreground=RED)
+        self.log_widget.tag_configure("badge_warn",   foreground=YELLOW)
+        self.log_widget.tag_configure("badge_safe",   foreground=GREEN)
+        self.log_widget.tag_configure("badge_filter", foreground=BLUE)
 
     def _log_get_text(self):
-        return self.log.get("1.0", "end-1c")
+        return self.log_widget.get("1.0", "end-1c")
 
     def _log_copy_all(self):
         txt = self._log_get_text()
@@ -1672,7 +1672,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
 
     def _log_copy_sel(self):
         try:
-            txt = self.log.get(tk.SEL_FIRST, tk.SEL_LAST)
+            txt = self.log_widget.get(tk.SEL_FIRST, tk.SEL_LAST)
             if txt:
                 self.clipboard_clear()
                 self.clipboard_append(txt)
@@ -1697,15 +1697,15 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
     def _log_flash(self, msg, tag="ok"):
         marker = f"__flash_{id(msg)}__"
         self._log(msg, tag)
-        self.log.configure(state="normal")
-        self.log.mark_set(marker, "end-1l linestart")
-        self.log.mark_gravity(marker, "left")
-        self.log.configure(state="disabled")
+        self.log_widget.configure(state="normal")
+        self.log_widget.mark_set(marker, "end-1l linestart")
+        self.log_widget.mark_gravity(marker, "left")
+        self.log_widget.configure(state="disabled")
         def _remove():
             try:
-                self.log.configure(state="normal")
-                self.log.delete(marker, f"{marker} lineend +1c")
-                self.log.configure(state="disabled")
+                self.log_widget.configure(state="normal")
+                self.log_widget.delete(marker, f"{marker} lineend +1c")
+                self.log_widget.configure(state="disabled")
             except tk.TclError:
                 pass
         self.after(3000, _remove)
@@ -1714,36 +1714,36 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         lvl = self._log_filter.get()
         tag_map = {"OK": "ok", "Err": "err", "Warn": "warn", "Info": "info"}
         # Remet tout visible
-        self.log.configure(state="normal")
-        self.log.tag_configure("hidden", elide=False)
+        self.log_widget.configure(state="normal")
+        self.log_widget.tag_configure("hidden", elide=False)
         if lvl == "All":
-            self.log.configure(state="disabled")
+            self.log_widget.configure(state="disabled")
             return
         # Filter by elision: hide lines that do not carry the target tag
         target = tag_map.get(lvl, "")
         # Strategy: elide lines that do NOT have the target tag
         # (Tk elide on tags: hide items carrying the "hidden" tag)
-        self.log.tag_remove("hidden", "1.0", "end")
+        self.log_widget.tag_remove("hidden", "1.0", "end")
         if target:
             all_ranges = set()
             # Lines carrying the target tag
             idx = "1.0"
             while True:
-                r = self.log.tag_nextrange(target, idx, "end")
+                r = self.log_widget.tag_nextrange(target, idx, "end")
                 if not r:
                     break
                 # Convert to line numbers
-                l1 = int(self.log.index(r[0]).split(".")[0])
-                l2 = int(self.log.index(r[1]).split(".")[0])
+                l1 = int(self.log_widget.index(r[0]).split(".")[0])
+                l2 = int(self.log_widget.index(r[1]).split(".")[0])
                 for ln in range(l1, l2 + 1):
                     all_ranges.add(ln)
                 idx = r[1]
-            total = int(self.log.index("end").split(".")[0])
+            total = int(self.log_widget.index("end").split(".")[0])
             for ln in range(1, total):
                 if ln not in all_ranges:
-                    self.log.tag_add("hidden", f"{ln}.0", f"{ln}.0 lineend +1c")
-        self.log.tag_configure("hidden", elide=True)
-        self.log.configure(state="disabled")
+                    self.log_widget.tag_add("hidden", f"{ln}.0", f"{ln}.0 lineend +1c")
+        self.log_widget.tag_configure("hidden", elide=True)
+        self.log_widget.configure(state="disabled")
 
     def _log_search_open(self):
         self._search_bar.grid()
@@ -1751,13 +1751,13 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
 
     def _log_search_close(self):
         self._search_bar.grid_remove()
-        self.log.tag_remove("search_hi",  "1.0", "end")
-        self.log.tag_remove("search_cur", "1.0", "end")
+        self.log_widget.tag_remove("search_hi",  "1.0", "end")
+        self.log_widget.tag_remove("search_cur", "1.0", "end")
         self._search_count.config(text="")
 
     def _log_search_highlight(self):
-        self.log.tag_remove("search_hi",  "1.0", "end")
-        self.log.tag_remove("search_cur", "1.0", "end")
+        self.log_widget.tag_remove("search_hi",  "1.0", "end")
+        self.log_widget.tag_remove("search_cur", "1.0", "end")
         q = self._search_var.get()
         if not q:
             self._search_count.config(text="")
@@ -1766,11 +1766,11 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         count = 0
         idx = "1.0"
         while True:
-            pos = self.log.search(q, idx, nocase=True, stopindex="end")
+            pos = self.log_widget.search(q, idx, nocase=True, stopindex="end")
             if not pos:
                 break
             end = f"{pos}+{len(q)}c"
-            self.log.tag_add("search_hi", pos, end)
+            self.log_widget.tag_add("search_hi", pos, end)
             count += 1
             idx = end
         self._search_count.config(text=f"{count} result{'s' if count != 1 else ''}")
@@ -1782,17 +1782,17 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         q = self._search_var.get()
         if not q:
             return
-        ranges = self.log.tag_ranges("search_hi")
+        ranges = self.log_widget.tag_ranges("search_hi")
         # tag_ranges returns flat list of (start, end, start, end, ...)
         pairs = [(ranges[i], ranges[i+1]) for i in range(0, len(ranges), 2)]
         if not pairs:
             return
         n = n % len(pairs)
         self._search_idx = n
-        self.log.tag_remove("search_cur", "1.0", "end")
+        self.log_widget.tag_remove("search_cur", "1.0", "end")
         s, e = pairs[n]
-        self.log.tag_add("search_cur", s, e)
-        self.log.see(s)
+        self.log_widget.tag_add("search_cur", s, e)
+        self.log_widget.see(s)
 
     def _log_search_next(self):
         self._log_search_goto(self._search_idx + 1)
@@ -5801,14 +5801,14 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         try:
             for tag, c in [("ok", GREEN), ("err", RED), ("info", ORANGE),
                             ("dim", MUTED), ("warn", YELLOW), ("blue", BLUE)]:
-                self.log.tag_configure(tag, foreground=c)
-            self.log.tag_configure("search_hi",  background=ORANGE2, foreground="white")
-            self.log.tag_configure("search_cur", background=ORANGE,  foreground="white")
-            self.log.tag_configure("badge_kill",   foreground=RED)
-            self.log.tag_configure("badge_warn",   foreground=YELLOW)
-            self.log.tag_configure("badge_safe",   foreground=GREEN)
-            self.log.tag_configure("badge_filter", foreground=BLUE)
-            self.log.configure(bg=_THEME["LOG_BG"], fg=TEXT,
+                self.log_widget.tag_configure(tag, foreground=c)
+            self.log_widget.tag_configure("search_hi",  background=ORANGE2, foreground="white")
+            self.log_widget.tag_configure("search_cur", background=ORANGE,  foreground="white")
+            self.log_widget.tag_configure("badge_kill",   foreground=RED)
+            self.log_widget.tag_configure("badge_warn",   foreground=YELLOW)
+            self.log_widget.tag_configure("badge_safe",   foreground=GREEN)
+            self.log_widget.tag_configure("badge_filter", foreground=BLUE)
+            self.log_widget.configure(bg=_THEME["LOG_BG"], fg=TEXT,
                                insertbackground=ORANGE, selectbackground=ORANGE2)
         except Exception:
             pass
@@ -6535,10 +6535,10 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
                 f"{nb_demos} demo{'s' if nb_demos != 1 else ''}")
 
     def _log(self, msg, tag=""):
-        self.log.configure(state="normal")
+        self.log_widget.configure(state="normal")
         if self._log_timestamps.get() and msg.strip():
-            self.log.insert("end", f"[{time.strftime('%H:%M:%S')}] ", "ts")
-        self.log.insert("end", msg + "\n", tag)
+            self.log_widget.insert("end", f"[{time.strftime('%H:%M:%S')}] ", "ts")
+        self.log_widget.insert("end", msg + "\n", tag)
         if tag == "err":
             self._log_err_count += 1
         elif tag == "warn":
@@ -6546,19 +6546,19 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         if tag in ("err", "warn"):
             self._update_log_counts()
         if self._log_autoscroll.get():
-            self.log.see("end")
-        self.log.configure(state="disabled")
+            self.log_widget.see("end")
+        self.log_widget.configure(state="disabled")
 
     def _log_parts(self, parts):
-        self.log.configure(state="normal")
+        self.log_widget.configure(state="normal")
         if self._log_timestamps.get():
-            self.log.insert("end", f"[{time.strftime('%H:%M:%S')}] ", "ts")
+            self.log_widget.insert("end", f"[{time.strftime('%H:%M:%S')}] ", "ts")
         for txt, tag in parts:
-            self.log.insert("end", txt, tag or "")
-        self.log.insert("end", "\n")
+            self.log_widget.insert("end", txt, tag or "")
+        self.log_widget.insert("end", "\n")
         if self._log_autoscroll.get():
-            self.log.see("end")
-        self.log.configure(state="disabled")
+            self.log_widget.see("end")
+        self.log_widget.configure(state="disabled")
 
     def _async_log(self, msg, tag=""):
         """Thread-safe async log — schedules a direct _log call on the main thread."""
@@ -6681,9 +6681,9 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
             self._dp2_cache.pop(oldest, None)
 
     def _clear_log(self):
-        self.log.configure(state="normal")
-        self.log.delete("1.0", "end")
-        self.log.configure(state="disabled")
+        self.log_widget.configure(state="normal")
+        self.log_widget.delete("1.0", "end")
+        self.log_widget.configure(state="disabled")
         self._log_err_count = 0
         self._log_warn_count = 0
         self._update_log_counts()
@@ -6718,7 +6718,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         menu.add_command(label="Copy selection", command=self._log_copy_sel)
         menu.add_separator()
         menu.add_command(label="Select all",
-                         command=lambda: (self.log.tag_add("sel", "1.0", "end-1c")))
+                         command=lambda: (self.log_widget.tag_add("sel", "1.0", "end-1c")))
         menu.add_command(label="Copy all", command=self._log_copy_all)
         menu.add_separator()
         menu.add_command(label="Search   Ctrl+F", command=self._log_search_open)
@@ -6728,9 +6728,9 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
 
     def _log_copy_line(self, x, y):
         try:
-            idx = self.log.index(f"@{x},{y}")
+            idx = self.log_widget.index(f"@{x},{y}")
             line_n = idx.split(".")[0]
-            txt = self.log.get(f"{line_n}.0", f"{line_n}.end").strip()
+            txt = self.log_widget.get(f"{line_n}.0", f"{line_n}.end").strip()
             if txt:
                 self.clipboard_clear()
                 self.clipboard_append(txt)
