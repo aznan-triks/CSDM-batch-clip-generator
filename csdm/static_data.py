@@ -228,6 +228,12 @@ VIDEO_CODECS = list(VIDEO_CODECS_INFO.keys())
 CPU_VIDEO_CODECS: set = {"libx264", "libx265", "libsvtav1", "libaom-av1",
                          "libvpx-vp9", "prores_ks", "utvideo"}
 
+# ── Runtime-injection CFG constants (moved here in chantier 1: the engine
+# needs them and cannot import csdm_batch_clips_generator.py without a cycle) ──
+CSDM_RUNTIME_CFG_NAME    = "csdm_batch_runtime.cfg"
+CSDM_RUNTIME_BLOCK_START = "// >>> CSDM_BATCH_RUNTIME START >>>"
+CSDM_RUNTIME_BLOCK_END   = "// <<< CSDM_BATCH_RUNTIME END <<<"
+
 AUDIO_CODECS_INFO = {
     "libmp3lame": "MP3 — Compatible everywhere.",
     "aac":        "AAC — Better than MP3, modern standard.",

@@ -63,5 +63,38 @@ class TestValidationUsesAskPort(unittest.TestCase):
         self.assertIn('self.ask("error"', src)
 
 
+class TestEngineModuleIsTkFree(unittest.TestCase):
+    def test_module_exists_and_carries_the_methods(self):
+        from csdm.engine.core import EngineMixin
+        for name in ENGINE_METHODS:
+            self.assertTrue(hasattr(EngineMixin, name), f"missing: {name}")
+
+    def test_app_inherits_the_mixin(self):
+        from csdm.engine.core import EngineMixin
+        from csdm_batch_clips_generator import App
+        self.assertTrue(issubclass(App, EngineMixin))
+
+    def test_module_imports_no_tkinter(self):
+        import ast
+        import csdm.engine.core as core
+        tree = ast.parse(open(core.__file__, encoding="utf-8").read())
+        imported = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                imported.update(a.name.split(".")[0] for a in node.names)
+            elif isinstance(node, ast.ImportFrom) and node.module:
+                imported.add(node.module.split(".")[0])
+        self.assertNotIn("tkinter", imported)
+
+    def test_module_has_no_forbidden_pattern(self):
+        import csdm.engine.core as core
+        src = open(core.__file__, encoding="utf-8").read()
+        offenders = []
+        for pat in FORBIDDEN + [r"\btk\.", r"\bttk\."]:
+            for m in re.finditer(pat, src):
+                offenders.append(f"{src[:m.start()].count(chr(10)) + 1} -> {m.group(0)}")
+        self.assertEqual(offenders, [], "\n".join(offenders))
+
+
 if __name__ == "__main__":
     unittest.main()
