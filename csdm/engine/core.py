@@ -29,11 +29,16 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
+try:
+    import psycopg2
+except ImportError:
+    psycopg2 = None
+
 from csdm.static_data import (
     SUICIDE_WEAPONS, DELAYED_EFFECT_WEAPONS, KILL_FILTER_REGISTRY,
     KILL_FILTER_SQL_COLS, CPU_VIDEO_CODECS,
     CSDM_RUNTIME_CFG_NAME, CSDM_RUNTIME_BLOCK_START, CSDM_RUNTIME_BLOCK_END,
-    _NO_AUTO_EXCLUDE, PERSP_LABELS,
+    _NO_AUTO_EXCLUDE, PERSP_LABELS, _MATCH_TYPE_KEY_TO_DB, _MATCH_TYPE_CFG_KEYS,
 )
 from csdm.core_utils import (
     build_camera_ticks, safe_folder_name, _count_kills, fmt_duration, progress_bar,
@@ -42,6 +47,156 @@ from csdm.core_utils import (
 
 class EngineMixin:
     """The engine half of App. See module docstring for the three sockets."""
+
+    def _pg(self):
+        """Return a live psycopg2 connection, reusing the existing one when possible.
+        Creates a new connection on first call or if the existing one is closed/broken.
+        The _connect_and_load thread always opens its own connection (thread safety).
+        """
+        if self._db_conn is not None:
+            try:
+                # Quick liveness check — closed attribute is False when open
+                if not self._db_conn.closed:
+                    return self._db_conn
+            except Exception:
+                pass
+        self._db_conn = psycopg2.connect(
+            host=self._pg_params["pg_host"], port=int(self._pg_params["pg_port"]),
+            user=self._pg_params["pg_user"], password=self._pg_params["pg_pass"],
+            dbname=self._pg_params["pg_db"], connect_timeout=5)
+        return self._db_conn
+
+    def _pg_fresh(self):
+        """Always create a new connection (used by background threads that must
+        not share the main-thread connection)."""
+        return psycopg2.connect(
+            host=self._pg_params["pg_host"], port=int(self._pg_params["pg_port"]),
+            user=self._pg_params["pg_user"], password=self._pg_params["pg_pass"],
+            dbname=self._pg_params["pg_db"], connect_timeout=5)
+
+    def _resolve_cli(self, p):
+        if not p:
+            return "csdm"
+        p = os.path.abspath(p)
+        b = os.path.basename(p).lower()
+        d = os.path.dirname(p)
+        if b in ("csdm.exe", "csdm.cmd") and os.path.isfile(p):
+            return p
+        for n in ("csdm.CMD", "csdm.cmd", "csdm.exe"):
+            for sd in (d, os.path.join(d, "resources")):
+                c = os.path.join(sd, n)
+                if os.path.exists(c):
+                    return c
+        w = shutil.which("csdm")
+        return w if w else p
+
+    def _find_col(self, table, candidates):
+        key = (table, tuple(candidates))
+        if key in self._col_cache:
+            return self._col_cache[key]
+        cols = self._db_schema.get(table, [])
+        result = None
+        for c in candidates:
+            if c in cols:
+                result = c
+                break
+        self._col_cache[key] = result
+        return result
+
+    # ── _query_events helpers (Phase 1.3 — one clause builder per concern) ──
+
+    @staticmethod
+    def _qe_epoch_bounds(cfg):
+        """Epoch bounds (ts_from, ts_to) for the post-query Python date filter."""
+        ts_from = None
+        ts_to   = None
+        if cfg.get("date_from", ""):
+            try:
+                ts_from = int(datetime.strptime(cfg["date_from"], "%Y-%m-%d")
+                              .replace(hour=0, minute=0, second=0).timestamp())
+            except ValueError:
+                pass
+        if cfg.get("date_to", ""):
+            try:
+                ts_to = int((datetime.strptime(cfg["date_to"], "%Y-%m-%d")
+                             .replace(hour=23, minute=59, second=59)).timestamp())
+            except ValueError:
+                pass
+        return ts_from, ts_to
+
+    def _qe_match_type_sql(self, cfg):
+        """Match-type WHERE fragment: "" or (clause_str, [param values])."""
+        if not cfg.get("match_type_filter_enabled"):
+            return ""
+        _gm_col = self._find_col("matches", ["game_mode_str", "game_mode"])
+        if not _gm_col:
+            self.log("⚠ Match type filter: game_mode_str column not found — filter ignored.", "warn")
+            return ""
+        selected_db_vals = [
+            db_v
+            for cfg_k in _MATCH_TYPE_CFG_KEYS
+            if cfg.get(cfg_k)
+            for db_v in _MATCH_TYPE_KEY_TO_DB[cfg_k]
+        ]
+        if not selected_db_vals:
+            return ""  # none checked = no filter
+        ph = ",".join(["%s"] * len(selected_db_vals))
+        return (f' AND m."{_gm_col}" IN ({ph})', selected_db_vals)
+
+    def _qe_headshot_sql(self, cfg):
+        """Headshot WHERE fragment. Returns (hs_col, clause)."""
+        _hsmode = cfg.get("headshots_mode", "all")
+        headshots_only    = (_hsmode == "only")
+        headshots_exclude = (_hsmode == "exclude")
+        hc = self._find_col("kills", ["is_headshot", "headshot", "is_hs", "hs"])
+        hsql = ""
+        if (headshots_only or headshots_exclude) and not hc:
+            self.log("⚠ Headshots filter: column not found in kills — filter ignored.", "warn")
+        elif headshots_only and hc:
+            hsql = f' AND k."{hc}" = TRUE'
+        elif headshots_exclude and hc:
+            hsql = f' AND k."{hc}" = FALSE'
+
+        # One Tap kills are by definition headshots — force HS filter at SQL level
+        if cfg.get("kill_mod_one_tap") and hc and not headshots_exclude and not headshots_only:
+            hsql = f' AND k."{hc}" = TRUE'
+        elif cfg.get("kill_mod_one_tap") and not hc:
+            self.log("⚠ One Tap: headshot column not found — HS enforcement skipped.", "warn")
+        return hc, hsql
+
+    def _qe_teamkill_sql(self, cfg):
+        """Teamkill include/exclude/only WHERE fragment."""
+        _tkmode = cfg.get("teamkills_mode", "include")
+        include_teamkills = (_tkmode != "exclude")
+        teamkills_only    = (_tkmode == "only")
+        tkc_k = self._find_col("kills", ["killer_team_name", "killer_side", "killer_team"])
+        tkc_v = self._find_col("kills", ["victim_team_name", "victim_side", "victim_team"])
+        if teamkills_only:
+            if tkc_k and tkc_v:
+                return f' AND k."{tkc_k}" = k."{tkc_v}"'
+            self.log("⚠ Teamkills only: team columns not found — filter ignored.", "warn")
+        elif not include_teamkills:
+            if tkc_k and tkc_v:
+                return f' AND k."{tkc_k}" != k."{tkc_v}"'
+            self.log("⚠ Exclude teamkills: team columns not found — filter ignored.", "warn")
+        return ""
+
+    _SQL_MOD_KEYS = (
+        "kill_mod_through_smoke",
+        "kill_mod_no_scope",
+        "kill_mod_assisted_flash",
+    )
+
+    def _mods_dp2_global_any_union_enabled(self, cfg):
+        if cfg.get("kill_mod_logic_mods", "any") != "any":
+            return False
+        if cfg.get("kill_mod_logic_dp2", "any") != "any":
+            return False
+        if not any(cfg.get(k) for k in self._SQL_MOD_KEYS):
+            return False
+        if cfg.get("kill_mod_trois_tap"):
+            return False
+        return any(cfg.get(k) for k, *_ in self._DP2_FILTER_DEFS)
 
     @staticmethod
     def _qe_suicide_sql(cfg, weapon_col):

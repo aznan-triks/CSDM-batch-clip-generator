@@ -331,11 +331,26 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         self.bind("<Configure>", self._on_window_configure, add="+")
         self.after(60, self._update_res_preview)
 
+        self._sync_pg_params()
+
         self._auto_save()
         self.after(80, self._apply_dark_titlebar)
         self.after(200, self._preflight)
         if HAS_PG:
             self.after(500, self._connect_and_load)
+
+    def _sync_pg_params(self):
+        """Copy the five PostgreSQL identifier widgets into `self._pg_params`,
+        the plain dict `_pg`/`_pg_fresh` (moved to `EngineMixin`) actually read.
+        Called after the widgets exist, and again whenever the values may have
+        changed before a connection is opened — never assume it stays fresh."""
+        self._pg_params = {
+            "pg_host": self.v["pg_host"].get(),
+            "pg_port": self.v["pg_port"].get(),
+            "pg_user": self.v["pg_user"].get(),
+            "pg_pass": self.v["pg_pass"].get(),
+            "pg_db":   self.v["pg_db"].get(),
+        }
 
     def _on_player_change(self, name, sid):
         """Called when the DB search list selection changes.
@@ -360,6 +375,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         self._log("[PRE] OK\n", "ok")
 
     def _collect_config(self):
+        self._sync_pg_params()
         cfg = {}
         for k, var in self.v.items():
             if k == "resolution":
@@ -471,32 +487,6 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
             self._pending_restore_tags = list(tag_names)
 
 
-    def _pg(self):
-        """Return a live psycopg2 connection, reusing the existing one when possible.
-        Creates a new connection on first call or if the existing one is closed/broken.
-        The _connect_and_load thread always opens its own connection (thread safety).
-        """
-        if self._db_conn is not None:
-            try:
-                # Quick liveness check — closed attribute is False when open
-                if not self._db_conn.closed:
-                    return self._db_conn
-            except Exception:
-                pass
-        self._db_conn = psycopg2.connect(
-            host=self.v["pg_host"].get(), port=int(self.v["pg_port"].get()),
-            user=self.v["pg_user"].get(), password=self.v["pg_pass"].get(),
-            dbname=self.v["pg_db"].get(), connect_timeout=5)
-        return self._db_conn
-
-    def _pg_fresh(self):
-        """Always create a new connection (used by background threads that must
-        not share the main-thread connection)."""
-        return psycopg2.connect(
-            host=self.v["pg_host"].get(), port=int(self.v["pg_port"].get()),
-            user=self.v["pg_user"].get(), password=self.v["pg_pass"].get(),
-            dbname=self.v["pg_db"].get(), connect_timeout=5)
-
     # ── Map-column detection ────────────────────────────────────────────────────
     # CSDM stores map_name in the `demos` table (not `matches`).
     # If a future version moves it back to `matches`, the candidates list handles it.
@@ -536,6 +526,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         return None, "m", ""
 
     def _connect_and_load(self):
+        self._sync_pg_params()
         self.db_status.set("[DB:...]")
         self.db_status_lbl.config(fg=YELLOW)
 
@@ -6773,23 +6764,6 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
             self.__filter_badge_defs_cache = self._get_filter_badge_defs()
             return self.__filter_badge_defs_cache
 
-    _SQL_MOD_KEYS = (
-        "kill_mod_through_smoke",
-        "kill_mod_no_scope",
-        "kill_mod_assisted_flash",
-    )
-
-    def _mods_dp2_global_any_union_enabled(self, cfg):
-        if cfg.get("kill_mod_logic_mods", "any") != "any":
-            return False
-        if cfg.get("kill_mod_logic_dp2", "any") != "any":
-            return False
-        if not any(cfg.get(k) for k in self._SQL_MOD_KEYS):
-            return False
-        if cfg.get("kill_mod_trois_tap"):
-            return False
-        return any(cfg.get(k) for k, *_ in self._DP2_FILTER_DEFS)
-
     def _build_filter_badges(self, cfg, events=None):
         """Return (text, tag) badge tuples for kill filters that matched this clip.
 
@@ -6947,116 +6921,6 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
             self._async_log(base, "blue")
         else:
             self._log(base, "blue")
-
-    # ═══════════════════════════════════════════════════
-    #  CLI + BDD queries
-    # ═══════════════════════════════════════════════════
-    def _resolve_cli(self, p):
-        if not p:
-            return "csdm"
-        p = os.path.abspath(p)
-        b = os.path.basename(p).lower()
-        d = os.path.dirname(p)
-        if b in ("csdm.exe", "csdm.cmd") and os.path.isfile(p):
-            return p
-        for n in ("csdm.CMD", "csdm.cmd", "csdm.exe"):
-            for sd in (d, os.path.join(d, "resources")):
-                c = os.path.join(sd, n)
-                if os.path.exists(c):
-                    return c
-        w = shutil.which("csdm")
-        return w if w else p
-
-    def _find_col(self, table, candidates):
-        key = (table, tuple(candidates))
-        if key in self._col_cache:
-            return self._col_cache[key]
-        cols = self._db_schema.get(table, [])
-        result = None
-        for c in candidates:
-            if c in cols:
-                result = c
-                break
-        self._col_cache[key] = result
-        return result
-
-    # ── _query_events helpers (Phase 1.3 — one clause builder per concern) ──
-
-    @staticmethod
-    def _qe_epoch_bounds(cfg):
-        """Epoch bounds (ts_from, ts_to) for the post-query Python date filter."""
-        ts_from = None
-        ts_to   = None
-        if cfg.get("date_from", ""):
-            try:
-                ts_from = int(datetime.strptime(cfg["date_from"], "%Y-%m-%d")
-                              .replace(hour=0, minute=0, second=0).timestamp())
-            except ValueError:
-                pass
-        if cfg.get("date_to", ""):
-            try:
-                ts_to = int((datetime.strptime(cfg["date_to"], "%Y-%m-%d")
-                             .replace(hour=23, minute=59, second=59)).timestamp())
-            except ValueError:
-                pass
-        return ts_from, ts_to
-
-    def _qe_match_type_sql(self, cfg):
-        """Match-type WHERE fragment: "" or (clause_str, [param values])."""
-        if not cfg.get("match_type_filter_enabled"):
-            return ""
-        _gm_col = self._find_col("matches", ["game_mode_str", "game_mode"])
-        if not _gm_col:
-            self.log("⚠ Match type filter: game_mode_str column not found — filter ignored.", "warn")
-            return ""
-        selected_db_vals = [
-            db_v
-            for cfg_k in _MATCH_TYPE_CFG_KEYS
-            if cfg.get(cfg_k)
-            for db_v in _MATCH_TYPE_KEY_TO_DB[cfg_k]
-        ]
-        if not selected_db_vals:
-            return ""  # none checked = no filter
-        ph = ",".join(["%s"] * len(selected_db_vals))
-        return (f' AND m."{_gm_col}" IN ({ph})', selected_db_vals)
-
-    def _qe_headshot_sql(self, cfg):
-        """Headshot WHERE fragment. Returns (hs_col, clause)."""
-        _hsmode = cfg.get("headshots_mode", "all")
-        headshots_only    = (_hsmode == "only")
-        headshots_exclude = (_hsmode == "exclude")
-        hc = self._find_col("kills", ["is_headshot", "headshot", "is_hs", "hs"])
-        hsql = ""
-        if (headshots_only or headshots_exclude) and not hc:
-            self.log("⚠ Headshots filter: column not found in kills — filter ignored.", "warn")
-        elif headshots_only and hc:
-            hsql = f' AND k."{hc}" = TRUE'
-        elif headshots_exclude and hc:
-            hsql = f' AND k."{hc}" = FALSE'
-
-        # One Tap kills are by definition headshots — force HS filter at SQL level
-        if cfg.get("kill_mod_one_tap") and hc and not headshots_exclude and not headshots_only:
-            hsql = f' AND k."{hc}" = TRUE'
-        elif cfg.get("kill_mod_one_tap") and not hc:
-            self.log("⚠ One Tap: headshot column not found — HS enforcement skipped.", "warn")
-        return hc, hsql
-
-    def _qe_teamkill_sql(self, cfg):
-        """Teamkill include/exclude/only WHERE fragment."""
-        _tkmode = cfg.get("teamkills_mode", "include")
-        include_teamkills = (_tkmode != "exclude")
-        teamkills_only    = (_tkmode == "only")
-        tkc_k = self._find_col("kills", ["killer_team_name", "killer_side", "killer_team"])
-        tkc_v = self._find_col("kills", ["victim_team_name", "victim_side", "victim_team"])
-        if teamkills_only:
-            if tkc_k and tkc_v:
-                return f' AND k."{tkc_k}" = k."{tkc_v}"'
-            self.log("⚠ Teamkills only: team columns not found — filter ignored.", "warn")
-        elif not include_teamkills:
-            if tkc_k and tkc_v:
-                return f' AND k."{tkc_k}" != k."{tkc_v}"'
-            self.log("⚠ Exclude teamkills: team columns not found — filter ignored.", "warn")
-        return ""
 
     # ═══════════════════════════════════════════════════════════════════════
     #  CLUTCH detection helpers

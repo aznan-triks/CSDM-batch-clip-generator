@@ -175,6 +175,8 @@ class CSInjectionTests(unittest.TestCase):
         self.app.v = {
             "resolution": _Var("1920x1080"),
             "encoder": _Var("VirtualDub"),
+            "pg_host": _Var(""), "pg_port": _Var(""), "pg_user": _Var(""),
+            "pg_pass": _Var(""), "pg_db": _Var(""),
         }
         self.app.sel_events = {}
         self.app.sel_weapons = {}

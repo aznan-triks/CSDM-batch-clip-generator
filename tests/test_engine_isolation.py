@@ -27,6 +27,9 @@ ENGINE_METHODS = [
     "_dp2_required_sections", "_assemble_clips", "_get_dp2_filter_defs",
     "_DP2_FILTER_DEFS", "_apply_dp2_modifiers", "_apply_dp2_filters_to_events",
     "_worker",
+    "_find_col", "_pg", "_pg_fresh", "_resolve_cli", "_qe_epoch_bounds",
+    "_qe_match_type_sql", "_qe_headshot_sql", "_qe_teamkill_sql",
+    "_mods_dp2_global_any_union_enabled",
 ]
 
 # Forbidden patterns inside the engine: each one is a direct touch of the UI.
