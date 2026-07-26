@@ -59,5 +59,39 @@ class TestEnginePorts(unittest.TestCase):
             ports.log = None
 
 
+class TestAppStateRouting(unittest.TestCase):
+    """L'aiguilleur d'etat traduit un evenement en appel d'interface, sans Tk."""
+
+    def _app(self):
+        from csdm_batch_clips_generator import App
+        app = App.__new__(App)          # pas de fenetre Tk : on teste l'aiguillage seul
+        app._calls = []
+        app._reset_btns = lambda: app._calls.append(("reset", None))
+        app._show_preview = lambda e, c, t=None: app._calls.append(("preview", (e, c, t)))
+        app._emit_demo_log_entry = lambda **kw: app._calls.append(("entry", kw))
+        return app
+
+    def test_buttons_idle_calls_reset(self):
+        app = self._app()
+        app._on_state_main("buttons_idle", {})
+        self.assertEqual(app._calls, [("reset", None)])
+
+    def test_preview_ready_forwards_three_arguments(self):
+        app = self._app()
+        app._on_state_main("preview_ready", {"events": {"a": 1}, "cfg": {"b": 2},
+                                             "timings": None})
+        self.assertEqual(app._calls, [("preview", ({"a": 1}, {"b": 2}, None))])
+
+    def test_demo_entry_forwards_payload_as_keywords(self):
+        app = self._app()
+        app._on_state_main("demo_entry", {"demo_name": "x.dem", "seq_count": 3})
+        self.assertEqual(app._calls, [("entry", {"demo_name": "x.dem", "seq_count": 3})])
+
+    def test_unknown_event_raises(self):
+        app = self._app()
+        with self.assertRaises(KeyError):
+            app._on_state_main("nope", {})
+
+
 if __name__ == "__main__":
     unittest.main()

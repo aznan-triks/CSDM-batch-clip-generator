@@ -6595,6 +6595,88 @@ class App(tk.Tk):
         """Thread-safe async log for multi-part lines (badge rows)."""
         self.after(0, lambda p=parts: self._log_parts(p))
 
+    # ═══════════════════════════════════════════════════
+    #  Engine ports (D21) — Tkinter side
+    # ═══════════════════════════════════════════════════
+    def log(self, message, level=""):
+        """Engine port: write one line to the console. Thread-safe, no pump."""
+        self._async_log(message, level)
+
+    def state(self, name, payload=None):
+        """Engine port: report a typed state change. Rendered on the main thread."""
+        self.after(0, lambda n=name, p=payload or {}: self._on_state_main(n, p))
+
+    _SUMMARY_COLORS = {"ok": GREEN, "warn": YELLOW, "err": RED,
+                       "muted": MUTED, "running": YELLOW}
+
+    def _on_state_main(self, name, payload):
+        """Route one state event to the widgets. Main thread only."""
+        if name == "buttons_idle":
+            self._reset_btns()
+        elif name == "progress":
+            self.progress_lbl.config(text=payload["text"])
+        elif name == "summary":
+            self._summary_lbl.config(text=payload["text"],
+                                     fg=self._SUMMARY_COLORS[payload["level"]])
+        elif name == "preview_ready":
+            self._show_preview(payload["events"], payload["cfg"], payload.get("timings"))
+        elif name == "stop_available":
+            self.stop_btn.config(state="normal" if payload["enabled"] else "disabled",
+                                 text="⏸ Stop")
+        elif name == "demos_unchecked":
+            self._uncheck_demos_in_picker(payload["paths"])
+        elif name == "demo_entry":
+            self._emit_demo_log_entry(**payload)
+        else:
+            raise KeyError(f"unknown engine state event: {name!r}")
+
+    def ask(self, kind, message, options):
+        """Engine port: ask the user and BLOCK until the answer comes back.
+
+        Called from a worker thread. The dialog must open on the main thread,
+        so we post it and wait on an Event — same shape as the existing
+        `_ask_user` closure in `_worker`.
+        """
+        result, done = [None], threading.Event()
+
+        def _open():
+            try:
+                if kind == "error":
+                    messagebox.showerror("", message)
+                    result[0] = "ok"
+                else:
+                    res = messagebox.askyesnocancel(options[0], message, default="no")
+                    # True -> options[1], False -> options[2], None -> cancel
+                    result[0] = None if res is None else (options[1] if res else options[2])
+            finally:
+                done.set()
+
+        self.after(0, _open)
+        done.wait()
+        return result[0]
+
+    def _uncheck_demos_in_picker(self, paths):
+        """Uncheck a set of demo paths in the picker. Main thread only."""
+        for dp in paths:
+            if dp in self._demo_picker_state:
+                self._demo_picker_state[dp] = False
+                try:
+                    self._demo_tree.item(dp, values=("✕",
+                        self._demo_picker_fmt_date(dp),
+                        self._demo_picker_fmt_map(dp),
+                        self._demo_picker_fmt_name(dp)),
+                        tags=("off",))
+                except Exception:
+                    pass
+        n_on  = sum(1 for v in self._demo_picker_state.values() if v)
+        n_tot = len(self._demo_picker_state)
+        try:
+            self._picker_count_lbl.config(
+                text=f"{n_on}/{n_tot} selected",
+                fg=ORANGE if n_on < n_tot else MUTED)
+        except tk.TclError:
+            pass
+
     _LOG_MAX_LINES = 8000   # trim oldest lines when the Text widget exceeds this
 
     _DP2_CACHE_MAX = 150    # max demos kept in dp2 cache; oldest evicted beyond this
