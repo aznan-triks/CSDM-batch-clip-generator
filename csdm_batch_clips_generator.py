@@ -8928,7 +8928,7 @@ class App(tk.Tk):
 
         threading.Thread(target=_watch, daemon=True).start()
 
-    def _exec(self, cmd, timeout_s=0):
+    def _exec(self, cmd, cfg, timeout_s=0):
         errs, has_err, retryable = [], False, False
         self._last_raw_not_found = False
         _timed_out = [False]
@@ -8937,7 +8937,7 @@ class App(tk.Tk):
             self._proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                           text=True, encoding="utf-8", errors="replace", bufsize=1)
             # Start CS2 send-to-back watcher if the option is enabled
-            if getattr(self, "v", {}) and self.v.get("cs2_send_to_back") and self.v["cs2_send_to_back"].get():
+            if cfg.get("cs2_send_to_back"):
                 self._start_cs2_send_to_back_watcher()
 
             # Timeout watchdog — kills CS2 + CSDM if recording takes too long.
@@ -9264,7 +9264,7 @@ class App(tk.Tk):
         # ── Header ─────────────────────────────────────────────────────────────
         self._log(f"Player:  {self._player_str(cfg)}", "info")
 
-        _auto_tags = self._get_active_tag_names() if self.v["tag_enabled"].get() else []
+        _auto_tags = self._get_active_tag_names() if cfg.get("tag_enabled") else []
         if _auto_tags:
             self._log(f"Tag:     🏷 {', '.join(_auto_tags)}", "info")
 
@@ -9681,7 +9681,7 @@ class App(tk.Tk):
                ] + fast_start + [
                "-f", ffmpeg_fmt, tmp_out]
 
-        success, rc, errs, _ = self._exec(cmd)
+        success, rc, errs, _ = self._exec(cmd, cfg)
         try:
             os.unlink(lst_path)
         except Exception:
@@ -10529,7 +10529,7 @@ class App(tk.Tk):
                         time.sleep(1)
                     if not self._running:
                         break
-                success, rc, errs, retryable = self._exec(cmd, timeout_s=_rec_timeout_s)
+                success, rc, errs, retryable = self._exec(cmd, cfg, timeout_s=_rec_timeout_s)
                 if success:
                     d_ok = True
                     break
@@ -10549,7 +10549,7 @@ class App(tk.Tk):
                     _jdata["trueView"] = False
                     with open(tp, "w", encoding="utf-8") as _f:
                         json.dump(_jdata, _f, indent=2)
-                    success, rc, errs_tv, _ = self._exec(cmd)
+                    success, rc, errs_tv, _ = self._exec(cmd, cfg)
                     if success:
                         d_ok = True
                         d_err = ""
