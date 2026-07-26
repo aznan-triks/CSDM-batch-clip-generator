@@ -81,12 +81,19 @@ def _run_command(host, writer, command):
 
 
 def serve(stdin, stdout):
-    """Read commands from `stdin`, write protocol lines to `stdout`. Returns an exit code."""
+    """Read commands from `stdin`, write protocol lines to `stdout`. Returns an exit code.
+
+    The real `stdout` is captured for the writer before `sys.stdout` is
+    replaced with `sys.stderr`. That way a stray `print()` -- today or in ten
+    years -- lands in the traces instead of corrupting the protocol pipe.
+    """
     writer = LineWriter(stdout)
     ports = PipePorts(writer)
     host = BridgeHost(ports)
     threads = []
 
+    real_stdout = sys.stdout
+    sys.stdout = sys.stderr
     try:
         for raw_line in stdin:
             line = raw_line.rstrip("\n")
@@ -115,6 +122,8 @@ def serve(stdin, stdout):
         for t in threads:
             t.join()
         return 1
+    finally:
+        sys.stdout = real_stdout
 
     # Stdin closed: wait for in-flight commands so their `result` line is
     # written before the process exits, or the parent sees a dead pipe first.
