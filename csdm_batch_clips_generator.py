@@ -126,6 +126,7 @@ from csdm.static_data import (
     CSDM_RUNTIME_CFG_NAME, CSDM_RUNTIME_BLOCK_START, CSDM_RUNTIME_BLOCK_END,
 )
 from csdm.engine.core import EngineMixin
+from csdm.engine.state import EngineStateMixin
 
 # ── Configuration : defauts, presets, persistance (Phase 1.1) ──────────────
 #  Extraits dans csdm/config.py. Importes ici pour conserver les memes noms.
@@ -169,9 +170,10 @@ from csdm.widgets import (
 # ═══════════════════════════════════════════════════════
 #  App
 # ═══════════════════════════════════════════════════════
-class App(EngineMixin, tk.Tk):
+class App(EngineStateMixin, EngineMixin, tk.Tk):
     def __init__(self):
         super().__init__()
+        self.init_engine_state()
         self.cfg = load_config()
         # Polices nommees Tk : creees maintenant (root pret), AVANT tout widget.
         init_fonts(self, self.cfg.get("ui_font_family", "auto"))
@@ -192,24 +194,9 @@ class App(EngineMixin, tk.Tk):
         # au debut de _build_ui, avant l'ouverture de toute liste deroulante).
 
         self.presets = load_presets()
-        self._player_names = {}
-        self._tags_list = []
-        self._tags_active = set()   # IDs of currently selected tags
-        self._tags_schema = {}
-        self._demo_checksums = {}  # {demo_path: checksum} — populated by _query_events
-        self._demo_dates     = {}  # {demo_path: date_val} — populated by _query_events
-        self._ts_cache       = {}  # {demo_path: int|None} — cached _get_demo_ts results
-        self._demo_map_cache = {}  # {demo_path: str} — map name from DB
-        self._col_cache      = {}  # {(table, tuple(candidates)): col} — cached _find_col results
-        self._db_conn        = None  # persistent psycopg2 connection — reused across calls
         self._db_match_types: list = []   # distinct game_mode_str values found in DB
-        self._db_maps:        list = []   # [(display_key, [raw_vals])] from DB map col
-        self._map_alias:      str  = "m"  # SQL alias for the table holding the map col
-        self._map_join:       str  = ""   # extra JOIN clause when map col is in demos
         self._map_filter_vars: dict = {}  # {display_key: BooleanVar} — rebuilt by _refresh_map_filter_ui
-        self._dp2_verbose    = False  # per-kill dp2 filter logging (debug only — expensive)
         self._tag_search_results = {}
-        self._warned_missing_mods: set = set()  # suppress repeat warnings for same absent cols
         self._warned_clutch_no_team_col: bool = False   # suppress repeated team-col warning
         self._warned_require_win_no_data: bool = False  # suppress repeated win-data warning
 
@@ -296,22 +283,9 @@ class App(EngineMixin, tk.Tk):
         self.sel_weapons = {}
         for w in self.cfg.get("weapons", []):
             self.sel_weapons[w] = tk.BooleanVar(value=True)
-        self._running = False
-        self._current_demo = ""
         self._previewing = False
         self._preview_cancel = threading.Event()
-        self._stop_after_current = False
-        self._kill_triggered = False
-        self._tagged_this_batch = []   # [(demo_path, tag_name)] — for rollback on kill
-        self._proc = None
-        self._dp2_cache      = {}                  # {demo_path: {…}}
-        self._dp2_cache_lock = threading.Lock()    # protects _dp2_cache during parallel pre-parse
         self._dp2_cache_order: list = []           # LRU insertion order for eviction
-        self._db_schema = {}
-        self._db_col_types = {}
-        self._date_col = None
-        self._date_col_type = ""      # actual SQL type of the date column
-        self._map_col  = None         # map_name column in matches table (optional)
         self._pending_restore_sid  = None   # steam_id to restore once DB is ready
         self._pending_restore_tags = []     # tag names to restore once DB is ready
         self._speed_feedback = None
