@@ -1261,7 +1261,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
             return False, str(e)
 
     def _tag_log_line(self, msg):
-        self._async_log(msg, "dim")
+        self.log(msg, "dim")
 
     def _do_tag_demos(self, demos, tag_name):
 
@@ -3600,7 +3600,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
                 result = acc > thresholds["acc"]
 
             if self._dp2_verbose:
-                self._async_log(
+                self.log(
                     f"  🎲 [{weapon_raw}] acc={acc:.4f}(threshold={thresholds['acc']}) "
                     f"scoped={scoped} vel={vel:.0f} → {'✓ TROIS SHOT' if result else '✗ precise'}",
                     "info" if result else "dim")
@@ -3650,14 +3650,14 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         try:
             from demoparser2 import DemoParser
         except ImportError:
-            self._async_log(
+            self.log(
                 "  ⚠ demoparser2 not installed — install with: pip install demoparser2",
                 "warn")
             return False
         try:
             parser = DemoParser(demo_path)
         except Exception as e:
-            self._async_log(f"  ⚠ dp2 parse error ({Path(demo_path).name}): {e}", "warn")
+            self.log(f"  ⚠ dp2 parse error ({Path(demo_path).name}): {e}", "warn")
             return False
 
         fire_detail = dict(existing.get("fire_detail") or {})
@@ -3692,7 +3692,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
                     col_vx = _col("velocity_X")
                     col_vy = _col("velocity_Y")
                     if not col_sid or not col_acc:
-                        self._async_log(
+                        self.log(
                             f"  ⚠ dp2: steamid/accuracy columns missing in weapon_fire "
                             f"({Path(demo_path).name})", "warn")
                         fire_detail = {}
@@ -3726,7 +3726,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
                                 grp["scoped"].tolist(), grp["vel"].tolist()))
                             fire_ticks[key] = t
             except Exception as e:
-                self._async_log(f"  ⚠ dp2 parse error ({Path(demo_path).name}): {e}", "warn")
+                self.log(f"  ⚠ dp2 parse error ({Path(demo_path).name}): {e}", "warn")
                 fire_detail = {}
                 fire_ticks = {}
 
@@ -3935,7 +3935,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
             weapon_raw  = evt.get("weapon", "")
             isolated = _is_isolated(kill_tick, killer_sid, weapon_raw)
             if self._dp2_verbose:
-                self._async_log(
+                self.log(
                     f"  🎯 [{weapon_raw}] [tick={kill_tick}] sid={killer_sid} → "
                     f"{'✓ isolated' if isolated else '✗ not isolated'}",
                     "info" if isolated else "dim")
@@ -4854,11 +4854,11 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
             # so n_before == n_after gives no useful info.  Show stamped/total instead.
             if cfg_key == "kill_mod_mate_pov":
                 n_with_mate = sum(1 for e in combined if e.get("_mate_pov_sid"))
-                self._async_log(
+                self.log(
                     f"  {label} [{Path(dp).name}] : {n_with_mate}/{n_before} with qualifying mate",
                     "info" if n_with_mate else "dim")
             else:
-                self._async_log(
+                self.log(
                     f"  {label} [{Path(dp).name}] : {n_before} kills → {n_after}",
                     "info" if n_after else "dim")
             if combined:
@@ -7007,7 +7007,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
             return ""
         _gm_col = self._find_col("matches", ["game_mode_str", "game_mode"])
         if not _gm_col:
-            self._async_log("⚠ Match type filter: game_mode_str column not found — filter ignored.", "warn")
+            self.log("⚠ Match type filter: game_mode_str column not found — filter ignored.", "warn")
             return ""
         selected_db_vals = [
             db_v
@@ -7028,7 +7028,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         hc = self._find_col("kills", ["is_headshot", "headshot", "is_hs", "hs"])
         hsql = ""
         if (headshots_only or headshots_exclude) and not hc:
-            self._async_log("⚠ Headshots filter: column not found in kills — filter ignored.", "warn")
+            self.log("⚠ Headshots filter: column not found in kills — filter ignored.", "warn")
         elif headshots_only and hc:
             hsql = f' AND k."{hc}" = TRUE'
         elif headshots_exclude and hc:
@@ -7038,7 +7038,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         if cfg.get("kill_mod_one_tap") and hc and not headshots_exclude and not headshots_only:
             hsql = f' AND k."{hc}" = TRUE'
         elif cfg.get("kill_mod_one_tap") and not hc:
-            self._async_log("⚠ One Tap: headshot column not found — HS enforcement skipped.", "warn")
+            self.log("⚠ One Tap: headshot column not found — HS enforcement skipped.", "warn")
         return hc, hsql
 
     def _qe_teamkill_sql(self, cfg):
@@ -7051,11 +7051,11 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         if teamkills_only:
             if tkc_k and tkc_v:
                 return f' AND k."{tkc_k}" = k."{tkc_v}"'
-            self._async_log("⚠ Teamkills only: team columns not found — filter ignored.", "warn")
+            self.log("⚠ Teamkills only: team columns not found — filter ignored.", "warn")
         elif not include_teamkills:
             if tkc_k and tkc_v:
                 return f' AND k."{tkc_k}" != k."{tkc_v}"'
-            self._async_log("⚠ Exclude teamkills: team columns not found — filter ignored.", "warn")
+            self.log("⚠ Exclude teamkills: team columns not found — filter ignored.", "warn")
         return ""
 
     # ═══════════════════════════════════════════════════════════════════════
