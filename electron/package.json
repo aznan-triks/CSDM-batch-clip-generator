@@ -1,0 +1,13 @@
+{
+  "name": "csdm-bridge-shell",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Skeleton Electron shell driving the Python engine over the JSON/stdio bridge.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
