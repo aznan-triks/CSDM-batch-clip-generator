@@ -9,6 +9,45 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v208]
+
+### Changed: the engine moved out of the UI file (Electron migration — stage 1)
+
+**What changed:** Nothing at all, as far as using the app goes. Under the hood, the part that
+does the real work — reading the database, filtering kills, building cameras, driving the CS2
+recording — was moved into its own file and no longer knows a window exists. It talks to the
+interface through four clearly named channels instead of touching buttons and labels directly.
+This is the groundwork that lets the app get a new Electron interface later without rewriting
+any of that logic.
+
+**Engine extraction:**
+- New package `csdm/engine/`: `ports.py` (the sockets) and `core.py` (`EngineMixin`, 39 engine
+  methods moved verbatim). `App` now inherits `EngineMixin`, so every `self.xxx()` call site is
+  unchanged. Main file: ~10 615 → 7 650 lines.
+- Technical: the move is a cut-and-paste. No SQL, filter, dp2, camera or CLI logic was rewritten.
+
+**The four sockets:**
+- `log(message, level)` replaces the ~130 direct `_async_log` calls; `log_parts(parts)` carries
+  the one multicolor log line (recording-timeout summary) that a single string would flatten;
+  `state(event, payload)` replaces the ~30 `self.after(...)` UI updates, reduced to 7 named
+  events; `ask(kind, payload)` replaces the blocking dialogs (`messagebox`) including the
+  "already tagged demos" prompt, which no longer hand-rolls a `threading.Event`.
+- Under Tkinter, `App` wires these to its existing widgets and renderers (`_async_log`,
+  `_emit_demo_log_entry`, `_reset_btns`, `_show_preview`) — none of them were rewritten.
+
+**Isolation is enforced by a test, not by discipline:**
+- New `tests/test_engine_isolation.py`: `csdm/engine/` must import no Tkinter module, and the
+  engine methods must contain none of the 13 forbidden UI patterns (`self.after(`, `messagebox`,
+  `filedialog`, `self.v[`, …). Also new: `tests/test_engine_ports.py`. 86 → 106 tests passing.
+- The two remaining direct widget reads in engine code (`cs2_send_to_back` in `_exec`,
+  `tag_enabled` in `_show_preview_impl`) now read the config dict instead.
+
+**Moved, not changed:** `CSDM_RUNTIME_CFG_NAME` / `CSDM_RUNTIME_BLOCK_START` /
+`CSDM_RUNTIME_BLOCK_END` moved to `csdm/static_data.py` (the engine cannot import the main file
+without a cycle). The main file re-imports them, so existing call sites still work.
+
+---
+
 ## [v207]
 
 ### Added / Changed: "terminal / HUD" visual overhaul
