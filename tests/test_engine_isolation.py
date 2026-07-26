@@ -30,6 +30,12 @@ ENGINE_METHODS = [
     "_find_col", "_pg", "_pg_fresh", "_resolve_cli", "_qe_epoch_bounds",
     "_qe_match_type_sql", "_qe_headshot_sql", "_qe_teamkill_sql",
     "_mods_dp2_global_any_union_enabled",
+    # chantier 1.5, task 4 — kill filters and their dp2 cascade
+    "_non_kill_only", "_stamp_mf", "_split_required_optional",
+    "_get_filter_badge_defs", "_FILTER_BADGE_DEFS", "_dp2_parse_demo",
+    "_trois_shot_filter", "_one_tap_filter", "_trois_tap_filter",
+    "_no_trois_shot_filter", "_apply_global_filter_gate_events",
+    "_apply_global_filter_gate_dict", "_apply_filter_to_events",
 ]
 
 # Forbidden patterns inside the engine: each one is a direct touch of the UI.

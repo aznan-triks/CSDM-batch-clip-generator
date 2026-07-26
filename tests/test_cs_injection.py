@@ -52,7 +52,9 @@ class CSInjectionTests(unittest.TestCase):
         # KILL_FILTER_REGISTRY. Pre-seed its backing cache so the property does
         # not fall through to tk.Tk.__getattr__ — which recurses forever on a
         # bare App.__new__ instance (self.tk is never set).
-        self.app._App__filter_badge_defs_cache = App._get_filter_badge_defs()
+        # The property now lives on EngineMixin (chantier 1.5, task 4), so the
+        # name-mangled cache attribute is `_EngineMixin__...`, not `_App__...`.
+        self.app._EngineMixin__filter_badge_defs_cache = App._get_filter_badge_defs()
 
     def test_common_cs2_injection(self):
         cfg = {

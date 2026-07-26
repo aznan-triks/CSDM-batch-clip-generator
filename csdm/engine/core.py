@@ -13,6 +13,7 @@ by its host (see csdm/engine/ports.py):
 A guard test (tests/test_engine_isolation.py) fails the build if any Tkinter
 import or widget access reappears here.
 """
+import bisect
 import concurrent.futures
 import json
 import os
@@ -39,6 +40,7 @@ from csdm.static_data import (
     KILL_FILTER_SQL_COLS, CPU_VIDEO_CODECS,
     CSDM_RUNTIME_CFG_NAME, CSDM_RUNTIME_BLOCK_START, CSDM_RUNTIME_BLOCK_END,
     _NO_AUTO_EXCLUDE, PERSP_LABELS, _MATCH_TYPE_KEY_TO_DB, _MATCH_TYPE_CFG_KEYS,
+    CSDM_TO_DP2_WEAPON, TROIS_SHOT_THRESHOLDS, DP2_TICK_WINDOW,
 )
 from csdm.core_utils import (
     build_camera_ticks, safe_folder_name, _count_kills, fmt_duration, progress_bar,
@@ -3186,3 +3188,518 @@ class EngineMixin:
         self._tagged_this_batch = []
 
         self.state("buttons_idle")
+
+    # ── kill filters: gates, cascades, dp2 parser ───────────────────────────
+
+    @staticmethod
+    def _non_kill_only(events):
+        return [e for e in events if e.get("type") != "kill"]
+
+    @staticmethod
+    def _stamp_mf(events, cfg_key):
+        """Add cfg_key to the _mf (matched-filters) set on every kill event.
+
+        """
+        for e in events:
+            if e.get("type") == "kill":
+                mf = e.get("_mf")
+                if mf is None:
+                    e["_mf"] = {cfg_key}
+                else:
+                    mf.add(cfg_key)
+
+    @staticmethod
+    def _split_required_optional(cfg, keys: list) -> tuple:
+        """Split active filter cfg_keys into (required, optional) from ★ Must flags."""
+        required = [k for k in keys if cfg.get(f"{k}_req", False)]
+        optional = [k for k in keys if not cfg.get(f"{k}_req", False)]
+        return required, optional
+
+    # Ordered list of (cfg_key, emoji_label, category) for every kill filter that has a badge.
+    # category: "mods" | "dp2" | "db"
+    # Used by _build_filter_badges (per-clip) and _build_filter_header_parts (preview header).
+    @staticmethod
+    def _get_filter_badge_defs():
+        """Derive badge defs from KILL_FILTER_REGISTRY — replaces _FILTER_BADGE_DEFS.
+        Returns [(key, badge, category), ...] for all registered filters."""
+        return [(f.key, f.badge, f.category) for f in KILL_FILTER_REGISTRY]
+
+    # Cached class-level property — derived once from registry
+    @property
+    def _FILTER_BADGE_DEFS(self):
+        try:
+            return self.__filter_badge_defs_cache
+        except AttributeError:
+            self.__filter_badge_defs_cache = self._get_filter_badge_defs()
+            return self.__filter_badge_defs_cache
+
+    def _dp2_parse_demo(self, demo_path, required_sections=None):
+        if required_sections is None:
+            required_sections = {"fire", "death", "hurt", "names"}
+        required_sections = set(required_sections)
+        with self._dp2_cache_lock:
+            existing = self._dp2_cache.get(demo_path)
+            if not isinstance(existing, dict):
+                existing = {}
+            existing_sections = set(existing.get("_sections", set()))
+        needed = required_sections - existing_sections
+        if not needed:
+            return True
+        if not os.path.isfile(demo_path):
+            with self._dp2_cache_lock:
+                cur = self._dp2_cache.get(demo_path, {})
+                if not isinstance(cur, dict):
+                    cur = {}
+                cur.setdefault("fire_detail", {})
+                cur.setdefault("fire_ticks", {})
+                cur.setdefault("view_angles", {})
+                cur.setdefault("hurt_index", {})
+                cur.setdefault("death_flags", {})
+                cur["_sections"] = set(cur.get("_sections", set())) | required_sections
+                self._dp2_cache_put_locked(demo_path, cur)
+            return False
+        try:
+            from demoparser2 import DemoParser
+        except ImportError:
+            self.log(
+                "  ⚠ demoparser2 not installed — install with: pip install demoparser2",
+                "warn")
+            return False
+        try:
+            parser = DemoParser(demo_path)
+        except Exception as e:
+            self.log(f"  ⚠ dp2 parse error ({Path(demo_path).name}): {e}", "warn")
+            return False
+
+        fire_detail = dict(existing.get("fire_detail") or {})
+        fire_ticks = dict(existing.get("fire_ticks") or {})
+        view_angles = dict(existing.get("view_angles") or {})
+        hurt_index = dict(existing.get("hurt_index") or {})
+        death_flags = dict(existing.get("death_flags") or {})
+        demo_names = dict(existing.get("demo_names") or {})
+
+        if "fire" in needed:
+            try:
+                fire_df = parser.parse_event(
+                    "weapon_fire",
+                    player=["is_scoped", "velocity_X", "velocity_Y",
+                            "accuracy_penalty", "player_steamid"],
+                    other=[],
+                )
+                if fire_df is None or len(fire_df) == 0:
+                    fire_detail = {}
+                    fire_ticks = {}
+                else:
+                    cols = list(fire_df.columns)
+                    def _col(name):
+                        if name in cols:
+                            return name
+                        if f"user_{name}" in cols:
+                            return f"user_{name}"
+                        return None
+                    col_sid = _col("player_steamid") or _col("steamid")
+                    col_acc = _col("accuracy_penalty")
+                    col_scope = _col("is_scoped")
+                    col_vx = _col("velocity_X")
+                    col_vy = _col("velocity_Y")
+                    if not col_sid or not col_acc:
+                        self.log(
+                            f"  ⚠ dp2: steamid/accuracy columns missing in weapon_fire "
+                            f"({Path(demo_path).name})", "warn")
+                        fire_detail = {}
+                        fire_ticks = {}
+                    else:
+                        # Vectorized: pandas ops release the GIL → less UI blocking
+                        import numpy as _np
+                        wdf = fire_df[["tick", "weapon", col_sid, col_acc]].copy()
+                        wdf.columns = ["tick", "weapon", "sid", "acc"]
+                        wdf["tick"] = wdf["tick"].fillna(0).astype(int)
+                        wdf["weapon"] = (wdf["weapon"].fillna("").str.lower()
+                                         .str.replace(r"^weapon_", "", regex=True))
+                        wdf["sid"] = wdf["sid"].fillna("").astype(str)
+                        wdf["acc"] = wdf["acc"].fillna(0).astype(float)
+                        wdf["scoped"] = (fire_df[col_scope].fillna(False).astype(bool)
+                                         if col_scope else False)
+                        if col_vx and col_vy:
+                            _vx = fire_df[col_vx].fillna(0).astype(float)
+                            _vy = fire_df[col_vy].fillna(0).astype(float)
+                            wdf["vel"] = _np.sqrt(_vx * _vx + _vy * _vy)
+                        else:
+                            wdf["vel"] = 0.0
+                        wdf.sort_values("tick", inplace=True)
+                        fire_detail = {}
+                        fire_ticks = {}
+                        for (sid, wpn), grp in wdf.groupby(["sid", "weapon"], sort=False):
+                            key = (sid, wpn)
+                            t = grp["tick"].tolist()
+                            fire_detail[key] = list(zip(
+                                t, grp["acc"].tolist(),
+                                grp["scoped"].tolist(), grp["vel"].tolist()))
+                            fire_ticks[key] = t
+            except Exception as e:
+                self.log(f"  ⚠ dp2 parse error ({Path(demo_path).name}): {e}", "warn")
+                fire_detail = {}
+                fire_ticks = {}
+
+        if "death" in needed:
+            view_angles = {}
+            death_flags = {}
+            try:
+                death_df = parser.parse_event(
+                    "player_death",
+                    player=["pitch", "yaw"],
+                    other=["attacker_steamid",
+                           "noscope", "thrusmoke", "attackerblind",
+                           "penetrated", "attackerinair"],
+                )
+                if death_df is not None and len(death_df) > 0:
+                    dcols = list(death_df.columns)
+                    def _dc(name):
+                        if name in dcols:
+                            return name
+                        if f"attacker_{name}" in dcols:
+                            return f"attacker_{name}"
+                        if f"user_{name}" in dcols:
+                            return f"user_{name}"
+                        return None
+                    # Precompute lowered column names (avoid repeated .lower() per column)
+                    _dcols_low = {c: c.lower() for c in dcols}
+                    col_atk = _dc("attacker_steamid") or next(
+                        (c for c, cl in _dcols_low.items() if "attacker" in cl and "steam" in cl), None)
+                    col_yaw = next((c for c, cl in _dcols_low.items() if "yaw" in cl), None)
+                    col_pitch = next((c for c, cl in _dcols_low.items() if "pitch" in cl), None)
+                    flag_cols = {
+                        "noscope": next((c for c, cl in _dcols_low.items() if "noscope" in cl), None),
+                        "thrusmoke": next((c for c, cl in _dcols_low.items() if "thrusmoke" in cl), None),
+                        "attackerblind": next((c for c, cl in _dcols_low.items() if "attackerblind" in cl), None),
+                        "penetrated": next((c for c, cl in _dcols_low.items() if "penetrated" in cl), None),
+                        "attackerinair": next((c for c, cl in _dcols_low.items() if "attackerinair" in cl), None),
+                    }
+                    if col_atk:
+                        fetch_cols = ["tick", col_atk]
+                        if col_yaw:
+                            fetch_cols.append(col_yaw)
+                        if col_pitch:
+                            fetch_cols.append(col_pitch)
+                        for fc in flag_cols.values():
+                            if fc and fc not in fetch_cols:
+                                fetch_cols.append(fc)
+                        arr_d = death_df[fetch_cols].to_numpy()
+                        yaw_i = fetch_cols.index(col_yaw) if col_yaw else None
+                        pitch_i = fetch_cols.index(col_pitch) if col_pitch else None
+                        flag_indices = {fname: fetch_cols.index(fc) for fname, fc in flag_cols.items() if fc}
+                        for row in arr_d:
+                            t = int(row[0] or 0)
+                            sid = str(row[1] or "")
+                            if not sid:
+                                continue
+                            yaw = float(row[yaw_i] or 0) if yaw_i is not None else 0.0
+                            pit = float(row[pitch_i] or 0) if pitch_i is not None else 0.0
+                            if yaw_i is not None or pitch_i is not None:
+                                view_angles.setdefault(sid, []).append((t, yaw, pit))
+                            flags = {}
+                            for fname, fi in flag_indices.items():
+                                val = row[fi]
+                                if val is not None:
+                                    flags[fname] = int(val) if fname == "penetrated" else bool(val)
+                            if flags:
+                                death_flags[(t, sid)] = flags
+                for k in view_angles:
+                    view_angles[k].sort(key=lambda r: r[0])
+            except Exception:
+                pass
+
+        if "hurt" in needed:
+            hurt_index = {}
+            try:
+                hurt_df = parser.parse_event(
+                    "player_hurt",
+                    player=[],
+                    other=["attacker_steamid", "userid_steamid"],
+                )
+                if hurt_df is not None and len(hurt_df) > 0:
+                    hcols = list(hurt_df.columns)
+                    col_hatk = next((c for c in hcols if "attacker" in c.lower() and "steam" in c.lower()), None)
+                    col_hvic = next((c for c in hcols if ("user" in c.lower() or "victim" in c.lower())
+                                     and "steam" in c.lower() and "attacker" not in c.lower()), None)
+                    if col_hatk and col_hvic:
+                        hdf = hurt_df[["tick", col_hatk, col_hvic]].copy()
+                        hdf.columns = ["tick", "atk", "vic"]
+                        hdf["tick"] = hdf["tick"].fillna(0).astype(int)
+                        hdf["atk"] = hdf["atk"].fillna("").astype(str)
+                        hdf["vic"] = hdf["vic"].fillna("").astype(str)
+                        hdf = hdf[(hdf["atk"] != "") & (hdf["vic"] != "")]
+                        hdf.sort_values("tick", inplace=True)
+                        for vic, grp in hdf.groupby("vic", sort=False):
+                            hurt_index[vic] = list(zip(
+                                grp["tick"].tolist(), grp["atk"].tolist()))
+            except Exception:
+                pass
+
+        if "names" in needed:
+            try:
+                info_df = parser.parse_player_info()
+                if info_df is not None and len(info_df) > 0:
+                    icols = list(info_df.columns)
+                    sid_col  = next((c for c in icols if "steamid" in c.lower()
+                                     or "steam_id" in c.lower()), None)
+                    name_col = next((c for c in icols if c.lower() == "name"), None)
+                    if sid_col and name_col:
+                        for sid, nm in zip(
+                            info_df[sid_col].fillna("").astype(str),
+                            info_df[name_col].fillna("").astype(str),
+                        ):
+                            if sid and nm:
+                                demo_names[sid] = nm
+            except Exception:
+                pass
+
+        with self._dp2_cache_lock:
+            merged = self._dp2_cache.get(demo_path, {})
+            if not isinstance(merged, dict):
+                merged = {}
+            merged["fire_detail"] = fire_detail
+            merged["fire_ticks"] = fire_ticks
+            merged["view_angles"] = view_angles
+            merged["hurt_index"] = hurt_index
+            merged["death_flags"] = death_flags
+            merged["demo_names"]  = demo_names
+            merged["_sections"] = set(merged.get("_sections", set())) | required_sections
+            self._dp2_cache_put_locked(demo_path, merged)
+        return True
+
+    def _trois_shot_filter(self, demo_path, events, cfg):
+        """Keep only lucky kills (TROIS SHOT filter).
+
+        Reads weapon_fire data from _dp2_cache (populated by _dp2_parse_demo).
+        Works on any weapon that has a threshold defined in TROIS_SHOT_THRESHOLDS
+        (via CSDM_TO_DP2_WEAPON). Kills with weapons that have no threshold are
+        passed through unchanged (no weapon restriction enforced in UI anymore).
+        """
+        if not os.path.isfile(demo_path):
+            return self._non_kill_only(events)
+
+        if demo_path not in self._dp2_cache:
+            self._dp2_parse_demo(demo_path)
+
+        with self._dp2_cache_lock:
+            data = self._dp2_cache.get(demo_path, {})
+        fire_index = data.get("fire_detail", {})
+
+        def _is_lucky(kill_tick, killer_sid, weapon_raw):
+            w_key = CSDM_TO_DP2_WEAPON.get(weapon_raw.lower().strip())
+            if w_key is None:
+                return False  # no threshold for this weapon — never lucky
+            thresholds = TROIS_SHOT_THRESHOLDS[w_key]
+            wp_suffix  = w_key[7:] if w_key.startswith("weapon_") else w_key
+
+            entries = fire_index.get((killer_sid, wp_suffix))
+            if not entries:
+                return False
+
+            ticks_only = [e[0] for e in entries]
+            pos = bisect.bisect_right(ticks_only, kill_tick) - 1
+            best = None
+            best_dist = DP2_TICK_WINDOW + 1
+            i = pos
+            while i >= 0:
+                ftick, acc, scoped, vel = entries[i]
+                dist = kill_tick - ftick
+                if dist < 0:
+                    i -= 1; continue
+                if dist >= DP2_TICK_WINDOW:
+                    break
+                if dist < best_dist:
+                    best_dist = dist
+                    best = (acc, scoped, vel)
+                i -= 1
+
+            if best is None:
+                return False
+
+            acc, scoped, vel = best
+            if thresholds["scope"] and thresholds["vel"]:
+                result = (not scoped) or (acc > thresholds["acc"]) or (vel > 100)
+            elif thresholds["scope"]:
+                result = (not scoped) or (acc > thresholds["acc"])
+            else:
+                result = acc > thresholds["acc"]
+
+            if self._dp2_verbose:
+                self.log(
+                    f"  🎲 [{weapon_raw}] acc={acc:.4f}(threshold={thresholds['acc']}) "
+                    f"scoped={scoped} vel={vel:.0f} → {'✓ TROIS SHOT' if result else '✗ precise'}",
+                    "info" if result else "dim")
+            return result
+
+        filtered = []
+        for evt in events:
+            if evt.get("type") != "kill":
+                filtered.append(evt)
+                continue
+            weapon_raw = evt.get("weapon", "")
+            killer_sid = str(evt.get("killer_sid", ""))
+            kill_tick  = int(evt.get("tick", 0))
+            # Weapons with no threshold are skipped (not included)
+            if CSDM_TO_DP2_WEAPON.get(weapon_raw.lower().strip()) is None:
+                continue
+            if _is_lucky(kill_tick, killer_sid, weapon_raw):
+                filtered.append(evt)
+
+        return filtered
+
+    def _one_tap_filter(self, demo_path, events, cfg):
+        """Keep only isolated single-shot kills.
+
+        A kill is kept if the killer fired exactly one shot with that weapon
+        in [kill_tick − WINDOW, kill_tick + WINDOW] where WINDOW is derived
+        from cfg["kill_mod_one_tap_s"] (seconds) × tickrate (default: 2s).
+        Reads fire_ticks from _dp2_cache (populated by _dp2_parse_demo).
+        If the demo is not yet cached, triggers a synchronous parse as fallback.
+        (Headshot is pre-guaranteed by the DB query when kill_mod_one_tap is enabled.)
+        """
+        if not os.path.isfile(demo_path):
+            return self._non_kill_only(events)
+
+        # Ensure parsed — no-op if already cached
+        if demo_path not in self._dp2_cache:
+            self._dp2_parse_demo(demo_path)
+
+        with self._dp2_cache_lock:
+            data = self._dp2_cache.get(demo_path, {})
+        shots_index = data.get("fire_ticks", {})
+
+        _one_tap_s = max(0.5, float(cfg.get("kill_mod_one_tap_s", 2)))
+        _tickrate   = int(cfg.get("tickrate", 64))
+        WINDOW = int(_one_tap_s * _tickrate)  # convert user-seconds → ticks
+
+        def _is_isolated(kill_tick, killer_sid, weapon_raw):
+            """True iff exactly 1 shot with this weapon was fired in [kill_tick-WINDOW, kill_tick+WINDOW]."""
+            # Resolve weapon suffix the same way as _trois_shot_filter
+            w_key = CSDM_TO_DP2_WEAPON.get(weapon_raw.lower().strip())
+            if w_key:
+                wpn_s = w_key[7:] if w_key.startswith("weapon_") else w_key
+            else:
+                wpn_s = weapon_raw.lower().strip()
+                if wpn_s.startswith("weapon_"):
+                    wpn_s = wpn_s[7:]
+            ticks = shots_index.get((str(killer_sid), wpn_s), [])
+            if not ticks:
+                return False
+            lo, hi = kill_tick - WINDOW, kill_tick + WINDOW
+            pos = bisect.bisect_left(ticks, lo)
+            count = 0
+            for i in range(pos, len(ticks)):
+                if ticks[i] > hi:
+                    break
+                count += 1
+                if count > 1:
+                    return False  # more than one shot with this weapon in the window
+            return count == 1
+
+        filtered = []
+        for evt in events:
+            if evt.get("type") != "kill":
+                filtered.append(evt)
+                continue
+            killer_sid  = str(evt.get("killer_sid", ""))
+            kill_tick   = int(evt.get("tick", 0))
+            weapon_raw  = evt.get("weapon", "")
+            isolated = _is_isolated(kill_tick, killer_sid, weapon_raw)
+            if self._dp2_verbose:
+                self.log(
+                    f"  🎯 [{weapon_raw}] [tick={kill_tick}] sid={killer_sid} → "
+                    f"{'✓ isolated' if isolated else '✗ not isolated'}",
+                    "info" if isolated else "dim")
+            if isolated:
+                filtered.append(evt)
+
+        return filtered
+
+    def _no_trois_shot_filter(self, demo_path, events, cfg):
+        """Keep only precise kills — inverse of TROIS SHOT.
+        Kills on weapons with no threshold are passed through (can't be lucky).
+        """
+        lucky_evts = self._trois_shot_filter(demo_path, events, cfg)
+        lucky_sig = {
+            (e.get("tick"), str(e.get("killer_sid")))
+            for e in lucky_evts if e.get("type") == "kill"
+        }
+        filtered = []
+        for e in events:
+            if e.get("type") != "kill":
+                filtered.append(e)
+                continue
+            sig = (e.get("tick"), str(e.get("killer_sid")))
+            if sig not in lucky_sig:
+                filtered.append(e)
+        return filtered
+
+    def _trois_tap_filter(self, demo_path, events, cfg):
+        """TROIS TAP = TROIS SHOT AND ONE TAP combined.
+        Keeps only lucky kills that are also isolated single shots.
+        """
+        lucky_events = self._trois_shot_filter(demo_path, events, cfg)
+        return self._one_tap_filter(demo_path, lucky_events, cfg)
+
+    def _apply_global_filter_gate_events(self, events, cfg):
+        active_keys = [k for k, *_ in self._FILTER_BADGE_DEFS if cfg.get(k)]
+        if not active_keys:
+            return events
+        req_keys, opt_keys = self._split_required_optional(cfg, active_keys)
+        req_set = set(req_keys)
+        opt_set = set(opt_keys)
+        non_kill = [e for e in events if e.get("type") != "kill"]
+        kept = []
+        for e in events:
+            if e.get("type") != "kill":
+                continue
+            matched = set(e.get("_mf") or set())
+            if req_set and not req_set.issubset(matched):
+                continue
+            if opt_set and not (matched & opt_set):
+                continue
+            kept.append(e)
+        result = kept + non_kill
+        return result or None
+
+    def _apply_global_filter_gate_dict(self, evts, cfg):
+        out = {}
+        for dp, events in evts.items():
+            gated = self._apply_global_filter_gate_events(events, cfg)
+            if gated is not None:
+                out[dp] = gated
+        return out
+
+    def _apply_filter_to_events(self, evts, cfg, cfg_key, filter_fn, label):
+        """Apply a per-demo filter function to all demos in evts.
+
+        Skips if cfg_key is falsy. Returns a new {demo_path: events} dict
+        with empty-demo paths removed.
+
+        Surviving kill events are tagged with cfg_key in their _mf (matched filters)
+        set so that clip badges can show exactly which filter each clip triggered.
+        """
+        if not cfg.get(cfg_key):
+            return evts
+        result = {}
+        for dp, events in evts.items():
+            n_before = _count_kills(events)
+            filtered = filter_fn(dp, events, cfg)
+            combined = filtered or []
+            n_after  = _count_kills(combined)
+            # Mate POV is a camera modifier: kills aren't removed in optional mode,
+            # so n_before == n_after gives no useful info.  Show stamped/total instead.
+            if cfg_key == "kill_mod_mate_pov":
+                n_with_mate = sum(1 for e in combined if e.get("_mate_pov_sid"))
+                self.log(
+                    f"  {label} [{Path(dp).name}] : {n_with_mate}/{n_before} with qualifying mate",
+                    "info" if n_with_mate else "dim")
+            else:
+                self.log(
+                    f"  {label} [{Path(dp).name}] : {n_before} kills → {n_after}",
+                    "info" if n_after else "dim")
+            if combined:
+                self._stamp_mf(combined, cfg_key)
+                result[dp] = combined
+        return result
