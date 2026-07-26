@@ -3254,7 +3254,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
     def _on_window_configure(self, event=None):
         if not self.v["ui_remember_layout"].get():
             return
-        if self.state() != "normal":
+        if self.wm_state() != "normal":
             return
         if self._layout_cfg_job is not None:
             try:
@@ -3267,7 +3267,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         self._layout_cfg_job = None
         if not self.v["ui_remember_layout"].get():
             return
-        if self.state() != "normal":
+        if self.wm_state() != "normal":
             return
         try:
             w = self.winfo_width()

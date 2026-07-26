@@ -41,3 +41,17 @@ def test_log_port_is_callable_on_the_class():
     import csdm_batch_clips_generator as main
     assert callable(main.App.log)
     assert main.App.log.__qualname__.startswith("App.")
+
+
+def test_main_file_never_calls_the_state_port_itself():
+    """`App.state` is the engine port and deliberately overrides `tk.Tk.state`.
+
+    Only the engine may call it. The UI's own window-state checks must go
+    through `wm_state`, which is the very same Tk function under its other
+    name -- calling `self.state()` here would hit the port instead and raise.
+    """
+    src = MAIN.read_text(encoding="utf-8")
+    assert "self.state(" not in src, (
+        "the main file calls self.state(...), which resolves to the engine port, "
+        "not to tk.Tk.state -- use self.wm_state(...) instead"
+    )

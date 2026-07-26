@@ -31,6 +31,19 @@ so every `self.log(...)` call made from `csdm/engine/core.py` (104 call sites) r
 Added `tests/test_engine_port_shadowing.py`, an AST-based guard that fails the suite if any
 `self.<port> = ...` assignment reappears for `log` / `log_parts` / `state` / `ask`.
 
+### Fixed: resizing the window could crash the app
+
+**What changed:** the engine's own "what state are we in" channel had the same name as the
+window's built-in "is the window normal, minimized, or maximized" check. The two window-size
+checks in the app were calling the engine's channel by mistake, which crashed as soon as the
+window was resized. They now call the window's own check directly, under its other name.
+
+**Technical details:** the two `self.state()` calls in `_on_configure`/`_remember_layout_state`
+(lines 3257 and 3270) resolved to `App.state`, the engine port, not to `tk.Tk.state` — even
+though `tk.Tk.state` and `tk.Tk.wm_state` are literally the same function object. Both call
+sites now use `self.wm_state()`, the same Tk function under its other, non-shadowed name.
+Added `test_main_file_never_calls_the_state_port_itself` to the AST guard suite.
+
 ---
 
 ## [v209]
