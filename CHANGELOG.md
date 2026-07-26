@@ -9,6 +9,49 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v211]
+
+### Changed: the engine can now run without a window (Electron migration — stage 1.5)
+
+**What changed:** Nothing you can see. The part of the app that does the real work — reading the
+database, filtering kills, reading demo files, tagging, building the summary — used to need the
+window to exist before it could run, even though it never showed anything itself. It doesn't
+anymore. That was the missing piece before the app can be given a new interface.
+
+**Why a stage 1.5 at all:** stage 1 (v208) claimed the engine was separated, but the engine still
+borrowed 26 methods and 23 pieces of state from the interface file. It worked *inside* the
+window and nowhere else — which is not what "separated" is for.
+
+**Moved into `csdm/engine/`** (~930 lines, verbatim — no logic rewritten):
+- Database and column helpers: `_find_col`, `_pg`, `_pg_fresh`, `_resolve_cli`, the four
+  `_qe_*_sql` fragment builders, `_SQL_MOD_KEYS`, `_mods_dp2_global_any_union_enabled`.
+- Kill filters and their dp2 cascade: `_dp2_parse_demo` (236 lines), `_trois_shot_filter`,
+  `_one_tap_filter`, `_trois_tap_filter`, `_no_trois_shot_filter`, the three `_apply_*` gates,
+  `_stamp_mf`, `_split_required_optional`, `_non_kill_only`, `_FILTER_BADGE_DEFS`.
+- Demo, tag and summary helpers: `_get_demo_ts`, `_format_demo_date`, `_demo_sort_key`,
+  `_demo_picker_get_active`, `_get_demo_checksum`, `_tag_demo`, `_tag_log_line`,
+  `_get_active_tag_names`, `_normalize_recsys`, `_hms`, `_calc_summary`, `_fmt_summary`,
+  `_read_demo_date_from_info`, `_ts_from_demo_path`.
+- Main file: 7 650 → 6 672 lines. `csdm/engine/core.py`: 3 029 → 4 009.
+
+**New: the host contract** (`csdm/engine/state.py`) — the 31 pieces of state an engine host must
+provide, declared in one place with a factory per entry so two hosts never share a dict. `App`
+now calls `init_engine_state()` instead of setting them one by one. Five defaults in the plan
+were wrong and were taken from the real code instead.
+
+**The database credentials stopped being read from the screen:** `_pg` / `_pg_fresh` read
+`_pg_params` (fed by `_sync_pg_params()`) instead of the five text fields. Same keys as
+`_collect_config()` already produced.
+
+**The proof** (`tests/test_engine_headless.py`): a `HeadlessHost` that inherits only the engine
+and the state contract — no Tk, no widget, no main loop — runs the filter chain, the summary
+helpers and the SQL fragment builders. A subprocess check asserts Tkinter is never imported;
+verified to have real detection power (importing the main file pulls in 10 Tkinter modules,
+importing the engine pulls in none). The isolation guard list grew from 39 to 66 methods.
+118 → 124 tests.
+
+---
+
 ## [v210]
 
 ### Fixed: the log console silently swallowed every engine log line
