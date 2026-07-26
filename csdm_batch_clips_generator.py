@@ -100,7 +100,6 @@ EVENTS           = ["Kills", "Deaths", "Rounds"]
 ENCODER_OPTIONS  = ["FFmpeg"]
 RECSYS_OPTIONS   = ["HLAE", "CS"]
 VIDEO_CONTAINERS = ["mp4", "avi", "mkv", "mov", "webm"]
-PERSP_LABELS     = {"killer": "POV Killer", "victim": "POV Victim", "both": "Both"}
 
 
 # ── Donnees de reference statiques (registre de filtres, armes, codecs, …) ──
@@ -110,6 +109,7 @@ from csdm.static_data import (
     FilterDef, KILL_FILTER_REGISTRY,
     KILL_FILTER_KEYS_ALL, KILL_FILTER_KEYS, KILL_FILTER_LABELS, KILL_FILTER_SQL_COLS,
     _FILTER_CONFIG_DEFAULTS, _NO_AUTO_EXCLUDE, _FILTER_BOOL_KEYS, _FILTER_PRESET_PLAYER_KEYS,
+    PERSP_LABELS,
     VIDEO_CODECS_INFO, VIDEO_CODECS, CPU_VIDEO_CODECS, AUDIO_CODECS_INFO, AUDIO_CODECS,
     RESOLUTIONS, FRAMERATES, DEFINITIONS, ASPECT_RATIOS,
     TROIS_SHOT_THRESHOLDS, CSDM_TO_DP2_WEAPON, DP2_TICK_WINDOW,

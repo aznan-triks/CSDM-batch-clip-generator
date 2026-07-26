@@ -178,6 +178,8 @@ KILL_FILTER_SQL_COLS: dict = {f.key: f.sql_cols
 _FILTER_CONFIG_DEFAULTS: dict = {}
 # Keys that must NOT get an auto-generated _exclude entry
 _NO_AUTO_EXCLUDE = {"kill_mod_no_trois_shot", "kill_mod_trois_tap"}
+# Perspective keys as used by the CSDM CLI, mapped to their display labels.
+PERSP_LABELS = {"killer": "POV Killer", "victim": "POV Victim", "both": "Both"}
 for _f in KILL_FILTER_REGISTRY:
     _FILTER_CONFIG_DEFAULTS[_f.key] = False
     _FILTER_CONFIG_DEFAULTS[f"{_f.key}_req"] = False

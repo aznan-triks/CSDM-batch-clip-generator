@@ -13,14 +13,18 @@ by its host (see csdm/engine/ports.py):
 A guard test (tests/test_engine_isolation.py) fails the build if any Tkinter
 import or widget access reappears here.
 """
+import concurrent.futures
 import json
 import os
+import random
 import re
+import shlex
 import shutil
 import subprocess
 import tempfile
 import threading
 import time
+import uuid
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -29,6 +33,7 @@ from csdm.static_data import (
     SUICIDE_WEAPONS, DELAYED_EFFECT_WEAPONS, KILL_FILTER_REGISTRY,
     KILL_FILTER_SQL_COLS, CPU_VIDEO_CODECS,
     CSDM_RUNTIME_CFG_NAME, CSDM_RUNTIME_BLOCK_START, CSDM_RUNTIME_BLOCK_END,
+    _NO_AUTO_EXCLUDE, PERSP_LABELS,
 )
 from csdm.core_utils import (
     build_camera_ticks, safe_folder_name, _count_kills, fmt_duration, progress_bar,
