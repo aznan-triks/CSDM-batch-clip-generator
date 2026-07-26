@@ -1,4 +1,5 @@
 """Tests des trois prises du moteur (chantier 1, tache 1)."""
+import threading
 import unittest
 
 from csdm.engine.ports import EnginePorts, CollectingPorts
@@ -97,6 +98,37 @@ class TestAppStateRouting(unittest.TestCase):
         app = self._app()
         with self.assertRaises(KeyError):
             app._on_state_main("nope", {})
+
+
+class TestDp2ExcludePathRuns:
+    """The dp2 exclude branch read `_NO_AUTO_EXCLUDE`, a name the engine no longer had.
+
+    Guard the behaviour, not just the name: this is the branch that made both
+    PREVIEW and RUN raise NameError as soon as one Exclude checkbox was ticked.
+    """
+
+    def test_exclude_branch_does_not_raise(self):
+        from csdm.engine.core import EngineMixin
+        from csdm.engine.ports import CollectingPorts
+
+        ports = CollectingPorts()
+
+        class Host(EngineMixin):
+            def __init__(self):
+                self.log = ports.log
+                self.log_parts = ports.log_parts
+                self.state = ports.state
+                self.ask = ports.ask
+                self._dp2_cache = {}
+                self._dp2_cache_lock = threading.Lock()
+
+        host = Host()
+        cfg = {"kill_mod_wallbang": False, "kill_mod_wallbang_exclude": True}
+
+        # No events in, so no dp2 parse happens; we only need the branch that
+        # builds the exclude key list to be reachable.
+        result = host._apply_dp2_filters_to_events({}, cfg)
+        assert result == {}
 
 
 if __name__ == "__main__":
