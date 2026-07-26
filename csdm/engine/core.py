@@ -3703,3 +3703,307 @@ class EngineMixin:
                 self._stamp_mf(combined, cfg_key)
                 result[dp] = combined
         return result
+
+    # ── chantier 1.5, task 5 — demo, tag and summary helpers ─────────────────
+
+    def _hms(self, s):
+        s = int(s)
+        if s < 60:   return f"{s}s"
+        if s < 3600: return f"{s//60}m{s%60:02d}s"
+        return f"{s//3600}h{(s%3600)//60:02d}m{s%60:02d}s"
+
+    @staticmethod
+    def _read_demo_date_from_info(demo_path):
+        """
+        Read the .info file next to the .dem and extract the Unix timestamp
+        of the actual match date.
+
+        The .info file is a binary protobuf. The date field is a varint
+        (field 5, type 0) encoding a Unix timestamp in seconds.
+
+        CDataGCCStrike15_v2_MatchInfo format:
+          field 1 = matchid (uint64)
+          field 2 = matchtime (uint32) ← match timestamp
+          ...
+        Minimal parsing with no protobuf dependency.
+        """
+        info_path = Path(demo_path).with_suffix(".info")
+        if not info_path.exists():
+            # Also try demo_path + ".info" (some versions append to the name)
+            info_path2 = Path(str(demo_path) + ".info")
+            if info_path2.exists():
+                info_path = info_path2
+            else:
+                return None
+        try:
+            data = info_path.read_bytes()
+            i = 0
+            while i < len(data):
+                # Read tag varint
+                tag = 0
+                shift = 0
+                while i < len(data):
+                    b = data[i]; i += 1
+                    tag |= (b & 0x7F) << shift
+                    shift += 7
+                    if not (b & 0x80):
+                        break
+                field_num = tag >> 3
+                wire_type = tag & 0x07
+                if wire_type == 0:   # varint
+                    val = 0; shift = 0
+                    while i < len(data):
+                        b = data[i]; i += 1
+                        val |= (b & 0x7F) << shift
+                        shift += 7
+                        if not (b & 0x80):
+                            break
+                    if field_num == 2 and val > 1_000_000_000:
+                        # matchtime: Unix timestamp post-2001 → valid match date
+                        return val
+                elif wire_type == 2: # length-delimited
+                    length = 0; shift = 0
+                    while i < len(data):
+                        b = data[i]; i += 1
+                        length |= (b & 0x7F) << shift
+                        shift += 7
+                        if not (b & 0x80):
+                            break
+                    i += length
+                elif wire_type in (1, 5):
+                    i += 8 if wire_type == 1 else 4
+                else:
+                    break   # unknown wire type, stop
+        except Exception:
+            pass
+        return None
+
+    @staticmethod
+    def _ts_from_demo_path(demo_path):
+        """Return the .dem file mtime as a Unix timestamp, or None if not found.
+        Best fallback when .info is absent — typically close to the download date."""
+        try:
+            p = Path(demo_path)
+            if p.is_file():
+                return int(p.stat().st_mtime)
+        except Exception:
+            pass
+        return None
+
+    @staticmethod
+    def _normalize_recsys(value):
+        v = str(value or "").strip().upper()
+        return "CS" if v == "CS" else "HLAE"
+
+    def _get_demo_ts(self, demo_path):
+        """Return the canonical demo timestamp. Cached after the first call.
+        Priority: 1) .info file  2) .dem mtime  (None if unavailable)."""
+        if demo_path in self._ts_cache:
+            return self._ts_cache[demo_path]
+        ts = self._read_demo_date_from_info(demo_path)
+        if ts is None:
+            ts = self._ts_from_demo_path(demo_path)
+        self._ts_cache[demo_path] = ts
+        return ts
+
+    def _format_demo_date(self, demo_path):
+        ts = self._get_demo_ts(demo_path)
+        if ts is not None:
+            try:
+                return datetime.fromtimestamp(ts).strftime("%d %m %Y")
+            except Exception:
+                pass
+        # Fallback DB (often = import date)
+        raw = self._demo_dates.get(demo_path)
+        if raw is None:
+            return "??-??-????"
+        try:
+            if hasattr(raw, "strftime"):
+                return raw.strftime("%d %m %Y")
+            if isinstance(raw, (int, float)):
+                t = int(raw)
+                if t > 4_000_000_000:
+                    t //= 1000
+                return datetime.fromtimestamp(t).strftime("%d %m %Y")
+            s = str(raw).strip()
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S",
+                        "%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+                try:
+                    return datetime.strptime(s[:len(fmt)], fmt).strftime("%d %m %Y")
+                except ValueError:
+                    continue
+        except Exception:
+            pass
+        return "??-??-????"
+
+    def _demo_sort_key(self, demo_path):
+        """Cached sort key — avoids repeated strptime on the same raw date value."""
+        # _ts_cache covers _get_demo_ts (covers .info and mtime).
+        # For DB raw dates, normalise once and store back as int in _demo_dates.
+        ts = self._get_demo_ts(demo_path)
+        if ts is not None:
+            return (0, ts)
+        raw = self._demo_dates.get(demo_path)
+        if raw is None:
+            return (1, 0)
+        # Already normalised on a previous call?
+        if isinstance(raw, (int, float)):
+            t = int(raw)
+            t = t // 1000 if t > 4_000_000_000 else t
+            return (0, t)
+        try:
+            if hasattr(raw, "timestamp"):
+                t = int(raw.timestamp())
+                self._demo_dates[demo_path] = t  # normalise in-place
+                return (0, t)
+            s = str(raw).strip()
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+                try:
+                    t = int(datetime.strptime(s[:len(fmt)], fmt).timestamp())
+                    self._demo_dates[demo_path] = t  # normalise in-place
+                    return (0, t)
+                except ValueError:
+                    continue
+        except Exception:
+            pass
+        return (1, 0)
+
+    def _demo_picker_get_active(self):
+        """Return list of demo paths that are checked in the picker.
+        If picker is empty (no preview run yet), returns None (= no filter)."""
+        if not self._demo_picker_state:
+            return None
+        return [dp for dp, ok in self._demo_picker_state.items() if ok]
+
+    def _get_active_tag_names(self):
+        return [tn for tid, tn, _ in self._tags_list if tid in self._tags_active]
+
+    def _tag_log_line(self, msg):
+        self.log(msg, "dim")
+
+    def _get_demo_checksum(self, demo_path):
+        """Return the matches checksum for a demo path.
+
+        v19: Priority: cache populated by _query_events (no re-query).
+        Fallback: direct query with extended candidates.
+        """
+        # 1. Cache populated by _query_events — primary path
+        if demo_path in self._demo_checksums:
+            return self._demo_checksums[demo_path]
+
+        # 2. Fallback: direct query
+        dc = self._find_col("matches", [
+            "demo_path", "demo_file_path", "demo_filepath",
+            "share_code", "file_path", "path",
+        ])
+        mkm = self._find_col("matches", ["checksum", "id", "match_id"])
+
+        if not dc or not mkm:
+            self._tag_log_line(
+                f"[CHK] ERREUR: colonnes non trouvees (dc={dc}, mkm={mkm})\n"
+                f"      Colonnes matches: {self._db_schema.get('matches', [])}")
+            return None
+
+        candidates = [demo_path]
+        abs_path = os.path.abspath(demo_path)
+        candidates.append(abs_path)
+        candidates.append(abs_path.replace("\\", "/"))
+        candidates.append(abs_path.replace("/", "\\"))
+        basename = os.path.basename(demo_path)
+
+        try:
+            conn = self._pg_fresh()
+            with conn.cursor() as cur:
+                for sp in candidates:
+                    cur.execute(
+                        f'SELECT "{mkm}" FROM matches WHERE "{dc}"=%s LIMIT 1', (sp,))
+                    r = cur.fetchone()
+                    if r:
+                        self._demo_checksums[demo_path] = r[0]
+                        conn.close()
+                        return r[0]
+
+                # LIKE on the filename
+                cur.execute(
+                    f'SELECT "{mkm}" FROM matches WHERE "{dc}" LIKE %s LIMIT 1',
+                    (f"%{basename}",))
+                r = cur.fetchone()
+                if r:
+                    self._demo_checksums[demo_path] = r[0]
+                    conn.close()
+                    return r[0]
+
+                # Debug: show what is in the table
+                cur.execute(f'SELECT "{dc}","{mkm}" FROM matches LIMIT 5')
+                samples = cur.fetchall()
+                self._tag_log_line(
+                    f"[CHK] Not found: {demo_path!r}\n"
+                    f"      col_demo={dc!r}, col_chk={mkm!r}")
+                for s in samples:
+                    self._tag_log_line(f"      sample DB: demo={s[0]!r}  chk={s[1]!r}")
+            conn.close()
+        except Exception as e:
+            self._tag_log_line(f"[CHK] Exception: {e}")
+        return None
+
+    def _tag_demo(self, demo_path, tag_name):
+        ts = self._tags_schema
+        jt = ts.get("junction_table")
+        jt_tag = ts.get("jt_tag_col")
+        jt_match = ts.get("jt_match_col")
+        if not jt or not jt_tag or not jt_match:
+            return False, f"Junction table not found (jt={jt}, tag={jt_tag}, match={jt_match})"
+
+        tag_id = next((tid for tid, tn, _ in self._tags_list if tn == tag_name), None)
+        if tag_id is None:
+            return False, f"Tag '{tag_name}' not found in self._tags_list"
+
+        checksum = self._get_demo_checksum(demo_path)
+        if not checksum:
+            return False, f"Checksum not found for {os.path.basename(demo_path)}"
+
+        try:
+            conn = self._pg_fresh()
+            with conn.cursor() as cur:
+                cur.execute(
+                    f'SELECT 1 FROM "{jt}" WHERE "{jt_match}"=%s AND "{jt_tag}"=%s LIMIT 1',
+                    (checksum, tag_id))
+                if not cur.fetchone():
+                    cur.execute(
+                        f'INSERT INTO "{jt}" ("{jt_match}","{jt_tag}") VALUES (%s,%s)',
+                        (checksum, tag_id))
+                    conn.commit()
+                    self._tag_log_line(
+                        f"   INSERT {jt}({jt_match}={checksum!r}, {jt_tag}={tag_id}) OK")
+                else:
+                    conn.commit()
+                    self._tag_log_line(
+                        f"   Relation deja existante: {jt_match}={checksum!r}, {jt_tag}={tag_id}")
+            conn.close()
+            return True, ""
+        except Exception as e:
+            return False, str(e)
+
+    def _calc_summary(self, all_events, cfg):
+        """Return (nb_demos, nb_clips, total_sec, avg_sec) from events and config."""
+        tickrate = cfg.get("tickrate", 64)
+        before_s = self._effective_before(cfg)
+        after_s = cfg.get("after", 5)
+        nb_demos = len(all_events)
+        nb_clips = 0
+        total_ticks = 0
+        for events in all_events.values():
+            seqs = self._build_sequences(events, tickrate, before_s, after_s)
+            nb_clips += len(seqs)
+            for s in seqs:
+                total_ticks += s["end_tick"] - s["start_tick"]
+        total_sec = total_ticks / tickrate if tickrate else 0
+        avg_sec = (total_sec / nb_clips) if nb_clips else 0
+        return nb_demos, nb_clips, total_sec, avg_sec
+
+    def _fmt_summary(self, nb_demos, nb_clips, total_sec, avg_sec):
+        h = self._hms
+        return (f"  {nb_clips} clip{'s' if nb_clips != 1 else ''}  •  "
+                f"total duration {h(total_sec)}  •  "
+                f"avg. {h(avg_sec)}/clip  •  "
+                f"{nb_demos} demo{'s' if nb_demos != 1 else ''}")

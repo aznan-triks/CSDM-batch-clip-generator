@@ -36,6 +36,12 @@ ENGINE_METHODS = [
     "_trois_shot_filter", "_one_tap_filter", "_trois_tap_filter",
     "_no_trois_shot_filter", "_apply_global_filter_gate_events",
     "_apply_global_filter_gate_dict", "_apply_filter_to_events",
+    # chantier 1.5, task 5 — demo, tag and summary helpers
+    "_read_demo_date_from_info", "_ts_from_demo_path", "_get_demo_ts",
+    "_format_demo_date", "_demo_sort_key", "_demo_picker_get_active",
+    "_get_demo_checksum", "_tag_demo", "_tag_log_line",
+    "_get_active_tag_names", "_normalize_recsys", "_hms", "_calc_summary",
+    "_fmt_summary",
 ]
 
 # Forbidden patterns inside the engine: each one is a direct touch of the UI.
