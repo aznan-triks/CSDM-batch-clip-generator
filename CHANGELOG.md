@@ -9,6 +9,44 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v209]
+
+### Fixed: the engine could not actually run after the v208 move
+
+**What changed:** v208 moved the engine into its own file, but seven names it relied on stayed
+behind in the old one. In Python, a method that moves looks for those names in its *new* file —
+not in the file of the class that inherits it — so it no longer found them. The result: PREVIEW
+and RUN crashed. All seven are restored, and a new test makes this whole class of mistake
+impossible to repeat.
+
+**The seven names, and what each one broke:**
+- `PERSP_LABELS` (`core.py:2566`, in `_worker`) — on the header log line, executed on every RUN,
+  so **RUN failed unconditionally**. It was a plain label table, so it moved to
+  `csdm/static_data.py` next to the other lookup tables; the main file re-imports it, leaving
+  its existing call site untouched.
+- `_NO_AUTO_EXCLUDE` (`core.py:2220` and `2395`, in `_apply_dp2_modifiers` and
+  `_apply_dp2_filters_to_events`) — reached as soon as one kill filter had its Exclude box
+  ticked, on **both the PREVIEW and RUN paths**. Now imported from `csdm/static_data.py`,
+  where it already lived.
+- `concurrent` (`core.py:1932`, in `_preparse_dp2`) — the demo pre-parse, **PREVIEW and RUN**.
+- `uuid` (`core.py:2058`, in `_assemble_clips`) — final assembly.
+- `shlex` (`core.py:1389`, in `_inject_hlae_extra_args`) — only with extra HLAE arguments.
+- `random` (`core.py:2635`, in `_worker`) — only with random demo order enabled.
+- Technical: the four stdlib names were simply absent from the header import block. No business
+  logic was touched — imports and one constant move, nothing else.
+
+**Why no test caught it:** `tests/test_engine_isolation.py` checks what the engine is *forbidden*
+to do (import Tkinter, call `self.after`, read a widget). It never checked what the engine
+*needs* in order to run. A relocation cannot be validated by a prohibition test alone.
+
+**The new guard:** `tests/test_engine_globals.py` walks the AST of every module in
+`csdm/engine/` and fails if any free name is loaded without being defined, imported, or a
+builtin. It reproduced all seven sites before the fix and is green after. Also new:
+`TestDp2ExcludePathRuns` in `tests/test_engine_ports.py`, which drives the dp2 exclude branch
+through `CollectingPorts` — guarding the behaviour, not just the name. 106 → 108 tests.
+
+---
+
 ## [v208]
 
 ### Changed: the engine moved out of the UI file (Electron migration — stage 1)
