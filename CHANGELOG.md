@@ -9,6 +9,57 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v212]
+
+### Added: the bridge between Electron and the Python engine (Electron migration — stage 2)
+
+**What changed:** Nothing in the app you use today — Tkinter is still the interface. What is new
+is a second way to talk to the engine: a small Electron window can now start the engine as a
+background process and receive its logs, its progress and its questions live, through a plain
+text pipe. No network port is opened, so Windows never raises a firewall prompt — that was the
+condition for the finished app to install with a double-click.
+
+**The protocol** (`csdm/bridge/protocol.py`): one JSON object per line. Six message types out
+(`log`, `log_parts`, `state`, `ask`, `result`, `fatal`), two in (`command`, `answer`).
+- `LineWriter` serialises writes from every thread with a **lock**, not a queue drained by a
+  thread. Deliberate: a draining thread is a pump, and the log pump was removed in v190 because
+  it lagged (R5). The lock gives the same guarantee — no interleaved lines — with no latency.
+  Verified under 20 concurrent threads writing 500 lines: all intact.
+
+**The four sockets over the pipe** (`csdm/bridge/ports.py`): `PipePorts` is the third
+implementation of the contract from `csdm/engine/ports.py`, next to Tkinter and the test double,
+and the engine cannot tell them apart. `ask` blocks the calling worker thread on an event, sends
+the question with a correlation id, and resumes exactly where it stopped when the answer returns
+with that id. An answer for an unknown id is ignored instead of crashing.
+
+**The host** (`csdm/bridge/host.py`, run with `python -m csdm.bridge`): reads commands line by
+line and runs **each one in its own thread** — otherwise a question would block the very reader
+that has to deliver its answer. Four demonstration commands only (`ping`, `demo_logs`,
+`demo_ask`, `tkinter_check`): this stage proves the transport, it does not port the app.
+An unreadable line is reported and skipped; a failing command returns `ok: false` with its
+reason and never kills the host.
+
+**Keeping the pipe clean:** verified that both external-process launches in the engine already
+capture their output (`core.py:1984`, `core.py:2008`) — nothing to fix, so the task reduced to a
+guard test. `serve()` additionally points `sys.stdout` at `sys.stderr` while serving, so a
+stray `print()` written years from now goes to the logs instead of corrupting the protocol.
+
+**The Electron shell** (`electron/`): spawns the engine with `windowsHide`, reassembles JSON
+lines across chunk boundaries (a line can arrive split in two — the classic bug of this kind of
+bridge), routes the child's `stderr` to the console without parsing it, reports the engine's
+death instead of freezing, and kills the child on both `window-all-closed` and `before-quit` so
+no orphan is left driving CS2. `contextIsolation` on, `nodeIntegration` off, preload exposing
+only `send()` and `onMessage()`. Raw line display only — no styling, that is stage 3.
+
+**Not yet verified:** the Electron window has not been opened and looked at. The Python side was
+driven by hand end to end (ping, streaming logs, a full question/answer round trip, a garbage
+line, an unknown command, and `tkinter modules loaded: none`).
+
+**Tests:** 124 → 145. New: `test_bridge_protocol.py`, `test_bridge_ports.py`,
+`test_bridge_e2e.py` (drives a real subprocess), `test_bridge_isolation.py`.
+
+---
+
 ## [v211]
 
 ### Changed: the engine can now run without a window (Electron migration — stage 1.5)
