@@ -6602,6 +6602,10 @@ class App(tk.Tk):
         """Engine port: write one line to the console. Thread-safe, no pump."""
         self._async_log(message, level)
 
+    def log_parts(self, parts):
+        """Engine port: write one multicolor console line. Thread-safe, no pump."""
+        self._async_log_parts(parts)
+
     def state(self, name, payload=None):
         """Engine port: report a typed state change. Rendered on the main thread."""
         self.after(0, lambda n=name, p=payload or {}: self._on_state_main(n, p))
@@ -7147,7 +7151,7 @@ class App(tk.Tk):
                         missing_labels = ", ".join(
                             m.replace("kill_mod_", "").replace("_", " ")
                             for m in missing_mods)
-                        self._async_log(
+                        self.log(
                             f"⛔ Modifiers not found in DB: {missing_labels}. "
                             f"No clips returned — uncheck these modifiers or check the schema.",
                             "err")
@@ -7160,7 +7164,7 @@ class App(tk.Tk):
                         missing_labels = ", ".join(
                             m.replace("kill_mod_", "").replace("_", " ")
                             for m in missing_mods)
-                        self._async_log(
+                        self.log(
                             f"⚠ Modifiers not found in DB: {missing_labels} — ignored. "
                             f"Only the others are applied.",
                             "warn")
@@ -7490,7 +7494,7 @@ class App(tk.Tk):
             if all_kills_by_demo:
                 results = self._apply_clutch_filter(results, sids, cfg, all_kills_by_demo)
             else:
-                self._async_log(
+                self.log(
                     "  ⚠ Clutch: could not fetch all-kills data — clutch filter skipped.",
                     "warn")
 
@@ -7865,7 +7869,7 @@ class App(tk.Tk):
                         "round_num": rn_val,
                     })
         except Exception as e:
-            self._async_log(f"  ⚠ Clutch: DB fetch error — {e}", "warn")
+            self.log(f"  ⚠ Clutch: DB fetch error — {e}", "warn")
             return {}
 
         # ── Fetch per-match team sizes from the players table ─────────────────
@@ -8271,7 +8275,7 @@ class App(tk.Tk):
         try:
             val = cast(str(raw).strip())
         except Exception:
-            self._async_log(f"  ⚠ cfg '{key}' invalid ({raw}) — fallback {default}", "warn")
+            self.log(f"  ⚠ cfg '{key}' invalid ({raw}) — fallback {default}", "warn")
             val = cast(default)
         if lo is not None:
             val = max(lo, val)
@@ -8297,7 +8301,7 @@ class App(tk.Tk):
                 return True
             if s in {"0", "false", "no", "off"}:
                 return False
-        self._async_log(f"  ⚠ cfg '{key}' invalid ({raw}) — fallback {default}", "warn")
+        self.log(f"  ⚠ cfg '{key}' invalid ({raw}) — fallback {default}", "warn")
         return bool(default)
 
     def _refresh_injection_preview(self):
@@ -8415,7 +8419,7 @@ class App(tk.Tk):
     def _inject_cs_runtime_cfg(self, cfg, shared):
         cfg_dir = self._resolve_cs2_cfg_dir(cfg)
         if not cfg_dir:
-            self._async_log("  ⚠ CS injection: CS2 cfg folder not found. "
+            self.log("  ⚠ CS injection: CS2 cfg folder not found. "
                        "Set cs2_cfg_dir in csdm_config.json.", "warn")
             return False
 
@@ -8434,7 +8438,7 @@ class App(tk.Tk):
             Path(runtime_cfg_path).write_text("\n".join(runtime_cmds) + "\n",
                                               encoding="utf-8")
         except Exception as e:
-            self._async_log(f"  ⚠ CS injection: failed to write runtime cfg: {e}", "warn")
+            self.log(f"  ⚠ CS injection: failed to write runtime cfg: {e}", "warn")
             return False
 
         autoexec_path = os.path.join(cfg_dir, "autoexec.cfg")
@@ -8455,12 +8459,12 @@ class App(tk.Tk):
                 updated = f"{current}{sep}{block}"
             Path(autoexec_path).write_text(updated, encoding="utf-8")
         except Exception as e:
-            self._async_log(f"  ⚠ CS injection: failed to update autoexec.cfg: {e}", "warn")
+            self.log(f"  ⚠ CS injection: failed to update autoexec.cfg: {e}", "warn")
             return False
 
-        self._async_log(f"  🎮 CS injection ready: {runtime_cfg_path}", "dim")
+        self.log(f"  🎮 CS injection ready: {runtime_cfg_path}", "dim")
         if shared.get("launch_args"):
-            self._async_log(
+            self.log(
                 f"  ⚠ CS launch options not injectable via CSDM JSON: {' '.join(shared['launch_args'])}",
                 "warn")
         return True
@@ -8845,7 +8849,7 @@ class App(tk.Tk):
                     import win32con
                     _have_w32p = False
                 except ImportError:
-                    self._async_log("  ℹ cs2_send_to_back: pywin32 not installed — option ignored.", "dim")
+                    self.log("  ℹ cs2_send_to_back: pywin32 not installed — option ignored.", "dim")
                     return
 
             # ── Helper: get executable path for a window (needs win32process) ──
@@ -8909,12 +8913,12 @@ class App(tk.Tk):
                     return  # CSDM already finished
                 hwnds = _find_cs2()
                 if hwnds:
-                    self._async_log("  🔙 CS2 found — keeping behind other windows.", "dim")
+                    self.log("  🔙 CS2 found — keeping behind other windows.", "dim")
                     break
                 time.sleep(0.5)
 
             if not hwnds:
-                self._async_log("  ⚠ cs2_send_to_back: CS2 window not found within 120 s.", "warn")
+                self.log("  ⚠ cs2_send_to_back: CS2 window not found within 120 s.", "warn")
                 return
 
             # ── Phase 2: keep pushing to back every 500 ms while CSDM runs ────
@@ -8949,7 +8953,7 @@ class App(tk.Tk):
                     if _done_event.wait(timeout=timeout_s):
                         return  # finished normally
                     _timed_out[0] = True
-                    self._async_log(
+                    self.log(
                         f"  ⏱ Recording timeout ({int(timeout_s // 60)}m{int(timeout_s % 60):02d}s)"
                         " — killing CS2 and retrying…", "warn")
                     try:
@@ -8980,9 +8984,9 @@ class App(tk.Tk):
                     errs.append(line)
                     if any(k in ll for k in self.RETRYABLE):
                         retryable = True
-                    self._async_log(f"  > {line}", "err")
+                    self.log(f"  > {line}", "err")
                 else:
-                    self._async_log(f"  > {line}", "dim")
+                    self.log(f"  > {line}", "dim")
             self._proc.stdout.close()
             rc = self._proc.wait()
         except Exception as e:
@@ -9123,19 +9127,19 @@ class App(tk.Tk):
         n_cached = len(paths) - len(missing)
 
         if not missing:
-            self._async_log(
+            self.log(
                 f"  ⚡ Pre-parse: all {len(paths)} demo(s) already cached — skipping",
                 "dim")
             return
 
         n_threads = max(1, min(8, int(cfg.get("dp2_threads", 2))))
         if n_cached:
-            self._async_log(
+            self.log(
                 f"  ⚡ Pre-parsing {len(missing)} demo(s) "
                 f"({n_cached} already cached) with {n_threads} thread(s)…",
                 "info")
         else:
-            self._async_log(
+            self.log(
                 f"  ⚡ Pre-parsing {len(missing)} demo(s) with {n_threads} thread(s)…",
                 "info")
 
@@ -9148,18 +9152,16 @@ class App(tk.Tk):
                 try:
                     fut.result()
                 except Exception as e:
-                    self._async_log(
+                    self.log(
                         f"  ⚠ Pre-parse error ({Path(futs[fut]).name}): {e}",
                         "warn")
-                # Update progress label directly — safe because we're on the worker thread
-                # and after() is thread-safe; but we batch: only schedule every 5 completions
-                # or on the last one to avoid flooding the event queue.
+                # Report progress — batched: only every 5 completions or on the
+                # last one, to avoid flooding the state channel.
                 if done == total or done % 5 == 0:
-                    self.after(0, lambda d=done, t=total:
-                               self.progress_lbl.config(text=f"PRE-PARSE {progress_bar(d, t)}"))
+                    self.state("progress", {"text": f"PRE-PARSE {progress_bar(done, total)}"})
 
         cached_total = n_cached + done
-        self._async_log(
+        self.log(
             f"  ✓ Pre-parse done ({done} parsed, {cached_total}/{len(paths)} total in cache)",
             "ok")
 
@@ -9609,7 +9611,7 @@ class App(tk.Tk):
             p = Path.home() / ".csdm" / "ffmpeg" / "ffmpeg.exe"
             ffmpeg = str(p) if p.exists() else None
         if not ffmpeg:
-            self._async_log("  Assembly: FFmpeg not found.", "err")
+            self.log("  Assembly: FFmpeg not found.", "err")
             return
 
         # Collect all video files from produced directories
@@ -9628,10 +9630,10 @@ class App(tk.Tk):
         clips = [c for c in clips if not (str(c) in seen or seen.add(str(c)))]
 
         if not clips:
-            self._async_log("  Assembly: no clip found.", "warn")
+            self.log("  Assembly: no clip found.", "warn")
             return
 
-        self._async_log(f"  {len(clips)} clip(s) to assemble…", "info")
+        self.log(f"  {len(clips)} clip(s) to assemble…", "info")
 
         # Resolve the output path
         out_name = (cfg.get("assemble_output", "assembled.mp4") or "assembled.mp4").strip()
@@ -9654,7 +9656,7 @@ class App(tk.Tk):
             lst.close()
             lst_path = lst.name
         except Exception as e:
-            self._async_log(f"  Assembly: list error — {e}", "err")
+            self.log(f"  Assembly: list error — {e}", "err")
             return
 
         # The # in out_name causes issues with FFmpeg on the command line.
@@ -9695,9 +9697,9 @@ class App(tk.Tk):
                         os.remove(out_name)
                     os.rename(tmp_out, out_name)
                 except Exception as e:
-                    self._async_log(f"  ⚠ Assembled but rename failed: {e}\n  File: {tmp_out}", "warn")
+                    self.log(f"  ⚠ Assembled but rename failed: {e}\n  File: {tmp_out}", "warn")
                     out_name = tmp_out
-            self._async_log(f"  ✓ Assembled: {out_name}", "ok")
+            self.log(f"  ✓ Assembled: {out_name}", "ok")
             if cfg.get("delete_after_assemble"):
                 deleted = 0
                 dirs_to_check: set = set()
@@ -9752,7 +9754,7 @@ class App(tk.Tk):
                 msg = f"  🗑 {deleted} clip(s) deleted"
                 if removed_dirs:
                     msg += f", {removed_dirs} folder(s) removed"
-                self._async_log(msg + ".", "dim")
+                self.log(msg + ".", "dim")
         else:
             if needs_rename and os.path.exists(tmp_out):
                 try:
@@ -9760,7 +9762,7 @@ class App(tk.Tk):
                 except Exception:
                     pass
             err_msg = errs[0] if errs else f"code {rc}"
-            self._async_log(f"  ✗ Assembly failed: {err_msg}", "err")
+            self.log(f"  ✗ Assembly failed: {err_msg}", "err")
 
 
     # ── dp2 filter definition table ────────────────────────────────────────
@@ -9805,9 +9807,9 @@ class App(tk.Tk):
             n_before = _count_kills(events)
             events   = self._trois_tap_filter(dp, events, cfg)
             n_after  = _count_kills(events)
-            self._async_log(f"  🎯🎲 TROIS TAP : {n_before} kills → {n_after} TROIS TAP", "info")
+            self.log(f"  🎯🎲 TROIS TAP : {n_before} kills → {n_after} TROIS TAP", "info")
             if not events:
-                self._async_log("  ⏭ SKIP: 0 TROIS TAP in this demo", "dim")
+                self.log("  ⏭ SKIP: 0 TROIS TAP in this demo", "dim")
                 return None
             self._stamp_mf(events, "kill_mod_trois_tap")
             return events
@@ -9816,9 +9818,9 @@ class App(tk.Tk):
             n_before = _count_kills(events)
             events = self._no_trois_shot_filter(dp, events, cfg)
             n_after = _count_kills(events)
-            self._async_log(f"  🚫🎲 Exclude : {n_before} kills → {n_after} precise", "info")
+            self.log(f"  🚫🎲 Exclude : {n_before} kills → {n_after} precise", "info")
             if not events:
-                self._async_log("  ⏭ SKIP: 0 precise kills after Exclude in this demo", "dim")
+                self.log("  ⏭ SKIP: 0 precise kills after Exclude in this demo", "dim")
                 return None
             self._stamp_mf(events, "kill_mod_no_trois_shot")
 
@@ -9834,12 +9836,12 @@ class App(tk.Tk):
                 for e in matched:
                     if e.get("type") == "kill":
                         excluded_sigs.add((e["tick"], str(e.get("killer_sid", ""))))
-                self._async_log(f"  🚫{ex_label} exclude : {len(excluded_sigs)} kills removed", "dim")
+                self.log(f"  🚫{ex_label} exclude : {len(excluded_sigs)} kills removed", "dim")
             events = [e for e in events
                       if e.get("type") != "kill"
                       or (e["tick"], str(e.get("killer_sid", ""))) not in excluded_sigs]
             if not _count_kills(events):
-                self._async_log("  ⏭ SKIP: all kills excluded", "dim")
+                self.log("  ⏭ SKIP: all kills excluded", "dim")
                 return None
 
         active = [(k, getattr(self, fn), ll, rl, sl)
@@ -9856,9 +9858,9 @@ class App(tk.Tk):
                 n_before = _count_kills(events)
                 events   = filter_fn(dp, events, cfg)
                 n_after  = _count_kills(events)
-                self._async_log(f"  {log_label} : {n_before} kills → {n_after} {result_label}", "info")
+                self.log(f"  {log_label} : {n_before} kills → {n_after} {result_label}", "info")
                 if not events:
-                    self._async_log(f"  ⏭ SKIP: {skip_label} in this demo", "dim")
+                    self.log(f"  ⏭ SKIP: {skip_label} in this demo", "dim")
                     return None
                 self._stamp_mf(events, cfg_key)
             return events
@@ -9871,7 +9873,7 @@ class App(tk.Tk):
                 n_before = _count_kills(events)
                 passed   = filter_fn(dp, events, cfg)
                 n_after  = _count_kills(passed)
-                self._async_log(f"  {log_label} : {n_before} kills → {n_after} {result_label}", "info")
+                self.log(f"  {log_label} : {n_before} kills → {n_after} {result_label}", "info")
                 for e in passed:
                     if e.get("type") == "kill":
                         sig = (e["tick"], str(e.get("killer_sid", "")))
@@ -9885,9 +9887,9 @@ class App(tk.Tk):
                 n_before = _count_kills(evts)
                 evts = filter_fn(dp, evts, cfg)
                 n_after = _count_kills(evts)
-                self._async_log(f"  {log_label} : {n_before} kills → {n_after} {result_label}", "info")
+                self.log(f"  {log_label} : {n_before} kills → {n_after} {result_label}", "info")
                 if not evts:
-                    self._async_log(f"  ⏭ SKIP: {skip_label} in this demo", "dim")
+                    self.log(f"  ⏭ SKIP: {skip_label} in this demo", "dim")
                     return None
                 self._stamp_mf(evts, cfg_key)
             return evts
@@ -9935,7 +9937,7 @@ class App(tk.Tk):
                     kept_kills.append(e)
             result = kept_kills + non_kill
             if not result:
-                self._async_log("  ⏭ SKIP: 0 kills after dp2 required filters in this demo", "dim")
+                self.log("  ⏭ SKIP: 0 kills after dp2 required filters in this demo", "dim")
                 return None
             return result
 
@@ -9972,7 +9974,7 @@ class App(tk.Tk):
                     kept_kills.append(e)
             result = kept_kills + non_kill
             if not result:
-                self._async_log("  ⏭ SKIP: 0 kills after dp2 OR filters in this demo", "dim")
+                self.log("  ⏭ SKIP: 0 kills after dp2 OR filters in this demo", "dim")
                 return None
             return result
 
@@ -9985,13 +9987,13 @@ class App(tk.Tk):
         Returns a new dict with empty-demo entries removed.
         """
         if cfg.get("kill_mod_trois_tap"):
-            self._async_log("  🎯🎲 TROIS TAP — analyzing demos…", "info")
+            self.log("  🎯🎲 TROIS TAP — analyzing demos…", "info")
             return self._apply_filter_to_events(
                 evts, cfg, "kill_mod_trois_tap",
                 self._trois_tap_filter, "🎯🎲 TROIS TAP → TROIS TAP")
 
         if cfg.get("kill_mod_no_trois_shot"):
-            self._async_log("  🚫🎲 Exclude — analyzing demos…", "info")
+            self.log("  🚫🎲 Exclude — analyzing demos…", "info")
             evts = self._apply_filter_to_events(
                 evts, cfg, "kill_mod_no_trois_shot",
                 self._no_trois_shot_filter, "🚫🎲 Exclude → precise")
@@ -10034,7 +10036,7 @@ class App(tk.Tk):
             """AND-chain: each apply_fn narrows the dict further."""
             result = src
             for cfg_key, apply_fn, log_label in filters:
-                self._async_log(f"  {log_label} — analyzing demos…", "info")
+                self.log(f"  {log_label} — analyzing demos…", "info")
                 result = apply_fn(result, cfg)
             return result
 
@@ -10042,7 +10044,7 @@ class App(tk.Tk):
             """OR-union: run each independently, merge _mf per sig."""
             per = []
             for cfg_key, apply_fn, log_label in filters:
-                self._async_log(f"  {log_label} — analyzing demos…", "info")
+                self.log(f"  {log_label} — analyzing demos…", "info")
                 per.append((cfg_key, apply_fn(src, cfg)))
 
             all_demos: set = set()
@@ -10131,22 +10133,22 @@ class App(tk.Tk):
 
     def _worker(self, cfg):
         cli = self._resolve_cli(cfg["csdm_exe"])
-        self._async_log(f"CLI: {cli}", "dim")
+        self.log(f"CLI: {cli}", "dim")
         if not os.path.isfile(cli):
             w = shutil.which(cli)
             if w:
                 cli = w
             else:
-                self._async_log(f"CLI not found: {cli}", "err")
-                self.after(0, self._reset_btns)
+                self.log(f"CLI not found: {cli}", "err")
+                self.state("buttons_idle")
                 return
         player_str = self._player_str(cfg)
         tv = cfg.get("true_view", True)
         tag_name = cfg.get("tag_on_export", "")
         tag_enabled = cfg.get("tag_enabled", False) and bool(tag_name)
         perspective = cfg.get("perspective", "killer")
-        self._async_log(f"Player(s): {player_str}", "info")
-        self._async_log(f"Video: {cfg['width']}x{cfg['height']}@{cfg['framerate']}fps CRF={cfg['crf']} {cfg['video_codec']} {cfg['video_container']}", "info")
+        self.log(f"Player(s): {player_str}", "info")
+        self.log(f"Video: {cfg['width']}x{cfg['height']}@{cfg['framerate']}fps CRF={cfg['crf']} {cfg['video_codec']} {cfg['video_container']}", "info")
         tag_str = f" | Tag: \U0001f3f7 {tag_name}" if tag_enabled else ""
         recsys = self._normalize_recsys(cfg.get("recsys", "HLAE"))
         cfg["recsys"] = recsys
@@ -10172,61 +10174,61 @@ class App(tk.Tk):
             if not cfg.get("phys_dynamic_lighting", True): phys_parts.append("NoDynLight")
             if phys_parts:
                 hlae_info += f" | Phys: {' '.join(phys_parts)}"
-        self._async_log(f"Encoder: {cfg['encoder']} | RecSys: {recsys}{hlae_info} | TrueView: {'ON' if tv else 'OFF'} | Perspective: {PERSP_LABELS.get(perspective, perspective)}{tag_str}", "info")
+        self.log(f"Encoder: {cfg['encoder']} | RecSys: {recsys}{hlae_info} | TrueView: {'ON' if tv else 'OFF'} | Perspective: {PERSP_LABELS.get(perspective, perspective)}{tag_str}", "info")
         if recsys == "CS":
             _shared = self._common_cs2_injection(cfg)
             self._inject_cs_runtime_cfg(cfg, _shared)
-            self._async_log(
+            self.log(
                 "  ⚠ RecSys CS: CS2 replays the demo from tick 0 to reach the target tick.\n"
                 "  Each clip will take as long as the full demo before the event.\n"
                 "  HLAE is strongly recommended for batch recording.", "warn")
         _hsm = cfg.get("headshots_mode", "all")
         if _hsm == "only":
-            self._async_log("🎯 Headshots only", "info")
+            self.log("🎯 Headshots only", "info")
         elif _hsm == "exclude":
-            self._async_log("🎯 Headshots excluded", "info")
+            self.log("🎯 Headshots excluded", "info")
         _sm = cfg.get("suicides_mode", "include")
         if _sm == "exclude":
-            self._async_log("🚫 Suicides excluded", "info")
+            self.log("🚫 Suicides excluded", "info")
         elif _sm == "only":
-            self._async_log("💀 Suicides only", "info")
+            self.log("💀 Suicides only", "info")
         _tkm = cfg.get("teamkills_mode", "include")
         if _tkm == "exclude":
-            self._async_log("🚫 Teamkills excluded", "info")
+            self.log("🚫 Teamkills excluded", "info")
         elif _tkm == "only":
-            self._async_log("⚔ Teamkills only", "info")
+            self.log("⚔ Teamkills only", "info")
         if cfg.get("clutch_enabled"):
             _cmode = "Full clutch" if cfg.get("clutch_mode") == "full_clutch" else "Kills only"
             _csizes = [f"1v{n}" for n in range(1, 6) if cfg.get(f"clutch_1v{n}")]
             _csize_str = " " + " ".join(_csizes) if _csizes else " (all sizes)"
             _cwins = " · Wins only" if cfg.get("clutch_wins_only") else ""
-            self._async_log(f"🎯 Clutch: {_cmode}{_csize_str}{_cwins}", "info")
+            self.log(f"🎯 Clutch: {_cmode}{_csize_str}{_cwins}", "info")
         batch_start = time.time()
         _df = cfg.get("date_from", "")
         _dt = cfg.get("date_to", "")
         if _df or _dt:
-            self._async_log(f"Date filter: {_df or '∞'}  →  {_dt or '∞'}", "info" if self._date_col else "warn")
-        self._async_log("Querying DB...", "info")
+            self.log(f"Date filter: {_df or '∞'}  →  {_dt or '∞'}", "info" if self._date_col else "warn")
+        self.log("Querying DB...", "info")
         t0_query = time.time()
         try:
             all_events = self._query_events(cfg)
         except Exception as e:
-            self._async_log(f"Error: {e}", "err")
-            self.after(0, self._reset_btns)
+            self.log(f"Error: {e}", "err")
+            self.state("buttons_idle")
             return
         t_query = time.time() - t0_query
         if not all_events:
-            self._async_log("No events.", "warn")
-            self.after(0, lambda: self._summary_lbl.config(text="  No clips found.", fg=MUTED))
-            self.after(0, self._reset_btns)
+            self.log("No events.", "warn")
+            self.state("summary", {"text": "  No clips found.", "level": "muted"})
+            self.state("buttons_idle")
             return
         te = sum(len(e) for e in all_events.values())
         # Compute summary once (reused at the end)
         _nd, _nc, _ts, _as = self._calc_summary(all_events, cfg)
         _stxt = self._fmt_summary(_nd, _nc, _ts, _as)
-        self.after(0, lambda t=_stxt: self._summary_lbl.config(text=t + "  [running…]", fg=YELLOW))
-        self._async_log(f"OK: {len(all_events)} demo(s), {te} events  ⏱ DB {t_query*1000:.0f}ms", "ok")
-        self._async_log("-" * 56, "dim")
+        self.state("summary", {"text": _stxt + "  [running…]", "level": "running"})
+        self.log(f"OK: {len(all_events)} demo(s), {te} events  ⏱ DB {t_query*1000:.0f}ms", "ok")
+        self.log("-" * 56, "dim")
 
         order = cfg.get("clip_order", "chrono")
         # Apply demo picker filter — only keep demos checked in the picker
@@ -10238,15 +10240,15 @@ class App(tk.Tk):
                           if dp in _picker_set}
             _removed = _before - len(all_events)
             if _removed:
-                self._async_log(f"  ⚙ Demo picker: {_removed} demo(s) excluded by manual selection", "dim")
+                self.log(f"  ⚙ Demo picker: {_removed} demo(s) excluded by manual selection", "dim")
         if order == "random":
             items = list(all_events.items())
             random.shuffle(items)
             demo_list = items
-            self._async_log("Order: Random 🎲", "info")
+            self.log("Order: Random 🎲", "info")
         else:
             demo_list = sorted(all_events.items(), key=lambda kv: self._demo_sort_key(kv[0]))
-            self._async_log("Order: Chronological", "info")
+            self.log("Order: Chronological", "info")
 
         ok = fail = skip = retried = tagged = 0
         summary = []
@@ -10288,86 +10290,54 @@ class App(tk.Tk):
 
             if _already_tagged_paths:
                 n_already = len(_already_tagged_paths)
-                # Ask the user — must run on the main thread
-                # Yes = include anyway, No = ignore, Cancel = stop and redo preview
-                _ev = threading.Event()
-                _choice = [None]  # True = include, False = ignore, None = cancel
+                # Ask the user — blocks until answered (self.ask waits on an Event)
+                # include = keep them anyway, ignore = skip them, None = cancel and redo preview
+                demo_names = [Path(dp).name for dp, _ in demo_list
+                              if dp in _already_tagged_paths]
+                lines = "\n".join(f"  • {nm}" for nm in demo_names[:5])
+                ellipsis = "\n  …" if n_already > 5 else ""
+                msg = (
+                    f"{n_already}/{len(demo_list)} demo(s) already have tag \"{tag_name}\":\n"
+                    f"{lines}{ellipsis}\n\n"
+                    f"[Yes] Include anyway\n"
+                    f"[No] Ignore\n"
+                    f"[Cancel] Stop and redo preview without them"
+                )
+                answer = self.ask("confirm", msg,
+                                  ["Already tagged demos", "include", "ignore"])
 
-                def _ask_user(n=n_already, names=[]):
-                    lines = "\n".join(f"  • {nm}" for nm in names[:5])
-                    ellipsis = "\n  …" if n > 5 else ""
-                    msg = (
-                        f"{n}/{len(demo_list)} demo(s) already have tag \"{tag_name}\":\n"
-                        f"{lines}{ellipsis}\n\n"
-                        f"[Yes] Include anyway\n"
-                        f"[No] Ignore\n"
-                        f"[Cancel] Stop and redo preview without them"
-                    )
-                    res = messagebox.askyesnocancel(
-                        "Already tagged demos",
-                        msg,
-                        default="no"
-                    )
-                    _choice[0] = res  # True = include, False = ignore, None = cancel
-                    _ev.set()
-
-                demo_names = [Path(dp).name for dp, _ in demo_list if dp in _already_tagged_paths]
-                self.after(0, lambda: _ask_user(n_already, demo_names))
-                _ev.wait()
-                choice = _choice[0]
-
-                def _uncheck_in_picker(paths=_already_tagged_paths):
-                    """Uncheck a set of demo paths in the picker. Must run on main thread."""
-                    for dp in paths:
-                        if dp in self._demo_picker_state:
-                            self._demo_picker_state[dp] = False
-                            try:
-                                self._demo_tree.item(dp, values=("✕",
-                                    self._demo_picker_fmt_date(dp),
-                                    self._demo_picker_fmt_map(dp),
-                                    self._demo_picker_fmt_name(dp)),
-                                    tags=("off",))
-                            except Exception:
-                                pass
-                    n_on  = sum(1 for v in self._demo_picker_state.values() if v)
-                    n_tot = len(self._demo_picker_state)
-                    try:
-                        self._picker_count_lbl.config(
-                            text=f"{n_on}/{n_tot} selected",
-                            fg=ORANGE if n_on < n_tot else MUTED)
-                    except tk.TclError:
-                        pass
-
-                if choice is None:
+                if answer is None:
                     # Cancel → uncheck already-tagged in picker, redo preview without them.
-                    self.after(0, _uncheck_in_picker)
+                    self.state("demos_unchecked", {"paths": list(_already_tagged_paths)})
                     filtered_events = {dp: ev for dp, ev in all_events.items()
                                        if dp not in _already_tagged_paths}
-                    self._async_log(f"  ⏭ Cancelled — preview restarted without {n_already} already-tagged demo(s)", "info")
-                    def _redo():
-                        self._log(f"\n{'─' * 60}", "dim")
-                        self._log(f"  PREVIEW (without already tagged)  —  {datetime.now().strftime('%H:%M:%S')}", "info")
-                        self._log(f"{'─' * 60}", "dim")
-                        self._summary_lbl.config(text="  Computing…", fg=YELLOW)
-                        _fe = filtered_events
-                        def _bg():
-                            nonlocal _fe
-                            self._preparse_dp2(cfg, list(_fe.keys()))
-                            _fe = self._apply_dp2_filters_to_events(_fe, cfg)
-                            _fe = self._apply_global_filter_gate_dict(_fe, cfg)
-                            self.after(0, lambda: self._show_preview(_fe, cfg))
-                        threading.Thread(target=_bg, daemon=True).start()
-                    self.after(0, _redo)
-                    self.after(0, self._reset_btns)
+                    self.log(f"  ⏭ Cancelled — preview restarted without {n_already} already-tagged demo(s)", "info")
+                    self.log(f"\n{'─' * 60}", "dim")
+                    self.log(f"  PREVIEW (without already tagged)  —  "
+                             f"{datetime.now().strftime('%H:%M:%S')}", "info")
+                    self.log(f"{'─' * 60}", "dim")
+                    self.state("summary", {"text": "  Computing…", "level": "running"})
+                    _fe = filtered_events
+
+                    def _bg():
+                        nonlocal _fe
+                        self._preparse_dp2(cfg, list(_fe.keys()))
+                        _fe = self._apply_dp2_filters_to_events(_fe, cfg)
+                        _fe = self._apply_global_filter_gate_dict(_fe, cfg)
+                        self.state("preview_ready", {"events": _fe, "cfg": cfg,
+                                                     "timings": None})
+
+                    threading.Thread(target=_bg, daemon=True).start()
+                    self.state("buttons_idle")
                     return
-                elif choice is True:
+                elif answer == "include":
                     skip_already_tagged = False
-                    self._async_log(f"  ▶ {n_already} already-tagged demo(s) → included anyway", "info")
+                    self.log(f"  ▶ {n_already} already-tagged demo(s) → included anyway", "info")
                 else:
                     skip_already_tagged = True
-                    # No → skip during this run AND uncheck in picker for future runs.
-                    self.after(0, _uncheck_in_picker)
-                    self._async_log(f"  ⏭ {n_already} already-tagged demo(s) → ignored", "info")
+                    # ignore → skip during this run AND uncheck in picker for future runs.
+                    self.state("demos_unchecked", {"paths": list(_already_tagged_paths)})
+                    self.log(f"  ⏭ {n_already} already-tagged demo(s) → ignored", "info")
 
         for i, (dp, events) in enumerate(demo_list, 1):
             if self._stop_after_current or not self._running:
@@ -10379,7 +10349,7 @@ class App(tk.Tk):
             # Skip already-tagged demos if the user chose to ignore them
             if skip_already_tagged and dp in _already_tagged_paths:
                 dn_skip = Path(dp).name
-                self._async_log(f"  ⏭ SKIP (already tagged): {dn_skip}", "dim")
+                self.log(f"  ⏭ SKIP (already tagged): {dn_skip}", "dim")
                 summary.append((Path(dp).name, "SKIP", 0, 0, "Already tagged"))
                 skip += 1
                 continue
@@ -10408,8 +10378,7 @@ class App(tk.Tk):
             ad = os.path.abspath(dp)
             self._current_demo = dn
             date_str = self._format_demo_date(dp)
-            self.after(0, lambda lbl=progress_bar(i, len(demo_list)):
-                       self.progress_lbl.config(text=lbl))
+            self.state("progress", {"text": progress_bar(i, len(demo_list))})
             _timing_str = ""
             if t_dp2 > 0.01 or t_seq > 0.001:
                 _parts = []
@@ -10418,19 +10387,18 @@ class App(tk.Tk):
                 if t_seq > 0.001:
                     _parts.append(f"seq {t_seq*1000:.1f}ms")
                 _timing_str = f"  ⏱ {' '.join(_parts)}"
-            self._emit_demo_log_entry(
-                date_str=date_str,
-                demo_name=dn,
-                events=events,
-                seq_count=len(seqs),
-                cfg=cfg,
-                idx=i,
-                total=len(demo_list),
-                timing_str=_timing_str,
-                async_emit=True,
-            )
+            self.state("demo_entry", {
+                "date_str": date_str,
+                "demo_name": dn,
+                "events": events,
+                "seq_count": len(seqs),
+                "cfg": cfg,
+                "idx": i,
+                "total": len(demo_list),
+                "timing_str": _timing_str,
+            })
             if not os.path.isfile(ad):
-                self._async_log(f"  SKIP: {ad}", "warn")
+                self.log(f"  SKIP: {ad}", "warn")
                 summary.append((dn, "SKIP", 0, 0, "Not found"))
                 skip += 1
                 continue
@@ -10446,10 +10414,10 @@ class App(tk.Tk):
                          if si - 1 < len(cj.get("sequences", [])) else [])
                 _cam0 = _cams[0] if _cams else {}
                 _sid0 = _cam0.get("playerSteamId", "")
-                self._async_log(
+                self.log(
                     f"  seq {si}/{len(seqs)}  tick {seq['start_tick']}→{seq['end_tick']}"
                     f"  ({dur_s:.1f}s)  cam:{_sid0 or '-'}", "dim")
-            self._async_log(
+            self.log(
                 f"  RecSys: {cfg.get('recsys','HLAE')} | "
                 f"TrueView: {'ON' if cfg.get('true_view') else 'OFF'} | "
                 f"Concat: {'ON' if cfg.get('concatenate_sequences') else 'OFF'}",
@@ -10463,7 +10431,7 @@ class App(tk.Tk):
                 if ho.get("hideSpectatorUi"):parts.append("NoUI")
                 if ho.get("extraArgs"):      parts.append(f"args={ho['extraArgs'][:60]}")
                 if parts:
-                    self._async_log(f"  HLAE: {' | '.join(parts)}", "dim")
+                    self.log(f"  HLAE: {' | '.join(parts)}", "dim")
             # ──────────────────────────────────────────────────────────────────
 
             try:
@@ -10477,9 +10445,9 @@ class App(tk.Tk):
                 fail += 1
                 continue
 
-            self._async_log(f"  JSON: {tp}", "dim")
+            self.log(f"  JSON: {tp}", "dim")
             cmd = [cli, "video", "--config-file", tp]
-            self._async_log(f"  CMD: {' '.join(cmd)}", "dim")
+            self.log(f"  CMD: {' '.join(cmd)}", "dim")
 
             mx = 1 + cfg.get("retry_count", 2)
 
@@ -10501,7 +10469,7 @@ class App(tk.Tk):
             _to_min = _rec_timeout_s // 60
             _to_sec = _rec_timeout_s % 60
             _slow_part = f", slow {int(_timescale*100)}%" if _timescale < 0.99 else ""
-            self._async_log_parts([
+            self.log_parts([
                 ("  ⏱ Timeout: ", "dim"),
                 (f"{_to_min}m{_to_sec:02d}s", "info"),
                 ("  (content ", "dim"),
@@ -10522,7 +10490,7 @@ class App(tk.Tk):
                 if att > 1:
                     retried += 1
                     delay = cfg.get("retry_delay", 15)
-                    self._async_log(f"  ↻ Retry {att - 1} — {delay}s...", "warn")
+                    self.log(f"  ↻ Retry {att - 1} — {delay}s...", "warn")
                     for _ in range(delay):
                         if not self._running:
                             break
@@ -10540,7 +10508,7 @@ class App(tk.Tk):
 
             # ── TrueView fallback: retry with TrueView OFF if CSDM can't find raw files
             if not d_ok and tv and getattr(self, "_last_raw_not_found", False):
-                self._async_log(
+                self.log(
                     "  ⚠ TrueView: raw files not found (old demo?) — retrying with TrueView OFF…",
                     "warn")
                 try:
@@ -10553,11 +10521,11 @@ class App(tk.Tk):
                     if success:
                         d_ok = True
                         d_err = ""
-                        self._async_log("  ✓ TrueView-OFF retry succeeded", "ok")
+                        self.log("  ✓ TrueView-OFF retry succeeded", "ok")
                     else:
                         d_err = errs_tv[0] if errs_tv else d_err
                 except Exception as _tv_e:
-                    self._async_log(f"  ⚠ TrueView-OFF retry error: {_tv_e}", "warn")
+                    self.log(f"  ⚠ TrueView-OFF retry error: {_tv_e}", "warn")
 
             dur = time.time() - t0
             threading.Thread(
@@ -10583,68 +10551,62 @@ class App(tk.Tk):
                         tag_msg = f" \U0001f3f7 {', '.join(_tag_ok_names)}"
                     if _tag_fail:
                         tag_msg += f" \U0001f3f7 FAILED: {_tag_fail}"
-                self.after(0, lambda d=ds, r=ri, tm=tag_msg:
-                           self._log(f"  ✓ OK [{d}]{r}{tm}", "ok"))
+                self.log(f"  ✓ OK [{ds}]{ri}{tag_msg}", "ok")
                 summary.append((dn, "OK", dur, att, ""))
                 produced_dirs.append(cj.get("outputFolderPath", ""))
                 ok += 1
             else:
                 ds = fmt_duration(dur)
-                self.after(0, lambda d=ds, e=d_err:
-                           self._log(f"  ✗ FAILED [{d}] {e}", "err"))
+                self.log(f"  ✗ FAILED [{ds}] {d_err}", "err")
                 summary.append((dn, "FAIL", dur, att, d_err))
                 fail += 1
 
             if i < len(demo_list) and not self._stop_after_current:
                 delay = cfg.get("delay_between_demos", 3)
                 if delay > 0:
-                    self._async_log(f"  Pause {delay}s...", "dim")
+                    self.log(f"  Pause {delay}s...", "dim")
                     for _ in range(delay):
                         if self._stop_after_current:
                             break
                         time.sleep(1)
 
         bd = time.time() - batch_start
-        self._async_log("\n" + "═" * 60, "dim")
-        self._async_log("  SUMMARY", "info")
-        self._async_log("═" * 60, "dim")
+        self.log("\n" + "═" * 60, "dim")
+        self.log("  SUMMARY", "info")
+        self.log("═" * 60, "dim")
         for n, st, d, a, e in summary:
             ds = fmt_duration(d) if d > 0 else "-"
             rs = f" x{a}" if a > 1 else ""
             if st == "OK":
-                self.after(0, lambda n=n, d=ds, r=rs:
-                           self._log(f"  ✓ {n} [{d}]{r}", "ok"))
+                self.log(f"  ✓ {n} [{ds}]{rs}", "ok")
             elif st == "SKIP":
-                self.after(0, lambda n=n, e=e:
-                           self._log(f"  ⏭ {n} {e}", "warn"))
+                self.log(f"  ⏭ {n} {e}", "warn")
             else:
-                self.after(0, lambda n=n, d=ds, e=e, r=rs:
-                           self._log(f"  ✗ {n} [{d}]{r} {e}", "err"))
-        self._async_log("─" * 60, "dim")
+                self.log(f"  ✗ {n} [{ds}]{rs} {e}", "err")
+        self.log("─" * 60, "dim")
         tag_summary = f" Tagged:{tagged}" if tag_enabled else ""
-        self._async_log(f"  OK:{ok} Failed:{fail} Skip:{skip} Retries:{retried}{tag_summary} Duration:{fmt_duration(bd)}", "info")
-        self._async_log("═" * 60, "dim")
-        self.after(0, lambda: self.progress_lbl.config(
-            text=f"{ok}/{len(demo_list)} OK ({fmt_duration(bd)})"))
+        self.log(f"  OK:{ok} Failed:{fail} Skip:{skip} Retries:{retried}{tag_summary} Duration:{fmt_duration(bd)}", "info")
+        self.log("═" * 60, "dim")
+        self.state("progress", {"text": f"{ok}/{len(demo_list)} OK ({fmt_duration(bd)})"})
         # Final summary — reuse the summary computed before the loop
-        _color = GREEN if fail == 0 else (YELLOW if ok > 0 else RED)
+        _level = "ok" if fail == 0 else ("warn" if ok > 0 else "err")
         _status = f"  ✓ {ok}/{len(demo_list)} demos OK" if fail == 0 else f"  ⚠ {ok} OK / {fail} failed"
         _stxt_final = self._fmt_summary(_nd, _nc, _ts, _as) + f"  —  {fmt_duration(bd)}{_status}"
-        self.after(0, lambda t=_stxt_final, c=_color: self._summary_lbl.config(text=t, fg=c))
+        self.state("summary", {"text": _stxt_final, "level": _level})
 
         if ok > 0 and cfg.get("assemble_after") and not self._kill_triggered:
-            self._async_log("\n⚙  Final assembly in progress...", "info")
+            self.log("\n⚙  Final assembly in progress...", "info")
             try:
                 self._assemble_clips(cfg, produced_dirs)
             except Exception as e:
-                self._async_log(f"  Assembly error: {e}", "err")
+                self.log(f"  Assembly error: {e}", "err")
         elif self._kill_triggered and cfg.get("assemble_after"):
-            self._async_log("\n⏭ Assembly skipped (batch killed).", "warn")
+            self.log("\n⏭ Assembly skipped (batch killed).", "warn")
 
         # ── Tag rollback on premature stop ────────────────────────────────────
         _was_interrupted = self._kill_triggered or (self._stop_after_current and ok < len(demo_list))
         if _was_interrupted and self._tagged_this_batch and tag_enabled:
-            self._async_log(f"\n↩ Rolling back {len(self._tagged_this_batch)} tag(s)…", "warn")
+            self.log(f"\n↩ Rolling back {len(self._tagged_this_batch)} tag(s)…", "warn")
             _rolled_back, _rb_fail = 0, 0
             for _dp, _tn in self._tagged_this_batch:
                 try:
@@ -10671,10 +10633,10 @@ class App(tk.Tk):
             msg = f"  ↩ Rolled back {_rolled_back} tag(s)"
             if _rb_fail:
                 msg += f" ({_rb_fail} failed)"
-            self._async_log(msg, "warn")
+            self.log(msg, "warn")
         self._tagged_this_batch = []
 
-        self.after(0, self._reset_btns)
+        self.state("buttons_idle")
 
 if __name__ == "__main__":
     App().mainloop()

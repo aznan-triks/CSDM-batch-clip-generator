@@ -36,6 +36,12 @@ class TestCollectingPorts(unittest.TestCase):
         p = CollectingPorts()
         self.assertIsNone(p.ask("confirm", "q", ["a", "b"]))
 
+    def test_log_parts_records_segments_in_order_with_levels(self):
+        p = CollectingPorts()
+        p.log_parts([("  Timeout: ", "dim"), ("3m00s", "info")])
+        self.assertEqual(p.log_parts_calls,
+                         [[("  Timeout: ", "dim"), ("3m00s", "info")]])
+
 
 class TestEnginePorts(unittest.TestCase):
     def test_holds_the_three_callables(self):
