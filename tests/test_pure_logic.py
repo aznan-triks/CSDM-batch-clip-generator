@@ -71,6 +71,26 @@ class FilterRegistryTests(unittest.TestCase):
                 self.assertEqual(f.category, "mods",
                                  f"{f.key} a des colonnes SQL mais n'est pas 'mods'")
 
+    def test_no_auto_exclude_entries_still_exist(self):
+        # Une cle restee dans _NO_AUTO_EXCLUDE apres suppression du filtre
+        # supprimerait silencieusement la case Exclude d'un autre filtre.
+        keys = {f.key for f in sd.KILL_FILTER_REGISTRY}
+        self.assertTrue(sd._NO_AUTO_EXCLUDE <= keys,
+                        f"cles orphelines: {sd._NO_AUTO_EXCLUDE - keys}")
+
+    def test_exclude_defaults_match_registry_exactly(self):
+        expected = {f"{f.key}_exclude" for f in sd.KILL_FILTER_REGISTRY
+                    if not f.hide_ui and f.key not in sd._NO_AUTO_EXCLUDE}
+        actual = {k for k in sd._FILTER_CONFIG_DEFAULTS if k.endswith("_exclude")}
+        self.assertEqual(expected, actual)
+
+    def test_retired_trois_shot_keys_are_gone(self):
+        # v208 — remplacees par le mecanisme generique kill_mod_trois_shot_exclude.
+        for dead in ("kill_mod_no_trois_shot", "kill_mod_no_trois_shot_req"):
+            self.assertNotIn(dead, sd._FILTER_CONFIG_DEFAULTS)
+            self.assertNotIn(dead, cfgmod.DEFAULT_CONFIG)
+        self.assertIn("kill_mod_trois_shot_exclude", cfgmod.DEFAULT_CONFIG)
+
 
 # ════════════════════════════════════════════════════════════════════════════
 #  Classification des armes
@@ -154,6 +174,23 @@ class ConfigMigrationTests(unittest.TestCase):
         # Si la cle moderne est deja fournie, on ne l'ecrase pas avec l'ancienne.
         cfg = self._migrate({"headshots_only": True, "headshots_mode": "exclude"})
         self.assertEqual(cfg["headshots_mode"], "exclude")
+
+    def test_no_trois_shot_becomes_trois_shot_exclude(self):
+        cfg = self._migrate({"kill_mod_no_trois_shot": True,
+                             "kill_mod_no_trois_shot_req": False})
+        self.assertIs(cfg["kill_mod_trois_shot_exclude"], True)
+        self.assertNotIn("kill_mod_no_trois_shot", cfg)
+        self.assertNotIn("kill_mod_no_trois_shot_req", cfg)
+
+    def test_no_trois_shot_false_does_not_force_exclude(self):
+        cfg = self._migrate({"kill_mod_no_trois_shot": False})
+        self.assertIs(cfg["kill_mod_trois_shot_exclude"], False)
+
+    def test_legacy_filter_migration_is_idempotent(self):
+        d = {"kill_mod_no_trois_shot": True}
+        cfgmod.migrate_legacy_filter_keys(d)
+        cfgmod.migrate_legacy_filter_keys(d)
+        self.assertEqual(d, {"kill_mod_trois_shot_exclude": True})
 
 
 # ════════════════════════════════════════════════════════════════════════════

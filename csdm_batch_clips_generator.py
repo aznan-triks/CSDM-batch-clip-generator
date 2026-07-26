@@ -27,7 +27,7 @@ except ImportError:
 # ═══════════════════════════════════════════════════════
 #  Version
 # ═══════════════════════════════════════════════════════
-APP_VERSION = "v207"
+APP_VERSION = "v208"
 
 # ═══════════════════════════════════════════════════════
 #  Theme system
@@ -136,7 +136,7 @@ from csdm.config import (
     _load_json, _save_json,
     load_presets, save_presets, load_saved_players, save_saved_players,
     load_asm_names, save_asm_names,
-    _migrate_config, load_config, save_config,
+    _migrate_config, migrate_legacy_filter_keys, load_config, save_config,
 )
 
 # ── Helpers purs (Phase 1.1) — deplaces dans csdm/core_utils.py ─────────────
@@ -2316,36 +2316,21 @@ class App(tk.Tk):
         for _fdef in [f for f in KILL_FILTER_REGISTRY
                       if f.category == "dp2" and not f.hide_ui]:
             if _fdef.special == "high_velocity":
-                # FERRARI PEEK: expandable sub-panel
-                _hv_row = tk.Frame(sec, bg=BG2)
-                _hv_row.pack(fill="x", pady=(4, 0))
-                flabel(_hv_row, _fdef.label).pack(side="left")
-                add_tip(_hv_row.winfo_children()[-1], _fdef.tip)
-                _hv_inner = tk.Frame(_hv_row, bg=BG2)
-                def _on_hv_toggle(*_, _inner=_hv_inner):
-                    if self.v["kill_mod_high_velocity"].get():
-                        _inner.pack(side="left", fill="x")
-                    else:
-                        _inner.pack_forget()
-                _hv_en = hchk(_hv_row, "Enable", self.v["kill_mod_high_velocity"],
-                              command=_on_hv_toggle)
-                _hv_en.pack(side="left", padx=(4, 0))
-                _hv_must = hchk(_hv_row, "★ Must", self.v["kill_mod_high_velocity_req"])
-                _hv_must.pack(side="left", padx=(8, 0))
-                self._must_widgets["dp2"].append(_hv_must)
-                add_tip(_hv_must, "Required filter (must match).")
-                self._wire_enable_must(self.v["kill_mod_high_velocity"],
-                                       self.v["kill_mod_high_velocity_req"])
-                _os_cb = hchk(_hv_inner, "One-shot", self.v["kill_mod_hv_one_shot"])
+                # FERRARI PEEK: standard row + expandable sub-panel.
+                # The panel follows the Enable var through a trace, so it also
+                # collapses when Exclude, "Unselect all" or a preset clears it.
+                _hv_row = self._build_filter_row(sec, _fdef, self._must_widgets["dp2"])
+                self._hv_inner = tk.Frame(_hv_row, bg=BG2)
+                _os_cb = hchk(self._hv_inner, "One-shot", self.v["kill_mod_hv_one_shot"])
                 _os_cb.pack(side="left", padx=(8, 0))
                 add_tip(_os_cb, "Require no prior fire within ~0.75s before the kill.\n"
                                 "Uncheck to allow spray finishers.")
-                mlabel(_hv_inner, "  Min approach:").pack(side="left", padx=(8, 0))
-                sentry(_hv_inner, self.v["kill_mod_high_vel_thr"], width=5).pack(
+                mlabel(self._hv_inner, "  Min approach:").pack(side="left", padx=(8, 0))
+                sentry(self._hv_inner, self.v["kill_mod_high_vel_thr"], width=5).pack(
                     side="left", padx=(4, 0), ipady=4)
-                mlabel(_hv_inner, "u/s").pack(side="left", padx=(2, 0))
-                dp2_badge(_hv_row).pack(side="right", padx=(0, 4))
-                self.after(50, _on_hv_toggle)
+                mlabel(self._hv_inner, "u/s").pack(side="left", padx=(2, 0))
+                self.v["kill_mod_high_velocity"].trace_add("write", self._on_hv_toggle)
+                self.after(50, self._on_hv_toggle)
             elif _fdef.key == "kill_mod_flick":
                 # FLICK: degree entry field
                 _fl_row = self._build_filter_row(sec, _fdef, self._must_widgets["dp2"])
@@ -3410,22 +3395,27 @@ class App(tk.Tk):
         self._acodec_desc.config(text=AUDIO_CODECS_INFO.get(self.v["audio_codec"].get(), ""))
 
     # ── TROIS SHOT (v62) ──────────────────────────────────────────────────
-    def _on_trois_shot_toggle(self, *_):
-        """Toggle TROIS SHOT. Mutually exclusive with Exclude only.
-        Independent of ONE TAP and TROIS TAP."""
-        active = self.v["kill_mod_trois_shot"].get()
-        if active and self.v["kill_mod_no_trois_shot"].get():
-            self.v["kill_mod_no_trois_shot"].set(False)
+    def _on_trois_shot_exclude(self, *_):
+        """Extra rule for TROIS SHOT's Exclude: also clears TROIS TAP.
 
-    def _on_no_trois_shot_toggle(self, *_):
-        """Toggle Exclude (inverse TROIS SHOT).
-        Mutually exclusive with TROIS SHOT and TROIS TAP only."""
-        active = self.v["kill_mod_no_trois_shot"].get()
-        if active:
-            if self.v["kill_mod_trois_shot"].get():
-                self.v["kill_mod_trois_shot"].set(False)
-            if self.v["kill_mod_trois_tap"].get():
-                self.v["kill_mod_trois_tap"].set(False)
+        TROIS TAP is a lucky-kill filter, so excluding lucky kills would leave
+        it with nothing to match. _build_filter_row already clears Enable and
+        ★ Must for every filter.
+        """
+        if self.v["kill_mod_trois_shot_exclude"].get():
+            self.v["kill_mod_trois_tap"].set(False)
+
+    # ── FERRARI PEEK (high velocity) ──────────────────────────────────────
+    _hv_inner = None   # sub-panel frame, created in _build_kill_filters_section
+
+    def _on_hv_toggle(self, *_):
+        """Show the FERRARI PEEK sub-panel only while the filter is enabled."""
+        if self._hv_inner is None:
+            return
+        if self.v["kill_mod_high_velocity"].get():
+            self._hv_inner.pack(side="left", fill="x")
+        else:
+            self._hv_inner.pack_forget()
 
 
     def _on_logic_mode_change(self, category: str, *_):
@@ -3450,11 +3440,10 @@ class App(tk.Tk):
         lbl.pack(side="left")
         add_tip(lbl, fdef.tip)
 
-        # Command for special filters
-        cmd_map = {
-            "trois_shot": self._on_trois_shot_toggle,
+        # Extra rules for special filters, run on top of the generic wiring
+        exclude_cmd_map = {
+            "trois_shot": self._on_trois_shot_exclude,
         }
-        cmd = cmd_map.get(fdef.special)
 
         ex_key = f"{fdef.key}_exclude"
         has_exclude = (fdef.key not in _NO_AUTO_EXCLUDE
@@ -3462,16 +3451,14 @@ class App(tk.Tk):
                        and ex_key in self.v)
 
         # Enable — clears Exclude when turned on
-        def _make_enable_cmd(f_key=fdef.key, ex_k=ex_key, base_cmd=cmd):
+        def _make_enable_cmd(f_key=fdef.key, ex_k=ex_key):
             def _on():
-                if self.v[f_key].get() and ex_k in self.v:
+                if self.v[f_key].get():
                     self.v[ex_k].set(False)
-                if base_cmd:
-                    base_cmd()
             return _on
 
         cb = hchk(row, "Enable", self.v[fdef.key],
-                  command=_make_enable_cmd() if (has_exclude or cmd) else None)
+                  command=_make_enable_cmd() if has_exclude else None)
         cb.pack(side="left", padx=(4, 0))
         add_tip(cb, fdef.tip)
 
@@ -3483,24 +3470,21 @@ class App(tk.Tk):
 
         # Exclude checkbox — mutually exclusive with Enable + ★ Must
         if has_exclude:
-            def _make_excl_cmd(f_key=fdef.key, ex_k=ex_key, req_k=f"{fdef.key}_req"):
+            _ex_extra = exclude_cmd_map.get(fdef.special)
+            def _make_excl_cmd(f_key=fdef.key, ex_k=ex_key, req_k=f"{fdef.key}_req",
+                               extra_cmd=_ex_extra):
                 def _on():
                     if self.v[ex_k].get():
                         self.v[f_key].set(False)
                         self.v[req_k].set(False)
+                    if extra_cmd:
+                        extra_cmd()
                 return _on
             excl_cb = hchk(row, "Exclude", self.v[ex_key], command=_make_excl_cmd())
             excl_cb.pack(side="left", padx=(4, 0))
             add_tip(excl_cb,
                     f"Exclude: remove every kill matching {fdef.badge} from results.\n"
                     "Mutually exclusive with Enable and ★ Must.")
-        elif fdef.special == "trois_shot":
-            # TROIS SHOT uses the legacy no_trois_shot key for its Exclude
-            nts_cb = hchk(row, "Exclude", self.v["kill_mod_no_trois_shot"],
-                          command=self._on_no_trois_shot_toggle)
-            nts_cb.pack(side="left", padx=(4, 0))
-            add_tip(nts_cb, "Inverse of TROIS SHOT — removes lucky kills on these weapons.\n"
-                            "When combined with other dp2 filters, acts as an exclusion gate first.")
 
         # dp2 badge always far right for dp2 category
         if fdef.category == "dp2":
@@ -3883,25 +3867,6 @@ class App(tk.Tk):
             merged["_sections"] = set(merged.get("_sections", set())) | required_sections
             self._dp2_cache_put_locked(demo_path, merged)
         return True
-
-    def _no_trois_shot_filter(self, demo_path, events, cfg):
-        """Keep only precise kills — inverse of TROIS SHOT.
-        Kills on weapons with no threshold are passed through (can't be lucky).
-        """
-        lucky_evts = self._trois_shot_filter(demo_path, events, cfg)
-        lucky_sig = {
-            (e.get("tick"), str(e.get("killer_sid")))
-            for e in lucky_evts if e.get("type") == "kill"
-        }
-        filtered = []
-        for e in events:
-            if e.get("type") != "kill":
-                filtered.append(e)
-                continue
-            sig = (e.get("tick"), str(e.get("killer_sid")))
-            if sig not in lucky_sig:
-                filtered.append(e)
-        return filtered
 
     def _one_tap_filter(self, demo_path, events, cfg):
         """Keep only isolated single-shot kills.
@@ -6237,6 +6202,8 @@ class App(tk.Tk):
         p = self.presets.get(name)
         if not p:
             return
+        # Presets saved before a filter key was retired still carry the old key
+        migrate_legacy_filter_keys(p["data"])
         # Support both old {"type": "..."} and new {"cats": [...]} formats
         cats = p.get("cats") or [p.get("type", "full")]
         if "full" in cats:
@@ -9087,7 +9054,6 @@ class App(tk.Tk):
         fire_keys = {
             "kill_mod_trois_tap",
             "kill_mod_trois_shot",
-            "kill_mod_no_trois_shot",
             "kill_mod_one_tap",
             "kill_mod_spray_transfer",
             "kill_mod_high_velocity",
@@ -9730,16 +9696,6 @@ class App(tk.Tk):
             self._stamp_mf(events, "kill_mod_trois_tap")
             return events
 
-        if cfg.get("kill_mod_no_trois_shot"):
-            n_before = _count_kills(events)
-            events = self._no_trois_shot_filter(dp, events, cfg)
-            n_after = _count_kills(events)
-            self._async_log(f"  🚫🎲 Exclude : {n_before} kills → {n_after} precise", "info")
-            if not events:
-                self._async_log("  ⏭ SKIP: 0 precise kills after Exclude in this demo", "dim")
-                return None
-            self._stamp_mf(events, "kill_mod_no_trois_shot")
-
         # ── dp2 exclusions — strip matching kills BEFORE any positive filter ─
         excl_dp2 = [(k, getattr(self, fn), ll)
                     for k, fn, _afn, ll, _rl, _sl in self._DP2_FILTER_DEFS
@@ -9762,7 +9718,7 @@ class App(tk.Tk):
 
         active = [(k, getattr(self, fn), ll, rl, sl)
                   for k, fn, _afn, ll, rl, sl in self._DP2_FILTER_DEFS
-                  if cfg.get(k) and k != "kill_mod_no_trois_shot"]
+                  if cfg.get(k)]
         if not active:
             # when no dp2 modifier is active (the most common case).
             return events
@@ -9908,14 +9864,6 @@ class App(tk.Tk):
                 evts, cfg, "kill_mod_trois_tap",
                 self._trois_tap_filter, "🎯🎲 TROIS TAP → TROIS TAP")
 
-        if cfg.get("kill_mod_no_trois_shot"):
-            self._async_log("  🚫🎲 Exclude — analyzing demos…", "info")
-            evts = self._apply_filter_to_events(
-                evts, cfg, "kill_mod_no_trois_shot",
-                self._no_trois_shot_filter, "🚫🎲 Exclude → precise")
-            if not evts:
-                return {}
-
         # ── dp2 exclusions — strip matching kills BEFORE any positive filter ─
         excl_dp2 = [(k, getattr(self, fn))
                     for k, fn, _afn, _ll, _rl, _sl in self._DP2_FILTER_DEFS
@@ -9941,7 +9889,7 @@ class App(tk.Tk):
                       self._apply_filter_to_events(evts, cfg, _k, getattr(self, _fn), _ll),
                    ll)
                   for k, fn, _afn, ll, _rl, _sl in self._DP2_FILTER_DEFS
-                  if cfg.get(k) and k != "kill_mod_no_trois_shot"]
+                  if cfg.get(k)]
         if not active:
             return evts
 
