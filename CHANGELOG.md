@@ -9,6 +9,30 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v210]
+
+### Fixed: the log console silently swallowed every engine log line
+
+**What changed:** the console text box on screen and the engine's own "write a log line"
+function had the same internal name. Whichever was created last won, and the console box
+always won — so every time the engine tried to log something (filters running, demo parsing,
+DB lookups), the app crashed with an error instead of writing the line. It had been broken
+since the previous release; nothing on screen showed it because it was only ever triggered
+from code paths not yet covered by a running app test. The console box now has its own,
+separate internal name, and a new automatic check will refuse to let this happen again.
+
+**Technical details:** `App.log` was assigned twice with two different meanings —
+`self.log = tk.Text(...)` (the on-screen console widget, set at UI construction) and
+`def log(self, message, level="")` (the engine port declared in `csdm/engine/ports.py`'s
+contract). An instance attribute always shadows a class method of the same name in Python,
+so every `self.log(...)` call made from `csdm/engine/core.py` (104 call sites) raised
+`TypeError: 'Text' object is not callable`. The widget is renamed to `self.log_widget`
+(1 assignment + 67 accesses); `log_parts`, `state`, and `ask` had no competing assignment.
+Added `tests/test_engine_port_shadowing.py`, an AST-based guard that fails the suite if any
+`self.<port> = ...` assignment reappears for `log` / `log_parts` / `state` / `ask`.
+
+---
+
 ## [v209]
 
 ### Fixed: the engine could not actually run after the v208 move
