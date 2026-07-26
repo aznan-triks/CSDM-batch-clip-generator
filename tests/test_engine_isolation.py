@@ -55,5 +55,13 @@ class TestEngineMethodsAreUIFree(unittest.TestCase):
         self.assertEqual(offenders, [], "\n".join(offenders))
 
 
+class TestValidationUsesAskPort(unittest.TestCase):
+    def test_validate_run_inputs_goes_through_ask(self):
+        from csdm_batch_clips_generator import App
+        src = inspect.getsource(App._validate_run_inputs)
+        self.assertNotIn("messagebox", src)
+        self.assertIn('self.ask("error"', src)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -9000,10 +9000,10 @@ class App(tk.Tk):
     def _validate_run_inputs(self):
         """Check common preconditions for run/preview. Returns False if invalid."""
         if not self.player_search.get_steam_ids():
-            messagebox.showerror("", "Check at least one registered account.")
+            self.ask("error", "Check at least one registered account.", [])
             return False
         if not any(v.get() for v in self.sel_events.values()):
-            messagebox.showerror("", "Select at least one event.")
+            self.ask("error", "Select at least one event.", [])
             return False
         return True
 
