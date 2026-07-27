@@ -5802,7 +5802,8 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
                 self.stop_btn.config(text=payload["stop_label"])
             if "kill" in payload:
                 self.kill_btn.config(state="normal" if payload["kill"] else "disabled")
-        elif name in ("buttons_busy", "run_started", "preview_started"):
+        elif name in ("buttons_busy", "run_started", "preview_started",
+                      "stop_requested", "kill_requested"):
             # The window already set its own buttons when the click happened;
             # these exist for a host that has no click to react to. Explicit
             # pass, so a new event can never fall through unnoticed.

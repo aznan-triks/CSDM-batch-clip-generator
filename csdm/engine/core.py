@@ -2778,6 +2778,9 @@ class EngineMixin:
         mark current demo as failed, then do not start the next one."""
         self._stop_after_current = True
         self._running = False
+        # Announced before the work, not after: an interface stages a waiting
+        # charge on this event and must not stage it from its own click (D18).
+        self.state("stop_requested")
         _demo = self._current_demo or "current demo"
         self.log(
             f"\n⏸ STOP — {datetime.now().strftime('%H:%M:%S')}\n"
@@ -2803,6 +2806,7 @@ class EngineMixin:
         self._kill_triggered = True
         self._running = False
         self._stop_after_current = True
+        self.state("kill_requested")
         _demo = self._current_demo or "current demo"
         self.log(
             f"\n⛔ KILL — {datetime.now().strftime('%H:%M:%S')}\n"
