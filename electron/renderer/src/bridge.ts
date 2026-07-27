@@ -54,7 +54,8 @@ export type BridgeCommand =
 /** What `preload.js` puts on `window`. Nothing else crosses the isolation boundary. */
 interface BridgeApi {
   send(command: BridgeCommand): void;
-  onMessage(cb: (message: BridgeMessage) => void): void;
+  /** Returns an unsubscribe function. */
+  onMessage(cb: (message: BridgeMessage) => void): () => void;
 }
 
 declare global {
@@ -77,16 +78,7 @@ export function sendCommand(name: string): string {
   return id;
 }
 
-/**
- * Subscribe to engine messages. Returns an unsubscribe function so React
- * effects can clean up; `preload.js` has no `off`, so the guard lives here.
- */
+/** Subscribe to engine messages. Returns an unsubscribe function for React effects. */
 export function onMessage(cb: (message: BridgeMessage) => void): () => void {
-  let live = true;
-  window.bridge.onMessage((message) => {
-    if (live) cb(message);
-  });
-  return () => {
-    live = false;
-  };
+  return window.bridge.onMessage(cb);
 }

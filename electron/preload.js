@@ -11,7 +11,13 @@ contextBridge.exposeInMainWorld("bridge", {
   },
   // Main -> renderer. `cb` receives one decoded protocol message (or a
   // synthetic {type: "child_exit", ...} / {type: "child_error", ...} event).
+  //
+  // Returns an unsubscribe function. Without one, every React remount would
+  // stack another IPC listener that can never be removed -- StrictMode alone
+  // mounts twice in development.
   onMessage(cb) {
-    ipcRenderer.on("bridge:message", (_event, message) => cb(message));
+    const listener = (_event, message) => cb(message);
+    ipcRenderer.on("bridge:message", listener);
+    return () => ipcRenderer.removeListener("bridge:message", listener);
   },
 });

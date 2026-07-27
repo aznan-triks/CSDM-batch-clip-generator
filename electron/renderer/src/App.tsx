@@ -78,7 +78,12 @@ function describe(message: BridgeMessage): { text: string; cssClass: string } {
 
 export default function App() {
   const [lines, setLines] = useState<Line[]>([]);
-  const [ask, setAsk] = useState<PendingAsk | null>(null);
+  // A QUEUE, not a single slot. Each `ask` blocks one engine worker thread
+  // until its own id is answered, so a second question must wait its turn
+  // rather than replace the first -- replacing it would strand the first
+  // thread waiting on an answer that can no longer be sent.
+  const [asks, setAsks] = useState<PendingAsk[]>([]);
+  const ask = asks[0] ?? null;
   const logRef = useRef<HTMLDivElement>(null);
   const nextKey = useRef(0);
 
@@ -91,11 +96,14 @@ export default function App() {
 
       if (message.type === "ask") {
         // `options[0]` is the dialog title, the rest are the answers.
-        setAsk({
-          id: message.id,
-          title: message.options[0] ?? message.message,
-          choices: message.options.slice(1),
-        });
+        setAsks((previous) => [
+          ...previous,
+          {
+            id: message.id,
+            title: message.options[0] ?? message.message,
+            choices: message.options.slice(1),
+          },
+        ]);
       }
     });
   }, []);
@@ -109,7 +117,7 @@ export default function App() {
   function answer(value: string | null) {
     if (!ask) return;
     send({ type: "answer", id: ask.id, value });
-    setAsk(null);
+    setAsks((previous) => previous.slice(1));
   }
 
   return (
