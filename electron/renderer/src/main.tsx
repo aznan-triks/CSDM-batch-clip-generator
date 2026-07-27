@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import App from "./App";
+import { installSmoothScroll } from "./motion/scroll";
 import { applyAccent, DEFAULT_ACCENT } from "./theme/accent";
 import "./theme/tokens.css";
 import "./skeleton.css";
@@ -11,6 +12,10 @@ import "./skeleton.css";
 // default gold so the window is never unstyled, and this recomputes it from
 // the same rule the settings screen will use.
 applyAccent(DEFAULT_ACCENT);
+
+// Smoothed scrolling, short inertia, and it switches itself off under
+// intensity `none` or `prefers-reduced-motion`.
+installSmoothScroll();
 
 const container = document.getElementById("root");
 if (!container) {

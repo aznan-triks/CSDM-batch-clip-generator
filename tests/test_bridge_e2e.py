@@ -80,6 +80,19 @@ class TestBridgeEndToEnd(unittest.TestCase):
         self.assertTrue(result["ok"], result.get("error"))
         self.assertTrue(any(m["type"] == "state" and m["name"] == "buttons" for m in msgs))
 
+    def test_kill_reports_the_request_then_the_confirmed_exit(self):
+        """The two events the interface stages its charge on, over the real pipe.
+
+        cs2.exe is not running here, so the wait ends on the first look -- which
+        is the point: the exit event is reported because the task list said so.
+        """
+        proc, msgs = _run([{"type": "command", "id": "1", "name": "request_kill"}])
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        states = [m["name"] for m in msgs if m["type"] == "state"]
+        self.assertIn("kill_requested", states)
+        self.assertIn("process_exited", states)
+        self.assertLess(states.index("kill_requested"), states.index("process_exited"))
+
     def test_the_child_never_imports_tkinter(self):
         _, msgs = _run([{"type": "command", "id": "1", "name": "tkinter_check"}])
         check = [m for m in msgs if m["type"] == "log" and "tkinter" in m["message"]]

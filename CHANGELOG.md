@@ -9,6 +9,68 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v214]
+
+### Added: the new interface's visual language and its motion vocabulary (Electron migration — stage 3)
+
+**Humanised:** The Electron window now looks like the approved mockup instead of a bare page:
+dark grounds, a cold gold accent, corner brackets on cards, cut-corner tabs. Nothing moves when
+you hover any more — a reflection sweeps behind the label and the label itself stays put, which
+is what keeps a screen of 140 controls calm. There is a motion setting with three levels, and
+"none" really does stop everything while leaving the app fully usable; if Windows is set to
+reduce animations, the app obeys without being asked.
+
+**Technical:** `electron/renderer/` is a Vite + React 19 + TypeScript app, loaded from disk in
+production and from the dev server when `VITE_DEV_SERVER_URL` is set; `contextIsolation` and
+`nodeIntegration` are unchanged. Design tokens extracted verbatim from `ui-v5.html` into
+`theme/tokens.css`, with the mock's three sub-AA greys corrected and collapsed into one `--dim`;
+`applyAccent()` rewrites `--gold` and derives its three siblings. Primitives: `Card`, `Tab`,
+`ActionButton`, `Field`, `Chip`, `Segmented`. The hover lock
+(`src/__tests__/no-hover-motion.test.ts`) builds the app and scans every shipped stylesheet plus
+the source for pointer-driven motion — a computed-style test was rejected on evidence, since
+jsdom has no hover state and no pseudo-element styles, so it would have detected nothing.
+`motion/engine.ts` holds the sequence registry, the intensity gate and cleanup that runs off the
+clock rather than `onfinish`, which never fires while the window is hidden.
+
+### Added: the weapon band and the four action animations
+
+**Humanised:** The bottom of the window carries a status line, a progress bar, and a weapon that
+is always fully visible — never cropped. Each action has its own animation: RUN fires the
+weapon's own burst, PREVIEW opens a sight and takes one contained shot, KILL slams the bolt and
+yanks the weapon out of frame, and STOP plants a demolition charge that beeps. The charge keeps
+beeping for as long as the game is still running — ten seconds, a minute, forever if it refuses
+— and detonates only when the engine confirms the game is actually gone. Adding another weapon
+means drawing its silhouette and filling in its numbers; no animation code changes.
+
+**Technical:** `weapon/weapons.ts` is the per-weapon table (shots, gap, kick, rotation, flash,
+impact, shake, shell size, bolt delay) with silhouettes imported from `assets/*.svg?raw`.
+`weapon/sequences.ts` holds the one parameterised frame and registers five sequences; every
+shared number is in `MOTION`, every per-weapon number in `WEAPONS`, and none in a function.
+`weapon/controller.ts` maps engine state events to sequences and owns the armed charge — it
+takes engine events and nothing else, so no click can start a long sequence (D18). The
+detonation is a separate sequence reachable only from `process_exited`. Proven by
+`weapon/__tests__/stop-waits.test.ts`: sixty seconds of clock with no confirmation leaves the
+charge beeping and the effects layer free of any explosion element; the AWP goes through every
+action with no change to `sequences.ts`. Smoothed scrolling via Lenis (`motion/scroll.ts`),
+short by design, switched off under intensity `none` and under `prefers-reduced-motion`.
+
+### Added: the engine announces stop and kill requests
+
+**Technical:** `state("stop_requested")` and `state("kill_requested")` are raised by
+`EngineMixin`, so the waiting charge is staged by the engine's own report rather than by the
+click that asked for it. `csdm/bridge/e2e` coverage asserts `kill_requested` precedes
+`process_exited` over the real pipe.
+
+### Fixed: the window no longer goes blank when opened outside Electron
+
+**Humanised:** Opening the page in a plain browser to look at the layout used to show nothing at
+all, with the real cause buried in the console.
+
+**Technical:** `bridge.ts` resolves `window.bridge` through a guard that warns once and returns
+null, instead of throwing during mount and unmounting the whole React tree.
+
+---
+
 ## [v213]
 
 ### Added: the engine now knows when CS2 is really dead (Electron migration — stage 3.5)

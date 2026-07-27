@@ -14,15 +14,26 @@
 /** Levels the engine actually emits (grepped from `csdm/engine/core.py`). */
 export type LogLevel = "info" | "warn" | "err" | "ok" | "dim" | "";
 
-/** The seven state events the engine can raise. */
+/**
+ * Every state event the engine can raise. The last six arrived in v213, when
+ * stop, kill and preview cancellation moved into the engine: `process_exited`
+ * in particular is raised only after the task list confirms the game is gone,
+ * which is what the waiting charge in the band is watching for.
+ */
 export type StateName =
   | "progress"
   | "buttons_idle"
   | "buttons_busy"
+  | "buttons"
   | "summary"
   | "demos_unchecked"
   | "preview_ready"
-  | "demo_entry";
+  | "demo_entry"
+  | "run_started"
+  | "preview_started"
+  | "stop_requested"
+  | "kill_requested"
+  | "process_exited";
 
 export type BridgeMessage =
   | { type: "log"; message: string; level: LogLevel }
@@ -64,8 +75,29 @@ declare global {
   }
 }
 
+/**
+ * The preload bridge, or null when the page is open outside Electron.
+ *
+ * Inside the app it is always there. Outside -- a plain browser tab used to
+ * look at the layout -- it is not, and reaching straight through `window`
+ * threw during mount, which unmounted the whole tree and left a white page
+ * with the real cause buried in the console. Say it once, plainly, and let
+ * the interface render.
+ */
+function bridge(): Window["bridge"] | null {
+  const available = typeof window !== "undefined" ? window.bridge : undefined;
+  if (available) return available;
+  if (!warnedAboutMissingBridge) {
+    warnedAboutMissingBridge = true;
+    console.warn("no engine bridge on this page: running outside Electron, nothing will move");
+  }
+  return null;
+}
+
+let warnedAboutMissingBridge = false;
+
 export function send(command: BridgeCommand): void {
-  window.bridge.send(command);
+  bridge()?.send(command);
 }
 
 let commandCounter = 0;
@@ -80,5 +112,5 @@ export function sendCommand(name: string): string {
 
 /** Subscribe to engine messages. Returns an unsubscribe function for React effects. */
 export function onMessage(cb: (message: BridgeMessage) => void): () => void {
-  return window.bridge.onMessage(cb);
+  return bridge()?.onMessage(cb) ?? (() => {});
 }
