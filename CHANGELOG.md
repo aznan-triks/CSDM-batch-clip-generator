@@ -9,6 +9,54 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v213]
+
+### Added: the engine now knows when CS2 is really dead (Electron migration — stage 3.5)
+
+**Humanised:** When you hit KILL, the app used to fire the kill order and immediately move on
+— it never actually watched CS2 close. It does now: it waits and checks the task list until
+the game is really gone, then says so. That matters because the new interface will show a
+demolition charge that keeps beeping until the game is down, and it must beep on the truth,
+never on a stopwatch.
+
+**Technical:** `core_utils.process_is_running(name)` reads the Windows task list with an
+explicit `stdout=` (an inherited handle would corrupt the bridge protocol) and answers
+"still running" when the list is unreadable — a bad reading is not proof of death.
+`EngineMixin._await_process_exit(name, probe=None)` polls it until the process is absent,
+emits `state("process_exited", {"name": …})` on real absence only, and returns `False` on
+timeout. `request_kill` now uses `subprocess.run` instead of a fire-and-forget `Popen`, so
+the moment of death is observable at all. Three settings in `DEFAULT_CONFIG`:
+`process_exit_poll_interval`, `process_exit_timeout`, `cs2_process_name`.
+
+### Added: stop, kill and preview cancellation are reachable without a window
+
+**Humanised:** The three buttons that interrupt a job used to live inside the old window, so
+the future interface could not have used them. They moved into the engine; the window now
+just asks the engine to do it, and the engine reports back what changed.
+
+**Technical:** `_stop_preview` / `_stop_graceful` / `_kill_now` / `_handle_stop` moved from
+`App` into `EngineMixin` as `cancel_preview` / `_stop_graceful` / `request_kill` /
+`request_stop`, with every widget call replaced by a `state` event. The preview thread body
+moved too, as `EngineMixin._preview_worker(cfg)`; `_dry_run` keeps only widget reading and
+starts it. New events: `buttons` (with `stop` / `stop_label` / `kill`), `run_started`,
+`preview_started`, `process_exited` — `buttons_busy` finally has a producer. `_previewing`
+and `_preview_cancel` joined `ENGINE_STATE_DEFAULTS` (31 → 33 entries) and are no longer
+created by hand in `App.__init__`. The three commands are registered in `csdm/bridge/host.py`.
+New tests: `tests/test_process_exit.py`, plus headless stop/kill cases and two bridge
+round-trips. 147 → 156 tests.
+
+### Fixed: non-ASCII log lines no longer break the bridge
+
+**Humanised:** Any message containing a symbol — and nearly every message the app writes has
+one — was killing the connection between the new window and the engine on Windows.
+
+**Technical:** `csdm/bridge/__main__.py` forces UTF-8 on stdin/stdout/stderr before serving.
+Windows hands the child a console-codepage stream (cp1252), so the first `⏸` raised
+`UnicodeEncodeError` mid-line and corrupted the protocol. Found by the new
+`cancel_preview` round-trip test, which now stands as the regression guard.
+
+---
+
 ## [v212]
 
 ### Added: the bridge between Electron and the Python engine (Electron migration — stage 2)
