@@ -1,0 +1,109 @@
+/*
+ * The design tokens, extracted from the validated mock (ui-v5.html).
+ *
+ * ONE global theme (D23): no per-tab tint, no page/section levels. The accent
+ * is the only colour the user configures (D9) -- everything else must hold on
+ * its own, which is why the hierarchy is carried by the four ground layers and
+ * never by the accent.
+ *
+ * Contrast corrections applied against the mock, measured with WCAG 2.1 on the
+ * ground each colour actually sits on. The mock's values failed AA:
+ *   --dim  #6B7887 on --raise  3.65:1  ->  #7B8897  4.55:1
+ *   log timestamps #3E4C5A     2.20:1  ->  --dim     5.51:1 on --void
+ *   strip counter  #46525E     2.44:1  ->  --dim     5.51:1 on --void
+ *   strip status   #5A6875     3.41:1  ->  --dim
+ *   error text     #C4453B     3.93:1  ->  --blood-t 4.68:1
+ * `--dim` is calibrated on `--raise`, the LIGHTEST ground it lands on, not on
+ * `--panel`: chips and fields sit on the raised layer, so passing on the panel
+ * proves nothing. Calibrating on the comfortable ground is how the first
+ * attempt shipped at 4.14:1.
+ * `--blood` itself is unchanged: it stays the danger colour for fills, borders
+ * and the C4 light, where the 4.5:1 text rule does not apply. `--blood-t` is
+ * its text-legible sibling, the same pairing the mock already uses for
+ * --gold / --gold-d.
+ */
+
+:root {
+  /* -- ground layers. Strictly increasing luminance: this is the hierarchy,
+        and it must survive with the accent removed entirely (D9). -- */
+  --void: #07090c; /* deepest ground, behind everything */
+  --base: #0d1116; /* app background */
+  --panel: #12171e; /* section card */
+  --raise: #182029; /* raised control: field, chip, segment */
+  --raise-hi: #1e2833; /* the same control, hovered */
+
+  /* -- lines -- */
+  --line: #222b36; /* hairline border */
+  --line-hi: #33404e; /* hairline border, hovered */
+
+  /* -- text, from loudest to quietest -- */
+  --txt-hi: #f0f4f8; /* active tab, selected row */
+  --txt: #c6d0da; /* body text */
+  --txt-lo: #a8b6c4; /* section heading */
+  --dim: #7b8897; /* labels, descriptions, values, log timestamps, counters.
+                     The quietest legible text there is: the mock's three
+                     quieter greys all failed AA, and correcting them landed
+                     them here, so they are this one token now. */
+
+  /* -- accent. `--gold` is the only user-configurable colour; the other three
+        are derived from it by `applyAccent()` and must never be hand-set. -- */
+  --gold: #c8a24a; /* accent */
+  --gold-hi: #e0bb68; /* accent, lit: gradient top, active segment */
+  --gold-d: #8a6e2e; /* accent, shaded: corner brackets, gradient bottom */
+  --on-gold: #0b0e12; /* label ON the accent, flipped by measured contrast */
+
+  /* -- semantic -- */
+  --steel: #6e8ba8; /* secondary information, PREVIEW reticle */
+  --ok: #7fa86a; /* success */
+  --fire: #ff8a2b; /* warning, explosion mid-tone */
+  --blood: #c4453b; /* danger: fills, borders, the C4 light */
+  --blood-t: #d0554a; /* danger, as TEXT. Only difference: it passes AA. */
+
+  /* -- type. Two families, both present on Windows (D2), so nothing is
+        fetched: the app must run fully offline. -- */
+  --font-display: "Bahnschrift", "DIN Alternate", "Oswald", system-ui, sans-serif;
+  --font-mono: "Consolas", "Cascadia Mono", monospace;
+
+  /* Sizes measured on the mock, collapsed from 9 near-duplicates to 7 steps. */
+  --fs-micro: 9.5px; /* the C4 tag */
+  --fs-xs: 10.5px; /* chips, segments, counters */
+  --fs-sm: 11px; /* section headings, log body, fields */
+  --fs-md: 11.5px; /* descriptions */
+  --fs-lg: 12px; /* action buttons */
+  --fs-base: 13px; /* tabs, body */
+  --fs-xl: 14px; /* card titles */
+
+  --fw-normal: 400;
+  --fw-bold: 600; /* the mock has no third weight -- do not add one */
+
+  /* Uppercase tracking, collapsed from 8 values to 5. */
+  --tr-tight: 0.08em;
+  --tr-snug: 0.12em;
+  --tr-wide: 0.16em;
+  --tr-wider: 0.19em;
+  --tr-widest: 0.22em; /* the title bar only */
+
+  /* -- space. 8 steps covering every measured padding, margin and gap. -- */
+  --sp-1: 3px;
+  --sp-2: 5px;
+  --sp-3: 7px;
+  --sp-4: 9px;
+  --sp-5: 12px;
+  --sp-6: 14px;
+  --sp-7: 18px;
+  --sp-8: 22px;
+
+  /* -- lines and corners -- */
+  --bw: 1px; /* hairline */
+  --bw-accent: 2px; /* corner brackets, active-tab underline */
+
+  /* ONE radius, and it is zero. The direction is cut edges, not rounded ones:
+     shape comes from clip-path bevels, never from a corner radius. A non-zero
+     radius anywhere is a bug, which is why there is no second step to reach
+     for. */
+  --radius: 0;
+
+  /* -- focus. The mock had none: nothing in it was reachable by keyboard. -- */
+  --focus-ring: var(--gold);
+  --focus-ring-width: 2px;
+}
