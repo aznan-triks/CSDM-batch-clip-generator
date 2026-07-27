@@ -119,6 +119,13 @@ DEFAULT_CONFIG = {
     "cs2_send_to_back": False,
     # demoparser2 performance
     "dp2_threads": min(8, max(2, os.cpu_count() or 4)),  # auto-scaled to CPU count (1–8)
+
+    # How long to wait for a killed process to actually disappear, and how
+    # often to look. The UI detonates its charge on the real exit, never on a
+    # timer, so these govern a real observation and not an animation.
+    "process_exit_poll_interval": 0.5,
+    "process_exit_timeout": 60.0,
+    "cs2_process_name": "cs2.exe",
 }
 
 PRESET_CATEGORIES = {

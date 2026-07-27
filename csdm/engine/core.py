@@ -42,13 +42,50 @@ from csdm.static_data import (
     _NO_AUTO_EXCLUDE, PERSP_LABELS, _MATCH_TYPE_KEY_TO_DB, _MATCH_TYPE_CFG_KEYS,
     CSDM_TO_DP2_WEAPON, TROIS_SHOT_THRESHOLDS, DP2_TICK_WINDOW,
 )
+from csdm.config import DEFAULT_CONFIG
 from csdm.core_utils import (
     build_camera_ticks, safe_folder_name, _count_kills, fmt_duration, progress_bar,
+    process_is_running,
 )
 
 
 class EngineMixin:
     """The engine half of App. See module docstring for the three sockets."""
+
+    def _host_cfg(self, key):
+        """Read one setting from the host's config, falling back to the default.
+
+        Engine methods normally receive the run config as an argument. These
+        settings belong to no run: they describe how the host watches the
+        machine, so they are read from the host itself. A host that carries no
+        config at all (the bridge, today) still gets the shipped default.
+        """
+        cfg = getattr(self, "cfg", None) or {}
+        return cfg.get(key, DEFAULT_CONFIG[key])
+
+    def _await_process_exit(self, name, probe=None):
+        """Block until `name` is gone, then announce it. Returns False on timeout.
+
+        The wait is OPEN, not a countdown: the interface stages a charge that
+        keeps beeping while this returns nothing, and detonates only on the
+        event below. A timer here would let the animation lie about the real
+        state (D17, D18).
+
+        `probe` is a seam for tests; production uses the real task list.
+        """
+        look = probe or process_is_running
+        timeout = self._host_cfg("process_exit_timeout")
+        interval = self._host_cfg("process_exit_poll_interval")
+        deadline = time.time() + timeout
+        while True:
+            if not look(name):
+                self.state("process_exited", {"name": name})
+                return True
+            if time.time() >= deadline:
+                break
+            time.sleep(interval)
+        self.log(f"  ⚠ {name} did not exit within {int(timeout)}s", "warn")
+        return False
 
     def _pg(self):
         """Return a live psycopg2 connection, reusing the existing one when possible.

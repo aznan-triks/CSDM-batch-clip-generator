@@ -7,6 +7,7 @@ Le fichier principal re-importe chaque nom pour la compatibilite.
 import random
 import re
 import shutil
+import subprocess
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -118,3 +119,32 @@ def _generate_id_for_type(data_type):
 def _count_kills(events):
     """Count kill-type events in a list."""
     return sum(1 for e in events if e.get("type") == "kill")
+
+
+# ═══════════════════════════════════════════════════════
+#  Process probing
+# ═══════════════════════════════════════════════════════
+# Win32 CREATE_NO_WINDOW: keeps the console flash out of the user's face.
+_CREATE_NO_WINDOW = 0x08000000
+# A task list that takes longer than this is not going to answer at all.
+_TASKLIST_TIMEOUT_S = 15
+
+
+def process_is_running(name):
+    """True when a process with this image name is in the task list.
+
+    Windows only, like the rest of the recording path (D2). `stdout` is set
+    explicitly: under the Electron bridge the parent's stdout carries the
+    protocol, and an inherited handle would corrupt it.
+    """
+    try:
+        result = subprocess.run(
+            ["tasklist", "/FI", f"IMAGENAME eq {name}"],
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True, encoding="utf-8", errors="replace",
+            timeout=_TASKLIST_TIMEOUT_S, creationflags=_CREATE_NO_WINDOW)
+    except Exception:
+        # An unreadable task list is not proof of death. Say "still running"
+        # so the caller keeps waiting instead of detonating on a bad reading.
+        return True
+    return name.lower() in (result.stdout or "").lower()
