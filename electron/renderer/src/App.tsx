@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { onMessage, send, sendCommand } from "./bridge";
 import type { BridgeMessage } from "./bridge";
+import Gallery from "./components/Gallery";
 
 /** One rendered console line. `key` is a counter: two identical lines are distinct events. */
 interface Line {
@@ -122,6 +123,8 @@ export default function App() {
 
   return (
     <>
+      <Gallery />
+
       <div id="toolbar">
         <button type="button" onClick={() => sendCommand("ping")}>
           ping

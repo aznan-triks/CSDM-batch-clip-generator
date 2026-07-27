@@ -93,6 +93,24 @@
   --sp-7: 18px;
   --sp-8: 22px;
 
+  /* -- depth. The mock builds relief from white and black washes rather than
+        from extra ground colours; these are those washes, named. They repeated
+        across four component stylesheets as raw rgba() before landing here. -- */
+  --sheen-soft: rgba(255, 255, 255, 0.028); /* heading bar gradient */
+  --sheen: rgba(255, 255, 255, 0.045); /* panel inset top highlight */
+  --sheen-edge: rgba(255, 255, 255, 0.05); /* raised control inset highlight */
+  --gloss: rgba(255, 255, 255, 0.2); /* filled-button hover tint */
+  --gloss-hi: rgba(255, 255, 255, 0.22); /* the reflection sweep itself */
+  --sheen-strong: rgba(255, 255, 255, 0.45); /* filled-button inset highlight */
+  --shadow: rgba(0, 0, 0, 0.45); /* panel drop shadow */
+
+  /* -- duration, for CSS STATE transitions only: a hover tint, a focus ring,
+        a border colour. Timeline SEQUENCES (the four action animations) live
+        in the MOTION table instead -- these are two different things and
+        neither should reach into the other. -- */
+  --dur-fast: 0.16s;
+  --dur-base: 0.2s;
+
   /* -- lines and corners -- */
   --bw: 1px; /* hairline */
   --bw-accent: 2px; /* corner brackets, active-tab underline */

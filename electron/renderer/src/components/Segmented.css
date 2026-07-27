@@ -1,0 +1,47 @@
+/* `.seg` from the mock (ui-v5.html lines 93-98). No un-tokenized literals. */
+.segmented {
+  display: inline-flex;
+  border: var(--bw) solid var(--line);
+  background: var(--raise);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.segment {
+  appearance: none;
+  cursor: pointer;
+  padding: var(--sp-1) var(--sp-5);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-tight);
+  text-transform: uppercase;
+  color: var(--dim);
+  background: transparent;
+  border: 0;
+  border-right: var(--bw) solid var(--line);
+  transition: background var(--dur-fast), color var(--dur-fast);
+}
+
+.segment:last-child {
+  border-right: 0;
+}
+
+.segment:hover {
+  background: var(--raise-hi);
+  color: var(--txt-lo);
+}
+
+.segment-selected {
+  color: var(--on-gold);
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
+  font-weight: var(--fw-bold);
+}
+
+.segment-selected:hover {
+  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
+}
+
+.segment:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: -2px;
+}

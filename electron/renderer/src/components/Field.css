@@ -1,0 +1,43 @@
+/* `.fld` from the mock (ui-v5.html lines 82-85). No un-tokenized literals. */
+.field-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.field-label {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-snug);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.field {
+  background: var(--raise);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-2) var(--sp-4);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--txt);
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+
+.field-mono {
+  font-family: var(--font-mono);
+}
+
+.field:hover {
+  background: var(--raise-hi);
+  border-color: var(--line-hi);
+}
+
+.field:focus {
+  background: var(--raise-hi);
+  border-color: var(--line-hi);
+}
+
+.field:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 1px;
+}

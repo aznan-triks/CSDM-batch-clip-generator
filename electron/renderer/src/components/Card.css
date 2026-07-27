@@ -1,0 +1,70 @@
+/*
+ * .pbox from the mock (ui-v5.html lines 67-80), renamed `panel-box` per the
+ * mock's own comment: `.card` collided with a third-party hover-lift class.
+ *
+ * Literals not backed by a token (reported, not tokenized):
+ *  - the corner-bracket size (9px) -- explicitly allowed as geometry, not a
+ *    spacing value.
+ */
+.panel-box {
+  position: relative;
+  background: var(--panel);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  box-shadow:
+    inset 0 1px 0 var(--sheen),
+    0 1px 3px var(--shadow);
+}
+
+.panel-box::before,
+.panel-box::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  pointer-events: none;
+}
+
+.panel-box::before {
+  top: -1px;
+  left: -1px;
+  border-top: var(--bw-accent) solid var(--gold-d);
+  border-left: var(--bw-accent) solid var(--gold-d);
+}
+
+.panel-box::after {
+  top: -1px;
+  right: -1px;
+  border-top: var(--bw-accent) solid var(--gold-d);
+  border-right: var(--bw-accent) solid var(--gold-d);
+}
+
+.panel-heading {
+  margin: 0;
+  padding: var(--sp-4) var(--sp-6);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-normal);
+  letter-spacing: var(--tr-wider);
+  text-transform: uppercase;
+  color: var(--txt-lo);
+  border-bottom: var(--bw) solid var(--line);
+  background: linear-gradient(180deg, var(--sheen-soft), transparent);
+}
+
+.panel-heading-icon {
+  display: inline-flex;
+  color: var(--gold);
+  font-size: 1.15em;
+  line-height: 1;
+}
+
+.panel-content {
+  padding: var(--sp-5) var(--sp-6);
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  align-items: center;
+}
