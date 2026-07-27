@@ -49,8 +49,26 @@ def _cmd_tkinter_check(host, command):
     return {}
 
 
+def _cmd_request_stop(host, command):
+    host.request_stop()
+    return {}
+
+
+def _cmd_request_kill(host, command):
+    host.request_kill()
+    return {}
+
+
+def _cmd_cancel_preview(host, command):
+    host.cancel_preview()
+    return {}
+
+
 COMMANDS = {
     "ping": _cmd_ping,
+    "request_stop": _cmd_request_stop,
+    "request_kill": _cmd_request_kill,
+    "cancel_preview": _cmd_cancel_preview,
     "demo_logs": _cmd_demo_logs,
     "demo_ask": _cmd_demo_ask,
     "tkinter_check": _cmd_tkinter_check,

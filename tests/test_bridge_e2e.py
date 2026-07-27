@@ -60,6 +60,26 @@ class TestBridgeEndToEnd(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertTrue(result["error"])
 
+    def test_stop_is_reachable_over_the_pipe(self):
+        """The whole point of 3.5: an interface with no window can stop a run."""
+        proc, msgs = _run([{"type": "command", "id": "1", "name": "request_stop"}])
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        result = [m for m in msgs if m["type"] == "result"][0]
+        self.assertTrue(result["ok"], result.get("error"))
+
+    def test_preview_cancellation_is_reachable_over_the_pipe(self):
+        """Also the non-ASCII guard: this path logs "⏸ Preview cancelled.".
+
+        On Windows the child's stdout defaults to the console codepage, which
+        cannot encode that character -- the command failed and the line was
+        lost. The entry point now forces UTF-8 on both ends.
+        """
+        proc, msgs = _run([{"type": "command", "id": "1", "name": "cancel_preview"}])
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        result = [m for m in msgs if m["type"] == "result"][0]
+        self.assertTrue(result["ok"], result.get("error"))
+        self.assertTrue(any(m["type"] == "state" and m["name"] == "buttons" for m in msgs))
+
     def test_the_child_never_imports_tkinter(self):
         _, msgs = _run([{"type": "command", "id": "1", "name": "tkinter_check"}])
         check = [m for m in msgs if m["type"] == "log" and "tkinter" in m["message"]]
