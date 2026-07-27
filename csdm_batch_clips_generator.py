@@ -5795,6 +5795,22 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
             self._uncheck_demos_in_picker(payload["paths"])
         elif name == "demo_entry":
             self._emit_demo_log_entry(**payload)
+        elif name == "buttons":
+            if "stop" in payload:
+                self.stop_btn.config(state="normal" if payload["stop"] else "disabled")
+            if "stop_label" in payload:
+                self.stop_btn.config(text=payload["stop_label"])
+            if "kill" in payload:
+                self.kill_btn.config(state="normal" if payload["kill"] else "disabled")
+        elif name in ("buttons_busy", "run_started", "preview_started"):
+            # The window already set its own buttons when the click happened;
+            # these exist for a host that has no click to react to. Explicit
+            # pass, so a new event can never fall through unnoticed.
+            pass
+        elif name == "process_exited":
+            # Tkinter shows nothing on exit -- the Electron interface detonates
+            # its charge here, and that is the whole point of the event.
+            pass
         else:
             raise KeyError(f"unknown engine state event: {name!r}")
 
@@ -6205,66 +6221,12 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         threading.Thread(target=self._worker, args=(cfg,), daemon=True).start()
 
     def _handle_stop(self):
-        """Dispatch stop to the right handler based on current state."""
-        if self._previewing:
-            self._stop_preview()
-        elif self._running:
-            self._stop_graceful()
-
-    def _stop_preview(self):
-        """Cancel a running preview computation."""
-        self._preview_cancel.set()
-        self._previewing = False
-        self._async_log("\n⏸ Preview cancelled.", "warn")
-        self.stop_btn.config(state="disabled", text="⏸ Stop")
-
-    def _stop_graceful(self):
-        """Stop after current demo: kill the running CSDM process immediately,
-        mark current demo as failed, then do not start the next one."""
-        self._stop_after_current = True
-        self._running = False
-        _demo = self._current_demo or "current demo"
-        self._async_log(
-            f"\n⏸ STOP — {datetime.now().strftime('%H:%M:%S')}\n"
-            f"  Killing CSDM for: {_demo}\n"
-            f"  Remaining demos will be skipped.",
-            "warn")
-        self.stop_btn.config(state="disabled")
-        if self._proc:
-            try:
-                self._proc.kill()
-            except Exception:
-                pass
+        """Button hook: the decision lives in the engine, not in the window."""
+        threading.Thread(target=self.request_stop, daemon=True).start()
 
     def _kill_now(self):
-        """Hard kill: stop everything immediately, kill CS2 process, skip assembly,
-        and revert tags applied during this batch."""
-        self._kill_triggered = True
-        self._running = False
-        self._stop_after_current = True
-        _demo = self._current_demo or "current demo"
-        self._async_log(
-            f"\n⛔ KILL — {datetime.now().strftime('%H:%M:%S')}\n"
-            f"  Hard-killing CSDM process and cs2.exe.\n"
-            f"  Aborted on: {_demo}\n"
-            f"  Assembly and remaining demos cancelled.\n"
-            f"  Any tags applied this batch will be reverted.",
-            "err")
-        if self._proc:
-            try:
-                self._proc.kill()
-            except Exception:
-                pass
-        # Kill CS2 process (Windows only — silent no-op on others)
-        try:
-            subprocess.Popen(
-                ["taskkill", "/F", "/IM", "cs2.exe"],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                creationflags=0x08000000  # CREATE_NO_WINDOW
-            )
-        except Exception:
-            pass
-        self.after(0, self._reset_btns)
+        """Button hook: hard kill runs on a thread -- it waits for cs2.exe to die."""
+        threading.Thread(target=self.request_kill, daemon=True).start()
 
     def _reset_btns(self):
         self._running = False
@@ -6284,43 +6246,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         self._previewing = True
         self._preview_cancel.clear()
         self.stop_btn.config(state="normal", text="⏸ Stop Preview")
-
-        def task():
-            t0_total = time.time()
-            try:
-                t0 = time.time()
-                evts = self._query_events(cfg)
-                t_query = time.time() - t0
-                if self._preview_cancel.is_set():
-                    return
-                # ── Signature-based DP2 pre-parse (cache preserved if same demo set) ──
-                t0 = time.time()
-                self._preparse_dp2(cfg, list(evts.keys()))
-                t_preparse = time.time() - t0
-                if self._preview_cancel.is_set():
-                    return
-                # Apply demoparser2 modifiers before preview.
-                t0 = time.time()
-                evts = self._apply_dp2_filters_to_events(evts, cfg)
-                evts = self._apply_global_filter_gate_dict(evts, cfg)
-                t_filters = time.time() - t0
-                t_total = time.time() - t0_total
-                timings = {
-                    "query":    t_query,
-                    "preparse": t_preparse,
-                    "filters":  t_filters,
-                    "total":    t_total,
-                }
-                self.after(0, lambda evts=evts, cfg=cfg, tm=timings:
-                           self._show_preview(evts, cfg, tm))
-            except Exception as e:
-                import traceback
-                self._async_log(f"Preview error: {e}\n{traceback.format_exc()}", "err")
-            finally:
-                self._previewing = False
-                self.after(0, lambda: self.stop_btn.config(state="disabled", text="⏸ Stop"))
-
-        threading.Thread(target=task, daemon=True).start()
+        threading.Thread(target=self._preview_worker, args=(cfg,), daemon=True).start()
 
     def _show_preview(self, evts, cfg, timings=None):
         """Display preview results. Must be called on the main thread."""

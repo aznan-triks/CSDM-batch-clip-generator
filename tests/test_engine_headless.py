@@ -15,6 +15,7 @@ import sys
 import textwrap
 import unittest
 
+from csdm.config import DEFAULT_CONFIG
 from csdm.engine.core import EngineMixin
 from csdm.engine.ports import CollectingPorts
 from csdm.engine.state import EngineStateMixin
@@ -71,6 +72,42 @@ class TestHeadlessHost(unittest.TestCase):
             {"kill_mod_wallbang": True}, "kill_mod_wallbang",
             lambda dp, evts, cfg: evts, "WALLBANG")
         self.assertTrue(self.ports.logs, "the engine logged nothing through the port")
+
+
+class TestStopKillAndPreviewCancellation(unittest.TestCase):
+    """The three actions a window used to own. An Electron host needs them too."""
+
+    def setUp(self):
+        self.ports = CollectingPorts()
+        self.host = HeadlessHost(self.ports)
+        self.host.cfg = dict(DEFAULT_CONFIG)
+        self.host.cfg["process_exit_poll_interval"] = 0.0
+
+    def test_stop_and_kill_work_without_a_window(self):
+        self.host._running = True
+        self.host.request_stop()
+        self.assertIs(self.host._stop_after_current, True)
+        self.assertIs(self.host._running, False)
+
+        ports2 = CollectingPorts()
+        host2 = HeadlessHost(ports2)
+        host2.cfg = dict(self.host.cfg)
+        host2._running = True
+        host2.request_kill(probe=lambda name: False)      # already gone
+        self.assertIs(host2._kill_triggered, True)
+        self.assertIn(("process_exited", {"name": "cs2.exe"}), ports2.states)
+
+    def test_stop_during_a_preview_cancels_the_preview_instead(self):
+        self.host._previewing = True
+        self.host.request_stop()
+        self.assertTrue(self.host._preview_cancel.is_set())
+        self.assertIs(self.host._previewing, False)
+        self.assertIs(self.host._stop_after_current, False, "a preview is not a run")
+
+    def test_stop_with_nothing_running_does_nothing(self):
+        self.host.request_stop()
+        self.assertIs(self.host._stop_after_current, False)
+        self.assertFalse(self.host._preview_cancel.is_set())
 
 
 class TestTkinterIsNeverImported(unittest.TestCase):

@@ -2719,7 +2719,119 @@ class EngineMixin:
         # "any" — OR
         return _union(active, evts)
 
+    def _preview_worker(self, cfg):
+        """Compute a preview and hand the result over the state channel.
+
+        Runs on its own thread; the host starts it. Cancellation is checked
+        between stages so a cancelled preview shows nothing at all.
+        """
+        self.state("preview_started")
+        self.state("buttons_busy")
+        t0_total = time.time()
+        try:
+            t0 = time.time()
+            evts = self._query_events(cfg)
+            t_query = time.time() - t0
+            if self._preview_cancel.is_set():
+                return
+            # ── Signature-based DP2 pre-parse (cache preserved if same demo set) ──
+            t0 = time.time()
+            self._preparse_dp2(cfg, list(evts.keys()))
+            t_preparse = time.time() - t0
+            if self._preview_cancel.is_set():
+                return
+            # Apply demoparser2 modifiers before preview.
+            t0 = time.time()
+            evts = self._apply_dp2_filters_to_events(evts, cfg)
+            evts = self._apply_global_filter_gate_dict(evts, cfg)
+            t_filters = time.time() - t0
+            timings = {
+                "query":    t_query,
+                "preparse": t_preparse,
+                "filters":  t_filters,
+                "total":    time.time() - t0_total,
+            }
+            self.state("preview_ready", {"events": evts, "cfg": cfg, "timings": timings})
+        except Exception as e:
+            import traceback
+            self.log(f"Preview error: {e}\n{traceback.format_exc()}", "err")
+        finally:
+            self._previewing = False
+            self.state("buttons", {"stop": False, "stop_label": "⏸ Stop"})
+
+    def request_stop(self):
+        """Dispatch stop to the right handler based on current state."""
+        if self._previewing:
+            self.cancel_preview()
+        elif self._running:
+            self._stop_graceful()
+
+    def cancel_preview(self):
+        """Cancel a running preview computation."""
+        self._preview_cancel.set()
+        self._previewing = False
+        self.log("\n⏸ Preview cancelled.", "warn")
+        self.state("buttons", {"stop": False, "stop_label": "⏸ Stop"})
+
+    def _stop_graceful(self):
+        """Stop after current demo: kill the running CSDM process immediately,
+        mark current demo as failed, then do not start the next one."""
+        self._stop_after_current = True
+        self._running = False
+        _demo = self._current_demo or "current demo"
+        self.log(
+            f"\n⏸ STOP — {datetime.now().strftime('%H:%M:%S')}\n"
+            f"  Killing CSDM for: {_demo}\n"
+            f"  Remaining demos will be skipped.",
+            "warn")
+        self.state("buttons", {"stop": False})
+        if self._proc:
+            try:
+                self._proc.kill()
+            except Exception:
+                pass
+
+    def request_kill(self, probe=None):
+        """Hard kill: stop everything immediately, kill CS2 process, skip assembly,
+        and revert tags applied during this batch.
+
+        `taskkill` is run and WAITED ON, then the task list is watched until the
+        process is really gone. The old code fired a `Popen` and moved on, so the
+        moment of death was never known -- and an interface cannot honestly
+        report an exit it never observed (D17, D18).
+        """
+        self._kill_triggered = True
+        self._running = False
+        self._stop_after_current = True
+        _demo = self._current_demo or "current demo"
+        self.log(
+            f"\n⛔ KILL — {datetime.now().strftime('%H:%M:%S')}\n"
+            f"  Hard-killing CSDM process and cs2.exe.\n"
+            f"  Aborted on: {_demo}\n"
+            f"  Assembly and remaining demos cancelled.\n"
+            f"  Any tags applied this batch will be reverted.",
+            "err")
+        if self._proc:
+            try:
+                self._proc.kill()
+            except Exception:
+                pass
+        name = self._host_cfg("cs2_process_name")
+        # Kill CS2 process (Windows only — silent no-op on others)
+        try:
+            subprocess.run(
+                ["taskkill", "/F", "/IM", name],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                timeout=15, creationflags=0x08000000  # CREATE_NO_WINDOW
+            )
+        except Exception:
+            pass
+        self._await_process_exit(name, probe=probe)
+        self.state("buttons_idle")
+
     def _worker(self, cfg):
+        self.state("run_started")
+        self.state("buttons_busy")
         cli = self._resolve_cli(cfg["csdm_exe"])
         self.log(f"CLI: {cli}", "dim")
         if not os.path.isfile(cli):
