@@ -40,6 +40,8 @@ ENGINE_STATE_DEFAULTS = {
     "_current_demo": lambda: "",
     "_last_raw_not_found": lambda: False,
     "_pg_params": dict,
+    "_previewing": lambda: False,
+    "_preview_cancel": threading.Event,
 }
 
 

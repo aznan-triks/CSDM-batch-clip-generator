@@ -3,9 +3,15 @@
 The engine used to get its state from `App.__init__`. A host without a window
 has no `App`, so the contract has to live in the engine package instead.
 """
+import threading
+
 import pytest
 
 from csdm.engine.state import ENGINE_STATE_DEFAULTS, EngineStateMixin
+
+
+class _BareHost(EngineStateMixin):
+    """A host with no window and no engine -- only the contract."""
 
 
 class TestEngineStateContract:
@@ -31,6 +37,22 @@ class TestEngineStateContract:
         assert host._pg_params == {}
         host.init_engine_state(pg_params={"host": "localhost"})
         assert host._pg_params == {"host": "localhost"}
+
+    def test_preview_attributes_are_part_of_the_contract(self):
+        """A headless host must get these two without an App to create them."""
+        host = _BareHost()
+        host.init_engine_state()
+        assert host._previewing is False
+        assert isinstance(host._preview_cancel, threading.Event)
+        assert not host._preview_cancel.is_set()
+
+    def test_two_hosts_never_share_a_preview_event(self):
+        """A factory, not a value: cancelling one host must not cancel the other."""
+        a, b = _BareHost(), _BareHost()
+        a.init_engine_state()
+        b.init_engine_state()
+        a._preview_cancel.set()
+        assert not b._preview_cancel.is_set()
 
     def test_module_imports_no_tkinter(self):
         import ast, pathlib

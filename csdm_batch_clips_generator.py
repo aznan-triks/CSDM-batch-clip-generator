@@ -283,8 +283,6 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         self.sel_weapons = {}
         for w in self.cfg.get("weapons", []):
             self.sel_weapons[w] = tk.BooleanVar(value=True)
-        self._previewing = False
-        self._preview_cancel = threading.Event()
         self._dp2_cache_order: list = []           # LRU insertion order for eviction
         self._pending_restore_sid  = None   # steam_id to restore once DB is ready
         self._pending_restore_tags = []     # tag names to restore once DB is ready
