@@ -26,30 +26,70 @@ export const MOTION = {
     minDuration: 0.13,
     distanceFactor: 0.62,
     weakDistanceFactor: 0.95,
+    /** Length in px: `base + flash * perFlash`. A weak shot uses `weakWidth`. */
+    baseWidth: 46,
+    perFlash: 22,
+    weakWidth: 44,
+    /** Thickness in px, same shape: `baseHeight + flash * perFlashHeight`. */
+    baseHeight: 1,
+    perFlashHeight: 1.6,
+    weakHeight: 2,
+    /** The round stops short of the target by this much, so the spark reads. */
+    shortfall: 24,
   },
 
+  /** A shot the weapon does not commit to (PREVIEW): scaled down from a real one. */
+  weakShot: { flash: 0.35, recoilFactor: 0.35 },
+
   /** The hit: a spark, then the impact frames. */
-  spark: { duration: 0.34, ease: "ease-out" },
+  spark: { duration: 0.34, ease: "ease-out", endScale: 4.4, startScale: 0.4 },
   impact: {
     frames: 3,
     starDuration: 0.09,
     flashDuration: 0.066,
     ringDuration: 0.4,
     ringEase: "cubic-bezier(.1,.8,.3,1)",
+    /** Star size: `starBase + power * starPerPower`. */
+    starBase: 0.5,
+    starPerPower: 0.9,
+    /** White-screen flash opacity at full power. */
+    flashOpacity: 0.34,
+    /** Ring end scale: `ringBase + power * ringPerPower`. */
+    ringBase: 7,
+    ringPerPower: 6,
   },
 
   /** The ejected case. */
-  shell: { duration: 0.68, ease: "cubic-bezier(.3,.1,.6,1)" },
+  shell: {
+    duration: 0.68,
+    ease: "cubic-bezier(.3,.1,.6,1)",
+    /** Where along the shot line the case leaves the weapon. */
+    originFactor: 0.16,
+    /** Arc: up and out, then down and away. Pixels, mirrored by ejection side. */
+    riseX: 26,
+    riseY: -30,
+    fallX: 52,
+    fallY: 40,
+    riseSpin: 200,
+    fallSpin: 460,
+  },
 
   /** Frame shake. Amplitude is per-weapon and lives in WEAPONS. */
-  shake: { duration: 0.21, ease: "ease-out", detonationDuration: 0.62 },
+  shake: {
+    duration: 0.21,
+    ease: "ease-out",
+    detonationDuration: 0.62,
+    detonationAmplitude: 9,
+    /** Each round of a burst shakes less than the one before. */
+    burstFalloff: 0.55,
+  },
 
   /** Recoil and the bolt working. */
   recoil: { duration: 0.25, boltDuration: 0.42, weakDuration: 0.19, ease: "cubic-bezier(.15,.9,.3,1)" },
   bolt: { duration: 0.3, ease: "cubic-bezier(.4,.1,.3,1)" },
 
   /** PREVIEW's opening reticle. Restored in v5 after being lost -- do not lose it again. */
-  reticle: { duration: 0.72, ease: "ease-out" },
+  reticle: { duration: 0.72, ease: "ease-out", startScale: 1.9, endScale: 0.7, shotDelay: 0.33 },
 
   /**
    * Planting the charge. NO overshoot easing: a bouncy landing reads as a toy,
@@ -58,10 +98,22 @@ export const MOTION = {
   c4Plant: { duration: 0.26, ease: "cubic-bezier(.22,.9,.28,1)" },
 
   /** The charge withdrawing the weapon from frame while it waits. */
-  c4Withdraw: { duration: 0.52, delay: 0.18, ease: "cubic-bezier(.4,0,.3,1)" },
+  c4Withdraw: { duration: 0.52, delay: 0.18, ease: "cubic-bezier(.4,0,.3,1)", distance: 120 },
+
+  /** Where the charge is set down, relative to the muzzle. */
+  c4Place: { offsetX: 120, offsetY: 4, dropHeight: -30, dropRotation: -24, squash: 0.94 },
 
   /** The wait. This LOOPS until the engine confirms -- it is never a countdown. */
-  c4Beat: { interval: 0.62, ledDuration: 0.18, ringDuration: 0.34, ringEase: "ease-out" },
+  c4Beat: {
+    interval: 0.62,
+    ledDuration: 0.18,
+    ringDuration: 0.34,
+    ringEase: "ease-out",
+    ringEndScale: 3.4,
+    /** The beep ring sits on the charge's indicator light, not on its centre. */
+    offsetX: 9,
+    offsetY: 5,
+  },
 
   /** Detonation, once the engine confirms the process is actually gone. */
   detonation: {
@@ -70,11 +122,35 @@ export const MOTION = {
     fire: { duration: 0.56, ease: "cubic-bezier(.1,.75,.3,1)" },
     shock: { duration: 0.56, ease: "cubic-bezier(.05,.85,.25,1)" },
     smoke: { duration: 1.1, delay: 0.11, ease: "cubic-bezier(.2,.6,.4,1)" },
-    debris: { count: 16, duration: 0.64, spread: 0.09, ease: "cubic-bezier(.15,.7,.4,1)" },
+    debris: {
+      count: 16,
+      duration: 0.64,
+      spread: 0.09,
+      ease: "cubic-bezier(.15,.7,.4,1)",
+      /** Throw distance: `baseDistance + (i % 5) * perStep`, so it is not a ring. */
+      baseDistance: 150,
+      perStep: 46,
+      /** Fragment size: `baseSize + (i % 4) * sizeStep`. */
+      baseSize: 3,
+      sizeStep: 2,
+      /** Gravity pulls the whole pattern down as it flies out. */
+      fall: 38,
+      verticalSquash: 0.7,
+      /** Longer flights for some fragments: `duration + (i % 5) * durationStep`. */
+      durationStep: 0.09,
+      spin: 360,
+      spinStep: 40,
+    },
   },
 
   /** KILL: brutal, immediate, no waiting. */
-  killRetract: { duration: 0.95, delay: 0.15, ease: "cubic-bezier(.5,0,.2,1)" },
+  killRetract: {
+    duration: 0.95,
+    delay: 0.15,
+    ease: "cubic-bezier(.5,0,.2,1)",
+    distance: 160,
+    shake: 3.6,
+  },
 
   /** Smoothed scrolling. Short on purpose: this is a work tool and aiming at a
       checkbox in a column of 25 sections has to stay precise. */

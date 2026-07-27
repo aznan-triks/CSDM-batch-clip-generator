@@ -8,15 +8,13 @@
  *     progress · buttons_idle · summary · demos_unchecked ·
  *     preview_ready · demo_entry
  *
- * `buttons_busy` is in the protocol's vocabulary and in the demo command in
- * `csdm/bridge/host.py`, but NO engine code path raises it. It is handled here
- * so the shape is right the day it gets a producer, and `busy` is otherwise
- * inferred from `buttons_idle` alone.
+ * Since v213 the engine also raises `buttons`, `buttons_busy`, `run_started`,
+ * `preview_started`, `stop_requested`, `kill_requested` and `process_exited`.
  *
- * There is deliberately NO mapping from a state event to an action animation
- * here. Three of the four actions have no engine-side existence yet -- see the
- * chantier 3 notes. Wiring an animation to an event that is never raised, or
- * to a click, would be exactly the lie D18 exists to prevent.
+ * There is still deliberately NO mapping from a state event to an animation
+ * here: that lives in `weapon/controller.ts`, which takes engine events and
+ * nothing else. Keeping it out of this hook is what stops a click from ever
+ * becoming an animation trigger (D18).
  */
 import { useEffect, useState } from "react";
 

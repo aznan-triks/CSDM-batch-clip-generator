@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { onMessage, send, sendCommand } from "./bridge";
 import type { BridgeMessage } from "./bridge";
 import Gallery from "./components/Gallery";
+import { useEngineState } from "./motion/useEngineState";
+import WeaponBand from "./weapon/WeaponBand";
 
 /** One rendered console line. `key` is a counter: two identical lines are distinct events. */
 interface Line {
@@ -87,6 +89,11 @@ export default function App() {
   const ask = asks[0] ?? null;
   const logRef = useRef<HTMLDivElement>(null);
   const nextKey = useRef(0);
+  const engine = useEngineState();
+  // The action buttons a shot aims at. Registered by name so the band never
+  // has to know this file's markup.
+  const actionButtons = useRef<Record<string, HTMLElement | null>>({});
+  const buttonRef = useCallback((action: string) => actionButtons.current[action] ?? null, []);
 
   useEffect(() => {
     return onMessage((message) => {
@@ -135,6 +142,27 @@ export default function App() {
         <button type="button" onClick={() => sendCommand("demo_ask")}>
           demo_ask
         </button>
+        {/* The two engine actions that exist today. RUN and PREVIEW get their
+            commands when the screens are ported (chantier 4); until then the
+            band still animates them, driven by the engine's own events. */}
+        <button
+          type="button"
+          ref={(element) => {
+            actionButtons.current.stop = element;
+          }}
+          onClick={() => sendCommand("request_stop")}
+        >
+          stop
+        </button>
+        <button
+          type="button"
+          ref={(element) => {
+            actionButtons.current.kill = element;
+          }}
+          onClick={() => sendCommand("request_kill")}
+        >
+          kill
+        </button>
       </div>
 
       {ask && (
@@ -155,6 +183,12 @@ export default function App() {
           </div>
         ))}
       </div>
+
+      <WeaponBand
+        status={engine.progress ?? (engine.busy ? "working…" : "idle")}
+        counter={engine.summary?.text ?? ""}
+        buttonRef={buttonRef}
+      />
     </>
   );
 }

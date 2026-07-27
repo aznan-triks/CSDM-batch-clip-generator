@@ -1,0 +1,333 @@
+/*
+ * The bottom band (D11): status and progress on the left, the weapon on the
+ * right, ENTIRELY inside the band -- never cropped, never overflowing.
+ *
+ * The band is 94px tall and that is the price of a fully visible weapon; it
+ * carries the status line and the progress bar so the height is not wasted.
+ * Extracted from the approved mock, with the mock's three failing greys
+ * replaced by `--dim`, the one legible quiet text token (see tokens.css).
+ *
+ * NO :hover RULE IN THIS FILE MAY MOVE ANYTHING. The band is not interactive
+ * at all -- it has `pointer-events: none` on the weapon -- but the lock in
+ * src/__tests__/no-hover-motion.test.ts sweeps this stylesheet like every
+ * other one.
+ */
+
+.band {
+  position: relative;
+  height: 94px;
+  border-top: var(--bw) solid var(--line);
+  background: linear-gradient(180deg, #0c1116, var(--void));
+  overflow: hidden;
+}
+
+.band-meta {
+  position: absolute;
+  left: var(--sp-6);
+  top: 20px;
+  right: 340px;
+}
+
+.band-status {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}
+
+.band-status b {
+  color: var(--gold);
+  font-weight: var(--fw-bold);
+}
+
+.band-progress {
+  margin-top: var(--sp-4);
+  height: 4px;
+  background: #11171e;
+  border: var(--bw) solid var(--line);
+}
+
+.band-progress i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-d), var(--gold));
+}
+
+.band-counter {
+  margin-top: var(--sp-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--dim);
+  letter-spacing: var(--tr-snug);
+  text-transform: uppercase;
+}
+
+/* The weapon. `bottom` and the fixed height are what keep it whole: it is
+   anchored inside the band, not centred on a line that could clip it. */
+.band-weapon {
+  position: absolute;
+  right: 24px;
+  bottom: var(--sp-5);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.band-kick {
+  display: block;
+  transform-origin: 78% 50%;
+}
+
+.band-weapon svg.gun-art {
+  display: block;
+  height: 70px;
+  width: auto;
+  transform: scaleX(-1); /* drawn pointing right, shown pointing left */
+}
+
+.band-weapon svg.gun-art * {
+  fill: var(--gold);
+  opacity: 0.82;
+}
+
+/* A zero-size anchor at the barrel's end. Every shot leaves from here. */
+.band-muzzle {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+}
+
+/* -- the effects layer. Every spawned element lands here and nowhere else. -- */
+
+.fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+  overflow: hidden;
+}
+
+.fx .flash {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
+  opacity: 0;
+  background: radial-gradient(circle, #fff6dc 0%, var(--gold) 36%, rgba(200, 162, 74, 0) 70%);
+}
+
+.fx .flash::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 7%,
+    #ffefc4 7% 11%,
+    transparent 11% 32%,
+    #ffefc4 32% 36%,
+    transparent 36% 57%,
+    #ffefc4 57% 61%,
+    transparent 61% 82%,
+    #ffefc4 82% 86%,
+    transparent 86%
+  );
+}
+
+.fx .tracer {
+  position: absolute;
+  height: 2px;
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, rgba(200, 162, 74, 0), #ffe9b0 55%, #fff8e4);
+  box-shadow: 0 0 8px rgba(200, 162, 74, 0.9);
+}
+
+.fx .shell {
+  position: absolute;
+  background: #c09a46;
+}
+
+.fx .spark {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  border: var(--bw-accent) solid #ffe9b0;
+  opacity: 0;
+}
+
+.fx .iflash {
+  position: absolute;
+  inset: 0;
+  background: #fff4da;
+  mix-blend-mode: screen;
+  opacity: 0;
+}
+
+.fx .istar {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  opacity: 0;
+  background: #fffdf4;
+  clip-path: polygon(
+    50% 0, 60% 34%, 76% 12%, 68% 42%, 92% 26%, 74% 50%, 100% 50%, 74% 56%, 92% 78%,
+    66% 62%, 74% 96%, 56% 66%, 50% 100%, 42% 66%, 26% 92%, 34% 60%, 8% 78%, 26% 54%,
+    0 50%, 26% 46%, 6% 24%, 32% 40%, 24% 8%, 42% 36%
+  );
+}
+
+.fx .ring {
+  position: absolute;
+  border: var(--bw-accent) solid rgba(255, 233, 176, 0.9);
+  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  opacity: 0;
+}
+
+/* PREVIEW's reticle. Lost once, restored in v5 -- do not lose it again. */
+.fx .reticle {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  opacity: 0;
+  border: var(--bw) solid var(--steel);
+  border-radius: 50%;
+}
+
+.fx .reticle::before,
+.fx .reticle::after {
+  content: "";
+  position: absolute;
+  background: var(--steel);
+}
+
+.fx .reticle::before {
+  left: 50%;
+  top: -7px;
+  bottom: -7px;
+  width: 1px;
+  margin-left: -0.5px;
+}
+
+.fx .reticle::after {
+  top: 50%;
+  left: -7px;
+  right: -7px;
+  height: 1px;
+  margin-top: -0.5px;
+}
+
+/* -- the charge, and what it becomes -- */
+
+.fx .c4 {
+  position: absolute;
+  width: 34px;
+  height: 44px;
+  margin: -22px 0 0 -17px;
+  z-index: 3;
+}
+
+.fx .c4 svg {
+  width: 100%;
+  height: 100%;
+}
+
+.fx .c4 .cbody {
+  fill: #3c4a3a;
+}
+
+.fx .c4 .tape {
+  fill: var(--gold-d);
+}
+
+.fx .c4 .cpanel {
+  fill: #141a20;
+}
+
+.fx .c4 .led {
+  fill: var(--blood);
+}
+
+.fx .c4 .tag {
+  position: absolute;
+  left: 40px;
+  top: var(--sp-5);
+  white-space: nowrap;
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  color: var(--blood-t);
+}
+
+.fx .beep {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  border: var(--bw-accent) solid var(--blood);
+  opacity: 0;
+}
+
+.fx .core {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  margin: -40px 0 0 -40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0 32%, #fff0c4 55%, rgba(255, 240, 196, 0) 72%);
+  opacity: 0;
+}
+
+.fx .fire {
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  margin: -130px 0 0 -130px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    #fff3ce 0 14%,
+    var(--fire) 34%,
+    #d2431f 56%,
+    rgba(120, 30, 10, 0) 76%
+  );
+  opacity: 0;
+}
+
+.fx .shock {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 214, 150, 0.85);
+  opacity: 0;
+}
+
+.fx .smoke {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  margin: -75px 0 0 -75px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(58, 48, 44, 0.85) 0 42%, rgba(40, 34, 32, 0) 72%);
+  opacity: 0;
+}
+
+.fx .debris {
+  position: absolute;
+  background: #2b2320;
+}
+
+.fx .blastflash {
+  position: absolute;
+  inset: 0;
+  background: #ffb463;
+  mix-blend-mode: screen;
+  opacity: 0;
+}
