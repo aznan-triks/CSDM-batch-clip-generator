@@ -119,7 +119,15 @@ function createWindow() {
       nodeIntegration: false,
     },
   });
-  mainWindow.loadFile(path.join(__dirname, "index.html"));
+  // In development `scripts/dev.mjs` sets VITE_DEV_SERVER_URL so the window
+  // gets hot reload; in production the built bundle is loaded from disk, with
+  // no server and no network involved.
+  const devServerUrl = process.env.VITE_DEV_SERVER_URL;
+  if (devServerUrl) {
+    mainWindow.loadURL(devServerUrl);
+  } else {
+    mainWindow.loadFile(path.join(__dirname, "renderer", "dist", "index.html"));
+  }
 }
 
 ipcMain.on("bridge:send", (_event, command) => {

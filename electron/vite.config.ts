@@ -1,0 +1,25 @@
+import path from "node:path";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+// The renderer directory is its own Vite root: `main.js` and `preload.js` run
+// in Node and are never bundled.
+const RENDERER_ROOT = path.join(__dirname, "renderer");
+
+export default defineConfig({
+  root: RENDERER_ROOT,
+  // Relative asset URLs. Electron loads the built page over `file://`, where an
+  // absolute "/assets/..." would resolve against the filesystem root and 404.
+  base: "./",
+  plugins: [react()],
+  build: {
+    outDir: path.join(RENDERER_ROOT, "dist"),
+    emptyOutDir: true,
+  },
+  server: {
+    // Fixed port: `scripts/dev.mjs` hands this URL to Electron, so a silent
+    // fallback to another port would leave the window pointing at nothing.
+    port: 5273,
+    strictPort: true,
+  },
+});
