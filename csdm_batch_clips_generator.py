@@ -5489,12 +5489,20 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         elif name == "demo_entry":
             self._emit_demo_log_entry(**payload)
         elif name == "buttons":
+            if "run" in payload:
+                self.run_btn.config(state="normal" if payload["run"] else "disabled",
+                                    bg=ORANGE if payload["run"] else BG3,
+                                    fg="white" if payload["run"] else MUTED)
             if "stop" in payload:
-                self.stop_btn.config(state="normal" if payload["stop"] else "disabled")
+                # fg=RED on enable: the launch used to paint it at click time,
+                # and the launch now happens in the engine.
+                self.stop_btn.config(state="normal" if payload["stop"] else "disabled",
+                                     **({"fg": RED} if payload["stop"] else {}))
             if "stop_label" in payload:
                 self.stop_btn.config(text=payload["stop_label"])
             if "kill" in payload:
-                self.kill_btn.config(state="normal" if payload["kill"] else "disabled")
+                self.kill_btn.config(state="normal" if payload["kill"] else "disabled",
+                                     **({"fg": RED} if payload["kill"] else {}))
         elif name in ("buttons_busy", "run_started", "preview_started",
                       "stop_requested", "kill_requested"):
             # The window already set its own buttons when the click happened;
@@ -5883,22 +5891,8 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
     ALL_ERR = RETRYABLE + FATAL + ["error:", "Error:"]
 
     def _run(self):
-        cfg = self._build_run_cfg()
-        if not self.validate_run_inputs(cfg):
-            return
-        ensure_csdm_dirs()
-        self._running = True
-        self._stop_after_current = False
-        self._kill_triggered = False
-        self._tagged_this_batch = []   # [(demo_path, tag_name), ...] — for rollback
-        self.run_btn.config(state="disabled", bg=BG3, fg=MUTED)
-        self.stop_btn.config(state="normal", fg=RED)
-        self.kill_btn.config(state="normal", fg=RED)
-        self._log(f"\n{'═' * 60}", "dim")
-        self._log(f"  ▶ LAUNCH  —  {datetime.now().strftime('%H:%M:%S')}", "info")
-        self._log(f"{'═' * 60}", "dim")
-        self._summary_lbl.config(text="  Querying DB…", fg=YELLOW)
-        threading.Thread(target=self._worker, args=(cfg,), daemon=True).start()
+        """Button hook: the launch lives in the engine, not in the window."""
+        self.start_run(self._build_run_cfg())
 
     def _handle_stop(self):
         """Button hook: the decision lives in the engine, not in the window."""
@@ -5916,17 +5910,8 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         self.kill_btn.config(state="disabled")
 
     def _dry_run(self):
-        cfg = self._build_run_cfg()
-        if not self.validate_run_inputs(cfg):
-            return
-        self._log(f"\n{'─' * 60}", "dim")
-        self._log(f"  🔍 PREVIEW  —  {datetime.now().strftime('%H:%M:%S')}", "info")
-        self._log(f"{'─' * 60}", "dim")
-        self._summary_lbl.config(text="  Computing…", fg=YELLOW)
-        self._previewing = True
-        self._preview_cancel.clear()
-        self.stop_btn.config(state="normal", text="⏸ Stop Preview")
-        threading.Thread(target=self._preview_worker, args=(cfg,), daemon=True).start()
+        """Button hook: same shape as _run."""
+        self.start_preview(self._build_run_cfg())
 
     def _show_preview(self, evts, cfg, timings=None):
         """Display preview results. Must be called on the main thread."""

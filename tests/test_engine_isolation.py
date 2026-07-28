@@ -49,6 +49,8 @@ ENGINE_METHODS = [
     "set_pg_params", "_pg_connect",
     # chantier 4a, task 3 — run inputs derived and validated from cfg
     "derive_event_flags", "build_run_cfg", "validate_run_inputs",
+    # chantier 4a, task 4 — launching from a windowless host
+    "start_run", "start_preview",
 ]
 
 # Forbidden patterns inside the engine: each one is a direct touch of the UI.

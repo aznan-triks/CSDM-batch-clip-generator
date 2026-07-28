@@ -46,7 +46,7 @@ from csdm.static_data import (
 from csdm.config import DEFAULT_CONFIG
 from csdm.core_utils import (
     build_camera_ticks, safe_folder_name, _count_kills, fmt_duration, progress_bar,
-    process_is_running,
+    process_is_running, ensure_csdm_dirs,
 )
 
 # Tables probed when reading the CSDM schema, in probe order.
@@ -3193,6 +3193,43 @@ class EngineMixin:
         if not (cfg.get("events") or []):
             self.ask("error", "Select at least one event.", [])
             return False
+        return True
+
+    def start_run(self, cfg):
+        """Launch a batch run on its own thread. False when the inputs are unusable.
+
+        The header lines and the flag reset are lifted from the window's own
+        `_run`, character for character: a run must read the same in the
+        console whichever host started it. `_worker` raises `run_started` and
+        `buttons_busy` itself -- do not raise them twice.
+        """
+        if not self.validate_run_inputs(cfg):
+            return False
+        ensure_csdm_dirs()
+        self._running = True
+        self._stop_after_current = False
+        self._kill_triggered = False
+        self._tagged_this_batch = []   # [(demo_path, tag_name), ...] -- for rollback
+        self.state("buttons", {"run": False, "stop": True, "kill": True})
+        self.log(f"\n{'═' * 60}", "dim")
+        self.log(f"  ▶ LAUNCH  —  {datetime.now().strftime('%H:%M:%S')}", "info")
+        self.log(f"{'═' * 60}", "dim")
+        self.state("summary", {"text": "  Querying DB…", "level": "running"})
+        threading.Thread(target=self._worker, args=(cfg,), daemon=True).start()
+        return True
+
+    def start_preview(self, cfg):
+        """Compute a preview on its own thread. False when the inputs are unusable."""
+        if not self.validate_run_inputs(cfg):
+            return False
+        self.log(f"\n{'─' * 60}", "dim")
+        self.log(f"  🔍 PREVIEW  —  {datetime.now().strftime('%H:%M:%S')}", "info")
+        self.log(f"{'─' * 60}", "dim")
+        self.state("summary", {"text": "  Computing…", "level": "running"})
+        self._previewing = True
+        self._preview_cancel.clear()
+        self.state("buttons", {"stop": True, "stop_label": "⏸ Stop Preview"})
+        threading.Thread(target=self._preview_worker, args=(cfg,), daemon=True).start()
         return True
 
     def request_stop(self):

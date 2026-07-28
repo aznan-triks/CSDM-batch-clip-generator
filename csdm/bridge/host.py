@@ -146,8 +146,29 @@ def _cmd_delete_preset(host, command):
     return {"data": presets}
 
 
+def _cmd_start_run(host, command):
+    """Launch a batch run from the configuration the renderer holds.
+
+    `started` is false when validation refused: the reason has already gone
+    out on the `ask` channel, so there is nothing to add here.
+    """
+    cfg = command.get("cfg")
+    if not isinstance(cfg, dict):
+        raise ValueError("start_run needs a `cfg` object")
+    return {"started": host.start_run(host.build_run_cfg(cfg))}
+
+
+def _cmd_start_preview(host, command):
+    cfg = command.get("cfg")
+    if not isinstance(cfg, dict):
+        raise ValueError("start_preview needs a `cfg` object")
+    return {"started": host.start_preview(host.build_run_cfg(cfg))}
+
+
 COMMANDS = {
     "ping": _cmd_ping,
+    "start_run": _cmd_start_run,
+    "start_preview": _cmd_start_preview,
     "load_config": _cmd_load_config,
     "save_config": _cmd_save_config,
     "list_presets": _cmd_list_presets,
