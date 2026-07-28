@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { Tab, TabBar } from "../components/Tab";
+import { ICONS } from "../icons";
 import { useEngineState } from "../motion/useEngineState";
 import WeaponBand from "../weapon/WeaponBand";
 import LogConsole from "./LogConsole";
@@ -28,14 +29,21 @@ export default function AppShell() {
     <div className="shell">
       <div className="shell-tabs">
         <TabBar>
-          {TABS.map((tab) => (
-            <Tab
-              key={tab.id}
-              label={tab.label}
-              active={tab.id === active}
-              onSelect={() => setActive(tab.id)}
-            />
-          ))}
+          {TABS.map((tab) => {
+            // Pulled out of the table BEFORE rendering: `ICONS[tab.icon]({})`
+            // would call the function instead of mounting it, and React would
+            // then see no component at all.
+            const Icon = ICONS[tab.icon];
+            return (
+              <Tab
+                key={tab.id}
+                label={tab.label}
+                icon={<Icon />}
+                active={tab.id === active}
+                onSelect={() => setActive(tab.id)}
+              />
+            );
+          })}
         </TabBar>
         <div className="shell-panel" role="tabpanel" aria-label={active}>
           {/* Empty until 4a.4 and 4b port the controls. */}

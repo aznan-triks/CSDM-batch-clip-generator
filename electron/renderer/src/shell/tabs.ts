@@ -6,14 +6,17 @@
  * table means the coverage test can walk every tab without knowing the
  * markup, and a fifth tab cannot appear without touching this file.
  */
+import type { IconName } from "../icons";
+
 export interface TabSpec {
   id: "capture" | "tags" | "video" | "settings";
   label: string;
+  icon: IconName;
 }
 
 export const TABS: readonly TabSpec[] = [
-  { id: "capture", label: "CAPTURE" },
-  { id: "tags", label: "TAGS" },
-  { id: "video", label: "VIDEO" },
-  { id: "settings", label: "SETTINGS" },
+  { id: "capture", label: "CAPTURE", icon: "capture" },
+  { id: "tags", label: "TAGS", icon: "tags" },
+  { id: "video", label: "VIDEO", icon: "video" },
+  { id: "settings", label: "SETTINGS", icon: "settings" },
 ] as const;
