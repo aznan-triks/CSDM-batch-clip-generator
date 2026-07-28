@@ -52,6 +52,44 @@ from csdm.core_utils import (
 class EngineMixin:
     """The engine half of App. See module docstring for the three sockets."""
 
+    # ── Map-column detection ────────────────────────────────────────────────────
+    # CSDM stores map_name in the `demos` table (not `matches`).
+    # If a future version moves it back to `matches`, the candidates list handles it.
+    # Returns (col, alias, join_sql) where:
+    #   col      — column name,  e.g. "map_name"
+    #   alias    — SQL table alias to prefix the column ("m" for matches, "d" for demos)
+    #   join_sql — extra JOIN clause to append to FROM, or "" if the col is in matches
+    _MAP_COL_CANDIDATES = ("map_name", "game_map", "map", "level_name", "server_map")
+
+    @staticmethod
+    def _detect_map_col(schema):
+        """Return (col, alias, join_sql) for the map-name column, or (None, "m", "")."""
+        matches_cols = schema.get("matches", [])
+        demos_cols   = schema.get("demos",   [])
+
+        # 1. Try matches directly (col present in matches table)
+        for c in EngineMixin._MAP_COL_CANDIDATES:
+            if c in matches_cols:
+                return c, "m", ""
+        fallback_m = next((c for c in matches_cols if "map" in c.lower()), None)
+        if fallback_m:
+            return fallback_m, "m", ""
+
+        # 2. Try demos table joined on checksum
+        if demos_cols:
+            demos_ck   = next((c for c in demos_cols   if c.lower() == "checksum"), None)
+            matches_ck = next((c for c in matches_cols if c.lower() == "checksum"), None)
+            if demos_ck and matches_ck:
+                join_sql = f'LEFT JOIN demos d ON d."{demos_ck}" = m."{matches_ck}"'
+                for c in EngineMixin._MAP_COL_CANDIDATES:
+                    if c in demos_cols:
+                        return c, "d", join_sql
+                fallback_d = next((c for c in demos_cols if "map" in c.lower()), None)
+                if fallback_d:
+                    return fallback_d, "d", join_sql
+
+        return None, "m", ""
+
     def _host_cfg(self, key):
         """Read one setting from the host's config, falling back to the default.
 

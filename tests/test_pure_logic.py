@@ -533,5 +533,33 @@ class BuildJsonHelperTests(unittest.TestCase):
         self.assertEqual(by_sid["222"]["playerName"], "DemoName")
 
 
+def test_detect_map_col_lives_on_the_engine():
+    """The map-column detector must be reachable from a windowless host."""
+    from csdm.engine.core import EngineMixin
+
+    schema = {"matches": ["checksum", "map_name", "game_mode_str"]}
+    col, alias, join = EngineMixin._detect_map_col(schema)
+    assert (col, alias, join) == ("map_name", "m", "")
+
+
+def test_detect_map_col_falls_back_to_demos_over_checksum():
+    from csdm.engine.core import EngineMixin
+
+    schema = {"matches": ["checksum"], "demos": ["checksum", "map_name"]}
+    col, alias, join = EngineMixin._detect_map_col(schema)
+    assert col == "map_name"
+    assert alias == "d"
+    assert 'LEFT JOIN demos d ON d."checksum" = m."checksum"' == join
+
+
+def test_detect_map_col_returns_none_when_absent():
+    from csdm.engine.core import EngineMixin
+
+    col, alias, join = EngineMixin._detect_map_col({"matches": ["checksum"]})
+    assert col is None
+    assert alias == "m"
+    assert join == ""
+
+
 if __name__ == "__main__":
     unittest.main()
