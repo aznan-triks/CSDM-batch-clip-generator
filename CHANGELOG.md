@@ -9,6 +9,35 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [v215]
+
+### Changed: database discovery runs without a window (Electron migration — stage 4a.1)
+
+**Humanised:** Connecting to the CSDM database used to be something only the old Tkinter window
+knew how to do — one 230-line block that read the schema, listed players, weapons, tags, match
+types and maps, and guessed which column holds the match date. That block now lives in the
+engine, split by what it actually does: *ask* the database, *remember* the answer, *hand it over*.
+The new Electron window can therefore connect on its own with a single `connect_db` command, and
+gets back the same lists the old window shows. The old window still works exactly as before —
+same players, same order, same date column, same deduplicated maps, same tags. Verified against
+a real database through the real pipe, not by calling a method directly.
+
+**Technical:** `App._connect_and_load` (`csdm_batch_clips_generator.py`) keeps only its thread and
+its widget updates. `EngineMixin` gains `_detect_map_col` (moved off `App`, staticmethod),
+`discover_database()` → plain dict on a documented 14-key contract, `apply_discovery(data)` →
+writes the 12 state attributes and resets the 7 per-connection caches, and
+`discovery_to_json(data)` → shapes and scalars only (datetime → ISO, tuples → lists, Decimal tag
+ids → str), so `json.dumps` never needs `default=`. The hardcoded table/type/prefix lists rise to
+named module constants in `csdm/engine/core.py` at identical values. `csdm/bridge/host.py` gains
+`_cmd_connect_db`, which lets exceptions travel to `_run_command` rather than duplicating the
+bridge's error handling; the pg credentials are supplied from the loaded config so a headless host
+connects without the window. The date-column warning now goes through `self.log(..., "warn")`
+without its `⚠` prefix — the level carries that, and decoration belongs to the interface.
+21 new tests (13 in `tests/test_db_discovery.py`, 5 bridge cases, 3 map-column cases); suite at
+184 Python + 109 renderer.
+
+---
+
 ## [v214]
 
 ### Added: the new interface's visual language and its motion vocabulary (Electron migration — stage 3)
