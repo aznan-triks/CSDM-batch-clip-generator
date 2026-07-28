@@ -27,7 +27,10 @@ except ImportError:
 # ═══════════════════════════════════════════════════════
 #  Version
 # ═══════════════════════════════════════════════════════
-APP_VERSION = "v215"
+# Defined in csdm/version.py so the windowless bridge host can name the build
+# too -- it may not import this file. Re-exported here for the ~4 call sites
+# below that still read it as a module global.
+from csdm.version import APP_VERSION
 
 # ═══════════════════════════════════════════════════════
 #  Theme system

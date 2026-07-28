@@ -1,5 +1,6 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { sendCommand } from "../bridge";
 import { Tab, TabBar } from "../components/Tab";
 import { ICONS } from "../icons";
 import { useEngineState } from "../motion/useEngineState";
@@ -24,6 +25,20 @@ export default function AppShell() {
   // has to know this file's markup.
   const actionButtons = useRef<Record<string, HTMLElement | null>>({});
   const buttonRef = useCallback((action: string) => actionButtons.current[action] ?? null, []);
+
+  // Ask the engine to introduce itself. It volunteers nothing at start-up, so
+  // without this the console holds a single bare `[result]` line and reads as
+  // a window talking to a dead engine.
+  //
+  // `sendCommand`, not `runCommand`: the answer that matters is the banner on
+  // the log socket, which the console already renders. There is nothing here
+  // to await and nothing to do if it fails -- a dead engine reports itself
+  // through `child_exit`.
+  //
+  // Effects run child-first, so LogConsole has subscribed before this fires.
+  useEffect(() => {
+    sendCommand("hello");
+  }, []);
 
   return (
     <div className="shell">

@@ -346,5 +346,63 @@ def test_connect_db_on_a_real_bridge_host_wires_discovered_state_end_to_end():
     assert host._pg_params["pg_host"] == "127.0.0.1"
 
 
+class TestHelloBanner(unittest.TestCase):
+    """The engine says nothing on its own; `hello` is how the window asks it to.
+
+    A banner emitted spontaneously at start-up would be written before the
+    Electron window exists, and `main.js` drops anything sent to a window that
+    is not there yet. Making it a command means the renderer only ever asks
+    once it is already listening, so the banner cannot be lost.
+    """
+
+    def test_hello_reports_the_version(self):
+        from csdm.version import APP_VERSION
+
+        _, msgs = _run([{"type": "command", "id": "1", "name": "hello"}])
+        results = [m for m in msgs if m["type"] == "result"]
+        self.assertTrue(results[0]["ok"], results[0].get("error"))
+        self.assertEqual(results[0]["data"]["app_version"], APP_VERSION)
+        self.assertTrue(results[0]["data"]["python_version"])
+
+    def test_hello_writes_the_banner_to_the_console(self):
+        from csdm.version import APP_VERSION
+
+        _, msgs = _run([{"type": "command", "id": "1", "name": "hello"}])
+        logs = [m for m in msgs if m["type"] == "log"]
+        self.assertTrue(logs, "hello must speak on the log socket, not only return")
+        banner = "\n".join(m["message"] for m in logs)
+        self.assertIn(APP_VERSION, banner)
+        self.assertIn("engine ready", banner.lower())
+
+    def test_hello_says_how_many_settings_it_loaded(self):
+        _, msgs = _run([{"type": "command", "id": "1", "name": "hello"}])
+        banner = "\n".join(m["message"] for m in msgs if m["type"] == "log")
+        self.assertRegex(banner, r"\d+ settings")
+
+
+class TestVersionIsReadableWithoutTkinter(unittest.TestCase):
+    """`csdm/version.py` exists so both hosts can name the build.
+
+    The bridge must never import the Tkinter entry point, so the constant
+    cannot live only there -- and duplicating it would let the two copies
+    drift apart.
+    """
+
+    def test_main_file_does_not_redefine_the_version(self):
+        import pathlib
+        import re
+
+        source = pathlib.Path("csdm_batch_clips_generator.py").read_text(encoding="utf-8")
+        self.assertIsNone(
+            re.search(r'^APP_VERSION\s*=\s*["\']', source, re.M),
+            "APP_VERSION must be imported from csdm.version, never redefined here")
+
+    def test_version_module_imports_no_tkinter(self):
+        import pathlib
+
+        source = pathlib.Path("csdm/version.py").read_text(encoding="utf-8")
+        self.assertNotIn("tkinter", source)
+
+
 if __name__ == "__main__":
     unittest.main()

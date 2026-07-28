@@ -28,6 +28,9 @@ vi.mock("../../bridge", () => ({
   runCommand: () => Promise.resolve({ type: "result", id: "1", ok: true, data: {} }),
   onMessage: () => () => {},
   send: () => {},
+  // The shell greets the engine on mount; this test only cares about which
+  // controls got rendered, so the greeting goes nowhere.
+  sendCommand: () => "1",
 }));
 
 /** Every key, straight from the one place they are defined. */

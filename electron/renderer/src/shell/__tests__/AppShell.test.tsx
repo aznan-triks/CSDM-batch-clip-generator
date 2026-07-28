@@ -39,4 +39,22 @@ describe("AppShell", () => {
   it("mounts without a bridge instead of blanking the page", () => {
     expect(() => render(<AppShell />)).not.toThrow();
   });
+
+  it("greets the engine on mount so the console is never blank", () => {
+    // The engine volunteers nothing at start-up: without this the console
+    // shows one bare `[result]` line and reads as broken. The greeting has to
+    // leave AFTER the console has subscribed, which child-first effect order
+    // guarantees -- LogConsole is mounted below this component.
+    const sent: unknown[] = [];
+    window.bridge = {
+      send(command) {
+        sent.push(command);
+      },
+      onMessage() {
+        return () => {};
+      },
+    };
+    render(<AppShell />);
+    expect(sent.some((c) => (c as { name?: string }).name === "hello")).toBe(true);
+  });
 });

@@ -5,6 +5,7 @@ engine mixins, call `init_engine_state()`, wire the four sockets. The test
 keeps its own copy on purpose (see the plan): a test host that imports
 production code stops proving the contract holds.
 """
+import platform
 import sys
 import threading
 import traceback
@@ -15,6 +16,7 @@ from csdm.config import (build_preset, load_config, load_presets, preset_payload
                          save_config, save_presets)
 from csdm.engine.core import EngineMixin
 from csdm.engine.state import EngineStateMixin
+from csdm.version import APP_VERSION
 
 
 class BridgeHost(EngineStateMixin, EngineMixin):
@@ -28,6 +30,26 @@ class BridgeHost(EngineStateMixin, EngineMixin):
 
 def _cmd_ping(host, command):
     return {}
+
+
+def _cmd_hello(host, command):
+    """Announce the engine on the log socket and name the build.
+
+    The engine speaks only when spoken to: nothing is written between
+    `serve()` starting and the first command, so a freshly opened window shows
+    an empty console and reads as broken. This is the greeting that fills it.
+
+    It is a COMMAND rather than something `serve()` emits on its own because
+    `main.js` relays to a window that does not exist yet at spawn time and
+    drops whatever arrives first. Asking for the banner means the renderer has
+    already subscribed by the time it is written, so it cannot be lost.
+    """
+    settings = load_config()
+    host.log(f"CSDM Batch Clips Generator {APP_VERSION} -- engine ready", "ok")
+    host.log(f"python {platform.python_version()} | {len(settings)} settings loaded", "dim")
+    return {"data": {"app_version": APP_VERSION,
+                     "python_version": platform.python_version(),
+                     "settings_count": len(settings)}}
 
 
 def _cmd_demo_logs(host, command):
@@ -171,6 +193,7 @@ def _cmd_start_preview(host, command):
 
 COMMANDS = {
     "ping": _cmd_ping,
+    "hello": _cmd_hello,
     "start_run": _cmd_start_run,
     "start_preview": _cmd_start_preview,
     "load_config": _cmd_load_config,
