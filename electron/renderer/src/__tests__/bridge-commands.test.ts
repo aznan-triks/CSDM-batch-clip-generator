@@ -115,6 +115,14 @@ describe("runCommand", () => {
     await expect(promise).rejects.toThrow("save_config needs a `cfg` object");
   });
 
+  it("rejects at once when the page has no bridge at all", async () => {
+    // @ts-expect-error -- a plain browser tab, where preload never ran.
+    delete window.bridge;
+    const { runCommand } = await freshBridge();
+
+    await expect(runCommand("load_config")).rejects.toThrow(/no engine bridge/);
+  });
+
   it("rejects every command in flight when the engine dies", async () => {
     const fake = installFakeBridge();
     const { runCommand } = await freshBridge();

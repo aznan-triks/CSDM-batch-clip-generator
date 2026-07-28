@@ -139,8 +139,12 @@ def _cmd_load_preset(host, command):
 
 
 def _cmd_delete_preset(host, command):
+    """Drop one preset. Refuses a name nobody has, like `load_preset` does:
+    silently rewriting the file on a typo reports a deletion that never was."""
     preset_name = command.get("preset")
     presets = load_presets()
+    if preset_name not in presets:
+        raise ValueError(f"no preset named {preset_name}")
     presets.pop(preset_name, None)
     save_presets(presets)
     return {"data": presets}

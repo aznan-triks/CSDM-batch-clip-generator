@@ -92,6 +92,26 @@ describe("SettingsProvider", () => {
     expect(commands.filter((c) => c.name === "save_config")).toHaveLength(0);
   });
 
+  it("never writes the file when the load it never got would be overwritten", async () => {
+    // save_config replaces the file wholesale. After a failed load the store
+    // holds nothing, so writing would swap every saved key for the one just
+    // edited -- the corrupted-config case turning into a wiped config.
+    loadResult = () => Promise.reject(new Error("config file is not valid JSON"));
+    render(
+      <SettingsProvider>
+        <Probe settingKey="crf" />
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(screen.getByRole("button").textContent).toBe("undefined"));
+
+    act(() => screen.getByRole("button").click());
+    await act(async () => {
+      vi.advanceTimersByTime(SAVE_DEBOUNCE_MS * 3);
+    });
+
+    expect(commands.filter((c) => c.name === "save_config")).toHaveLength(0);
+  });
+
   it("stays mounted and readable when the engine cannot answer", async () => {
     loadResult = () => Promise.reject(new Error("engine exited (code=1, signal=null)"));
     render(

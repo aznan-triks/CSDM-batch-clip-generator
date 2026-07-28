@@ -59,6 +59,14 @@ class TestBridgeEndToEnd(unittest.TestCase):
         self.assertFalse(results[0]["ok"])
         self.assertIn("name", results[0]["error"])
 
+    def test_delete_preset_that_does_not_exist_fails_instead_of_rewriting(self):
+        """A typo must not report a deletion that never happened."""
+        _, msgs = _run([{"type": "command", "id": "1", "name": "delete_preset",
+                         "preset": "no-such-preset-4a"}])
+        results = [m for m in msgs if m["type"] == "result"]
+        self.assertFalse(results[0]["ok"])
+        self.assertIn("no-such-preset-4a", results[0]["error"])
+
     def test_load_preset_that_does_not_exist_fails_readably(self):
         _, msgs = _run([{"type": "command", "id": "1", "name": "load_preset",
                          "preset": "no-such-preset-4a"}])

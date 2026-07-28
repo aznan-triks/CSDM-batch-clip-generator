@@ -167,6 +167,13 @@ export function runCommand(
   name: string,
   payload: CommandPayload = {},
 ): Promise<ResultMessage> {
+  // Outside Electron there is nobody to answer, and `send` is a no-op: the
+  // promise would stay pending for the life of the page. Say so at once, the
+  // way a dead engine already does, so a caller can show the reason instead of
+  // waiting on a result that cannot arrive.
+  if (!bridge()) {
+    return Promise.reject(new Error(`no engine bridge on this page: ${name} cannot run`));
+  }
   installResultRouter();
   return new Promise((resolve, reject) => {
     const id = sendCommand(name, payload);

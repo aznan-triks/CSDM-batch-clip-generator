@@ -36,12 +36,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // The load itself must not trigger a save: without this, every start-up
   // would rewrite the file it just read.
   const dirty = useRef(false);
+  // Saving is armed only by a load that SUCCEEDED. `save_config` replaces the
+  // file wholesale, so editing one setting after a failed load -- a corrupted
+  // csdm_config.json, say -- would replace 176 saved keys with the single one
+  // just touched. Refusing to write is the recoverable failure; writing is not.
+  const loaded = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     runCommand("load_config")
       .then((result) => {
         if (cancelled) return;
+        loaded.current = true;
         setSettings((result.data ?? {}) as Settings);
       })
       .catch((cause: Error) => {
@@ -64,7 +70,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!dirty.current) return;
+    if (!dirty.current || !loaded.current) return;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       runCommand("save_config", { cfg: settings }).catch((cause: Error) => {
