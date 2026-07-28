@@ -4,6 +4,7 @@ import { sendCommand } from "../bridge";
 import { Tab, TabBar } from "../components/Tab";
 import { ICONS } from "../icons";
 import { useEngineState } from "../motion/useEngineState";
+import CaptureTab from "../tabs/CaptureTab";
 import WeaponBand from "../weapon/WeaponBand";
 import LogConsole from "./LogConsole";
 import { TABS } from "./tabs";
@@ -61,7 +62,8 @@ export default function AppShell() {
           })}
         </TabBar>
         <div className="shell-panel" role="tabpanel" aria-label={active}>
-          {/* Empty until 4a.4 and 4b port the controls. */}
+          {/* Capture is ported (4a.4); the other three arrive in 4b. */}
+          {active === "capture" && <CaptureTab />}
         </div>
       </div>
 

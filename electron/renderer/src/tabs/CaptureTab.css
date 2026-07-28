@@ -1,0 +1,44 @@
+/*
+ * The Capture tab's layout. Colours come from theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.capture-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding: var(--sp-5) var(--sp-6);
+}
+
+/* A label followed by its controls on one line, wrapping on a narrow window
+   the way the window's own WrapRow does. */
+.capture-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.capture-label {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-tight);
+  text-transform: uppercase;
+  color: var(--dim);
+  min-width: 96px;
+}
+
+/* Two columns on a comfortable window, one when the console shares the
+   width. `auto-fit` means no breakpoint has to be maintained by hand. */
+.capture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-4) var(--sp-6);
+}
+
+/* The wrapper the coverage guard looks for carries no styling of its own:
+   it must not change how anything inside it lays out. */
+.capture-tab .setting {
+  min-width: 0;
+}
