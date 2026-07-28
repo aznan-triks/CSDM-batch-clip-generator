@@ -48,6 +48,23 @@ from csdm.core_utils import (
     process_is_running,
 )
 
+# Tables probed when reading the CSDM schema, in probe order.
+DISCOVERY_TABLES = ("kills", "matches", "demos", "rounds", "players", "tags",
+                    "checksum_tags", "match_tags")
+# SQL types that can carry a match date.
+DISCOVERY_DATE_TYPES = frozenset({
+    "date", "timestamp", "timestamp with time zone", "timestamp without time zone",
+    "timestamptz",
+})
+DISCOVERY_INT_TYPES = frozenset({
+    "bigint", "integer", "int", "int4", "int8", "smallint", "int2", "numeric",
+})
+# Column names that look like a date but record bookkeeping, not play time.
+DISCOVERY_SUSPECT_NAMES = ("analyze", "created", "import", "added", "updated")
+DISCOVERY_SUSPECT_PENALTY = 5
+# Map name prefixes stripped to build the display key.
+MAP_NAME_PREFIXES = ("de_", "cs_", "ar_", "gg_", "dz_", "tr_")
+
 
 class EngineMixin:
     """The engine half of App. See module docstring for the three sockets."""
@@ -89,6 +106,248 @@ class EngineMixin:
                     return fallback_d, "d", join_sql
 
         return None, "m", ""
+
+    def discover_database(self):
+        """Read the CSDM schema and everything the screens need to offer choices.
+
+        Blocking and windowless: the caller owns the thread. Returns a plain dict;
+        nothing here touches a widget, a port, or an event loop.
+        """
+        conn = self._pg_fresh()
+        try:
+            with conn.cursor() as cur:
+                schema = {}
+                col_types = {}
+                for t in DISCOVERY_TABLES:
+                    cur.execute(
+                        "SELECT column_name, data_type FROM information_schema.columns "
+                        "WHERE table_name=%s ORDER BY ordinal_position", (t,))
+                    ri = cur.fetchall()
+                    cols = [r[0] for r in ri]
+                    types = {r[0]: r[1] for r in ri}
+                    if cols:
+                        schema[t] = cols
+                        col_types[t] = types
+
+                # Fetch players with their last-seen match date for sorting
+                _m_cols_check = schema.get("matches", [])
+                _date_col_for_players = next(
+                    (c for c in _m_cols_check
+                     if col_types.get("matches", {}).get(c, "").lower()
+                     in {"date","timestamp","timestamp with time zone",
+                         "timestamp without time zone","timestamptz","bigint","integer","int","int4","int8"}
+                     and "analyze" not in c.lower()),
+                    None)
+                _pmk_col = next(
+                    (c for c in schema.get("players", [])
+                     if c.lower() in ("match_checksum","match_id","checksum")),
+                    None)
+                _mmk_col = next(
+                    (c for c in schema.get("matches", [])
+                     if c.lower() in ("checksum","id","match_id")),
+                    None)
+                if _date_col_for_players and _pmk_col and _mmk_col:
+                    try:
+                        cur.execute(
+                            f'SELECT DISTINCT ON (p.steam_id) p.name, p.steam_id, '
+                            f'MAX(m."{_date_col_for_players}") as last_seen '
+                            f'FROM players p '
+                            f'LEFT JOIN matches m ON m."{_mmk_col}" = p."{_pmk_col}" '
+                            f'WHERE p.name IS NOT NULL AND p.steam_id IS NOT NULL '
+                            f"AND p.name!='' AND p.steam_id!='' "
+                            f'GROUP BY p.steam_id, p.name '
+                            f'ORDER BY p.steam_id, last_seen DESC NULLS LAST')
+                        rows = [(r[0], r[1], r[2]) for r in cur.fetchall()]
+                    except Exception:
+                        cur.execute(
+                            "SELECT DISTINCT p.name, p.steam_id FROM players p "
+                            "WHERE p.name IS NOT NULL AND p.steam_id IS NOT NULL "
+                            "AND p.name!='' AND p.steam_id!='' ORDER BY p.name")
+                        rows = [(r[0], r[1], None) for r in cur.fetchall()]
+                else:
+                    cur.execute(
+                        "SELECT DISTINCT p.name, p.steam_id FROM players p "
+                        "WHERE p.name IS NOT NULL AND p.steam_id IS NOT NULL "
+                        "AND p.name!='' AND p.steam_id!='' ORDER BY p.name")
+                    rows = [(r[0], r[1], None) for r in cur.fetchall()]
+
+                _m_types = col_types.get("matches", {})
+                _m_cols  = schema.get("matches", [])
+
+                # Candidate columns: date/timestamp type, OR bigint with date-like name,
+                # OR text with 'date'/'time' in name
+                _candidates = []
+                for c in _m_cols:
+                    t = _m_types.get(c, "").lower()
+                    clow = c.lower()
+                    if t in DISCOVERY_DATE_TYPES:
+                        _candidates.append(c)
+                    elif any(it in t for it in DISCOVERY_INT_TYPES) and (
+                            "date" in clow or "time" in clow or "played" in clow):
+                        _candidates.append(c)
+                    elif "text" in t and ("date" in clow or "time" in clow):
+                        _candidates.append(c)
+
+                best_col, best_score = None, -1
+                for c in _candidates:
+                    try:
+                        cur.execute(
+                            f'SELECT COUNT(DISTINCT "{c}") FROM '
+                            f'(SELECT "{c}" FROM matches '
+                            f' WHERE "{c}" IS NOT NULL LIMIT 30) sub')
+                        n_distinct = cur.fetchone()[0] or 0
+                    except Exception:
+                        n_distinct = 0
+                    penalty = DISCOVERY_SUSPECT_PENALTY if any(
+                        s in c.lower() for s in DISCOVERY_SUSPECT_NAMES) else 0
+                    score = n_distinct - penalty
+                    if score > best_score:
+                        best_score = score
+                        best_col = c
+
+                dc = best_col
+                dc_type = _m_types.get(dc, "").lower() if dc else ""
+
+                cur.execute(
+                    "SELECT DISTINCT weapon_name FROM kills "
+                    "WHERE weapon_name IS NOT NULL AND weapon_name!='' ORDER BY weapon_name")
+                weapons = [r[0] for r in cur.fetchall()]
+
+                # Detect distinct game_mode_str values for match type filter.
+                # game_mode_str is the authoritative column (text, e.g. "premier",
+                # "scrimcomp2v2"). game_mode (integer) is a numeric fallback.
+                # Never use "type" or "source" — those hold the match source
+                # ("Matchmaking", "Faceit"…), not the game mode.
+                match_types_found: list = []
+                _gm_col = next(
+                    (c for c in schema.get("matches", [])
+                     if c.lower() == "game_mode_str"),
+                    None)
+                if not _gm_col:
+                    # Numeric fallback — less readable but still filterable
+                    _gm_col = next(
+                        (c for c in schema.get("matches", [])
+                         if c.lower() == "game_mode"),
+                        None)
+                if _gm_col:
+                    try:
+                        cur.execute(
+                            f'SELECT DISTINCT "{_gm_col}" FROM matches '
+                            f'WHERE "{_gm_col}" IS NOT NULL ORDER BY "{_gm_col}"')
+                        match_types_found = [str(r[0]) for r in cur.fetchall() if r[0]]
+                    except Exception:
+                        match_types_found = []
+
+                # Detect map column (may be in matches or demos) and fetch distinct values.
+                maps_found: list = []
+                _mc, _ma, _mj = self._detect_map_col(schema)
+                if _mc:
+                    # Fetch from the owning table directly (no join needed for DISTINCT)
+                    _map_src_table = "demos" if _ma == "d" else "matches"
+                    try:
+                        cur.execute(
+                            f'SELECT DISTINCT "{_mc}" FROM {_map_src_table} '
+                            f'WHERE "{_mc}" IS NOT NULL ORDER BY "{_mc}"')
+                        _raw_maps = [str(r[0]).strip() for r in cur.fetchall() if r[0]]
+                        # Deduplicate by display key (stripped prefix, lowercase)
+                        _disp: dict = {}
+                        for _rv in _raw_maps:
+                            _dk = _rv.lower()
+                            for _pfx in MAP_NAME_PREFIXES:
+                                if _dk.startswith(_pfx):
+                                    _dk = _dk[len(_pfx):]
+                                    break
+                            _disp.setdefault(_dk, []).append(_rv)
+                        maps_found = sorted(_disp.items())   # [(display_key, [raw_vals])]
+                    except Exception:
+                        maps_found = []
+
+                tags_data = []
+                tags_schema_info = {}
+                if "tags" in schema:
+                    tc = schema["tags"]
+                    tt = col_types.get("tags", {})
+                    id_col = next((c for c in tc if c in ("id", "tag_id")), tc[0] if tc else None)
+                    id_col_type = tt.get(id_col, "bigint")
+                    name_col = next((c for c in tc if c in ("name", "tag_name")), None)
+                    color_col = next((c for c in tc if c in ("color", "tag_color")), None)
+
+                    jt = None
+                    jt_tag_col = None
+                    jt_match_col = None
+                    jt_col_types = {}
+
+                    for jtable in ("checksum_tags", "match_tags"):
+                        if jtable in schema:
+                            jcols = schema[jtable]
+                            jtypes = col_types.get(jtable, {})
+                            candidate_tag = None
+                            candidate_match = None
+                            for c in jcols:
+                                cl = c.lower()
+                                if "tag" in cl and "checksum" not in cl and "match" not in cl:
+                                    candidate_tag = c
+                                elif any(k in cl for k in ("checksum", "match", "demo")):
+                                    candidate_match = c
+                            if candidate_tag and candidate_match:
+                                jt = jtable
+                                jt_tag_col = candidate_tag
+                                jt_match_col = candidate_match
+                                jt_col_types = jtypes
+                                break
+
+                    if not jt:
+                        for jtable in ("checksum_tags", "match_tags"):
+                            if jtable in schema:
+                                jcols = schema[jtable]
+                                if len(jcols) >= 2:
+                                    jt = jtable
+                                    jt_match_col = jcols[0]
+                                    jt_tag_col = jcols[1]
+                                    jt_col_types = col_types.get(jtable, {})
+                                    break
+
+                    tags_schema_info = {
+                        "table": "tags",
+                        "id_col": id_col,
+                        "id_col_type": id_col_type,
+                        "name_col": name_col,
+                        "color_col": color_col,
+                        "junction_table": jt,
+                        "jt_tag_col": jt_tag_col,
+                        "jt_match_col": jt_match_col,
+                        "jt_col_types": jt_col_types,
+                    }
+
+                    if name_col and id_col:
+                        sel = f'"{id_col}","{name_col}"'
+                        if color_col:
+                            sel += f',"{color_col}"'
+                        cur.execute(f'SELECT {sel} FROM tags ORDER BY "{name_col}"')
+                        for r in cur.fetchall():
+                            tags_data.append(
+                                (r[0], r[1] if len(r) > 1 else str(r[0]),
+                                 r[2] if len(r) > 2 and color_col else ""))
+        finally:
+            conn.close()
+        players = [(f"{n}  ({s})", s, n, d) for n, s, d in rows]
+        names = {s: n for n, s, *_ in rows}
+        return {
+            "players": players,
+            "names": names,
+            "date_col": dc,
+            "date_col_type": dc_type,
+            "weapons": weapons,
+            "schema": schema,
+            "col_types": col_types,
+            "tags": tags_data,
+            "tags_schema": tags_schema_info,
+            "match_types": match_types_found,
+            "maps": maps_found,
+            "map_col": _mc,
+            "map_alias": _ma,
+            "map_join": _mj,
+        }
 
     def _host_cfg(self, key):
         """Read one setting from the host's config, falling back to the default.
