@@ -59,7 +59,7 @@ export type BridgeMessage =
   | { type: "child_error"; error: string };
 
 export type BridgeCommand =
-  | { type: "command"; id: string; name: string }
+  | { type: "command"; id: string; name: string; [key: string]: unknown }
   | { type: "answer"; id: string; value: string | null };
 
 /** What `preload.js` puts on `window`. Nothing else crosses the isolation boundary. */
@@ -100,14 +100,78 @@ export function send(command: BridgeCommand): void {
   bridge()?.send(command);
 }
 
+/** Extra fields a command carries beside `type`, `id` and `name`. */
+export type CommandPayload = Record<string, unknown>;
+
+/** One command's outcome, as the Python side writes it. */
+export type ResultMessage = Extract<BridgeMessage, { type: "result" }>;
+
+interface PendingCommand {
+  resolve: (result: ResultMessage) => void;
+  reject: (error: Error) => void;
+}
+
+const pending = new Map<string, PendingCommand>();
+let routerInstalled = false;
+
+/**
+ * Route `result` lines back to whoever is waiting for them.
+ *
+ * Installed on the first `runCommand` rather than at module load: importing
+ * this file must stay free of side effects, or a test that only wants
+ * `sendCommand` would silently subscribe to the pipe.
+ */
+function installResultRouter(): void {
+  if (routerInstalled) return;
+  routerInstalled = true;
+  onMessage((message) => {
+    if (message.type === "result") {
+      if (message.id === null) return;
+      const waiting = pending.get(message.id);
+      if (!waiting) return;
+      pending.delete(message.id);
+      if (message.ok) waiting.resolve(message);
+      else waiting.reject(new Error(message.error ?? "command failed"));
+      return;
+    }
+    // The engine is gone: nothing will ever answer. Break every waiting
+    // promise now instead of leaving them pending for the life of the window.
+    if (message.type === "child_exit") {
+      failAllPending(`engine exited (code=${message.code}, signal=${message.signal})`);
+    } else if (message.type === "child_error" || message.type === "fatal") {
+      failAllPending(message.error);
+    }
+  });
+}
+
+function failAllPending(cause: string): void {
+  for (const [id, waiting] of [...pending]) {
+    pending.delete(id);
+    waiting.reject(new Error(cause));
+  }
+}
+
 let commandCounter = 0;
 
 /** Send a command under a fresh id and return that id. */
-export function sendCommand(name: string): string {
+export function sendCommand(name: string, payload: CommandPayload = {}): string {
   commandCounter += 1;
   const id = String(commandCounter);
-  send({ type: "command", id, name });
+  // Protocol fields last: a payload key can never rewrite them.
+  send({ ...payload, type: "command", id, name });
   return id;
+}
+
+/** Send a command and wait for its result line. Rejects on failure or engine death. */
+export function runCommand(
+  name: string,
+  payload: CommandPayload = {},
+): Promise<ResultMessage> {
+  installResultRouter();
+  return new Promise((resolve, reject) => {
+    const id = sendCommand(name, payload);
+    pending.set(id, { resolve, reject });
+  });
 }
 
 /** Subscribe to engine messages. Returns an unsubscribe function for React effects. */
