@@ -5,7 +5,6 @@ import App from "./App";
 import { installSmoothScroll } from "./motion/scroll";
 import { applyAccent, DEFAULT_ACCENT } from "./theme/accent";
 import "./theme/tokens.css";
-import "./skeleton.css";
 
 // The accent's three derived siblings are computed, never written by hand, so
 // they have to be applied once before the first paint -- tokens.css ships the

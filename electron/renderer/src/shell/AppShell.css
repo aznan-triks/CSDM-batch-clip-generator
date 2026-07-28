@@ -1,0 +1,68 @@
+/*
+ * The frame. Two columns above, the weapon band below.
+ *
+ * Every colour comes from theme/tokens.css: nothing here may introduce one,
+ * because the accent is user-chosen (D9) and the hierarchy has to survive in
+ * greyscale alone.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+/* The page itself. skeleton.css used to reset this; the shell owns it now,
+   and a stray body margin would push the 100vh grid into a scrollbar. */
+body {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-base);
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 3fr 2fr; /* the window's own PanedWindow weights */
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    "tabs logs"
+    "band band";
+  height: 100vh;
+  background: var(--base);
+  color: var(--txt);
+}
+
+.shell-tabs {
+  grid-area: tabs;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.shell-panel {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.shell-logs {
+  grid-area: logs;
+  border-left: 1px solid var(--line);
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/*
+ * Narrow window (D24, minimum 900 x 640): the console gives its column to the
+ * tabs. It is HIDDEN, never unmounted -- an unmounted console loses every line
+ * already written, and the lines are the only record of a run.
+ */
+@media (max-width: 1000px) {
+  .shell {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "tabs"
+      "band";
+  }
+
+  .shell-logs {
+    display: none;
+  }
+}

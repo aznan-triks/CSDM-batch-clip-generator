@@ -1,0 +1,42 @@
+/**
+ * The shell must mount, show its four tabs, and switch between them.
+ *
+ * It is rendered with no `window.bridge`: outside Electron the pipe is absent,
+ * and the shell has to stay usable rather than blank the page -- the failure
+ * mode `bridge.ts` already documents.
+ */
+import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it } from "vitest";
+
+import AppShell from "../AppShell";
+
+describe("AppShell", () => {
+  beforeEach(() => {
+    // @ts-expect-error -- deliberately absent, as in a plain browser tab.
+    delete window.bridge;
+  });
+
+  it("shows the four tabs", () => {
+    render(<AppShell />);
+    for (const label of ["CAPTURE", "TAGS", "VIDEO", "SETTINGS"]) {
+      expect(screen.getByRole("button", { name: new RegExp(label, "i") })).toBeTruthy();
+    }
+  });
+
+  it("opens on Capture", () => {
+    render(<AppShell />);
+    const capture = screen.getByRole("button", { name: /capture/i });
+    expect(capture.getAttribute("aria-current")).toBe("true");
+  });
+
+  it("keeps the log console in the tree at every width", () => {
+    // The narrow layout hides the console with CSS, never by unmounting it:
+    // an unmounted console loses every line already written.
+    render(<AppShell />);
+    expect(document.querySelector(".shell-logs")).not.toBeNull();
+  });
+
+  it("mounts without a bridge instead of blanking the page", () => {
+    expect(() => render(<AppShell />)).not.toThrow();
+  });
+});

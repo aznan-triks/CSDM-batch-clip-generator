@@ -9,6 +9,13 @@ const path = require("path");
 
 const REPO_ROOT = path.join(__dirname, "..");
 
+// Window geometry. Defaults mirror DEFAULT_CONFIG's ui_window_w / ui_window_h;
+// the minimum is D24 -- below it the two columns stop being usable.
+const WINDOW_DEFAULT_W = 1600;
+const WINDOW_DEFAULT_H = 900;
+const WINDOW_MIN_W = 900;
+const WINDOW_MIN_H = 640;
+
 let mainWindow = null;
 let child = null;
 let stdoutBuffer = ""; // holds a line fragment carried over between two stdout chunks
@@ -111,8 +118,10 @@ function sendCommandToEngine(command) {
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 700,
+    width: WINDOW_DEFAULT_W,
+    height: WINDOW_DEFAULT_H,
+    minWidth: WINDOW_MIN_W,
+    minHeight: WINDOW_MIN_H,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

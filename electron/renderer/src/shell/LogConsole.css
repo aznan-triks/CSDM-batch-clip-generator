@@ -1,0 +1,51 @@
+/*
+ * The log console's own styling.
+ *
+ * skeleton.css carried these rules with hardcoded hexes while it existed to
+ * prove the build chain. It is gone; the rules survive here on theme tokens,
+ * because deleting them outright would have cost the console its level colours
+ * and its line wrapping -- a visible regression dressed up as a cleanup.
+ *
+ * The height is no longer `calc(100vh - 100px)`: the shell grid owns the
+ * column now, so the console fills the cell it is given.
+ */
+
+.shell-logs {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+#ask-panel {
+  padding: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+#ask-panel button {
+  margin-right: 8px;
+}
+
+#log {
+  white-space: pre-wrap;
+  padding: 8px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.line-err {
+  color: var(--blood-t);
+}
+
+.line-warn {
+  color: var(--fire);
+}
+
+.line-ok {
+  color: var(--ok);
+}
+
+.line-dim {
+  color: var(--dim);
+}
