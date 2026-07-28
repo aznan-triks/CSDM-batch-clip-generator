@@ -11,7 +11,8 @@ import traceback
 
 from csdm.bridge.ports import PipePorts
 from csdm.bridge.protocol import LineWriter, MSG_FATAL, MSG_LOG, MSG_RESULT, decode
-from csdm.config import load_config
+from csdm.config import (build_preset, load_config, load_presets, preset_payload,
+                         save_config, save_presets)
 from csdm.engine.core import EngineMixin
 from csdm.engine.state import EngineStateMixin
 
@@ -87,8 +88,72 @@ def _cmd_connect_db(host, command):
     return {"data": host.discovery_to_json(data)}
 
 
+def _cmd_load_config(host, command):
+    """Hand the saved configuration to the renderer, migrations already applied."""
+    return {"data": load_config()}
+
+
+def _cmd_save_config(host, command):
+    """Write the configuration the renderer holds.
+
+    Fails loudly on a missing or malformed `cfg`: writing a partial
+    configuration would silently drop every key the renderer forgot.
+    """
+    cfg = command.get("cfg")
+    if not isinstance(cfg, dict):
+        raise ValueError("save_config needs a `cfg` object")
+    save_config(cfg)
+    return {}
+
+
+def _cmd_list_presets(host, command):
+    return {"data": load_presets()}
+
+
+def _cmd_save_preset(host, command):
+    """Store one preset. The preset's own name travels as `preset`, not `name`:
+    `name` already carries the command's name on every message."""
+    preset_name = (command.get("preset") or "").strip()
+    if not preset_name:
+        raise ValueError("a preset needs a name")
+    cats = command.get("cats") or []
+    if not cats:
+        raise ValueError("select at least one category to include")
+    cfg = command.get("cfg")
+    if not isinstance(cfg, dict):
+        raise ValueError("save_preset needs a `cfg` object")
+    presets = load_presets()
+    presets[preset_name] = build_preset(cfg, cats)
+    save_presets(presets)
+    return {"data": presets}
+
+
+def _cmd_load_preset(host, command):
+    """Return a preset's values and the keys it is allowed to overwrite."""
+    preset_name = command.get("preset")
+    presets = load_presets()
+    if preset_name not in presets:
+        raise ValueError(f"no preset named {preset_name}")
+    data, keys = preset_payload(presets[preset_name])
+    return {"data": data, "keys": keys}
+
+
+def _cmd_delete_preset(host, command):
+    preset_name = command.get("preset")
+    presets = load_presets()
+    presets.pop(preset_name, None)
+    save_presets(presets)
+    return {"data": presets}
+
+
 COMMANDS = {
     "ping": _cmd_ping,
+    "load_config": _cmd_load_config,
+    "save_config": _cmd_save_config,
+    "list_presets": _cmd_list_presets,
+    "save_preset": _cmd_save_preset,
+    "load_preset": _cmd_load_preset,
+    "delete_preset": _cmd_delete_preset,
     "request_stop": _cmd_request_stop,
     "request_kill": _cmd_request_kill,
     "cancel_preview": _cmd_cancel_preview,

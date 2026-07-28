@@ -228,6 +228,42 @@ def load_presets():
 def save_presets(presets):
     _save_json(PRESETS_FILE, presets)
 
+
+def preset_keys_for(cats):
+    """Return the config keys a preset of these categories covers.
+
+    None means "every key". The `full` category is not a key list, it is the
+    whole configuration: expanding it into names would freeze today's key set
+    into every preset saved from now on.
+    """
+    if "full" in cats:
+        return None
+    keys = []
+    for cat in cats:
+        for k in (PRESET_KEYS.get(cat) or []):
+            if k not in keys:
+                keys.append(k)
+    return keys
+
+
+def build_preset(cfg, cats):
+    """Extract from `cfg` the preset the user asked to save."""
+    keys = preset_keys_for(cats)
+    if keys is None:
+        return {"cats": ["full"], "data": dict(cfg)}
+    return {"cats": list(cats), "data": {k: cfg[k] for k in keys if k in cfg}}
+
+
+def preset_payload(preset):
+    """Return `(data, keys)` for a stored preset, old format or new.
+
+    Old presets carry {"type": "..."}, new ones {"cats": [...]}. `keys` is None
+    for a full preset, which is exactly what `_apply_config(cfg, keys=None)`
+    expects.
+    """
+    cats = preset.get("cats") or [preset.get("type", "full")]
+    return preset.get("data", {}), preset_keys_for(cats)
+
 def load_saved_players():
     return _load_json(PLAYERS_FILE, list)
 

@@ -134,7 +134,8 @@ from csdm.config import (
     CONFIG_FILE, PRESETS_FILE, PLAYERS_FILE, ASM_NAMES_FILE,
     DEFAULT_CONFIG, PRESET_CATEGORIES, PRESET_KEYS, _PRESET_TAB_GROUPS, _PRESET_ALL_CATS,
     _load_json, _save_json,
-    load_presets, save_presets, load_saved_players, save_saved_players,
+    load_presets, save_presets, build_preset, preset_payload,
+    load_saved_players, save_saved_players,
     load_asm_names, save_asm_names,
     _migrate_config, load_config, save_config,
 )
@@ -5272,18 +5273,8 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         if not cats_checked:
             messagebox.showerror("Preset", "Select at least one category to include.")
             return
-        cfg = self._collect_config()
-        if "full" in cats_checked:
-            data = dict(cfg)
-            cats_checked = ["full"]
-        else:
-            merged_keys: list = []
-            for cat in cats_checked:
-                for k in (PRESET_KEYS.get(cat) or []):
-                    if k not in merged_keys:
-                        merged_keys.append(k)
-            data = {k: cfg[k] for k in merged_keys if k in cfg}
-        self.presets[name] = {"cats": cats_checked, "data": data}
+        self.presets[name] = build_preset(self._collect_config(), cats_checked)
+        data = self.presets[name]["data"]
         save_presets(self.presets)
         self._refresh_preset_list()
         messagebox.showinfo("Preset", f"'{name}' saved ({len(data)} keys).")
@@ -5292,17 +5283,9 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         p = self.presets.get(name)
         if not p:
             return
-        # Support both old {"type": "..."} and new {"cats": [...]} formats
-        cats = p.get("cats") or [p.get("type", "full")]
-        if "full" in cats:
-            keys = None
-        else:
-            keys: list = []
-            for cat in cats:
-                for k in (PRESET_KEYS.get(cat) or []):
-                    if k not in keys:
-                        keys.append(k)
-        self._apply_config(p["data"], keys=keys)
+        # Both old {"type": "..."} and new {"cats": [...]} formats are read there.
+        data, keys = preset_payload(p)
+        self._apply_config(data, keys=keys)
         self._post_apply_ui()
         self._log(f"Preset '{name}' loaded.", "ok")
 

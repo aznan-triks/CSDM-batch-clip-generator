@@ -29,6 +29,43 @@ class TestBridgeEndToEnd(unittest.TestCase):
         self.assertEqual(results[0]["id"], "1")
         self.assertTrue(results[0]["ok"])
 
+    # -- configuration and presets -------------------------------------------
+    # Note: save_config and save_preset write to the project's own files. None
+    # of these tests calls a writing command with valid arguments, on purpose.
+
+    def test_load_config_returns_the_saved_configuration(self):
+        _, msgs = _run([{"type": "command", "id": "1", "name": "load_config"}])
+        results = [m for m in msgs if m["type"] == "result"]
+        self.assertTrue(results[0]["ok"], results[0].get("error"))
+        self.assertIn("crf", results[0]["data"], "a real configuration has a crf key")
+
+    def test_save_config_without_a_cfg_object_fails_with_one_sentence(self):
+        _, msgs = _run([{"type": "command", "id": "1", "name": "save_config"}])
+        results = [m for m in msgs if m["type"] == "result"]
+        self.assertFalse(results[0]["ok"])
+        self.assertIn("cfg", results[0]["error"])
+        self.assertNotIn("Traceback", results[0]["error"])
+
+    def test_list_presets_answers_with_an_object(self):
+        _, msgs = _run([{"type": "command", "id": "1", "name": "list_presets"}])
+        results = [m for m in msgs if m["type"] == "result"]
+        self.assertTrue(results[0]["ok"], results[0].get("error"))
+        self.assertIsInstance(results[0]["data"], dict)
+
+    def test_save_preset_without_a_name_fails_readably(self):
+        _, msgs = _run([{"type": "command", "id": "1", "name": "save_preset",
+                         "cats": ["date"], "cfg": {}}])
+        results = [m for m in msgs if m["type"] == "result"]
+        self.assertFalse(results[0]["ok"])
+        self.assertIn("name", results[0]["error"])
+
+    def test_load_preset_that_does_not_exist_fails_readably(self):
+        _, msgs = _run([{"type": "command", "id": "1", "name": "load_preset",
+                         "preset": "no-such-preset-4a"}])
+        results = [m for m in msgs if m["type"] == "result"]
+        self.assertFalse(results[0]["ok"])
+        self.assertIn("no-such-preset-4a", results[0]["error"])
+
     def test_logs_stream_before_the_result(self):
         _, msgs = _run([{"type": "command", "id": "1", "name": "demo_logs"}])
         types = [m["type"] for m in msgs]
