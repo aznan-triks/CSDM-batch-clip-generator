@@ -43,6 +43,8 @@ ENGINE_METHODS = [
     "_get_active_tag_names", "_normalize_recsys", "_hms", "_calc_summary",
     "_fmt_summary",
     "_detect_map_col",
+    # chantier 4a1 — windowless database discovery
+    "discover_database", "apply_discovery",
 ]
 
 # Forbidden patterns inside the engine: each one is a direct touch of the UI.

@@ -349,6 +349,38 @@ class EngineMixin:
             "map_join": _mj,
         }
 
+    def apply_discovery(self, data):
+        """Adopt a discovery result as this host's live database state.
+
+        Split from discover_database on purpose: a host may want the data
+        without adopting it (a connection test), and adopting it must not
+        require a server.
+        """
+        self._date_col       = data["date_col"]
+        self._date_col_type  = data["date_col_type"]
+        self._db_schema      = data["schema"]
+        self._db_col_types   = data["col_types"]
+        self._player_names   = data["names"]
+        self._tags_list      = data["tags"]
+        self._tags_schema    = data["tags_schema"]
+        self._db_match_types = data["match_types"] or []
+        self._db_maps        = data["maps"] or []
+        self._map_col        = data["map_col"]
+        self._map_alias      = data["map_alias"]
+        self._map_join       = data["map_join"]
+
+        # Every cache below is keyed by the connection we just replaced.
+        self._demo_checksums = {}
+        self._demo_dates     = {}
+        self._demo_map_cache = {}
+        self._ts_cache       = {}
+        self._col_cache      = {}
+        self._warned_missing_mods = set()
+        self._warned_require_win_no_data = False
+
+        if not data["date_col"]:
+            self.log("Date column not detected in matches — the date filter is off", "warn")
+
     def _host_cfg(self, key):
         """Read one setting from the host's config, falling back to the default.
 

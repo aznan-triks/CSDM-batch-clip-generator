@@ -127,3 +127,36 @@ def test_discovery_touches_no_widget_and_starts_no_thread():
     host = make_host()
     host.discover_database()
     assert not hasattr(host, "after")
+
+
+def test_apply_discovery_writes_the_engine_state():
+    host = make_host()
+    host.apply_discovery(host.discover_database())
+
+    assert host._date_col == "date"
+    assert host._map_col == "map_name"
+    assert host._map_alias == "m"
+    assert host._player_names == {"76561198": "s1mple"}
+    assert host._db_maps == [("mirage", ["de_mirage"]), ("nuke", ["de_nuke"])]
+    assert host._db_match_types == ["premier", "competitive"]
+
+
+def test_apply_discovery_resets_the_per_connection_caches():
+    host = make_host()
+    host._demo_checksums = {"stale": 1}
+    host._warned_missing_mods = {"stale"}
+    host.apply_discovery(host.discover_database())
+
+    assert host._demo_checksums == {}
+    assert host._warned_missing_mods == set()
+    assert host._warned_require_win_no_data is False
+
+
+def test_apply_discovery_warns_through_the_log_port_when_no_date_column():
+    host = make_host()
+    data = host.discover_database()
+    data["date_col"] = None
+    host.apply_discovery(data)
+
+    assert any(level == "warn" and "Date column" in message
+               for message, level in host.logged)
