@@ -9,7 +9,26 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "start": "npm run build && electron .",
+    "package": "npm run build && electron-builder",
     "test": "vitest run"
+  },
+  "build": {
+    "appId": "com.csdm.batch-clips-generator",
+    "productName": "CSDM Batch Clips Generator",
+    "directories": {
+      "output": "dist-app"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/dist/**"
+    ],
+    "win": {
+      "target": "portable"
+    },
+    "portable": {
+      "artifactName": "CSDM-Batch-Clips-Generator.exe"
+    }
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
@@ -18,6 +37,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
     "electron": "^43.2.0",
+    "electron-builder": "^26.15.3",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.23",
     "typescript": "^7.0.2",

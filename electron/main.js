@@ -5,9 +5,40 @@
 
 const { app, BrowserWindow, ipcMain } = require("electron");
 const { spawn, spawnSync } = require("child_process");
+const fs = require("fs");
 const path = require("path");
 
-const REPO_ROOT = path.join(__dirname, "..");
+/**
+ * Where the Python engine lives.
+ *
+ * Unpackaged, that is simply the folder above this one. Packaged, `__dirname`
+ * is inside the app archive, so the same join would point at the archive's own
+ * parent and `-m csdm.bridge` would resolve nothing: the window would open and
+ * the engine would never start. So the packaged build walks up from the
+ * executable looking for the `csdm/bridge` package, which is what keeps a
+ * portable build working as long as it sits somewhere under the project.
+ *
+ * CSDM_REPO_ROOT overrides both, for a build kept anywhere else.
+ */
+function resolveRepoRoot() {
+  if (process.env.CSDM_REPO_ROOT) {
+    return process.env.CSDM_REPO_ROOT;
+  }
+  const beside = path.join(__dirname, "..");
+  if (!app.isPackaged) {
+    return beside;
+  }
+  let dir = path.dirname(process.execPath);
+  for (let depth = 0; depth < 6; depth += 1) {
+    if (fs.existsSync(path.join(dir, "csdm", "bridge"))) {
+      return dir;
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) break; // reached the drive root
+    dir = parent;
+  }
+  return beside;
+}
 
 // Window geometry. Defaults mirror DEFAULT_CONFIG's ui_window_w / ui_window_h;
 // the minimum is D24 -- below it the two columns stop being usable.
@@ -61,7 +92,7 @@ function startEngine() {
   const args = pythonPath === "py" ? ["-3", "-m", "csdm.bridge"] : ["-m", "csdm.bridge"];
 
   child = spawn(pythonPath, args, {
-    cwd: REPO_ROOT, // `-m csdm.bridge` only resolves from the repo root
+    cwd: resolveRepoRoot(), // `-m csdm.bridge` only resolves from the repo root
     windowsHide: true, // Node's equivalent of CREATE_NO_WINDOW (D19)
   });
 
