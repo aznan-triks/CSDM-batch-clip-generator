@@ -1,4 +1,7 @@
 """Database discovery must run with no window and no real server."""
+import datetime as _dt
+import json
+
 import pytest
 
 from csdm.engine.core import EngineMixin
@@ -160,3 +163,42 @@ def test_apply_discovery_warns_through_the_log_port_when_no_date_column():
 
     assert any(level == "warn" and "Date column" in message
                for message, level in host.logged)
+
+
+def test_discovery_survives_json_dumps_with_a_datetime_last_seen():
+    host = make_host()
+    data = host.discover_database()
+    data["players"] = [("s1mple  (7656)", "7656", "s1mple", _dt.datetime(2026, 7, 1, 20, 30))]
+
+    payload = host.discovery_to_json(data)
+    text = json.dumps(payload)          # must not raise
+
+    assert json.loads(text)["players"][0][3] == "2026-07-01T20:30:00"
+
+
+def test_discovery_to_json_turns_maps_into_lists():
+    host = make_host()
+    payload = host.discovery_to_json(host.discover_database())
+    assert payload["maps"] == [["mirage", ["de_mirage"]], ["nuke", ["de_nuke"]]]
+    json.dumps(payload)
+
+
+def test_discovery_to_json_stringifies_tag_ids():
+    from decimal import Decimal
+
+    host = make_host()
+    data = host.discover_database()
+    data["tags"] = [(Decimal("12"), "aces", "#ff0000")]
+    payload = host.discovery_to_json(data)
+
+    assert payload["tags"] == [["12", "aces", "#ff0000"]]
+    json.dumps(payload)
+
+
+def test_discovery_to_json_keeps_a_none_last_seen_as_null():
+    host = make_host()
+    data = host.discover_database()
+    data["players"] = [("nobody  (1)", "1", "nobody", None)]
+    payload = host.discovery_to_json(data)
+
+    assert payload["players"][0][3] is None

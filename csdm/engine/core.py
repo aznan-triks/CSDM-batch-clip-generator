@@ -26,6 +26,7 @@ import tempfile
 import threading
 import time
 import uuid
+import datetime as _dt
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -347,6 +348,33 @@ class EngineMixin:
             "map_col": _mc,
             "map_alias": _ma,
             "map_join": _mj,
+        }
+
+    @staticmethod
+    def _json_scalar(value):
+        """Reduce one database scalar to something json.dumps accepts as-is."""
+        if value is None or isinstance(value, (str, int, float, bool)):
+            return value
+        if isinstance(value, (_dt.datetime, _dt.date)):
+            return value.isoformat()
+        return str(value)
+
+    def discovery_to_json(self, data):
+        """Return a discovery result the JSON pipe can carry unchanged.
+
+        Only shapes and scalar types change. No key is added, removed or renamed:
+        the renderer reads the same contract discover_database documents.
+        """
+        scalar = self._json_scalar
+        return {
+            **data,
+            "players": [[label, sid, name, scalar(seen)]
+                        for label, sid, name, seen in data["players"]],
+            "tags": [[scalar(tag_id), name, color]
+                     for tag_id, name, color in data["tags"]],
+            "maps": [[display, list(raw)] for display, raw in data["maps"]],
+            "tags_schema": {k: scalar(v) if not isinstance(v, (dict, list)) else v
+                            for k, v in data["tags_schema"].items()},
         }
 
     def apply_discovery(self, data):
