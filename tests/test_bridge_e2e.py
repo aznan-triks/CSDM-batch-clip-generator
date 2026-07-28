@@ -66,6 +66,50 @@ class TestBridgeEndToEnd(unittest.TestCase):
         self.assertFalse(results[0]["ok"])
         self.assertIn("no-such-preset-4a", results[0]["error"])
 
+    # -- launching --------------------------------------------------------
+    # Refusals are tested with no account and no event, on purpose: a valid
+    # configuration would start a real CSDM process from the test suite.
+
+    def test_start_run_refuses_an_empty_configuration_over_the_pipe(self):
+        """No account, no event: the engine must ask, not launch.
+
+        The refusal goes out on `ask`, which blocks the command thread until
+        the renderer dismisses it -- exactly like the modal it replaces. The
+        answer is queued up front, as in test_ask_round_trip_across_the_pipe.
+        """
+        _, msgs = _run([{"type": "command", "id": "1", "name": "start_run",
+                         "cfg": {"steam_ids": [], "events": []}},
+                        {"type": "answer", "id": "1", "value": None}])
+        results = [m for m in msgs if m["type"] == "result"]
+        self.assertTrue(results[0]["ok"], results[0].get("error"))
+        self.assertFalse(results[0]["started"])
+        asks = [m for m in msgs if m["type"] == "ask"]
+        self.assertTrue(asks, "the refusal must travel on the ask channel")
+        self.assertEqual(asks[0]["kind"], "error")
+
+    def test_start_preview_refuses_an_empty_configuration_over_the_pipe(self):
+        _, msgs = _run([{"type": "command", "id": "1", "name": "start_preview",
+                         "cfg": {"steam_ids": [], "events": []}},
+                        {"type": "answer", "id": "1", "value": None}])
+        results = [m for m in msgs if m["type"] == "result"]
+        self.assertFalse(results[0]["started"])
+
+    def test_start_run_without_a_cfg_object_fails_with_one_sentence(self):
+        _, msgs = _run([{"type": "command", "id": "1", "name": "start_run"}])
+        results = [m for m in msgs if m["type"] == "result"]
+        self.assertFalse(results[0]["ok"])
+        self.assertIn("cfg", results[0]["error"])
+        self.assertNotIn("Traceback", results[0]["error"])
+
+    def test_every_command_the_renderer_needs_is_registered(self):
+        """The shopping list for chantier 4a, checked in one place."""
+        from csdm.bridge.host import COMMANDS
+        for name in ("connect_db", "load_config", "save_config", "list_presets",
+                     "save_preset", "load_preset", "delete_preset",
+                     "start_run", "start_preview",
+                     "request_stop", "request_kill", "cancel_preview"):
+            self.assertIn(name, COMMANDS, name)
+
     def test_logs_stream_before_the_result(self):
         _, msgs = _run([{"type": "command", "id": "1", "name": "demo_logs"}])
         types = [m["type"] for m in msgs]
