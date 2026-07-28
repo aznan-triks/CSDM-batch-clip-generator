@@ -44,7 +44,7 @@ ENGINE_METHODS = [
     "_fmt_summary",
     "_detect_map_col",
     # chantier 4a1 — windowless database discovery
-    "discover_database", "apply_discovery",
+    "discover_database", "apply_discovery", "discovery_to_json",
 ]
 
 # Forbidden patterns inside the engine: each one is a direct touch of the UI.

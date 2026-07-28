@@ -4,6 +4,8 @@ import subprocess
 import sys
 import unittest
 
+import pytest
+
 
 def _run(commands, timeout=30):
     """Feed JSON lines in, collect JSON messages out."""
@@ -98,6 +100,46 @@ class TestBridgeEndToEnd(unittest.TestCase):
         check = [m for m in msgs if m["type"] == "log" and "tkinter" in m["message"]]
         self.assertTrue(check)
         self.assertIn("none", check[0]["message"].lower())
+
+
+def test_connect_db_is_a_registered_command():
+    from csdm.bridge.host import COMMANDS
+    assert "connect_db" in COMMANDS
+
+
+def test_connect_db_adopts_the_result_and_returns_it(monkeypatch):
+    """One command: read the database, adopt it, hand the payload to the renderer."""
+    from csdm.bridge.host import COMMANDS
+
+    class FakeHost:
+        def __init__(self):
+            self.adopted = None
+
+        def discover_database(self):
+            return {"date_col": "date", "players": [], "maps": []}
+
+        def apply_discovery(self, data):
+            self.adopted = data
+
+        def discovery_to_json(self, data):
+            return {"date_col": data["date_col"], "players": [], "maps": []}
+
+    host = FakeHost()
+    result = COMMANDS["connect_db"](host, {"id": "c1", "name": "connect_db"})
+
+    assert host.adopted["date_col"] == "date"
+    assert result["data"]["date_col"] == "date"
+
+
+def test_connect_db_reports_a_readable_error(monkeypatch):
+    from csdm.bridge.host import COMMANDS
+
+    class FailingHost:
+        def discover_database(self):
+            raise RuntimeError("could not connect to server")
+
+    with pytest.raises(RuntimeError):
+        COMMANDS["connect_db"](FailingHost(), {"id": "c2", "name": "connect_db"})
 
 
 if __name__ == "__main__":

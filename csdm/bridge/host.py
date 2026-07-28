@@ -64,6 +64,16 @@ def _cmd_cancel_preview(host, command):
     return {}
 
 
+def _cmd_connect_db(host, command):
+    """Read the CSDM database, adopt what it says, and hand it to the renderer.
+
+    Exceptions travel: _run_command already turns them into {"ok": false, "error"}.
+    """
+    data = host.discover_database()
+    host.apply_discovery(data)
+    return {"data": host.discovery_to_json(data)}
+
+
 COMMANDS = {
     "ping": _cmd_ping,
     "request_stop": _cmd_request_stop,
@@ -72,6 +82,7 @@ COMMANDS = {
     "demo_logs": _cmd_demo_logs,
     "demo_ask": _cmd_demo_ask,
     "tkinter_check": _cmd_tkinter_check,
+    "connect_db": _cmd_connect_db,
 }
 
 
