@@ -3161,6 +3161,40 @@ class EngineMixin:
             self._previewing = False
             self.state("buttons", {"stop": False, "stop_label": "⏸ Stop"})
 
+    @staticmethod
+    def derive_event_flags(cfg):
+        """Turn the `events` list into the three booleans the queries read.
+
+        The window kept three checkbox variables in step with `cfg["events"]`:
+        it builds them from that key at startup and rewrites them from it on
+        every config load, so they hold no information of their own. A
+        windowless host has no checkboxes, and derives them here instead.
+        """
+        events = cfg.get("events") or []
+        return {
+            "events_kills":  "Kills" in events,
+            "events_deaths": "Deaths" in events,
+            "events_rounds": "Rounds" in events,
+        }
+
+    def build_run_cfg(self, cfg):
+        """Return `cfg` plus the derived event flags, ready for run or preview.
+
+        A copy, never the caller's dict: the window reuses the one it
+        collected, and a run must not leave marks on it.
+        """
+        return {**cfg, **self.derive_event_flags(cfg)}
+
+    def validate_run_inputs(self, cfg):
+        """Check the preconditions run and preview share. False stops the caller."""
+        if not cfg.get("steam_ids"):
+            self.ask("error", "Check at least one registered account.", [])
+            return False
+        if not (cfg.get("events") or []):
+            self.ask("error", "Select at least one event.", [])
+            return False
+        return True
+
     def request_stop(self):
         """Dispatch stop to the right handler based on current state."""
         if self._previewing:

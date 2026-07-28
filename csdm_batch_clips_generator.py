@@ -5819,11 +5819,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
     # ═══════════════════════════════════════════════════════════════════════
 
     def _build_run_cfg(self):
-        cfg = self._collect_config()
-        cfg["events_kills"]  = self.sel_events["Kills"].get()
-        cfg["events_deaths"] = self.sel_events["Deaths"].get()
-        cfg["events_rounds"] = self.sel_events["Rounds"].get()
-        return cfg
+        return self.build_run_cfg(self._collect_config())
 
     def _refresh_injection_preview(self):
         """Rebuild the live INJECTION PREVIEW display from current config."""
@@ -5886,21 +5882,11 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
     # "error-corrected", "errorless", etc.
     ALL_ERR = RETRYABLE + FATAL + ["error:", "Error:"]
 
-    def _validate_run_inputs(self):
-        """Check common preconditions for run/preview. Returns False if invalid."""
-        if not self.player_search.get_steam_ids():
-            self.ask("error", "Check at least one registered account.", [])
-            return False
-        if not any(v.get() for v in self.sel_events.values()):
-            self.ask("error", "Select at least one event.", [])
-            return False
-        return True
-
     def _run(self):
-        if not self._validate_run_inputs():
+        cfg = self._build_run_cfg()
+        if not self.validate_run_inputs(cfg):
             return
         ensure_csdm_dirs()
-        cfg = self._build_run_cfg()
         self._running = True
         self._stop_after_current = False
         self._kill_triggered = False
@@ -5930,9 +5916,9 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         self.kill_btn.config(state="disabled")
 
     def _dry_run(self):
-        if not self._validate_run_inputs():
-            return
         cfg = self._build_run_cfg()
+        if not self.validate_run_inputs(cfg):
+            return
         self._log(f"\n{'─' * 60}", "dim")
         self._log(f"  🔍 PREVIEW  —  {datetime.now().strftime('%H:%M:%S')}", "info")
         self._log(f"{'─' * 60}", "dim")

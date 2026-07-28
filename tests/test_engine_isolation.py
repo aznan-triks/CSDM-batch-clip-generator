@@ -47,6 +47,8 @@ ENGINE_METHODS = [
     "discover_database", "apply_discovery", "discovery_to_json",
     # chantier 4a1, task 5 review fix — validated pg params seam
     "set_pg_params", "_pg_connect",
+    # chantier 4a, task 3 — run inputs derived and validated from cfg
+    "derive_event_flags", "build_run_cfg", "validate_run_inputs",
 ]
 
 # Forbidden patterns inside the engine: each one is a direct touch of the UI.
@@ -78,7 +80,8 @@ class TestEngineMethodsAreUIFree(unittest.TestCase):
 class TestValidationUsesAskPort(unittest.TestCase):
     def test_validate_run_inputs_goes_through_ask(self):
         from csdm_batch_clips_generator import App
-        src = inspect.getsource(App._validate_run_inputs)
+        # The method moved onto EngineMixin in chantier 4a; App inherits it.
+        src = inspect.getsource(App.validate_run_inputs)
         self.assertNotIn("messagebox", src)
         self.assertIn('self.ask("error"', src)
 
