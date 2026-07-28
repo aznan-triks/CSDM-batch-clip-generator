@@ -45,6 +45,8 @@ ENGINE_METHODS = [
     "_detect_map_col",
     # chantier 4a1 — windowless database discovery
     "discover_database", "apply_discovery", "discovery_to_json",
+    # chantier 4a1, task 5 review fix — validated pg params seam
+    "set_pg_params", "_pg_connect",
 ]
 
 # Forbidden patterns inside the engine: each one is a direct touch of the UI.

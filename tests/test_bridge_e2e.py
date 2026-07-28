@@ -114,6 +114,10 @@ def test_connect_db_adopts_the_result_and_returns_it(monkeypatch):
     class FakeHost:
         def __init__(self):
             self.adopted = None
+            self.pg_params = None
+
+        def set_pg_params(self, params):
+            self.pg_params = params
 
         def discover_database(self):
             return {"date_col": "date", "players": [], "maps": []}
@@ -129,17 +133,128 @@ def test_connect_db_adopts_the_result_and_returns_it(monkeypatch):
 
     assert host.adopted["date_col"] == "date"
     assert result["data"]["date_col"] == "date"
+    assert host.pg_params is not None  # resolved from the saved configuration
+
+
+def test_connect_db_passes_an_explicit_pg_object_through_to_set_pg_params():
+    """A renderer that has no saved config yet can still supply credentials inline."""
+    from csdm.bridge.host import COMMANDS
+
+    class FakeHost:
+        def __init__(self):
+            self.pg_params = None
+
+        def set_pg_params(self, params):
+            self.pg_params = params
+
+        def discover_database(self):
+            return {"date_col": None, "players": [], "maps": []}
+
+        def apply_discovery(self, data):
+            pass
+
+        def discovery_to_json(self, data):
+            return data
+
+    host = FakeHost()
+    COMMANDS["connect_db"](host, {
+        "id": "c1", "name": "connect_db",
+        "pg": {"pg_host": "10.1.2.3", "pg_port": "5433", "pg_db": "custom"},
+    })
+
+    assert host.pg_params["pg_host"] == "10.1.2.3"
+    assert host.pg_params["pg_port"] == "5433"
+    assert host.pg_params["pg_db"] == "custom"
+    # keys not supplied inline fall back to the saved/default configuration
+    assert "pg_user" in host.pg_params and "pg_pass" in host.pg_params
 
 
 def test_connect_db_reports_a_readable_error(monkeypatch):
     from csdm.bridge.host import COMMANDS
 
     class FailingHost:
+        def set_pg_params(self, params):
+            pass
+
         def discover_database(self):
             raise RuntimeError("could not connect to server")
 
     with pytest.raises(RuntimeError):
         COMMANDS["connect_db"](FailingHost(), {"id": "c2", "name": "connect_db"})
+
+
+def test_connect_db_on_a_real_bridge_host_wires_discovered_state_end_to_end():
+    """Finding 3 (minor): the earlier tests only drove hand-written fakes, so the
+    real discover_database/apply_discovery/discovery_to_json chain, running with
+    a real (empty) `_pg_params` seeded through `set_pg_params`, was never
+    exercised. This is the regression guard for the critical finding: only the
+    psycopg2 connection itself is mocked, everything else is the real bridge.
+    """
+    from unittest import mock
+
+    from csdm.bridge.host import BridgeHost, COMMANDS
+
+    class _FakeCursor:
+        def __init__(self):
+            self._rows = []
+
+        def execute(self, sql, params=None):
+            table = params[0] if params else None
+            if "information_schema.columns" in sql and table == "matches":
+                self._rows = [("checksum", "text"), ("match_date", "timestamp")]
+            elif "information_schema.columns" in sql:
+                self._rows = []
+            else:
+                self._rows = []
+
+        def fetchall(self):
+            return self._rows
+
+        def fetchone(self):
+            return None
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    class _FakeConn:
+        def cursor(self):
+            return _FakeCursor()
+
+        def commit(self):
+            pass
+
+        def close(self):
+            pass
+
+        @property
+        def closed(self):
+            return False
+
+    class _Ports:
+        def log(self, message, level=""):
+            pass
+
+        def log_parts(self, parts):
+            pass
+
+        def state(self, name, payload=None):
+            pass
+
+        def ask(self, kind, message, options):
+            return None
+
+    host = BridgeHost(_Ports())
+    with mock.patch("csdm.engine.core.psycopg2.connect", return_value=_FakeConn()):
+        result = COMMANDS["connect_db"](host, {"id": "c1", "name": "connect_db",
+                                                "pg": {"pg_host": "127.0.0.1"}})
+
+    assert result["data"] is not None
+    # apply_discovery actually ran against real engine state, not a fake
+    assert host._db_schema.get("matches") == ["checksum", "match_date"]
+    assert host._pg_params["pg_host"] == "127.0.0.1"
 
 
 if __name__ == "__main__":

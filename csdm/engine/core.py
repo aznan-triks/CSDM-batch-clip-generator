@@ -65,6 +65,8 @@ DISCOVERY_SUSPECT_NAMES = ("analyze", "created", "import", "added", "updated")
 DISCOVERY_SUSPECT_PENALTY = 5
 # Map name prefixes stripped to build the display key.
 MAP_NAME_PREFIXES = ("de_", "cs_", "ar_", "gg_", "dz_", "tr_")
+# The five PostgreSQL identifiers `_pg`/`_pg_fresh` read out of `_pg_params`.
+PG_PARAM_KEYS = ("pg_host", "pg_port", "pg_user", "pg_pass", "pg_db")
 
 
 class EngineMixin:
@@ -444,6 +446,55 @@ class EngineMixin:
         self.log(f"  ⚠ {name} did not exit within {int(timeout)}s", "warn")
         return False
 
+    def set_pg_params(self, params):
+        """Adopt the five PostgreSQL identifiers `_pg`/`_pg_fresh` read from `_pg_params`.
+
+        Any host (bridge, Tkinter, tests) can call this instead of poking
+        `_pg_params` directly. Validates all five keys are present *before*
+        anything touches the network, so a caller gets one readable sentence
+        instead of a bare `KeyError` surfacing from inside `psycopg2.connect`.
+        `pg_pass` legitimately may be an empty string -- only an absent key
+        counts as missing, never an empty value.
+        """
+        missing = [k for k in PG_PARAM_KEYS if k not in params]
+        if missing:
+            raise ValueError(
+                "Missing database connection setting(s): " + ", ".join(missing) +
+                ". Check pg_host, pg_port, pg_user, pg_pass and pg_db.")
+        self._pg_params = {k: params[k] for k in PG_PARAM_KEYS}
+
+    def _pg_connect(self):
+        """Open one new psycopg2 connection from `_pg_params`, or raise a readable error.
+
+        Two failure modes, both turned into one actionable English sentence
+        instead of a raw KeyError repr or the full driver traceback:
+        parameters missing/unusable, and the server refusing or timing out
+        the connection (`psycopg2.OperationalError`).
+        """
+        missing = [k for k in PG_PARAM_KEYS if k not in self._pg_params]
+        if missing:
+            raise ValueError(
+                "Missing database connection setting(s): " + ", ".join(missing) +
+                ". Connect to the database (set pg_host, pg_port, pg_user, "
+                "pg_pass, pg_db) before running a discovery.")
+        p = self._pg_params
+        try:
+            port = int(p["pg_port"])
+        except (TypeError, ValueError):
+            raise ValueError(
+                f"The database port {p['pg_port']!r} is not a number. "
+                "Check pg_port in the configuration.") from None
+        try:
+            return psycopg2.connect(
+                host=p["pg_host"], port=port, user=p["pg_user"],
+                password=p["pg_pass"], dbname=p["pg_db"], connect_timeout=5)
+        except psycopg2.OperationalError as exc:
+            reason = next((ln for ln in str(exc).splitlines() if ln.strip()),
+                          "connection refused")
+            raise ConnectionError(
+                f"Could not connect to PostgreSQL at {p['pg_host']}:{p['pg_port']} "
+                f"(database '{p['pg_db']}'): {reason}") from exc
+
     def _pg(self):
         """Return a live psycopg2 connection, reusing the existing one when possible.
         Creates a new connection on first call or if the existing one is closed/broken.
@@ -456,19 +507,13 @@ class EngineMixin:
                     return self._db_conn
             except Exception:
                 pass
-        self._db_conn = psycopg2.connect(
-            host=self._pg_params["pg_host"], port=int(self._pg_params["pg_port"]),
-            user=self._pg_params["pg_user"], password=self._pg_params["pg_pass"],
-            dbname=self._pg_params["pg_db"], connect_timeout=5)
+        self._db_conn = self._pg_connect()
         return self._db_conn
 
     def _pg_fresh(self):
         """Always create a new connection (used by background threads that must
         not share the main-thread connection)."""
-        return psycopg2.connect(
-            host=self._pg_params["pg_host"], port=int(self._pg_params["pg_port"]),
-            user=self._pg_params["pg_user"], password=self._pg_params["pg_pass"],
-            dbname=self._pg_params["pg_db"], connect_timeout=5)
+        return self._pg_connect()
 
     def _resolve_cli(self, p):
         if not p:

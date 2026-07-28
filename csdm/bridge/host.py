@@ -11,6 +11,7 @@ import traceback
 
 from csdm.bridge.ports import PipePorts
 from csdm.bridge.protocol import LineWriter, MSG_FATAL, MSG_LOG, MSG_RESULT, decode
+from csdm.config import load_config
 from csdm.engine.core import EngineMixin
 from csdm.engine.state import EngineStateMixin
 
@@ -65,10 +66,22 @@ def _cmd_cancel_preview(host, command):
 
 
 def _cmd_connect_db(host, command):
-    """Read the CSDM database, adopt what it says, and hand it to the renderer.
+    """Resolve connection settings, read the CSDM database, adopt what it says,
+    and hand it to the renderer.
+
+    Settings come from the command's own `pg` object when the renderer
+    supplies one (so it can connect before any config file exists), layered
+    over the saved configuration (`load_config()`) for whichever of the five
+    keys it omits. `set_pg_params` validates the result before anything
+    touches the network.
 
     Exceptions travel: _run_command already turns them into {"ok": false, "error"}.
     """
+    params = load_config()
+    pg = command.get("pg")
+    if isinstance(pg, dict):
+        params = {**params, **pg}
+    host.set_pg_params(params)
     data = host.discover_database()
     host.apply_discovery(data)
     return {"data": host.discovery_to_json(data)}
