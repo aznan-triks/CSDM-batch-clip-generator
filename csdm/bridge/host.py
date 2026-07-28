@@ -12,6 +12,7 @@ import traceback
 
 from csdm.bridge.ports import PipePorts
 from csdm.bridge.protocol import LineWriter, MSG_FATAL, MSG_LOG, MSG_RESULT, decode
+from csdm.bridge.tables import describe_filters
 from csdm.config import (build_preset, load_config, load_presets, preset_payload,
                          save_config, save_presets)
 from csdm.engine.core import EngineMixin
@@ -50,6 +51,11 @@ def _cmd_hello(host, command):
     return {"data": {"app_version": APP_VERSION,
                      "python_version": platform.python_version(),
                      "settings_count": len(settings)}}
+
+
+def _cmd_describe_filters(host, command):
+    """Hand the renderer every static table it needs to build its rows."""
+    return {"data": describe_filters()}
 
 
 def _cmd_demo_logs(host, command):
@@ -194,6 +200,7 @@ def _cmd_start_preview(host, command):
 COMMANDS = {
     "ping": _cmd_ping,
     "hello": _cmd_hello,
+    "describe_filters": _cmd_describe_filters,
     "start_run": _cmd_start_run,
     "start_preview": _cmd_start_preview,
     "load_config": _cmd_load_config,
