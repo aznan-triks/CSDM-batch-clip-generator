@@ -6,7 +6,7 @@ build its rows from the same source the engine filters on. A table copied into
 TypeScript would drift the day someone adds a filter, and the window would then
 silently stop showing it.
 """
-from csdm.config import PRESET_KEYS
+from csdm.config import _PRESET_ALL_CATS
 from csdm.static_data import (AUDIO_CODECS, FRAMERATES, KILL_FILTER_REGISTRY,
                               MATCH_TYPE_DEFS, RESOLUTIONS, VIDEO_CODECS,
                               WEAPON_CATEGORIES)
@@ -32,7 +32,11 @@ def describe_filters():
         "video_codecs": list(VIDEO_CODECS),
         "audio_codecs": list(AUDIO_CODECS),
         # The preset checkbox list (PresetSection) reads its category keys
-        # from here rather than retyping PRESET_KEYS in TypeScript -- a copy
+        # from here rather than retyping the list in TypeScript -- a copy
         # would drift the day a category is added or renamed (D20 / R1).
-        "preset_categories": list(PRESET_KEYS),
+        # "full" plus the tab-grouped categories mirrors exactly what the
+        # original Tkinter preset dialog rendered as checkboxes; PRESET_KEYS
+        # also carries "player"/"video", two backward-compat aliases for
+        # reading old preset files that were never shown as checkboxes.
+        "preset_categories": ["full"] + list(_PRESET_ALL_CATS),
     }

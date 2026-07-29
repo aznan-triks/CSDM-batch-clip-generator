@@ -3,9 +3,14 @@
  * row in `_tab_outils` (csdm_batch_clips_generator.py).
  *
  * Category checkboxes come from `useTables()`'s `presetCategories` --
- * `describe_filters`'s `preset_categories`, itself `list(PRESET_KEYS)` on the
- * Python side (`csdm/bridge/tables.py`). A hand-typed category list here
- * would drift the day Python adds or renames one (D20 / R1).
+ * `describe_filters`'s `preset_categories` on the Python side
+ * (`csdm/bridge/tables.py`), which sends "full" plus the tab-grouped
+ * categories (`_PRESET_ALL_CATS` in `csdm/config.py`) -- the same list the
+ * original Tkinter preset dialog rendered as checkboxes. `PRESET_KEYS` also
+ * carries two backward-compat aliases, "player" and "video", for reading old
+ * preset files; those were never shown as checkboxes and are deliberately
+ * left out here. A hand-typed category list here would drift the day Python
+ * adds or renames one (D20 / R1).
  *
  * `load_preset` returns `{ data, keys }`: `keys` is the list of configuration
  * keys this preset may overwrite (`null` for a "full" preset, which then

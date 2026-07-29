@@ -49,11 +49,15 @@ class TestDescribeFilters(unittest.TestCase):
         self.assertEqual(len(data["resolutions"]), len(RESOLUTIONS))
 
     def test_preset_categories_travel(self):
-        from csdm.config import PRESET_KEYS
+        from csdm.config import _PRESET_ALL_CATS
 
         _, msgs = _run([{"type": "command", "id": "1", "name": "describe_filters"}])
         data = [m for m in msgs if m["type"] == "result"][0]["data"]
-        self.assertEqual(data["preset_categories"], list(PRESET_KEYS))
+        self.assertEqual(data["preset_categories"], ["full"] + list(_PRESET_ALL_CATS))
+        # The two backward-compat aliases (old preset-file format) are never
+        # shown as checkboxes -- the original Tkinter dialog didn't render them.
+        self.assertNotIn("player", data["preset_categories"])
+        self.assertNotIn("video", data["preset_categories"])
 
     def test_tables_module_imports_no_tkinter(self):
         import pathlib

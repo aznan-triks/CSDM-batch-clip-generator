@@ -1,14 +1,15 @@
 /**
- * PresetSection: the name field, one checkbox per `PRESET_KEYS` category
- * (`describe_filters`'s `preset_categories`), SAVE, and the preset list's
- * Load/Delete actions.
+ * PresetSection: the name field, one checkbox per category the Python side
+ * sends as `describe_filters`'s `preset_categories` ("full" plus the
+ * tab-grouped categories -- not the two backward-compat aliases `PRESET_KEYS`
+ * also carries), SAVE, and the preset list's Load/Delete actions.
  *
  * The settings store is mocked directly rather than wrapped in a real
  * `SettingsProvider`: this lets `loadPresetAndCaptureWrites` see exactly the
  * keys `setMany` was called with, without decoding a debounced `save_config`
  * round trip.
  */
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import PresetSection from "../PresetSection";
@@ -34,7 +35,7 @@ vi.mock("../../settings/store", () => ({
 }));
 
 vi.mock("../../bridge", () => ({
-  runCommand: (command: string) => {
+  runCommand: (command: string, payload: Record<string, unknown> = {}) => {
     if (command === "describe_filters") {
       return Promise.resolve({ type: "result", id: "1", ok: true, data: TABLES_FIXTURE });
     }
@@ -43,7 +44,21 @@ vi.mock("../../bridge", () => ({
         type: "result",
         id: "1",
         ok: true,
-        data: { date: { cats: ["date"], data: { date_from: "", date_to: "" } } },
+        data: {
+          date: { cats: ["date"], data: { date_from: "", date_to: "" } },
+          everything: { cats: ["full"], data: { date_from: "", date_to: "", steam_id: "" } },
+        },
+      });
+    }
+    if (command === "load_preset" && payload.preset === "everything") {
+      // A "full" preset: `keys` comes back null, meaning "overwrite the
+      // entire configuration", not just the keys `data` happens to list.
+      return Promise.resolve({
+        type: "result",
+        id: "1",
+        ok: true,
+        data: { date_from: "01-01-2024", date_to: "02-02-2024", steam_id: "999" },
+        keys: null,
       });
     }
     if (command === "load_preset") {
@@ -68,11 +83,13 @@ async function renderSection() {
   return rendered;
 }
 
-async function loadPresetAndCaptureWrites() {
+async function loadPresetAndCaptureWrites(presetName = "date") {
   writes.length = 0;
   await renderSection();
+  const row = screen.getByText(presetName, { selector: ".preset-row-name" }).closest("li");
+  if (!row) throw new Error(`no preset row found for "${presetName}"`);
   act(() => {
-    screen.getByRole("button", { name: /^Load$/i }).click();
+    within(row).getByRole("button", { name: /^Load$/i }).click();
   });
   await act(async () => {});
   return writes[0] ?? {};
@@ -95,7 +112,17 @@ describe("PresetSection", () => {
   it("writes only the keys the preset owns", async () => {
     // `load_preset` returns the keys it may overwrite. Writing `data` wholesale
     // would let a "date" preset replace the entire configuration.
-    const written = await loadPresetAndCaptureWrites();
+    const written = await loadPresetAndCaptureWrites("date");
     expect(Object.keys(written)).toEqual(["date_from", "date_to"]);
+  });
+
+  it("writes the entire configuration for a full-config preset (keys === null)", async () => {
+    // A "full" preset comes back with `keys: null`, meaning "this preset may
+    // overwrite everything" -- the one dangerous-by-design branch. Anything
+    // that turned this into a subset write would silently narrow a full
+    // config restore into a partial one.
+    const written = await loadPresetAndCaptureWrites("everything");
+    expect(Object.keys(written).sort()).toEqual(["date_from", "date_to", "steam_id"]);
+    expect(written).toEqual({ date_from: "01-01-2024", date_to: "02-02-2024", steam_id: "999" });
   });
 });
