@@ -10,6 +10,11 @@ import { describe, expect, it, vi } from "vitest";
 import { SettingsProvider } from "../../settings/store";
 import CaptureTab from "../CaptureTab";
 
+// `vi.hoisted` because `vi.mock` factories run before this file's own
+// top-level code, so a plain module-scope object declared below would not
+// exist yet when the factory closes over it.
+const callCounts = vi.hoisted(() => ({ describe_filters: 0, connect_db: 0 }));
+
 vi.mock("../../bridge", () => ({
   // A configuration with the window's defaults, so the tab opens on `killer`
   // exactly as the application does. `describe_filters` also goes through
@@ -17,6 +22,9 @@ vi.mock("../../bridge", () => ({
   // set is enough here, since this file tests the tab's own conditional
   // rows, not the filter rows themselves.
   runCommand: (command: string) => {
+    if (command === "describe_filters" || command === "connect_db") {
+      callCounts[command] += 1;
+    }
     if (command === "describe_filters") {
       return Promise.resolve({
         type: "result",
@@ -72,6 +80,24 @@ function choosePerspective(value: string) {
 function keyOnScreen(container: HTMLElement, key: string): boolean {
   return container.querySelector(`[data-config-key="${key}"]`) !== null;
 }
+
+describe("CaptureTab bridge traffic", () => {
+  it("fetches the static tables and the database exactly once for the whole tab", async () => {
+    // `KillFiltersSection`, `MatchTypesSection`, `WeaponFilterSection` all
+    // call `useTables()`, and `MatchTypesSection`, `WeaponFilterSection`,
+    // `MapFilterSection`, `PlayerSection` all call `useDatabase()`. Before
+    // `TablesProvider`/`DatabaseProvider` existed, mounting the tab fired one
+    // `describe_filters` and one `connect_db` PER consumer -- each spawning
+    // its own Python thread against shared, unlocked host state. This is the
+    // count that must stay at exactly one no matter how many sections read
+    // the hooks.
+    callCounts.describe_filters = 0;
+    callCounts.connect_db = 0;
+    await renderTab();
+    expect(callCounts.describe_filters).toBe(1);
+    expect(callCounts.connect_db).toBe(1);
+  });
+});
 
 describe("CaptureTab conditional rows", () => {
   it("hides the switch delay outside `both` perspective", async () => {

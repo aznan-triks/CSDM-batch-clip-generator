@@ -4,8 +4,17 @@
  * They are NOT declared here: `describe_filters` sends them, and this hook only
  * caches them. A copy in TypeScript would drift the day a filter is added, and
  * the window would silently stop showing it (D20 / R1).
+ *
+ * Mounting the Capture tab used to fire one `describe_filters` per consuming
+ * section (KillFiltersSection, MatchTypesSection, WeaponFilterSection all
+ * called this hook independently), each spawning its own Python thread doing
+ * schema work. `TablesProvider` fetches once and every `useTables()` call
+ * inside it reads the same value; a `useTables()` call with no `TablesProvider`
+ * above it (a section rendered on its own in a test, say) falls back to
+ * fetching for itself, so no existing caller needs to change.
  */
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 
 import { runCommand } from "../bridge";
 
@@ -38,11 +47,28 @@ interface RawTables {
   audio_codecs: string[];
 }
 
-export function useTables(): { tables: Tables | null; error: string | null } {
+interface TablesValue {
+  tables: Tables | null;
+  error: string | null;
+}
+
+const TablesContext = createContext<TablesValue | null>(null);
+
+/**
+ * Runs the actual `describe_filters` fetch, unless `skip` is set.
+ *
+ * Called unconditionally by both `TablesProvider` (never skips) and
+ * `useTables` (skips whenever a provider is already supplying the value) so
+ * that the same hooks fire in the same order every render either way --
+ * `skip` toggling which branch of the effect body does anything, never
+ * whether the hook itself runs.
+ */
+function useTablesFetch(skip: boolean): TablesValue {
   const [tables, setTables] = useState<Tables | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (skip) return;
     let cancelled = false;
     runCommand("describe_filters")
       .then((result) => {
@@ -66,7 +92,22 @@ export function useTables(): { tables: Tables | null; error: string | null } {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [skip]);
 
   return { tables, error };
+}
+
+/** Fetches `describe_filters` once and shares it with every `useTables()` call underneath. */
+export function TablesProvider({ children }: { children: ReactNode }) {
+  const value = useTablesFetch(false);
+  return <TablesContext.Provider value={value}>{children}</TablesContext.Provider>;
+}
+
+export function useTables(): TablesValue {
+  const context = useContext(TablesContext);
+  // Skips its own fetch whenever a provider above already ran one; runs it
+  // when there isn't one, so a section rendered on its own (outside
+  // `CaptureTab`, as most of this tab's tests do) still gets its data.
+  const standalone = useTablesFetch(context !== null);
+  return context ?? standalone;
 }

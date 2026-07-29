@@ -17,6 +17,8 @@ import Segmented from "../components/Segmented";
 import Slider from "../components/Slider";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
+import { DatabaseProvider } from "../settings/useDatabase";
+import { TablesProvider } from "../settings/useTables";
 import DemoSelectionSection from "./DemoSelectionSection";
 import KillFiltersSection from "./KillFiltersSection";
 import MapFilterSection from "./MapFilterSection";
@@ -90,157 +92,164 @@ export default function CaptureTab() {
   }
 
   return (
-    <div className="capture-tab">
-      <PlayerSection />
-      <DemoSelectionSection />
-      <WeaponFilterSection />
-      <SettingControl settingKey="events">
-        <div className="capture-row">
-          <span className="capture-label">Capture</span>
-          {EVENT_KINDS.map((kind) => (
-            <Chip
-              key={kind.value}
-              label={kind.label}
-              selected={selectedEvents.includes(kind.value)}
-              onToggle={() => toggleEvent(kind.value)}
-            />
-          ))}
-        </div>
-      </SettingControl>
-
-      <SettingControl settingKey="perspective">
-        <div className="capture-row">
-          <span className="capture-label">Perspective</span>
-          <Segmented
-            options={PERSPECTIVES}
-            value={perspective ?? PERSPECTIVES[0]}
-            onChange={setPerspective}
-            label="Perspective"
-          />
-        </div>
-      </SettingControl>
-
-      {/* Only `both` switches camera, so only `both` has a delay to set. */}
-      {perspective === "both" && (
-        <SettingControl settingKey="victim_pre_s">
-          <Slider
-            id="victim-pre-s"
-            label="Switch delay (s)"
-            min={SWITCH_DELAY_RANGE.min}
-            max={SWITCH_DELAY_RANGE.max}
-            value={switchDelay}
-            onChange={setVictimPre}
-            readout={`${switchDelay}s · total before: ${beforeSeconds + switchDelay}s`}
-          />
-        </SettingControl>
-      )}
-
-      {/* Mate POV replaces the victim camera, so it is meaningless on the killer. */}
-      {(perspective === "victim" || perspective === "both") && (
-        <div className="capture-row">
-          <span className="capture-label">Mate POV</span>
-          <SettingControl settingKey="kill_mod_mate_pov">
-            <Chip label="Enable" selected={!!matePov} onToggle={toggleMatePov} />
+    // One `describe_filters` and one `connect_db` for the whole tab: every
+    // section below reads the SAME fetch through `useTables`/`useDatabase`
+    // instead of each triggering its own bridge command and Python thread.
+    <TablesProvider>
+      <DatabaseProvider>
+        <div className="capture-tab">
+          <PlayerSection />
+          <DemoSelectionSection />
+          <WeaponFilterSection />
+          <SettingControl settingKey="events">
+            <div className="capture-row">
+              <span className="capture-label">Capture</span>
+              {EVENT_KINDS.map((kind) => (
+                <Chip
+                  key={kind.value}
+                  label={kind.label}
+                  selected={selectedEvents.includes(kind.value)}
+                  onToggle={() => toggleEvent(kind.value)}
+                />
+              ))}
+            </div>
           </SettingControl>
-          <SettingControl settingKey="kill_mod_mate_pov_req">
-            <Chip
-              label="★ Must"
-              selected={!!matePovReq}
-              onToggle={() => matePov && setMatePovReq(!matePovReq)}
+
+          <SettingControl settingKey="perspective">
+            <div className="capture-row">
+              <span className="capture-label">Perspective</span>
+              <Segmented
+                options={PERSPECTIVES}
+                value={perspective ?? PERSPECTIVES[0]}
+                onChange={setPerspective}
+                label="Perspective"
+              />
+            </div>
+          </SettingControl>
+
+          {/* Only `both` switches camera, so only `both` has a delay to set. */}
+          {perspective === "both" && (
+            <SettingControl settingKey="victim_pre_s">
+              <Slider
+                id="victim-pre-s"
+                label="Switch delay (s)"
+                min={SWITCH_DELAY_RANGE.min}
+                max={SWITCH_DELAY_RANGE.max}
+                value={switchDelay}
+                onChange={setVictimPre}
+                readout={`${switchDelay}s · total before: ${beforeSeconds + switchDelay}s`}
+              />
+            </SettingControl>
+          )}
+
+          {/* Mate POV replaces the victim camera, so it is meaningless on the killer. */}
+          {(perspective === "victim" || perspective === "both") && (
+            <div className="capture-row">
+              <span className="capture-label">Mate POV</span>
+              <SettingControl settingKey="kill_mod_mate_pov">
+                <Chip label="Enable" selected={!!matePov} onToggle={toggleMatePov} />
+              </SettingControl>
+              <SettingControl settingKey="kill_mod_mate_pov_req">
+                <Chip
+                  label="★ Must"
+                  selected={!!matePovReq}
+                  onToggle={() => matePov && setMatePovReq(!matePovReq)}
+                />
+              </SettingControl>
+            </div>
+          )}
+
+          <SettingControl settingKey="player_name_override">
+            <Field
+              id="player-name-override"
+              label="Name override"
+              value={nameOverride ?? ""}
+              onChange={setNameOverride}
+              placeholder="name stored in the demo"
             />
           </SettingControl>
+
+          <div className="capture-grid">
+            <SettingControl settingKey="before">
+              <Slider
+                id="seconds-before"
+                label="Seconds before"
+                min={BEFORE_RANGE.min}
+                max={BEFORE_RANGE.max}
+                value={beforeSeconds}
+                onChange={setBefore}
+                readout={`${beforeSeconds}s`}
+              />
+            </SettingControl>
+            <SettingControl settingKey="after">
+              <Slider
+                id="seconds-after"
+                label="Seconds after"
+                min={AFTER_RANGE.min}
+                max={AFTER_RANGE.max}
+                value={asNumber(after, AFTER_RANGE.min)}
+                onChange={setAfter}
+                readout={`${asNumber(after, AFTER_RANGE.min)}s`}
+              />
+            </SettingControl>
+          </div>
+
+          <div className="capture-grid">
+            <SettingControl settingKey="retry_count">
+              <Field
+                id="retry-count"
+                label="Retries"
+                mono
+                value={String(retryCount ?? "")}
+                onChange={setRetryCount}
+              />
+            </SettingControl>
+            <SettingControl settingKey="retry_delay">
+              <Field
+                id="retry-delay"
+                label="Delay (s)"
+                mono
+                value={String(retryDelay ?? "")}
+                onChange={setRetryDelay}
+              />
+            </SettingControl>
+            <SettingControl settingKey="delay_between_demos">
+              <Field
+                id="demo-pause"
+                label="Demo pause (s)"
+                mono
+                value={String(demoPause ?? "")}
+                onChange={setDemoPause}
+              />
+            </SettingControl>
+            <SettingControl settingKey="recording_timeout">
+              <Field
+                id="recording-timeout"
+                label="Timeout (min)"
+                mono
+                value={String(timeout ?? "")}
+                onChange={setTimeout}
+              />
+            </SettingControl>
+          </div>
+
+          <SettingControl settingKey="clip_order">
+            <div className="capture-row">
+              <span className="capture-label">Order</span>
+              <Segmented
+                options={CLIP_ORDERS}
+                value={clipOrder ?? CLIP_ORDERS[0]}
+                onChange={setClipOrder}
+                label="Order"
+              />
+            </div>
+          </SettingControl>
+
+          <KillFiltersSection />
+          <MatchTypesSection />
+          <MapFilterSection />
         </div>
-      )}
-
-      <SettingControl settingKey="player_name_override">
-        <Field
-          id="player-name-override"
-          label="Name override"
-          value={nameOverride ?? ""}
-          onChange={setNameOverride}
-          placeholder="name stored in the demo"
-        />
-      </SettingControl>
-
-      <div className="capture-grid">
-        <SettingControl settingKey="before">
-          <Slider
-            id="seconds-before"
-            label="Seconds before"
-            min={BEFORE_RANGE.min}
-            max={BEFORE_RANGE.max}
-            value={beforeSeconds}
-            onChange={setBefore}
-            readout={`${beforeSeconds}s`}
-          />
-        </SettingControl>
-        <SettingControl settingKey="after">
-          <Slider
-            id="seconds-after"
-            label="Seconds after"
-            min={AFTER_RANGE.min}
-            max={AFTER_RANGE.max}
-            value={asNumber(after, AFTER_RANGE.min)}
-            onChange={setAfter}
-            readout={`${asNumber(after, AFTER_RANGE.min)}s`}
-          />
-        </SettingControl>
-      </div>
-
-      <div className="capture-grid">
-        <SettingControl settingKey="retry_count">
-          <Field
-            id="retry-count"
-            label="Retries"
-            mono
-            value={String(retryCount ?? "")}
-            onChange={setRetryCount}
-          />
-        </SettingControl>
-        <SettingControl settingKey="retry_delay">
-          <Field
-            id="retry-delay"
-            label="Delay (s)"
-            mono
-            value={String(retryDelay ?? "")}
-            onChange={setRetryDelay}
-          />
-        </SettingControl>
-        <SettingControl settingKey="delay_between_demos">
-          <Field
-            id="demo-pause"
-            label="Demo pause (s)"
-            mono
-            value={String(demoPause ?? "")}
-            onChange={setDemoPause}
-          />
-        </SettingControl>
-        <SettingControl settingKey="recording_timeout">
-          <Field
-            id="recording-timeout"
-            label="Timeout (min)"
-            mono
-            value={String(timeout ?? "")}
-            onChange={setTimeout}
-          />
-        </SettingControl>
-      </div>
-
-      <SettingControl settingKey="clip_order">
-        <div className="capture-row">
-          <span className="capture-label">Order</span>
-          <Segmented
-            options={CLIP_ORDERS}
-            value={clipOrder ?? CLIP_ORDERS[0]}
-            onChange={setClipOrder}
-            label="Order"
-          />
-        </div>
-      </SettingControl>
-
-      <KillFiltersSection />
-      <MatchTypesSection />
-      <MapFilterSection />
-    </div>
+      </DatabaseProvider>
+    </TablesProvider>
   );
 }
