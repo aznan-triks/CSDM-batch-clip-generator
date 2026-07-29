@@ -151,6 +151,31 @@ def _cmd_tags_set_active(host, command):
     return {"data": host.set_active_tags(tag_ids)}
 
 
+def _cmd_tags_apply(host, command):
+    """Apply every tag in `tag_names` to every demo in `demo_paths`."""
+    tag_names = command.get("tag_names") or []
+    demo_paths = command.get("demo_paths") or []
+    return {"data": host.apply_tags(demo_paths, tag_names)}
+
+
+def _cmd_tags_remove(host, command):
+    """Remove every tag in `tag_names` from every demo in `demo_paths`."""
+    tag_names = command.get("tag_names") or []
+    demo_paths = command.get("demo_paths") or []
+    return {"data": host.remove_tags(demo_paths, tag_names)}
+
+
+def _cmd_tag_create(host, command):
+    """Create a tag. `tag_name` (not `name` -- that key already carries the
+    command's own name on every message)."""
+    return {"data": host.create_tag(command.get("tag_name"), command.get("color"))}
+
+
+def _cmd_tag_delete(host, command):
+    """Delete a tag and its assignments."""
+    return {"data": host.delete_tag(command.get("tag_id"))}
+
+
 def _cmd_load_config(host, command):
     """Hand the saved configuration to the renderer, migrations already applied."""
     return {"data": load_config()}
@@ -255,6 +280,10 @@ COMMANDS = {
     "tags_search": _cmd_tags_search,
     "tags_calc_range": _cmd_tags_calc_range,
     "tags_set_active": _cmd_tags_set_active,
+    "tags_apply": _cmd_tags_apply,
+    "tags_remove": _cmd_tags_remove,
+    "tag_create": _cmd_tag_create,
+    "tag_delete": _cmd_tag_delete,
 }
 
 

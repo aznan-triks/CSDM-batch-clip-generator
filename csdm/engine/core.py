@@ -46,7 +46,7 @@ from csdm.static_data import (
 from csdm.config import DEFAULT_CONFIG
 from csdm.core_utils import (
     build_camera_ticks, safe_folder_name, _count_kills, fmt_duration, progress_bar,
-    process_is_running, ensure_csdm_dirs,
+    process_is_running, ensure_csdm_dirs, _generate_id_for_type,
 )
 
 # Tables probed when reading the CSDM schema, in probe order.
@@ -4784,6 +4784,56 @@ class EngineMixin:
         except Exception as e:
             return False, str(e)
 
+    def _untag_demo(self, demo_path, tag_name):
+        """Remove one tag from one demo. Pure DB logic, ported from
+        `_untag_demo` in csdm_batch_clips_generator.py unchanged (it already
+        touched no Tkinter)."""
+        ts = self._tags_schema
+        jt = ts.get("junction_table")
+        jt_tag = ts.get("jt_tag_col")
+        jt_match = ts.get("jt_match_col")
+        if not jt or not jt_tag or not jt_match:
+            return False, "Junction table not found"
+
+        tag_id = next((tid for tid, tn, _ in self._tags_list if tn == tag_name), None)
+        if tag_id is None:
+            return False, f"Tag '{tag_name}' not found"
+
+        checksum = self._get_demo_checksum(demo_path)
+        if not checksum:
+            # Last resort: direct query bypassing cache
+            dc = self._find_col("matches", ["demo_path", "demo_file_path", "demo_filepath",
+                                             "share_code", "file_path", "path"])
+            mkm = self._find_col("matches", ["checksum", "id", "match_id"])
+            if dc and mkm:
+                try:
+                    conn = self._pg_fresh()
+                    with conn.cursor() as cur:
+                        name = os.path.basename(demo_path)
+                        cur.execute(f'SELECT "{mkm}" FROM matches WHERE "{dc}" LIKE %s LIMIT 1',
+                                    (f"%{name}",))
+                        r = cur.fetchone()
+                        if r:
+                            checksum = r[0]
+                            self._demo_checksums[demo_path] = checksum
+                    conn.close()
+                except Exception:
+                    pass
+        if not checksum:
+            return False, f"Checksum not found for {os.path.basename(demo_path)}"
+
+        try:
+            conn = self._pg_fresh()
+            with conn.cursor() as cur:
+                cur.execute(
+                    f'DELETE FROM "{jt}" WHERE "{jt_match}"=%s AND "{jt_tag}"=%s',
+                    (checksum, tag_id))
+                conn.commit()
+            conn.close()
+            return True, ""
+        except Exception as e:
+            return False, str(e)
+
     def _tags_dc_mkm(self):
         """Return (demo-path column, match-key column) of `matches`, or (None, None)."""
         dc = self._find_col("matches", ["demo_path", "demo_file_path", "demo_filepath",
@@ -4983,6 +5033,135 @@ class EngineMixin:
         self._tags_active = set(tag_ids or [])
         return {"active_tag_ids": sorted(self._tags_active),
                 "active_tag_names": self._get_active_tag_names()}
+
+    def apply_tags(self, demo_paths, tag_names):
+        """Apply every tag in `tag_names` to every demo in `demo_paths`.
+
+        Ported from `_do_tag_demos`, itself called once per tag name by the
+        two Tkinter callers `_tag_apply_selected` (listbox selection) and
+        `_tag_apply_all` (every found demo). That "selected vs all" split was
+        UI-side (which rows are highlighted) -- headless, the caller already
+        holds the exact path list and passes it directly, so both callers
+        collapse into this one method plus the outer per-tag-name loop
+        `_do_tag_demos`'s callers used to do.
+
+        `threading.Thread`/`self.after` chrome is stripped: this runs
+        synchronously and returns counts instead of pushing a finish message
+        into a status label.
+        """
+        demo_paths = list(demo_paths or [])
+        tag_names = list(tag_names or [])
+        if not demo_paths:
+            raise ValueError("Select at least one demo.")
+        if not tag_names:
+            raise ValueError("Select at least one tag.")
+
+        ok_count = 0
+        first_error = ""
+        for tag_name in tag_names:
+            self._tag_log_line(f"=== Tag '{tag_name}' on {len(demo_paths)} demo(s) ===")
+            for dp in demo_paths:
+                self._tag_log_line(f"\n-> {os.path.basename(dp)}")
+                cached = dp in self._demo_checksums
+                self._tag_log_line(f"   checksum cache: {'yes' if cached else 'no'}")
+                success, err = self._tag_demo(dp, tag_name)
+                if success:
+                    ok_count += 1
+                else:
+                    self._tag_log_line(f"   FAILED: {err}")
+                    if not first_error:
+                        first_error = err
+
+        return {"ok_count": ok_count, "total": len(demo_paths) * len(tag_names),
+                "first_error": first_error}
+
+    def remove_tags(self, demo_paths, tag_names):
+        """Remove every tag in `tag_names` from every demo in `demo_paths`.
+
+        Ported from `_tag_remove_selected`, `threading.Thread`/`self.after`
+        chrome stripped -- runs synchronously and returns counts.
+        """
+        demo_paths = list(demo_paths or [])
+        tag_names = list(tag_names or [])
+        if not demo_paths:
+            raise ValueError("Select at least one demo.")
+        if not tag_names:
+            raise ValueError("Select at least one tag.")
+
+        ok_count = 0
+        first_error = ""
+        for dp in demo_paths:
+            for tag_name in tag_names:
+                success, err = self._untag_demo(dp, tag_name)
+                if success:
+                    ok_count += 1
+                elif not first_error:
+                    first_error = err
+
+        return {"ok_count": ok_count, "total": len(demo_paths) * len(tag_names),
+                "first_error": first_error}
+
+    def create_tag(self, name, color):
+        """Create a tag row. Ported from `_create_tag_programmatic`.
+
+        The original returned `(ok, tag_id_or_err)` and swallowed the
+        exception into the error string; here the failure path raises
+        instead, matching every other engine method in this file (the bridge
+        already turns any exception into `{"ok": false, "error": ...}`).
+        """
+        name = (name or "").strip()
+        if not name:
+            raise ValueError("A tag needs a name.")
+        ts = self._tags_schema
+        if not ts.get("name_col"):
+            raise ValueError("Tag schema not detected.")
+
+        conn = self._pg_fresh()
+        try:
+            with conn.cursor() as cur:
+                new_id = _generate_id_for_type(ts.get("id_col_type", "bigint"))
+                cols = f'"{ts["id_col"]}","{ts["name_col"]}"'
+                vals = [new_id, name]
+                if ts.get("color_col"):
+                    cols += f',"{ts["color_col"]}"'
+                    vals.append(color or "#f97316")
+                cur.execute(
+                    f'INSERT INTO tags ({cols}) VALUES ({",".join(["%s"] * len(vals))})', vals)
+                conn.commit()
+        finally:
+            conn.close()
+
+        self._tags_list.append((new_id, name, color or ""))
+        return {"tag_id": new_id, "tag_name": name}
+
+    def delete_tag(self, tag_id):
+        """Delete a tag row and its assignments. Ported from
+        `_delete_tag_from_db`.
+
+        The original also took a `tag_name` parameter that its body never
+        read (deletion is keyed by `tag_id` alone) -- dropped here rather
+        than carried along unused.
+        """
+        if tag_id is None:
+            raise ValueError("A tag id is required.")
+        ts = self._tags_schema
+        if not ts.get("id_col"):
+            raise ValueError("Tag schema not detected.")
+
+        conn = self._pg_fresh()
+        try:
+            with conn.cursor() as cur:
+                jt = ts.get("junction_table")
+                jt_tag = ts.get("jt_tag_col")
+                if jt and jt_tag:
+                    cur.execute(f'DELETE FROM "{jt}" WHERE "{jt_tag}"=%s', (tag_id,))
+                cur.execute(f'DELETE FROM tags WHERE "{ts["id_col"]}"=%s', (tag_id,))
+                conn.commit()
+        finally:
+            conn.close()
+
+        self._tags_list = [t for t in self._tags_list if t[0] != tag_id]
+        return {"ok": True}
 
     def _calc_summary(self, all_events, cfg):
         """Return (nb_demos, nb_clips, total_sec, avg_sec) from events and config."""
