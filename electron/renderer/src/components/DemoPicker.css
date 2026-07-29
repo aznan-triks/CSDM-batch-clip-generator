@@ -120,6 +120,12 @@
   color: var(--dim);
 }
 
+.dp-row-selected {
+  background: var(--raise-hi);
+  outline: var(--bw) solid var(--gold);
+  outline-offset: -1px;
+}
+
 .dp-check {
   appearance: none;
   cursor: pointer;

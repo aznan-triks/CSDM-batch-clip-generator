@@ -119,4 +119,31 @@ describe("DemoSelectionSection", () => {
     await renderTabWithDemos(); // fixture holds one demo dated 2024-01-01
     expect(screen.getByTitle(/breaking update/i)).toBeTruthy();
   });
+
+  it("checks only the highlighted row when Check selected is pressed", async () => {
+    await renderTabWithDemos();
+    // Both rows start checked (`_demo_picker_populate`'s default). Uncheck
+    // both first so "Check selected" flipping only one is actually visible.
+    act(() => screen.getByRole("button", { name: "✕ Uncheck all" }).click());
+
+    // Highlight (native-select) just the "old.dem" row by clicking it --
+    // a plain click, not the checkbox button inside it.
+    act(() => screen.getByTitle(/breaking update/i).click());
+    act(() => screen.getByRole("button", { name: "✓ Check selected" }).click());
+
+    const boxes = screen.getAllByRole("checkbox");
+    expect(boxes[0].getAttribute("aria-checked")).toBe("false"); // recent.dem, untouched
+    expect(boxes[1].getAttribute("aria-checked")).toBe("true"); // old.dem, was highlighted
+  });
+
+  it("unchecks only the highlighted row when Uncheck selected is pressed", async () => {
+    await renderTabWithDemos(); // both rows start checked
+
+    act(() => screen.getByTitle(/breaking update/i).click()); // highlight old.dem
+    act(() => screen.getByRole("button", { name: "✕ Uncheck selected" }).click());
+
+    const boxes = screen.getAllByRole("checkbox");
+    expect(boxes[0].getAttribute("aria-checked")).toBe("true"); // recent.dem, untouched
+    expect(boxes[1].getAttribute("aria-checked")).toBe("false"); // old.dem, was highlighted
+  });
 });

@@ -148,6 +148,17 @@ export default function DemoSelectionSection() {
     setChecked(Object.fromEntries(demos.map((row) => [row.path, value])));
   }
 
+  // Ported from `_demo_picker_set_selected`: only the currently highlighted
+  // rows change, every other row's checkbox state is left exactly as it was.
+  function setSelectedDemos(paths: string[], value: boolean) {
+    if (paths.length === 0) return;
+    setChecked((previous) => {
+      const next = { ...previous };
+      for (const path of paths) next[path] = value;
+      return next;
+    });
+  }
+
   return (
     <div className="demo-selection">
       <span className="ds-section-heading">Demo selection</span>
@@ -193,7 +204,13 @@ export default function DemoSelectionSection() {
         {error && <span className="ds-error">{error}</span>}
       </div>
 
-      <DemoPicker demos={demos} checked={checked} onToggle={toggleDemo} onSetAll={setAllDemos} />
+      <DemoPicker
+        demos={demos}
+        checked={checked}
+        onToggle={toggleDemo}
+        onSetAll={setAllDemos}
+        onSetSelected={setSelectedDemos}
+      />
     </div>
   );
 }

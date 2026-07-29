@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import "./DemoPicker.css";
 
 export interface DemoCompat {
@@ -21,6 +23,8 @@ interface DemoPickerProps {
   checked: Record<string, boolean>;
   onToggle: (path: string) => void;
   onSetAll: (value: boolean) => void;
+  /** Sets the checkbox state of exactly `paths`, leaving every other row untouched. */
+  onSetSelected: (paths: string[], value: boolean) => void;
 }
 
 /**
@@ -32,10 +36,37 @@ interface DemoPickerProps {
  * found at all. `title` carries the same explanation here; a screen reader or
  * a mouse hover both reach it the same way.
  */
-export default function DemoPicker({ demos, checked, onToggle, onSetAll }: DemoPickerProps) {
+export default function DemoPicker({ demos, checked, onToggle, onSetAll, onSetSelected }: DemoPickerProps) {
   const rows = demos ?? [];
   const total = rows.length;
   const onCount = rows.filter((row) => checked[row.path]).length;
+
+  // Highlighted (native-selected) rows, `_demo_tree.selection()`'s equivalent
+  // -- a separate concept from the checkbox state above. Session-only, like
+  // `checked` itself, so a plain useState is enough; it resets whenever the
+  // row list changes since paths from the old list would be meaningless.
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [anchor, setAnchor] = useState<number | null>(null);
+
+  function handleRowClick(event: React.MouseEvent, index: number, path: string) {
+    if (event.shiftKey && anchor !== null) {
+      const [start, end] = anchor < index ? [anchor, index] : [index, anchor];
+      setSelected(new Set(rows.slice(start, end + 1).map((row) => row.path)));
+      return;
+    }
+    if (event.ctrlKey || event.metaKey) {
+      setSelected((previous) => {
+        const next = new Set(previous);
+        if (next.has(path)) next.delete(path);
+        else next.add(path);
+        return next;
+      });
+      setAnchor(index);
+      return;
+    }
+    setSelected(new Set([path]));
+    setAnchor(index);
+  }
 
   return (
     <div className="demo-picker">
@@ -49,6 +80,20 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll }: DemoP
           </button>
           <button type="button" className="dp-btn dp-btn-off" onClick={() => onSetAll(false)}>
             ✕ Uncheck all
+          </button>
+          <button
+            type="button"
+            className="dp-btn dp-btn-on"
+            onClick={() => onSetSelected(Array.from(selected), true)}
+          >
+            ✓ Check selected
+          </button>
+          <button
+            type="button"
+            className="dp-btn dp-btn-off"
+            onClick={() => onSetSelected(Array.from(selected), false)}
+          >
+            ✕ Uncheck selected
           </button>
         </div>
       </div>
@@ -66,8 +111,9 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll }: DemoP
               No demos loaded -- run a Preview, or turn on Manual mode.
             </p>
           )}
-          {rows.map((row) => {
+          {rows.map((row, index) => {
             const isOn = !!checked[row.path];
+            const isSelected = selected.has(row.path);
             const warn = row.compat.status === "warn";
             const missing = row.compat.status === "missing";
             const title = warn
@@ -80,17 +126,26 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll }: DemoP
               !isOn && "dp-row-off",
               warn && "dp-row-warn",
               missing && "dp-row-missing",
+              isSelected && "dp-row-selected",
             ]
               .filter(Boolean)
               .join(" ");
             return (
-              <div key={row.path} className={rowClasses} title={title}>
+              <div
+                key={row.path}
+                className={rowClasses}
+                title={title}
+                onClick={(event) => handleRowClick(event, index, row.path)}
+              >
                 <button
                   type="button"
                   role="checkbox"
                   aria-checked={isOn}
                   className="dp-check"
-                  onClick={() => onToggle(row.path)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onToggle(row.path);
+                  }}
                 >
                   {isOn ? "✓" : "✕"}
                 </button>
