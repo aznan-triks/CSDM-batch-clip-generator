@@ -1,0 +1,81 @@
+/*
+ * The PLAYER section. Colours come from theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.player-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.ps-section-heading {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  letter-spacing: var(--tr-snug);
+  text-transform: uppercase;
+  color: var(--txt-lo);
+}
+
+.ps-active-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--gold);
+}
+
+.ps-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ps-row {
+  appearance: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--raise);
+  text-align: left;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+
+.ps-row:hover {
+  background: var(--raise-hi);
+  border-color: var(--line-hi);
+}
+
+.ps-row-active {
+  border-color: var(--gold-d);
+}
+
+.ps-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: var(--radius);
+  background: var(--line);
+}
+
+.ps-row-active .ps-dot {
+  background: var(--gold);
+}
+
+.ps-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--txt);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ps-row-active .ps-label {
+  color: var(--txt-hi);
+}

@@ -1,0 +1,140 @@
+/*
+ * The demo picker table. Colours come from theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.demo-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.dp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.dp-count {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--dim);
+}
+
+.dp-buttons {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.dp-btn {
+  appearance: none;
+  cursor: pointer;
+  padding: var(--sp-1) var(--sp-4);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-tight);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--raise);
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+
+.dp-btn-on {
+  color: var(--ok);
+}
+
+.dp-btn-off {
+  color: var(--blood-t);
+}
+
+.dp-btn:hover {
+  background: var(--raise-hi);
+  border-color: var(--line-hi);
+}
+
+.dp-table {
+  display: flex;
+  flex-direction: column;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.dp-row {
+  display: grid;
+  grid-template-columns: 24px 118px 80px 1fr;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+}
+
+.dp-head {
+  background: var(--panel);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-tight);
+  text-transform: uppercase;
+  color: var(--dim);
+  border-bottom: var(--bw) solid var(--line);
+}
+
+.dp-body {
+  display: flex;
+  flex-direction: column;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.dp-body .dp-row + .dp-row {
+  border-top: var(--bw) solid var(--line);
+}
+
+.dp-col-date,
+.dp-col-map,
+.dp-col-name {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--txt);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dp-row-off .dp-col-date,
+.dp-row-off .dp-col-map,
+.dp-row-off .dp-col-name {
+  color: var(--dim);
+}
+
+.dp-row-warn .dp-col-date,
+.dp-row-warn .dp-col-map,
+.dp-row-warn .dp-col-name {
+  color: var(--fire);
+}
+
+.dp-row-missing .dp-col-date,
+.dp-row-missing .dp-col-map,
+.dp-row-missing .dp-col-name {
+  color: var(--dim);
+}
+
+.dp-check {
+  appearance: none;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: var(--fs-xs);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--raise);
+  color: var(--ok);
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+
+.dp-check:hover {
+  background: var(--raise-hi);
+  border-color: var(--line-hi);
+}

@@ -17,9 +17,11 @@ import Segmented from "../components/Segmented";
 import Slider from "../components/Slider";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
+import DemoSelectionSection from "./DemoSelectionSection";
 import KillFiltersSection from "./KillFiltersSection";
 import MapFilterSection from "./MapFilterSection";
 import MatchTypesSection from "./MatchTypesSection";
+import PlayerSection from "./PlayerSection";
 import WeaponFilterSection from "./WeaponFilterSection";
 import "./CaptureTab.css";
 
@@ -89,6 +91,8 @@ export default function CaptureTab() {
 
   return (
     <div className="capture-tab">
+      <PlayerSection />
+      <DemoSelectionSection />
       <WeaponFilterSection />
       <SettingControl settingKey="events">
         <div className="capture-row">

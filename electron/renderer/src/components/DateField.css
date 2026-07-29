@@ -1,0 +1,60 @@
+/*
+ * The dd-mm-yyyy field + calendar button. Colours come from theme/tokens.css
+ * only. NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.date-field-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.date-field-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  position: relative;
+}
+
+.date-field-text {
+  width: 11ch;
+}
+
+.date-field-btn {
+  appearance: none;
+  cursor: pointer;
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--fs-sm);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--raise);
+  color: var(--gold);
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+
+.date-field-btn:hover {
+  background: var(--raise-hi);
+  border-color: var(--line-hi);
+}
+
+.date-field-btn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/*
+ * The real native picker: never painted, only driven by the button above via
+ * `showPicker()`. `color-scheme: dark` keeps the OS-drawn calendar popup off
+ * the platform's light-and-blue default when it does open -- CSS cannot reach
+ * inside that popup any other way.
+ */
+.date-field-native {
+  position: absolute;
+  width: 0;
+  height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+  color-scheme: dark;
+}

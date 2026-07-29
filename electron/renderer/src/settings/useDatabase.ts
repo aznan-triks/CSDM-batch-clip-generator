@@ -9,26 +9,33 @@
  * a real connection attempt against whatever `csdm_config.json` already
  * holds.
  *
- * Only the two fields the Capture-tab sections need are kept here: `weapons`
- * (a flat list of weapon names actually present in the database) and `maps`
- * (`[displayKey, rawValues[]][]`, sorted by display key). The full discovery
- * payload carries much more (players, tags, schema...), consumed by other
- * tabs in later chantiers -- this hook is not the place to widen that
- * contract before something actually reads the rest.
+ * Three fields the Capture-tab sections need are kept here: `weapons` (a flat
+ * list of weapon names actually present in the database), `maps`
+ * (`[displayKey, rawValues[]][]`, sorted by display key), and `players`
+ * (`[label, steamId, name, lastSeen][]`, the same tuple shape
+ * `discovery_to_json` sends -- PlayerSection, tâche 5, is the first reader).
+ * The full discovery payload carries more still (tags, schema...), consumed
+ * by other tabs in later chantiers -- this hook is not the place to widen
+ * that contract before something actually reads the rest.
  */
 import { useEffect, useState } from "react";
 
 import { runCommand } from "../bridge";
 
+/** One row of `connect_db`'s `players` list, unpacked from its tuple shape. */
+export type PlayerRow = [label: string, steamId: string, name: string, lastSeen: string | number | null];
+
 export interface DatabaseInfo {
   weapons: string[];
   maps: [string, string[]][];
+  players: PlayerRow[];
 }
 
 /** Shape of the JSON `connect_db` returns, before narrowing to what this hook keeps. */
 interface RawDiscovery {
   weapons: string[];
   maps: [string, string[]][];
+  players: PlayerRow[];
 }
 
 export function useDatabase(): { database: DatabaseInfo | null; error: string | null } {
@@ -44,6 +51,7 @@ export function useDatabase(): { database: DatabaseInfo | null; error: string | 
         setDatabase({
           weapons: raw.weapons ?? [],
           maps: raw.maps ?? [],
+          players: raw.players ?? [],
         });
       })
       .catch((cause: Error) => {
