@@ -38,6 +38,12 @@ export interface EngineState {
   demoEntries: number;
   /** True once a preview result has arrived. */
   previewReady: boolean;
+  /** RUN is clickable until the engine says otherwise. Nothing runs yet, so true. */
+  runEnabled: boolean;
+  /** STOP is disabled until the engine reports something it can stop. */
+  stopEnabled: boolean;
+  /** KILL is disabled until the engine reports something it can kill. */
+  killEnabled: boolean;
 }
 
 export const INITIAL_ENGINE_STATE: EngineState = {
@@ -47,6 +53,9 @@ export const INITIAL_ENGINE_STATE: EngineState = {
   uncheckedPaths: [],
   demoEntries: 0,
   previewReady: false,
+  runEnabled: true,
+  stopEnabled: false,
+  killEnabled: false,
 };
 
 /** Fold one state event into the current state. Pure, so it is directly testable. */
@@ -60,6 +69,16 @@ export function reduceEngineState(
       return { ...state, busy: false };
     case "buttons_busy":
       return { ...state, busy: true };
+    case "buttons": {
+      // A PARTIAL update: the engine only sends the keys that changed, so a
+      // `{ stop: true }` event must merge, never replace -- overwriting would
+      // wipe out a `kill: true` a previous event already reported.
+      const next = { ...state };
+      if (typeof payload.run === "boolean") next.runEnabled = payload.run;
+      if (typeof payload.stop === "boolean") next.stopEnabled = payload.stop;
+      if (typeof payload.kill === "boolean") next.killEnabled = payload.kill;
+      return next;
+    }
     case "progress":
       return { ...state, progress: String(payload.text ?? "") };
     case "summary":

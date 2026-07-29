@@ -13,6 +13,8 @@
 .shell-logs {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
 }
@@ -24,6 +26,101 @@
 
 #ask-panel button {
   margin-right: 8px;
+}
+
+/*
+ * The console's own toolbar: search, auto-scroll, timestamps, badges, export.
+ * Ported from the window's log toolbar row (`_build_log_panel`), muted
+ * buttons on the raised ground the same way the rest of the shell's chrome
+ * sits on it.
+ */
+.log-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: var(--bw) solid var(--line);
+  background: var(--raise);
+  flex-wrap: wrap;
+}
+
+.log-search {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-xs);
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: var(--tr-snug);
+}
+
+.log-search input {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--txt);
+  background: var(--panel);
+  border: var(--bw) solid var(--line);
+  padding: var(--sp-1) var(--sp-3);
+  min-width: 0;
+}
+
+.log-toggle,
+.log-export > button {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-snug);
+  text-transform: uppercase;
+  color: var(--dim);
+  background: var(--panel);
+  border: var(--bw) solid var(--line);
+  padding: var(--sp-1) var(--sp-3);
+  cursor: pointer;
+}
+
+.log-toggle-on {
+  color: var(--gold);
+  border-color: var(--gold-d);
+}
+
+.log-export {
+  position: relative;
+  margin-left: auto;
+}
+
+.log-export-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: var(--bw) solid var(--line);
+  box-shadow: 0 4px 10px var(--shadow);
+}
+
+.log-export-menu button {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--txt);
+  background: transparent;
+  border: none;
+  padding: var(--sp-2) var(--sp-4);
+  text-align: left;
+  cursor: pointer;
+}
+
+.log-ts {
+  color: var(--dim);
+}
+
+.log-badge {
+  display: inline-block;
+  margin-right: var(--sp-2);
+  padding: 0 var(--sp-2);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tr-wide);
+  border: var(--bw) solid currentColor;
 }
 
 #log {

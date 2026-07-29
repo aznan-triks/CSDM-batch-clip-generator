@@ -1,0 +1,56 @@
+/*
+ * The run bar (D11's neighbour): buttons and progress on one row, the
+ * summary line below -- the same two-row shape the window's `run_bar` used,
+ * with a top accent line reused from that frame.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16); the
+ * buttons themselves already carry the one allowed hover motion (the
+ * reflection sweep, in ActionButton.css).
+ */
+
+.action-bar {
+  display: flex;
+  flex-direction: column;
+  border-bottom: var(--bw) solid var(--line);
+  background: var(--panel);
+}
+
+.action-bar::before {
+  content: "";
+  display: block;
+  height: var(--bw-accent);
+  background: var(--gold);
+}
+
+.action-bar-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+}
+
+.action-bar-btn {
+  display: inline-flex;
+}
+
+.action-bar-sep {
+  width: var(--bw);
+  align-self: stretch;
+  background: var(--line);
+}
+
+.action-bar-progress {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.action-bar-summary {
+  padding: var(--sp-3) var(--sp-5);
+  border-top: var(--bw) solid var(--line);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}

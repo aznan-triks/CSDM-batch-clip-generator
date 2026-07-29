@@ -9,6 +9,10 @@ interface Line {
   key: number;
   text: string;
   cssClass: string;
+  /** The level the line carries (only "log" messages have one), for the badge toggle. */
+  level: string;
+  /** When the line arrived, for the timestamp toggle. */
+  ts: number;
 }
 
 /** The question currently on screen, or null when nothing is pending. */
@@ -77,6 +81,59 @@ function describe(message: BridgeMessage): { text: string; cssClass: string } {
   }
 }
 
+/** `HH:MM:SS`, local time -- the same shape the window's log timestamps used. */
+function formatTimestamp(ms: number): string {
+  const d = new Date(ms);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/**
+ * Build a standalone HTML file from the lines on screen and trigger a
+ * download.
+ *
+ * The old Tkinter window's "Export ▾" menu (HTML / TXT / JSON) exported the
+ * last PREVIEW RESULT -- a different table entirely, built from data the
+ * engine attaches to `preview_ready`. Reproducing that here would need the
+ * preview result plumbed into this component and a JSON/table renderer that
+ * does not exist yet, well past this task's scope. What this menu exports
+ * instead is the console's own lines, which the renderer already holds --
+ * the one export the existing data supports honestly.
+ *
+ * There is also no `pickSavePath`-driven save dialog: writing the chosen path
+ * would need a new IPC method in `main.js`/`preload.js`, which is likewise
+ * out of scope here. The browser download the `<a download>` triggers is the
+ * simplest thing that actually ships a file without adding that surface.
+ */
+function exportLinesAsHtml(lines: Line[]): void {
+  if (typeof URL === "undefined" || typeof URL.createObjectURL !== "function") {
+    console.warn("log export unavailable: no Blob/URL support in this environment");
+    return;
+  }
+  const body = lines
+    .map((line) => `<div class="${line.cssClass}">${escapeHtml(line.text)}</div>`)
+    .join("\n");
+  const html =
+    "<!doctype html><html><head><meta charset=\"utf-8\">" +
+    "<title>CSDM console export</title></head><body><pre>" +
+    body +
+    "</pre></body></html>";
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "csdm-console-export.html";
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 /**
  * The right-hand column: everything the engine says, plus the question panel.
  *
@@ -91,6 +148,11 @@ export default function LogConsole() {
   // rather than replace the first -- replacing it would strand the first
   // thread waiting on an answer that can no longer be sent.
   const [asks, setAsks] = useState<PendingAsk[]>([]);
+  const [search, setSearch] = useState("");
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [showTimestamps, setShowTimestamps] = useState(false);
+  const [showBadges, setShowBadges] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const ask = asks[0] ?? null;
   const logRef = useRef<HTMLDivElement>(null);
   const nextKey = useRef(0);
@@ -98,9 +160,10 @@ export default function LogConsole() {
   useEffect(() => {
     return onMessage((message) => {
       const { text, cssClass } = describe(message);
+      const level = message.type === "log" ? message.level || "" : "";
       nextKey.current += 1;
       const key = nextKey.current;
-      setLines((previous) => [...previous, { key, text, cssClass }]);
+      setLines((previous) => [...previous, { key, text, cssClass, level, ts: Date.now() }]);
 
       if (message.type === "ask") {
         // `options[0]` is the dialog title, the rest are the answers.
@@ -116,17 +179,26 @@ export default function LogConsole() {
     });
   }, []);
 
-  // Follow the tail, the way the skeleton page did on every appended line.
+  // Follow the tail, the way the skeleton page did on every appended line --
+  // unless the auto-scroll toggle is off, in which case the reader has
+  // deliberately scrolled up to read something and a jump would throw them
+  // back to the bottom mid-read.
   useEffect(() => {
+    if (!autoScroll) return;
     const element = logRef.current;
     if (element) element.scrollTop = element.scrollHeight;
-  }, [lines]);
+  }, [lines, autoScroll]);
 
   function answer(value: string | null) {
     if (!ask) return;
     send({ type: "answer", id: ask.id, value });
     setAsks((previous) => previous.slice(1));
   }
+
+  const trimmedSearch = search.trim().toLowerCase();
+  const visibleLines = trimmedSearch
+    ? lines.filter((line) => line.text.toLowerCase().includes(trimmedSearch))
+    : lines;
 
   return (
     <div className="shell-logs">
@@ -141,9 +213,83 @@ export default function LogConsole() {
         </div>
       )}
 
+      <div className="log-tools">
+        <label className="log-search">
+          Search
+          <input
+            type="text"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="filter…"
+          />
+        </label>
+
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={autoScroll}
+          aria-label="Auto-scroll"
+          className={autoScroll ? "log-toggle log-toggle-on" : "log-toggle"}
+          onClick={() => setAutoScroll((previous) => !previous)}
+        >
+          ↓
+        </button>
+
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={showTimestamps}
+          aria-label="Timestamps"
+          className={showTimestamps ? "log-toggle log-toggle-on" : "log-toggle"}
+          onClick={() => setShowTimestamps((previous) => !previous)}
+        >
+          TS
+        </button>
+
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={showBadges}
+          aria-label="Level badges"
+          className={showBadges ? "log-toggle log-toggle-on" : "log-toggle"}
+          onClick={() => setShowBadges((previous) => !previous)}
+        >
+          Badges
+        </button>
+
+        <div className="log-export">
+          <button
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={exportMenuOpen}
+            onClick={() => setExportMenuOpen((previous) => !previous)}
+          >
+            Export ▾
+          </button>
+          {exportMenuOpen && (
+            <div className="log-export-menu" role="menu">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  exportLinesAsHtml(lines);
+                  setExportMenuOpen(false);
+                }}
+              >
+                HTML (.html)
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div id="log" ref={logRef}>
-        {lines.map((line) => (
+        {visibleLines.map((line) => (
           <div key={line.key} className={line.cssClass}>
+            {showTimestamps && <span className="log-ts">{formatTimestamp(line.ts)} </span>}
+            {showBadges && line.level && (
+              <span className={`log-badge ${line.cssClass}`}>{line.level.toUpperCase()}</span>
+            )}
             {line.text}
           </div>
         ))}

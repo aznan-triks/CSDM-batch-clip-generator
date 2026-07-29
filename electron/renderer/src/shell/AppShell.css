@@ -42,10 +42,18 @@ body {
   min-height: 0;
 }
 
-.shell-logs {
+/*
+ * The right column: the run bar (ActionBar) above the console (LogConsole),
+ * the same stack the window's `run_bar` + log panel formed in `right_frame`.
+ * `.shell-logs` (LogConsole's own root) is a flex child in here, not the
+ * grid cell itself -- see LogConsole.css.
+ */
+.shell-log-column {
   grid-area: logs;
+  display: flex;
+  flex-direction: column;
   border-left: 1px solid var(--line);
-  overflow-y: auto;
+  overflow: hidden;
   min-width: 0;
 }
 
@@ -62,7 +70,7 @@ body {
       "band";
   }
 
-  .shell-logs {
+  .shell-log-column {
     display: none;
   }
 }

@@ -9,6 +9,7 @@ import SettingsTab from "../tabs/SettingsTab";
 import TagsTab from "../tabs/TagsTab";
 import VideoTab from "../tabs/VideoTab";
 import WeaponBand from "../weapon/WeaponBand";
+import ActionBar from "./ActionBar";
 import LogConsole from "./LogConsole";
 import { TABS } from "./tabs";
 import type { TabSpec } from "./tabs";
@@ -29,6 +30,12 @@ export default function AppShell() {
   // has to know this file's markup.
   const actionButtons = useRef<Record<string, HTMLElement | null>>({});
   const buttonRef = useCallback((action: string) => actionButtons.current[action] ?? null, []);
+  const registerButton = useCallback(
+    (action: string) => (element: HTMLElement | null) => {
+      actionButtons.current[action] = element;
+    },
+    [],
+  );
 
   // Ask the engine to introduce itself. It volunteers nothing at start-up, so
   // without this the console holds a single bare `[result]` line and reads as
@@ -72,7 +79,10 @@ export default function AppShell() {
         </div>
       </div>
 
-      <LogConsole />
+      <div className="shell-log-column">
+        <ActionBar registerButton={registerButton} />
+        <LogConsole />
+      </div>
 
       <WeaponBand
         status={engine.progress ?? (engine.busy ? "working…" : "idle")}
