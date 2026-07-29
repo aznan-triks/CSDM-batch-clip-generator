@@ -69,6 +69,9 @@ describe("AppShell", () => {
       onMessage() {
         return () => {};
       },
+      pickPath() {
+        return Promise.resolve(null);
+      },
     };
     renderShell();
     expect(sent.some((c) => (c as { name?: string }).name === "hello")).toBe(true);

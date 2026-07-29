@@ -20,4 +20,8 @@ contextBridge.exposeInMainWorld("bridge", {
     ipcRenderer.on("bridge:message", listener);
     return () => ipcRenderer.removeListener("bridge:message", listener);
   },
+  // Ask the main process to open a native picker. Resolves to a path or null.
+  pickPath(options) {
+    return ipcRenderer.invoke("bridge:pick-path", options);
+  },
 });

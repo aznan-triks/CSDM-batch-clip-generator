@@ -67,6 +67,7 @@ interface BridgeApi {
   send(command: BridgeCommand): void;
   /** Returns an unsubscribe function. */
   onMessage(cb: (message: BridgeMessage) => void): () => void;
+  pickPath(options?: { file?: boolean }): Promise<string | null>;
 }
 
 declare global {
@@ -184,4 +185,9 @@ export function runCommand(
 /** Subscribe to engine messages. Returns an unsubscribe function for React effects. */
 export function onMessage(cb: (message: BridgeMessage) => void): () => void {
   return bridge()?.onMessage(cb) ?? (() => {});
+}
+
+/** Open the native picker. Resolves to null outside Electron, where there is none. */
+export function pickPath(options?: { file?: boolean }): Promise<string | null> {
+  return bridge()?.pickPath(options) ?? Promise.resolve(null);
 }

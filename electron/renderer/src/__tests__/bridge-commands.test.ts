@@ -24,6 +24,9 @@ function installFakeBridge() {
         listeners.splice(listeners.indexOf(cb), 1);
       };
     },
+    pickPath() {
+      return Promise.resolve(null);
+    },
   };
   return {
     sent,

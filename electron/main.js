@@ -3,7 +3,7 @@
 // (chantier 3/4).
 "use strict";
 
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const { spawn, spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
@@ -172,6 +172,16 @@ function createWindow() {
 
 ipcMain.on("bridge:send", (_event, command) => {
   sendCommandToEngine(command);
+});
+
+// The renderer has no filesystem access at all (contextIsolation), so the
+// folder picker has to live here. It returns a path or null, nothing else.
+ipcMain.handle("bridge:pick-path", async (_event, options) => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    properties: [options && options.file ? "openFile" : "openDirectory"],
+  });
+  if (result.canceled || !result.filePaths.length) return null;
+  return result.filePaths[0];
 });
 
 app.whenReady().then(() => {
