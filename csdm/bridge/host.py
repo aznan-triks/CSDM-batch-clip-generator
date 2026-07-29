@@ -13,8 +13,8 @@ import traceback
 from csdm.bridge.ports import PipePorts
 from csdm.bridge.protocol import LineWriter, MSG_FATAL, MSG_LOG, MSG_RESULT, decode
 from csdm.bridge.tables import describe_filters
-from csdm.config import (build_preset, load_config, load_presets, preset_payload,
-                         save_config, save_presets)
+from csdm.config import (build_preset, load_config, load_presets, normalize_presets,
+                         preset_payload, save_config, save_presets)
 from csdm.engine.core import EngineMixin
 from csdm.engine.state import EngineStateMixin
 from csdm.version import APP_VERSION
@@ -224,7 +224,7 @@ def _cmd_save_config(host, command):
 
 
 def _cmd_list_presets(host, command):
-    return {"data": load_presets()}
+    return {"data": normalize_presets(load_presets())}
 
 
 def _cmd_save_preset(host, command):
@@ -242,7 +242,7 @@ def _cmd_save_preset(host, command):
     presets = load_presets()
     presets[preset_name] = build_preset(cfg, cats)
     save_presets(presets)
-    return {"data": presets}
+    return {"data": normalize_presets(presets)}
 
 
 def _cmd_load_preset(host, command):
@@ -264,7 +264,7 @@ def _cmd_delete_preset(host, command):
         raise ValueError(f"no preset named {preset_name}")
     presets.pop(preset_name, None)
     save_presets(presets)
-    return {"data": presets}
+    return {"data": normalize_presets(presets)}
 
 
 def _cmd_start_run(host, command):

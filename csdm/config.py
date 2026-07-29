@@ -254,15 +254,37 @@ def build_preset(cfg, cats):
     return {"cats": list(cats), "data": {k: cfg[k] for k in keys if k in cfg}}
 
 
+def preset_cats(preset):
+    """A stored preset's categories, old format or new.
+
+    Old presets carry {"type": "..."}, new ones {"cats": [...]}.
+    """
+    return preset.get("cats") or [preset.get("type", "full")]
+
+
 def preset_payload(preset):
     """Return `(data, keys)` for a stored preset, old format or new.
 
-    Old presets carry {"type": "..."}, new ones {"cats": [...]}. `keys` is None
-    for a full preset, which is exactly what `_apply_config(cfg, keys=None)`
-    expects.
+    `keys` is None for a full preset, which is exactly what
+    `_apply_config(cfg, keys=None)` expects.
     """
-    cats = preset.get("cats") or [preset.get("type", "full")]
-    return preset.get("data", {}), preset_keys_for(cats)
+    return preset.get("data", {}), preset_keys_for(preset_cats(preset))
+
+
+def normalize_presets(presets):
+    """Presets as the bridge should send them: `cats` always present.
+
+    `list_presets`/`save_preset`/`delete_preset` used to hand the on-disk
+    dict to the renderer unchanged. A preset saved by an old version of the
+    window carries {"type": "..."}, never {"cats": [...]}, and the renderer
+    reads `preset.cats` unconditionally (it has no reason to know the file
+    format's history) -- normalizing here, once, is cheaper than teaching
+    every renderer reader about a storage detail two formats deep.
+    """
+    return {
+        name: {"cats": preset_cats(preset), "data": preset.get("data", {})}
+        for name, preset in presets.items()
+    }
 
 def load_saved_players():
     return _load_json(PLAYERS_FILE, list)

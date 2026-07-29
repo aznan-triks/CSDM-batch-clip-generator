@@ -1,5 +1,5 @@
 """Preset category logic, extracted from the window so a pipe can call it."""
-from csdm.config import build_preset, preset_keys_for, preset_payload
+from csdm.config import build_preset, normalize_presets, preset_keys_for, preset_payload
 
 
 def test_full_means_every_key_not_a_key_list():
@@ -48,3 +48,23 @@ def test_preset_payload_still_reads_the_old_type_format():
     data, keys = preset_payload({"type": "full", "data": {"crf": 18}})
     assert data == {"crf": 18}
     assert keys is None
+
+
+def test_normalize_presets_gives_every_entry_a_cats_list():
+    # A preset saved by an old version of the window carries {"type": "..."},
+    # never {"cats": [...]}. `list_presets` sent this on the wire unchanged,
+    # so the renderer's `preset.cats.join(...)` crashed on `undefined` --
+    # exactly the "Something crashed" report this test locks down.
+    raw = {
+        "old one": {"type": "full", "data": {"crf": 18}},
+        "new one": {"cats": ["date"], "data": {"date_from": "x"}},
+    }
+    normalized = normalize_presets(raw)
+    assert normalized["old one"]["cats"] == ["full"]
+    assert normalized["old one"]["data"] == {"crf": 18}
+    assert normalized["new one"]["cats"] == ["date"]
+
+
+def test_normalize_presets_defaults_a_missing_data_key_to_empty():
+    normalized = normalize_presets({"bare": {"type": "date"}})
+    assert normalized["bare"]["data"] == {}

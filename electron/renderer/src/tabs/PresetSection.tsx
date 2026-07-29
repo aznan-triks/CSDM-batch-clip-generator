@@ -157,7 +157,7 @@ export default function PresetSection() {
         {Object.entries(presets).map(([presetName, preset]) => (
           <li key={presetName} className="preset-row">
             <span className="preset-row-name">{presetName}</span>
-            <span className="preset-row-cats">{preset.cats.join(", ")}</span>
+            <span className="preset-row-cats">{(preset.cats ?? []).join(", ")}</span>
             <button type="button" className="preset-btn" onClick={() => load(presetName)}>
               Load
             </button>
