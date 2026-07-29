@@ -48,6 +48,13 @@ class TestDescribeFilters(unittest.TestCase):
         self.assertEqual(data["video_codecs"], list(VIDEO_CODECS))
         self.assertEqual(len(data["resolutions"]), len(RESOLUTIONS))
 
+    def test_preset_categories_travel(self):
+        from csdm.config import PRESET_KEYS
+
+        _, msgs = _run([{"type": "command", "id": "1", "name": "describe_filters"}])
+        data = [m for m in msgs if m["type"] == "result"][0]["data"]
+        self.assertEqual(data["preset_categories"], list(PRESET_KEYS))
+
     def test_tables_module_imports_no_tkinter(self):
         import pathlib
         source = pathlib.Path("csdm/bridge/tables.py").read_text(encoding="utf-8")

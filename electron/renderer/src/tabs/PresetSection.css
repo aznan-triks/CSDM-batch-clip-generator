@@ -1,0 +1,101 @@
+/*
+ * PresetSection's own layout. Colours come from theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.preset-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+.preset-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-top: var(--sp-5);
+}
+
+.preset-btn {
+  background: var(--raise);
+  color: var(--txt);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-3) var(--sp-5);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+
+.preset-btn:hover {
+  background: var(--raise-hi);
+  border-color: var(--line-hi);
+}
+
+.preset-btn-primary {
+  background: var(--gold);
+  color: var(--on-gold);
+  border-color: var(--gold-d);
+}
+
+.preset-btn-primary:hover {
+  background: var(--gold-hi);
+}
+
+.preset-btn-delete {
+  color: var(--blood-t);
+}
+
+.preset-message {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+}
+
+.preset-message-error {
+  color: var(--blood-t);
+}
+
+.preset-message-ok {
+  color: var(--ok);
+}
+
+.preset-list {
+  list-style: none;
+  margin: var(--sp-5) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.preset-empty {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}
+
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--raise);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+}
+
+.preset-row-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--txt-hi);
+  flex: 1;
+}
+
+.preset-row-cats {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--dim);
+}

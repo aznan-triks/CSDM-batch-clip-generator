@@ -8,8 +8,8 @@
  * owns, so the five background presets the window offered have no equivalent
  * control here (see `NO_CONTROL_BY_DESIGN` in `../settings/coverage-ledger`).
  *
- * The preset save/load pair the window's PATHS tab also carried arrives in a
- * later chantier; this file's six `Card`s stop short of it on purpose.
+ * `PresetSection` (chantier 4d tâche 4) ports the preset save/load/delete
+ * block the window's PATHS tab also carried.
  */
 import { useState } from "react";
 
@@ -22,6 +22,7 @@ import { runCommand } from "../bridge";
 import SettingControl from "../settings/SettingControl";
 import { useSetting, useSettingsBatch } from "../settings/store";
 import { ACCENT_PRESETS, applyAccent } from "../theme/accent";
+import PresetSection from "./PresetSection";
 import "./SettingsTab.css";
 
 /** Mirrors `_clamp_layout_values` in csdm_batch_clips_generator.py. */
@@ -162,6 +163,8 @@ export default function SettingsTab() {
           />
         </SettingControl>
       </Card>
+
+      <PresetSection />
 
       <Card title="UI THEME">
         <SettingControl settingKey="theme_accent">

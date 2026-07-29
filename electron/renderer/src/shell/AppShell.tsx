@@ -6,6 +6,7 @@ import { ICONS } from "../icons";
 import { useEngineState } from "../motion/useEngineState";
 import CaptureTab from "../tabs/CaptureTab";
 import SettingsTab from "../tabs/SettingsTab";
+import TagsTab from "../tabs/TagsTab";
 import VideoTab from "../tabs/VideoTab";
 import WeaponBand from "../weapon/WeaponBand";
 import LogConsole from "./LogConsole";
@@ -64,8 +65,8 @@ export default function AppShell() {
           })}
         </TabBar>
         <div className="shell-panel" role="tabpanel" aria-label={active}>
-          {/* Capture, Video and Settings are ported; Tags arrives in a later chantier. */}
           {active === "capture" && <CaptureTab />}
+          {active === "tags" && <TagsTab />}
           {active === "video" && <VideoTab />}
           {active === "settings" && <SettingsTab />}
         </div>

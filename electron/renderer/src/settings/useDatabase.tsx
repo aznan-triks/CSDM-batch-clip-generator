@@ -14,9 +14,10 @@
  * (`[displayKey, rawValues[]][]`, sorted by display key), and `players`
  * (`[label, steamId, name, lastSeen][]`, the same tuple shape
  * `discovery_to_json` sends -- PlayerSection, tâche 5, is the first reader).
- * The full discovery payload carries more still (tags, schema...), consumed
- * by other tabs in later chantiers -- this hook is not the place to widen
- * that contract before something actually reads the rest.
+ * `tags` (`[tagId, name, color][]`) is the Tags tab's own reader, added in
+ * chantier 4d tâche 4. The full discovery payload carries more still
+ * (schema...), consumed by other tabs in later chantiers -- this hook is not
+ * the place to widen that contract before something actually reads the rest.
  *
  * Mounting the Capture tab used to fire one `connect_db` per consuming
  * section (MatchTypesSection, WeaponFilterSection, MapFilterSection,
@@ -35,10 +36,14 @@ import { runCommand } from "../bridge";
 /** One row of `connect_db`'s `players` list, unpacked from its tuple shape. */
 export type PlayerRow = [label: string, steamId: string, name: string, lastSeen: string | number | null];
 
+/** One row of `connect_db`'s `tags` list: `discovery_to_json`'s `[tag_id, name, color]`. */
+export type TagRow = [tagId: number | string, name: string, color: string];
+
 export interface DatabaseInfo {
   weapons: string[];
   maps: [string, string[]][];
   players: PlayerRow[];
+  tags: TagRow[];
 }
 
 /** Shape of the JSON `connect_db` returns, before narrowing to what this hook keeps. */
@@ -46,6 +51,7 @@ interface RawDiscovery {
   weapons: string[];
   maps: [string, string[]][];
   players: PlayerRow[];
+  tags: TagRow[];
 }
 
 interface DatabaseValue {
@@ -79,6 +85,7 @@ function useDatabaseFetch(skip: boolean): DatabaseValue {
           weapons: raw.weapons ?? [],
           maps: raw.maps ?? [],
           players: raw.players ?? [],
+          tags: raw.tags ?? [],
         });
       })
       .catch((cause: Error) => {

@@ -117,6 +117,18 @@ export function useSettingsBatch(): (changes: Record<string, unknown>) => void {
   return useSettingsContext().setMany;
 }
 
+/**
+ * The whole configuration, read-only.
+ *
+ * `PresetSection`'s SAVE needs it -- `save_preset` takes the entire `cfg` and
+ * extracts the categories' keys on the Python side (`build_preset`), the same
+ * way `start_run`/`start_preview` already send the whole thing rather than a
+ * hand-picked subset.
+ */
+export function useAllSettings(): Settings {
+  return useSettingsContext().settings;
+}
+
 /** Whether the configuration is still loading, and what went wrong if it did. */
 export function useSettingsStatus(): { loading: boolean; error: string | null } {
   const { loading, error } = useSettingsContext();

@@ -34,6 +34,8 @@ export interface Tables {
   framerates: number[];
   videoCodecs: string[];
   audioCodecs: string[];
+  /** `PresetSection`'s checkbox keys -- straight from Python's `PRESET_KEYS`, never retyped here. */
+  presetCategories: string[];
 }
 
 /** Shape of the JSON `describe_filters` returns, before renaming to camelCase. */
@@ -45,6 +47,7 @@ interface RawTables {
   framerates: number[];
   video_codecs: string[];
   audio_codecs: string[];
+  preset_categories: string[];
 }
 
 interface TablesValue {
@@ -82,6 +85,7 @@ function useTablesFetch(skip: boolean): TablesValue {
           framerates: raw.framerates,
           videoCodecs: raw.video_codecs,
           audioCodecs: raw.audio_codecs,
+          presetCategories: raw.preset_categories ?? [],
         });
       })
       .catch((cause: Error) => {

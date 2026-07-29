@@ -41,4 +41,4 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
 };
 
 /** Has a control in Tkinter, not ported yet. MUST shrink at every chantier. */
-export const NOT_YET_PORTED: readonly string[] = ["tag_enabled"];
+export const NOT_YET_PORTED: readonly string[] = [];
