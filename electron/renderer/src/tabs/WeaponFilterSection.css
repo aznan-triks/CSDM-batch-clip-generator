@@ -1,0 +1,79 @@
+/*
+ * The WEAPON FILTER section. Colours come from theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.weapon-filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding-top: var(--sp-5);
+  border-top: var(--bw) solid var(--line);
+}
+
+.wf-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.wf-section-heading {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  letter-spacing: var(--tr-snug);
+  text-transform: uppercase;
+  color: var(--txt-lo);
+}
+
+.wf-buttons {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.wf-btn {
+  appearance: none;
+  cursor: pointer;
+  padding: var(--sp-1) var(--sp-4);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-tight);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--raise);
+  color: var(--dim);
+  transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast);
+}
+
+.wf-btn:hover {
+  background: var(--raise-hi);
+  border-color: var(--line-hi);
+  color: var(--txt-lo);
+}
+
+.weapon-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.wf-category {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.wf-mini-label {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-tight);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.wf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}

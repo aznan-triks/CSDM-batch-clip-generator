@@ -18,6 +18,9 @@ import Slider from "../components/Slider";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
 import KillFiltersSection from "./KillFiltersSection";
+import MapFilterSection from "./MapFilterSection";
+import MatchTypesSection from "./MatchTypesSection";
+import WeaponFilterSection from "./WeaponFilterSection";
 import "./CaptureTab.css";
 
 /** Event kinds, and the exact strings `cfg["events"]` carries. */
@@ -86,6 +89,7 @@ export default function CaptureTab() {
 
   return (
     <div className="capture-tab">
+      <WeaponFilterSection />
       <SettingControl settingKey="events">
         <div className="capture-row">
           <span className="capture-label">Capture</span>
@@ -231,6 +235,8 @@ export default function CaptureTab() {
       </SettingControl>
 
       <KillFiltersSection />
+      <MatchTypesSection />
+      <MapFilterSection />
     </div>
   );
 }
