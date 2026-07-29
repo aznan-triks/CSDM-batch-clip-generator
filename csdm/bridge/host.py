@@ -116,6 +116,16 @@ def _cmd_connect_db(host, command):
     return {"data": host.discovery_to_json(data)}
 
 
+def _cmd_list_demos(host, command):
+    """Manual mode: hand the renderer every demo a match row points to.
+
+    Requires `connect_db` to have already run -- `list_all_demos` raises a
+    readable error otherwise, which `_run_command` turns into
+    `{"ok": false, "error": ...}` the same way every other command does.
+    """
+    return {"data": {"demos": host.list_all_demos()}}
+
+
 def _cmd_load_config(host, command):
     """Hand the saved configuration to the renderer, migrations already applied."""
     return {"data": load_config()}
@@ -216,6 +226,7 @@ COMMANDS = {
     "demo_ask": _cmd_demo_ask,
     "tkinter_check": _cmd_tkinter_check,
     "connect_db": _cmd_connect_db,
+    "list_demos": _cmd_list_demos,
 }
 
 

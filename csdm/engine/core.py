@@ -68,6 +68,27 @@ MAP_NAME_PREFIXES = ("de_", "cs_", "ar_", "gg_", "dz_", "tr_")
 # The five PostgreSQL identifiers `_pg`/`_pg_fresh` read out of `_pg_params`.
 PG_PARAM_KEYS = ("pg_host", "pg_port", "pg_user", "pg_pass", "pg_db")
 
+# Known CS2 updates that hard-broke all older demos. Each entry:
+# (cutoff_datetime, label, description). A demo recorded BEFORE a cutoff is
+# incompatible with any CS2 version released ON OR AFTER that cutoff. Sorted
+# newest-first so the most recent breaking update matches first. Ported
+# verbatim from `_CS2_DEMO_BREAKS` in csdm_batch_clips_generator.py -- pure
+# data plus a datetime comparison, so it belongs here, not behind Tkinter.
+_CS2_DEMO_BREAKS = [
+    (
+        datetime(2025, 7, 28),
+        "AnimGraph2",
+        "Valve's AnimGraph2 engine update (Jul 28 2025) made all older demos "
+        "incompatible. You need CS2 <= 1.40.8.8 (Steam beta depot) to replay them.",
+    ),
+    (
+        datetime(2024, 2, 6),
+        "Feb 2024 update",
+        "The February 6 2024 major update changed the demo file format. "
+        "Demos recorded before this date cannot be replayed on current CS2.",
+    ),
+]
+
 
 class EngineMixin:
     """The engine half of App. See module docstring for the three sockets."""
@@ -4493,6 +4514,159 @@ class EngineMixin:
         except Exception:
             pass
         return (1, 0)
+
+    def _check_demo_compat(self, demo_path):
+        """Check whether a CS2 demo may be incompatible with the current CS2 version.
+
+        Ported verbatim from `_check_demo_compat` in csdm_batch_clips_generator.py.
+        Detection is based on the demo's recorded timestamp (`_get_demo_ts`,
+        already engine-side) vs. `_CS2_DEMO_BREAKS`, never on the DB's own date
+        column: the DB date is often the import date, not the match date.
+
+        Returns a dict:
+          {
+            'status':  'ok' | 'warn' | 'missing',
+            'break':   str | None,   # short name of the breaking update
+            'tip':     str | None,   # human-readable explanation
+            'ts':      int | None,   # demo Unix timestamp
+          }
+        """
+        result = {"status": "ok", "break": None, "tip": None, "ts": None}
+        ts = self._get_demo_ts(demo_path)
+        if ts is None:
+            if not Path(demo_path).is_file():
+                result["status"] = "missing"
+            return result
+        result["ts"] = ts
+        demo_dt = datetime.fromtimestamp(ts)
+        for cutoff, label, tip in _CS2_DEMO_BREAKS:
+            if demo_dt < cutoff:
+                result["status"] = "warn"
+                result["break"] = label
+                result["tip"] = tip
+                return result  # match the most recent (first) applicable break
+        return result
+
+    @staticmethod
+    def _demo_picker_fmt_name(demo_path):
+        """Shorten long demo filenames for display: keep last ~40 chars, prefix …"""
+        name = Path(demo_path).name
+        if len(name) > 44:
+            return "…" + name[-43:]
+        return name
+
+    def _demo_picker_fmt_date(self, demo_path):
+        """Return dd-mm-yyyy hh:mm for a demo path."""
+        ts = self._get_demo_ts(demo_path)
+        if ts is not None:
+            try:
+                return datetime.fromtimestamp(ts).strftime("%d-%m-%Y %H:%M")
+            except Exception:
+                pass
+        raw = self._demo_dates.get(demo_path)
+        if raw is None:
+            return "??-??-???? ??:??"
+        try:
+            if hasattr(raw, "strftime"):
+                return raw.strftime("%d-%m-%Y %H:%M")
+            if isinstance(raw, (int, float)):
+                t = int(raw)
+                if t > 4_000_000_000:
+                    t //= 1000
+                return datetime.fromtimestamp(t).strftime("%d-%m-%Y %H:%M")
+            s = str(raw).strip()
+            for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+                try:
+                    return datetime.strptime(s[:len(fmt)], fmt).strftime("%d-%m-%Y %H:%M")
+                except ValueError:
+                    continue
+        except Exception:
+            pass
+        return "??-??-???? ??:??"
+
+    def _demo_picker_fmt_map(self, demo_path):
+        """Return the map name for a demo, shortened for display."""
+        m = self._demo_map_cache.get(demo_path, "")
+        if not m:
+            return ""
+        for pfx in MAP_NAME_PREFIXES:
+            if m.lower().startswith(pfx):
+                return m[len(pfx):]
+        return m
+
+    def _describe_demo(self, demo_path):
+        """One demo's picker row: path, display name/date/map, compat status."""
+        compat = self._check_demo_compat(demo_path)
+        return {
+            "path": demo_path,
+            "name": self._demo_picker_fmt_name(demo_path),
+            "date": self._demo_picker_fmt_date(demo_path),
+            "map": self._demo_picker_fmt_map(demo_path),
+            "compat": {"status": compat["status"], "break": compat["break"], "tip": compat["tip"]},
+        }
+
+    def list_all_demos(self):
+        """Return every demo any match row points to, formatted for the picker.
+
+        Ported from `_on_picker_mode_change` (csdm_batch_clips_generator.py) --
+        the window's own "Manual mode" query (load ALL demos from the DB, not
+        just the ones a Preview found), adapted to run headless and to return
+        data instead of populating a Treeview.
+
+        Requires a discovery to have already run: `_db_schema`, `_date_col`,
+        `_map_col`/`_map_join`/`_map_alias` are all populated by
+        `apply_discovery`, and nothing here connects on its own -- same
+        precondition as `_find_col` everywhere else in this class.
+        """
+        if not self._db_schema:
+            raise ValueError("Connect to the database before loading the demo list.")
+        dc = self._find_col("matches", ["demo_path", "demo_file_path",
+                                        "demo_filepath", "share_code"])
+        if not dc:
+            return []
+        mkm = self._find_col("matches", ["checksum", "id", "match_id"])
+        date_col = self._date_col
+        map_col = self._map_col
+        map_join = self._map_join or ""
+        map_alias = self._map_alias
+
+        conn = self._pg_fresh()
+        try:
+            with conn.cursor() as cur:
+                mkm_sel = f',m."{mkm}"' if mkm else ""
+                date_sel = f',m."{date_col}"' if date_col else ""
+                map_sel = f',{map_alias}."{map_col}"' if map_col else ""
+                cur.execute(
+                    f'SELECT m."{dc}"{mkm_sel}{date_sel}{map_sel} '
+                    f'FROM matches m {map_join} '
+                    + (f'ORDER BY m."{date_col}" DESC' if date_col else ''))
+                rows = cur.fetchall()
+        finally:
+            conn.close()
+
+        paths = []
+        seen = set()
+        for row in rows:
+            dp = row[0]
+            if not dp or dp in seen:
+                continue
+            seen.add(dp)
+            idx = 1
+            if mkm:
+                chk = row[idx] if len(row) > idx else None
+                if chk and dp not in self._demo_checksums:
+                    self._demo_checksums[dp] = chk
+                idx += 1
+            if date_col:
+                if len(row) > idx and row[idx] and dp not in self._demo_dates:
+                    self._demo_dates[dp] = row[idx]
+                idx += 1
+            if map_col and len(row) > idx and row[idx] and dp not in self._demo_map_cache:
+                self._demo_map_cache[dp] = str(row[idx]).strip()
+            paths.append(dp)
+
+        paths.sort(key=self._demo_sort_key)
+        return [self._describe_demo(dp) for dp in paths]
 
     def _demo_picker_get_active(self):
         """Return list of demo paths that are checked in the picker.
