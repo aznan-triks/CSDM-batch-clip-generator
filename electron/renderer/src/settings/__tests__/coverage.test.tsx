@@ -90,6 +90,47 @@ function collectInto(found: Set<string>, container: HTMLElement): void {
   }
 }
 
+/**
+ * Keys whose own Chip gates a sub-panel of OTHER settings, not reachable by
+ * the `role="radio"` sweep below.
+ *
+ * `KillFiltersSection.test.tsx` already demonstrates exactly these two
+ * panels: clicking the FERRARI PEEK row's own Enable chip
+ * (`kill_mod_high_velocity`) reveals `kill_mod_hv_one_shot` /
+ * `kill_mod_high_vel_thr`, and clicking the CLUTCH block's own chip
+ * (`clutch_enabled`) reveals `clutch_wins_only`, `clutch_mode`, and
+ * `clutch_1v1`..`clutch_1v5`.
+ *
+ * This list is deliberately NOT "every Chip on the page": every filter row
+ * has an Enable/Must/Exclude chip of its own, and blindly clicking all of
+ * them would toggle sibling rows' state along with it -- corrupting exactly
+ * the filter state that `KillFiltersSection.test.tsx`'s own assertions (and
+ * any future coverage test reading the same tree) depend on. Scoping to the
+ * two known gate keys opens their sub-panels without touching anything else.
+ */
+const CHIP_GATE_KEYS = ["kill_mod_high_velocity", "clutch_enabled"];
+
+/**
+ * Click each gate's own Chip, once, if it is not already open.
+ *
+ * `data-config-key` wraps the Chip directly for both gates (`FilterRow.tsx`,
+ * `KillFiltersSection.tsx`'s `ClutchBlock`), so scoping the query to that
+ * wrapper reaches the right button without depending on its visible label.
+ */
+function openChipGates(container: HTMLElement): void {
+  for (const key of CHIP_GATE_KEYS) {
+    const wrapper = container.querySelector(`[data-config-key="${key}"]`);
+    if (!wrapper) continue;
+    const chip = wrapper.querySelector<HTMLButtonElement>(
+      'button[aria-pressed="false"]:not([aria-disabled="true"])',
+    );
+    if (!chip) continue;
+    act(() => {
+      chip.click();
+    });
+  }
+}
+
 async function renderedKeys(): Promise<Set<string>> {
   const found = new Set<string>();
   for (const tab of TABS) {
@@ -111,6 +152,12 @@ async function renderedKeys(): Promise<Set<string>> {
     act(() => {
       screen.getByRole("button", { name: new RegExp(tab.label, "i") }).click();
     });
+    collectInto(found, container);
+
+    // Open the Chip-gated panels before the radio sweep: `clutch_mode` is a
+    // `role="radio"` control that does not exist in the tree until the
+    // CLUTCH chip itself has been clicked, so this must run first.
+    openChipGates(container);
     collectInto(found, container);
 
     // Walk every choice of every segmented control. Re-reading the list each

@@ -44,18 +44,6 @@ export const NOT_YET_PORTED: readonly string[] = [
   "audio_bitrate",
   "audio_codec",
   "close_game_after",
-  // clutch_1v1 .. clutch_1v5, clutch_mode, clutch_wins_only: real controls
-  // exist (KillFiltersSection.tsx), but they render only once clutch_enabled
-  // is toggled ON, and the coverage guard's sweep only walks `role="radio"`
-  // controls -- it never clicks the clutch_enabled Chip that reveals them.
-  // Left listed until the guard itself can reach a Chip-gated panel.
-  "clutch_1v1",
-  "clutch_1v2",
-  "clutch_1v3",
-  "clutch_1v4",
-  "clutch_1v5",
-  "clutch_mode",
-  "clutch_wins_only",
   "concatenate_sequences",
   "crf",
   "cs2_cfg_dir",
@@ -75,12 +63,6 @@ export const NOT_YET_PORTED: readonly string[] = [
   "hlae_fov",
   "hlae_no_spectator_ui",
   "hlae_slow_motion",
-  // kill_mod_hv_one_shot, kill_mod_high_vel_thr: real controls exist
-  // (KillFiltersSection.tsx's FERRARI PEEK sub-panel), but -- same as the
-  // clutch options above -- they render only once kill_mod_high_velocity is
-  // toggled ON via its own Chip, and the guard's sweep never clicks a Chip.
-  "kill_mod_high_vel_thr",
-  "kill_mod_hv_one_shot",
   "output_dir_assembled",
   "output_dir_clips",
   "output_dir_concat",
