@@ -1,14 +1,20 @@
 /**
- * The Video tab -- first slice: FINAL ASSEMBLY, RESOLUTION/FRAMERATE/WINDOW,
- * ENCODING.
+ * The Video tab: FINAL ASSEMBLY, RESOLUTION/FRAMERATE/WINDOW, ENCODING,
+ * IN-GAME OPTIONS, RECORDING SYSTEM, HLAE OPTIONS and CS2 EFFECTS.
  *
  * Ported from `_tab_video` in csdm_batch_clips_generator.py. `resolutions`,
  * `framerates`, `videoCodecs` and `audioCodecs` come from `useTables()`
  * (`describe_filters`), never hardcoded here -- a copy would drift the day
- * Python adds an entry (D20 / R1). `video_preset` and `video_container` have
- * no such table (`csdm/bridge/tables.py` never sends them); they are fixed
- * engine enums, the same category as `CaptureTab`'s own `PERSPECTIVES` /
- * `CLIP_ORDERS`, so they are declared locally like those.
+ * Python adds an entry (D20 / R1). `video_preset`, `video_container` and
+ * `RECSYS_OPTIONS` have no such table (`csdm/bridge/tables.py` never sends
+ * them); they are fixed engine enums, the same category as `CaptureTab`'s
+ * own `PERSPECTIVES` / `CLIP_ORDERS`, so they are declared locally like
+ * those.
+ *
+ * `HlaeOptionsSection` is mounted only while `recsys` is HLAE, ported from
+ * `_on_recsys_change`'s `is_hlae` branch (`self._hlae_sec.pack`/`pack_forget`).
+ * `Cs2EffectsSection` is mounted unconditionally: the window's own heading
+ * for that block reads "both HLAE and CS modes".
  */
 import Card from "../components/Card";
 import Chip from "../components/Chip";
@@ -17,7 +23,12 @@ import Segmented from "../components/Segmented";
 import SettingControl from "../settings/SettingControl";
 import { useSetting, useSettingsBatch } from "../settings/store";
 import { useTables } from "../settings/useTables";
+import Cs2EffectsSection from "./Cs2EffectsSection";
+import HlaeOptionsSection from "./HlaeOptionsSection";
 import "./VideoTab.css";
+
+/** `RECSYS_OPTIONS`, exactly as csdm_batch_clips_generator.py lists them. */
+const RECSYS_OPTIONS = ["HLAE", "CS"] as const;
 
 /** `video_preset` values, exactly as `csdm_batch_clips_generator.py`'s PRESETS_CPU lists them. */
 const VIDEO_PRESETS = [
@@ -69,6 +80,17 @@ export default function VideoTab() {
   const [audioBitrate, setAudioBitrate] = useSetting<number>("audio_bitrate");
   const [ffmpegInput, setFfmpegInput] = useSetting<string>("ffmpeg_input_params");
   const [ffmpegOutput, setFfmpegOutput] = useSetting<string>("ffmpeg_output_params");
+
+  const [trueView, setTrueView] = useSetting<boolean>("true_view");
+  const [showOnlyDeathNotices, setShowOnlyDeathNotices] =
+    useSetting<boolean>("show_only_death_notices");
+  const [showXray, setShowXray] = useSetting<boolean>("show_xray");
+  const [deathNoticesDuration, setDeathNoticesDuration] =
+    useSetting<string | number>("death_notices_duration");
+  const [closeGameAfter, setCloseGameAfter] = useSetting<boolean>("close_game_after");
+  const [recsys, setRecsys] = useSetting<string>("recsys");
+
+  const isHlae = recsys === RECSYS_OPTIONS[0];
 
   const currentWidth = asNumber(width, 1920);
   const currentHeight = asNumber(height, 1080);
@@ -292,6 +314,76 @@ export default function VideoTab() {
             onChange={setFfmpegOutput}
           />
         </SettingControl>
+      </Card>
+
+      <Card title="IN-GAME OPTIONS">
+        <SettingControl settingKey="true_view">
+          <Chip
+            label="TrueView"
+            selected={!!trueView}
+            onToggle={() => setTrueView(!trueView)}
+          />
+        </SettingControl>
+        <SettingControl settingKey="show_only_death_notices">
+          <Chip
+            label="Death notices only"
+            selected={!!showOnlyDeathNotices}
+            onToggle={() => setShowOnlyDeathNotices(!showOnlyDeathNotices)}
+          />
+        </SettingControl>
+        <SettingControl settingKey="show_xray">
+          <Chip label="X-Ray" selected={!!showXray} onToggle={() => setShowXray(!showXray)} />
+        </SettingControl>
+        <SettingControl settingKey="death_notices_duration">
+          <Field
+            id="death-notices-duration"
+            label="Death notices (s)"
+            mono
+            value={
+              deathNoticesDuration === undefined || deathNoticesDuration === null
+                ? "5"
+                : String(deathNoticesDuration)
+            }
+            onChange={setDeathNoticesDuration}
+          />
+        </SettingControl>
+        <SettingControl settingKey="close_game_after">
+          <Chip
+            label="Close CS2 after each demo"
+            selected={!!closeGameAfter}
+            onToggle={() => setCloseGameAfter(!closeGameAfter)}
+          />
+        </SettingControl>
+      </Card>
+
+      <Card title="RECORDING SYSTEM">
+        <SettingControl settingKey="recsys">
+          <div className="video-row">
+            <span className="video-label">System</span>
+            <Segmented
+              options={RECSYS_OPTIONS}
+              value={recsys ?? RECSYS_OPTIONS[0]}
+              onChange={setRecsys}
+              label="System"
+            />
+          </div>
+        </SettingControl>
+        <p className="video-hint">
+          HLAE = injects via HLAE into CS2 (recommended -- full options). CS = native CSDM
+          recording via CS2&apos;s startmovie command. HLAE-exclusive features (custom FOV, AFX
+          streams, No spectator UI, Fix scope FOV) are not available in CS mode; CS2 effects
+          (physics, gravity, blood) are injected in both modes.
+        </p>
+      </Card>
+
+      {isHlae && (
+        <Card title="⚡ HLAE OPTIONS">
+          <HlaeOptionsSection />
+        </Card>
+      )}
+
+      <Card title="🎮 CS2 EFFECTS">
+        <Cs2EffectsSection />
       </Card>
     </div>
   );
