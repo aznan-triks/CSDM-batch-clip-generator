@@ -83,4 +83,33 @@ describe("ActionBar", () => {
     act(() => emit({ type: "state", name: "summary", payload: { text: "12 clips" } }));
     expect(screen.getByText("12 clips")).toBeTruthy();
   });
+
+  it("switches the STOP label to STOP PREVIEW when the engine sends stop_label for a preview", async () => {
+    const { emit } = await renderBar();
+    expect(screen.getByRole("button", { name: /^STOP$/ })).toBeTruthy();
+    act(() =>
+      emit({
+        type: "state",
+        name: "buttons",
+        payload: { stop: true, stop_label: "⏸ Stop Preview" },
+      }),
+    );
+    expect(screen.getByRole("button", { name: /^STOP PREVIEW$/ })).toBeTruthy();
+  });
+
+  it("reverts the STOP label back to plain STOP when the engine says so", async () => {
+    const { emit } = await renderBar();
+    act(() =>
+      emit({
+        type: "state",
+        name: "buttons",
+        payload: { stop: true, stop_label: "⏸ Stop Preview" },
+      }),
+    );
+    expect(screen.getByRole("button", { name: /^STOP PREVIEW$/ })).toBeTruthy();
+    act(() =>
+      emit({ type: "state", name: "buttons", payload: { stop: false, stop_label: "⏸ Stop" } }),
+    );
+    expect(screen.getByRole("button", { name: /^STOP$/ })).toBeTruthy();
+  });
 });

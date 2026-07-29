@@ -44,6 +44,8 @@ export interface EngineState {
   stopEnabled: boolean;
   /** KILL is disabled until the engine reports something it can kill. */
   killEnabled: boolean;
+  /** The engine's own STOP label ("⏸ Stop" or "⏸ Stop Preview"), raw. */
+  stopLabel: string;
 }
 
 export const INITIAL_ENGINE_STATE: EngineState = {
@@ -56,6 +58,7 @@ export const INITIAL_ENGINE_STATE: EngineState = {
   runEnabled: true,
   stopEnabled: false,
   killEnabled: false,
+  stopLabel: "⏸ Stop",
 };
 
 /** Fold one state event into the current state. Pure, so it is directly testable. */
@@ -77,6 +80,7 @@ export function reduceEngineState(
       if (typeof payload.run === "boolean") next.runEnabled = payload.run;
       if (typeof payload.stop === "boolean") next.stopEnabled = payload.stop;
       if (typeof payload.kill === "boolean") next.killEnabled = payload.kill;
+      if (typeof payload.stop_label === "string") next.stopLabel = payload.stop_label;
       return next;
     }
     case "progress":

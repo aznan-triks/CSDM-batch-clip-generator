@@ -76,7 +76,7 @@ export default function ActionBar({ registerButton = noRegistration }: ActionBar
         <span className="action-bar-sep" />
         <span className="action-bar-btn" ref={registerButton("stop")}>
           <ActionButton
-            label="STOP"
+            label={engine.stopLabel.toLowerCase().includes("preview") ? "STOP PREVIEW" : "STOP"}
             icon={<ICONS.stop />}
             variant="stop"
             disabled={!engine.stopEnabled}
