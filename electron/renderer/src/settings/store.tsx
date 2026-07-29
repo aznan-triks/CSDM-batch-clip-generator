@@ -22,6 +22,7 @@ export type Settings = Record<string, unknown>;
 interface SettingsContextValue {
   settings: Settings;
   setSetting: (key: string, value: unknown) => void;
+  setMany: (changes: Record<string, unknown>) => void;
   loading: boolean;
   error: string | null;
 }
@@ -69,6 +70,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((previous) => ({ ...previous, [key]: value }));
   }, []);
 
+  // Writes several keys as ONE state change, so ONE save follows -- without
+  // this, a button that clears 60 keys would write the file 60 times.
+  const setMany = useCallback((changes: Record<string, unknown>) => {
+    dirty.current = true;
+    setSettings((previous) => ({ ...previous, ...changes }));
+  }, []);
+
   useEffect(() => {
     if (!dirty.current || !loaded.current) return;
     if (timer.current) clearTimeout(timer.current);
@@ -83,7 +91,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [settings]);
 
   return (
-    <SettingsContext.Provider value={{ settings, setSetting, loading, error }}>
+    <SettingsContext.Provider value={{ settings, setSetting, setMany, loading, error }}>
       {children}
     </SettingsContext.Provider>
   );
@@ -102,6 +110,11 @@ export function useSetting<T>(key: string): [T | undefined, (value: T) => void] 
   const { settings, setSetting } = useSettingsContext();
   const set = useCallback((value: T) => setSetting(key, value), [key, setSetting]);
   return [settings[key] as T | undefined, set];
+}
+
+/** Write several configuration keys as ONE change, so one save follows, not sixty. */
+export function useSettingsBatch(): (changes: Record<string, unknown>) => void {
+  return useSettingsContext().setMany;
 }
 
 /** Whether the configuration is still loading, and what went wrong if it did. */

@@ -12,14 +12,34 @@ import CaptureTab from "../CaptureTab";
 
 vi.mock("../../bridge", () => ({
   // A configuration with the window's defaults, so the tab opens on `killer`
-  // exactly as the application does.
-  runCommand: () =>
-    Promise.resolve({
+  // exactly as the application does. `describe_filters` also goes through
+  // `runCommand`, now that the tab mounts KillFiltersSection: an empty table
+  // set is enough here, since this file tests the tab's own conditional
+  // rows, not the filter rows themselves.
+  runCommand: (command: string) => {
+    if (command === "describe_filters") {
+      return Promise.resolve({
+        type: "result",
+        id: "1",
+        ok: true,
+        data: {
+          filters: [],
+          match_types: [],
+          weapon_categories: {},
+          resolutions: [],
+          framerates: [],
+          video_codecs: [],
+          audio_codecs: [],
+        },
+      });
+    }
+    return Promise.resolve({
       type: "result",
       id: "1",
       ok: true,
       data: { perspective: "killer", events: ["Kills"], before: 3, after: 5, victim_pre_s: 2 },
-    }),
+    });
+  },
   onMessage: () => () => {},
   send: () => {},
   sendCommand: () => "1",

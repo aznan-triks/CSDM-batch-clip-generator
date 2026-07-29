@@ -17,6 +17,7 @@ import Segmented from "../components/Segmented";
 import Slider from "../components/Slider";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
+import KillFiltersSection from "./KillFiltersSection";
 import "./CaptureTab.css";
 
 /** Event kinds, and the exact strings `cfg["events"]` carries. */
@@ -228,6 +229,8 @@ export default function CaptureTab() {
           />
         </div>
       </SettingControl>
+
+      <KillFiltersSection />
     </div>
   );
 }

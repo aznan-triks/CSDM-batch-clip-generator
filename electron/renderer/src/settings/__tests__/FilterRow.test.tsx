@@ -70,4 +70,30 @@ describe("FilterRow", () => {
     act(() => must.click());
     expect(must.getAttribute("aria-pressed")).toBe("false");
   });
+
+  it("omits a box whose key does not exist", async () => {
+    // `kill_mod_trois_tap_exclude` is not a real DEFAULT_CONFIG key.
+    const { container } = render(
+      <SettingsProvider>
+        <FilterRow def={{ ...DEF, key: "kill_mod_trois_tap" }} hasExclude={false} />
+      </SettingsProvider>,
+    );
+    await act(async () => {});
+    expect(container.querySelector('[data-config-key$="_exclude"]')).toBeNull();
+  });
+
+  it("omits a box the ledger marks as never shown", async () => {
+    // `kill_mod_high_velocity_exclude` exists in DEFAULT_CONFIG but the
+    // window never built a box for it. Showing it here would make a
+    // coverage-ledger.ts entry stale.
+    const { container } = render(
+      <SettingsProvider>
+        <FilterRow def={{ ...DEF, key: "kill_mod_high_velocity" }} hasExclude={false} />
+      </SettingsProvider>,
+    );
+    await act(async () => {});
+    expect(
+      container.querySelector('[data-config-key="kill_mod_high_velocity_exclude"]'),
+    ).toBeNull();
+  });
 });

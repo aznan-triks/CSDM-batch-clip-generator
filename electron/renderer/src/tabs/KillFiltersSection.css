@@ -1,0 +1,112 @@
+/*
+ * The KILL FILTERS section and the CLUTCH block. Colours come from
+ * theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.capture-hint {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}
+
+.kill-filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding-top: var(--sp-5);
+  border-top: var(--bw) solid var(--line);
+}
+
+.kf-top-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+}
+
+.kf-top-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.kf-mini-label {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-tight);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.kf-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.kf-section-heading {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  letter-spacing: var(--tr-snug);
+  text-transform: uppercase;
+  color: var(--txt-lo);
+}
+
+.kf-clear-btn {
+  appearance: none;
+  cursor: pointer;
+  padding: var(--sp-1) var(--sp-4);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-tight);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--raise);
+  color: var(--blood-t);
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+
+.kf-clear-btn:hover {
+  background: var(--raise-hi);
+  border-color: var(--line-hi);
+}
+
+.kf-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.kf-extra {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.kf-suffix {
+  font-size: var(--fs-xs);
+  color: var(--dim);
+}
+
+.kf-clutch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: var(--bw) solid var(--line);
+}
+
+.kf-clutch-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.kf-clutch-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}

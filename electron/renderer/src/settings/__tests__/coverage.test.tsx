@@ -24,14 +24,42 @@ import { TABS } from "../../shell/tabs";
 import { NOT_YET_PORTED, NO_CONTROL_BY_DESIGN } from "../coverage-ledger";
 import { SettingsProvider } from "../store";
 
-vi.mock("../../bridge", () => ({
-  runCommand: () => Promise.resolve({ type: "result", id: "1", ok: true, data: {} }),
-  onMessage: () => () => {},
-  send: () => {},
-  // The shell greets the engine on mount; this test only cares about which
-  // controls got rendered, so the greeting goes nowhere.
-  sendCommand: () => "1",
-}));
+vi.mock("../../bridge", () => {
+  // `describe_filters` is what KillFiltersSection (tâche 3) needs before it
+  // renders a single control. The 19-filter list is read from Python here
+  // too, for the same reason `defaultConfigKeys()` below is: a copy typed by
+  // hand would drift the day a filter is added, and this guard would then
+  // certify a coverage it no longer measures (D20 / R1). `require`, not the
+  // module's own `execFileSync` import: `vi.mock` factories run before this
+  // file's imports are guaranteed initialised, so nothing outside the
+  // factory itself can be relied on.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { execFileSync: run } = require("node:child_process");
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const nodePath = require("node:path");
+  const repoRoot = nodePath.resolve(__dirname, "../../../../..");
+  const tablesJson = run(
+    "python",
+    [
+      "-c",
+      "import json; from csdm.bridge.tables import describe_filters; print(json.dumps(describe_filters()))",
+    ],
+    { cwd: repoRoot, encoding: "utf8" },
+  );
+  const tables = JSON.parse(tablesJson);
+
+  return {
+    runCommand: (command: string) =>
+      command === "describe_filters"
+        ? Promise.resolve({ type: "result", id: "1", ok: true, data: tables })
+        : Promise.resolve({ type: "result", id: "1", ok: true, data: {} }),
+    onMessage: () => () => {},
+    send: () => {},
+    // The shell greets the engine on mount; this test only cares about which
+    // controls got rendered, so the greeting goes nowhere.
+    sendCommand: () => "1",
+  };
+});
 
 /** Every key, straight from the one place they are defined. */
 function defaultConfigKeys(): string[] {
@@ -62,7 +90,7 @@ function collectInto(found: Set<string>, container: HTMLElement): void {
   }
 }
 
-function renderedKeys(): Set<string> {
+async function renderedKeys(): Promise<Set<string>> {
   const found = new Set<string>();
   for (const tab of TABS) {
     const { container, unmount } = render(
@@ -70,6 +98,13 @@ function renderedKeys(): Set<string> {
         <AppShell />
       </SettingsProvider>,
     );
+    // Some tabs read a table fetched over the pipe (`useTables`, tâche 2/3)
+    // before they render a single control -- KillFiltersSection shows
+    // "Loading filters…" until `describe_filters` resolves. Without this
+    // flush, the guard would measure the loading state forever and report
+    // every setting behind it as unported, which is not what "not yet
+    // ported" means.
+    await act(async () => {});
     // Every click goes through `act`: React batches state updates, and a
     // raw .click() would let the guard read the tree BEFORE the branch it
     // just opened has rendered -- reporting a ported setting as missing.
@@ -108,9 +143,9 @@ function renderedKeys(): Set<string> {
 const MAX_REVEAL_PASSES = 40;
 
 describe("settings coverage", () => {
-  it("accounts for every key: ported, or explicitly listed", () => {
+  it("accounts for every key: ported, or explicitly listed", async () => {
     const keys = defaultConfigKeys();
-    const covered = renderedKeys();
+    const covered = await renderedKeys();
     const excused = new Set([...NOT_YET_PORTED, ...Object.keys(NO_CONTROL_BY_DESIGN)]);
 
     const unaccounted = keys.filter((k) => !covered.has(k) && !excused.has(k));
@@ -121,8 +156,8 @@ describe("settings coverage", () => {
     ).toEqual([]);
   });
 
-  it("has no stale ledger entry", () => {
-    const covered = renderedKeys();
+  it("has no stale ledger entry", async () => {
+    const covered = await renderedKeys();
     const stale = [...NOT_YET_PORTED, ...Object.keys(NO_CONTROL_BY_DESIGN)]
       .filter((k) => covered.has(k));
     expect(stale, "these keys are ported -- remove them from the ledger").toEqual([]);

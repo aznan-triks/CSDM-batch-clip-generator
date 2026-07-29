@@ -14,7 +14,26 @@ import type { FilterDef } from "./useTables";
 import { useSetting } from "./store";
 import "./FilterRow.css";
 
-export default function FilterRow({ def, children }: { def: FilterDef; children?: ReactNode }) {
+export default function FilterRow({
+  def,
+  hasExclude = true,
+  children,
+}: {
+  def: FilterDef;
+  /**
+   * Whether `${def.key}_exclude` is a real DEFAULT_CONFIG key with a box the
+   * Tkinter window actually built.
+   *
+   * Two different reasons can make this false, and both must omit the box the
+   * same way: the key can simply not exist (`kill_mod_trois_tap`), or it can
+   * exist but be listed in `coverage-ledger.ts`'s `NO_CONTROL_BY_DESIGN`
+   * (`kill_mod_high_velocity_exclude` -- FERRARI PEEK builds no Exclude box).
+   * Only the caller iterating the registry against DEFAULT_CONFIG knows which
+   * case applies, so it is passed in rather than guessed here.
+   */
+  hasExclude?: boolean;
+  children?: ReactNode;
+}) {
   const [enabled, setEnabled] = useSetting<boolean>(def.key);
   const [required, setRequired] = useSetting<boolean>(`${def.key}_req`);
   const [excluded, setExcluded] = useSetting<boolean>(`${def.key}_exclude`);
@@ -40,9 +59,11 @@ export default function FilterRow({ def, children }: { def: FilterDef; children?
           onToggle={() => enabled && setRequired(!required)}
         />
       </SettingControl>
-      <SettingControl settingKey={`${def.key}_exclude`}>
-        <Chip label="Exclude" selected={!!excluded} onToggle={() => setExcluded(!excluded)} />
-      </SettingControl>
+      {hasExclude && (
+        <SettingControl settingKey={`${def.key}_exclude`}>
+          <Chip label="Exclude" selected={!!excluded} onToggle={() => setExcluded(!excluded)} />
+        </SettingControl>
+      )}
       {children}
     </div>
   );
