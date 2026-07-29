@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import App from "./App";
+import ErrorBoundary from "./ErrorBoundary";
 import { installSmoothScroll } from "./motion/scroll";
 import { applyAccent, DEFAULT_ACCENT } from "./theme/accent";
 import "./theme/tokens.css";
@@ -24,6 +25,8 @@ if (!container) {
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );
