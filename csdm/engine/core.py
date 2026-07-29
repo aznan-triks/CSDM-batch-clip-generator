@@ -4784,6 +4784,206 @@ class EngineMixin:
         except Exception as e:
             return False, str(e)
 
+    def _tags_dc_mkm(self):
+        """Return (demo-path column, match-key column) of `matches`, or (None, None)."""
+        dc = self._find_col("matches", ["demo_path", "demo_file_path", "demo_filepath",
+                                        "share_code", "file_path", "path"])
+        mkm = self._find_col("matches", ["checksum", "id", "match_id"])
+        return dc, mkm
+
+    def search_tagged_demos(self, tag_ids, cfg=None):
+        """Find demos carrying the given tags, optionally filtered by a run config.
+
+        Ported from `_tag_search_by_tag` (no `cfg` -- a plain tag lookup) and
+        `_tag_search_demos` (`cfg`-filtered, intersected with `tag_ids` when
+        given) in csdm_batch_clips_generator.py. Tkinter chrome (`self.after`,
+        the Listbox/Label updates, the background thread) is stripped: this
+        runs synchronously on the bridge's own command thread and returns data
+        instead of pushing it into a widget.
+
+        `cfg` used to come from `player_search.get_steam_ids()` and a dict of
+        Tk `BooleanVar`s for the selected events. Headless, it is the same cfg
+        dict `start_run`/`start_preview` already take, read through the same
+        keys (`steam_ids`, `events`) `validate_run_inputs` checks.
+
+        The last-preview-cache reuse the original method had (skip
+        `_query_events` if a Preview already computed the same thing) is not
+        reproduced: that cache lived on the Tkinter window and headless has no
+        equivalent state to reuse it from.
+        """
+        tag_ids = list(tag_ids or [])
+        tag_names = [tn for tid, tn, _ in self._tags_list if tid in set(tag_ids)]
+
+        if cfg is None:
+            if not tag_ids:
+                raise ValueError("Select at least one tag.")
+            ts = self._tags_schema
+            jt = ts.get("junction_table")
+            jt_tag = ts.get("jt_tag_col")
+            jt_match = ts.get("jt_match_col")
+            dc, mkm = self._tags_dc_mkm()
+            if not jt or not dc or not mkm:
+                raise ValueError("Insufficient DB schema for tags.")
+
+            conn = self._pg_fresh()
+            try:
+                with conn.cursor() as cur:
+                    ph = ",".join(["%s"] * len(tag_ids))
+                    cur.execute(
+                        f'SELECT DISTINCT m."{dc}", m."{mkm}" '
+                        f'FROM "{jt}" ct JOIN matches m ON m."{mkm}"=ct."{jt_match}" '
+                        f'WHERE ct."{jt_tag}" IN ({ph}) ORDER BY m."{dc}"',
+                        tag_ids)
+                    rows = cur.fetchall()
+            finally:
+                conn.close()
+
+            demos = []
+            for r in rows:
+                dp, chk = str(r[0]), r[1]
+                if chk and dp not in self._demo_checksums:
+                    self._demo_checksums[dp] = chk
+                demos.append({"path": dp, "name": Path(dp).name, "n_events": 0, "n_seq": 0})
+            return {"demos": demos, "tag_names": tag_names}
+
+        # cfg supplied: config-filtered search, optionally intersected with tag_ids.
+        if not cfg.get("steam_ids"):
+            raise ValueError("Select at least one player account.")
+        if not (cfg.get("events") or []):
+            raise ValueError("Select at least one event.")
+
+        ts = self._tags_schema
+        jt = ts.get("junction_table")
+        jt_tag = ts.get("jt_tag_col")
+        jt_match = ts.get("jt_match_col")
+        if tag_ids and (not jt or not jt_tag or not jt_match):
+            raise ValueError("Insufficient DB schema for tag filter.")
+
+        self._demo_checksums = {}
+
+        tagged_checksums = None
+        if tag_ids:
+            conn = self._pg_fresh()
+            try:
+                with conn.cursor() as cur:
+                    ph = ",".join(["%s"] * len(tag_ids))
+                    cur.execute(
+                        f'SELECT DISTINCT "{jt_match}" FROM "{jt}" WHERE "{jt_tag}" IN ({ph})',
+                        tag_ids)
+                    tagged_checksums = {r[0] for r in cur.fetchall()}
+            finally:
+                conn.close()
+
+        evts = self._query_events(cfg)
+
+        demos = []
+        for dp in sorted(evts.keys(), key=self._demo_sort_key):
+            if tagged_checksums is not None:
+                chk = self._demo_checksums.get(dp) or self._get_demo_checksum(dp)
+                if not chk or chk not in tagged_checksums:
+                    continue
+            ne = len(evts[dp])
+            seqs = self._build_sequences(evts[dp], cfg["tickrate"], cfg["before"], cfg["after"])
+            demos.append({"path": dp, "name": Path(dp).name, "n_events": ne, "n_seq": len(seqs)})
+
+        return {"demos": demos, "tag_names": tag_names}
+
+    def calc_tag_date_range(self, tag_ids):
+        """Compute the date range spanned by demos carrying every given tag.
+
+        Ported from `_tag_calc_range`, Tkinter chrome stripped (`self.after`,
+        label/button updates, background thread). Runs synchronously and
+        returns the computed values instead of mutating window state.
+
+        Per the plan's design decision, the result is returned directly in the
+        response and not cached as engine state (no `_plage_date_start` /
+        `_plage_date_end` in ENGINE_STATE_DEFAULTS) -- the caller keeps it.
+        """
+        tag_ids = list(tag_ids or [])
+        if not tag_ids:
+            raise ValueError("Select at least one tag.")
+        ts = self._tags_schema
+        jt = ts.get("junction_table")
+        jt_tag = ts.get("jt_tag_col")
+        jt_match = ts.get("jt_match_col")
+        dc, mkm = self._tags_dc_mkm()
+        date_col = self._date_col
+        if not jt or not jt_tag or not jt_match or not mkm or not dc:
+            raise ValueError("Insufficient DB schema for tags.")
+
+        conn = self._pg_fresh()
+        try:
+            with conn.cursor() as cur:
+                ph = ",".join(["%s"] * len(tag_ids))
+                date_sel = f', m."{date_col}"' if date_col else ""
+                cur.execute(
+                    f'SELECT DISTINCT m."{dc}", m."{mkm}"{date_sel} '
+                    f'FROM "{jt}" ct JOIN matches m ON m."{mkm}"=ct."{jt_match}" '
+                    f'WHERE ct."{jt_tag}" IN ({ph})',
+                    tag_ids)
+                rows = cur.fetchall()
+        finally:
+            conn.close()
+
+        demos = [str(r[0]) for r in rows]
+        for r in rows:
+            dp_r, chk = str(r[0]), r[1]
+            if chk and dp_r not in self._demo_checksums:
+                self._demo_checksums[dp_r] = chk
+            if date_col and len(r) > 2 and r[2] is not None:
+                self._demo_dates.setdefault(dp_r, r[2])
+
+        if not demos:
+            return {"date_start": None, "date_end": None, "date_after": None, "demo_count": 0}
+
+        sorted_demos = sorted(demos, key=self._demo_sort_key)
+        first_demo = sorted_demos[0]
+        last_demo = sorted_demos[-1]
+
+        def _demo_to_date_str(dp):
+            demo_ts = self._get_demo_ts(dp)
+            if demo_ts is None:
+                sk = self._demo_sort_key(dp)
+                demo_ts = sk[1] if sk[0] == 0 else None
+            if demo_ts is None:
+                return None
+            try:
+                return datetime.fromtimestamp(demo_ts).strftime("%d-%m-%Y")
+            except Exception:
+                return None
+
+        date_start = _demo_to_date_str(first_demo)
+        date_end = _demo_to_date_str(last_demo)
+
+        date_after = None
+        if date_end:
+            try:
+                date_after = (datetime.strptime(date_end, "%d-%m-%Y")
+                              + _dt.timedelta(days=1)).strftime("%d-%m-%Y")
+            except Exception:
+                date_after = date_end
+
+        return {
+            "date_start": date_start,
+            "date_end": date_end,
+            "date_after": date_after,
+            "demo_count": len(demos),
+        }
+
+    def set_active_tags(self, tag_ids):
+        """Replace the active-tag selection wholesale. An empty list deselects all.
+
+        Collapses `_tag_toggle` (single-id flip), `_tags_deselect_all` (clear)
+        and `_restore_active_tags` (bulk-set from a list of names) into one
+        operation: those three existed because `_tags_active` was a Tk-window-
+        local set the UI mutated one click at a time. Headless, `_tags_active`
+        is plain engine state (`csdm/engine/state.py`) and the renderer simply
+        tells the engine what the new selection is.
+        """
+        self._tags_active = set(tag_ids or [])
+        return {"active_tag_ids": sorted(self._tags_active),
+                "active_tag_names": self._get_active_tag_names()}
+
     def _calc_summary(self, all_events, cfg):
         """Return (nb_demos, nb_clips, total_sec, avg_sec) from events and config."""
         tickrate = cfg.get("tickrate", 64)

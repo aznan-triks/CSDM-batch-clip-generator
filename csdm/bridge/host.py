@@ -126,6 +126,31 @@ def _cmd_list_demos(host, command):
     return {"data": {"demos": host.list_all_demos()}}
 
 
+def _cmd_tags_search(host, command):
+    """Find demos carrying the given tags, optionally filtered by a run cfg.
+
+    `cfg` is optional: omitted or null runs the plain by-tag lookup, present
+    runs the config-filtered search (intersected with `tag_ids` when non-empty).
+    """
+    tag_ids = command.get("tag_ids") or []
+    cfg = command.get("cfg")
+    if cfg is not None and not isinstance(cfg, dict):
+        raise ValueError("tags_search's `cfg` must be an object or null")
+    return {"data": host.search_tagged_demos(tag_ids, cfg)}
+
+
+def _cmd_tags_calc_range(host, command):
+    """Compute the date range spanned by demos carrying every given tag."""
+    tag_ids = command.get("tag_ids") or []
+    return {"data": host.calc_tag_date_range(tag_ids)}
+
+
+def _cmd_tags_set_active(host, command):
+    """Replace the server-side active-tag selection. An empty list deselects all."""
+    tag_ids = command.get("tag_ids") or []
+    return {"data": host.set_active_tags(tag_ids)}
+
+
 def _cmd_load_config(host, command):
     """Hand the saved configuration to the renderer, migrations already applied."""
     return {"data": load_config()}
@@ -227,6 +252,9 @@ COMMANDS = {
     "tkinter_check": _cmd_tkinter_check,
     "connect_db": _cmd_connect_db,
     "list_demos": _cmd_list_demos,
+    "tags_search": _cmd_tags_search,
+    "tags_calc_range": _cmd_tags_calc_range,
+    "tags_set_active": _cmd_tags_set_active,
 }
 
 
