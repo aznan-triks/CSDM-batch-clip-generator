@@ -68,6 +68,7 @@ interface BridgeApi {
   /** Returns an unsubscribe function. */
   onMessage(cb: (message: BridgeMessage) => void): () => void;
   pickPath(options?: { file?: boolean }): Promise<string | null>;
+  pickSavePath(options?: { defaultName?: string }): Promise<string | null>;
 }
 
 declare global {
@@ -190,4 +191,9 @@ export function onMessage(cb: (message: BridgeMessage) => void): () => void {
 /** Open the native picker. Resolves to null outside Electron, where there is none. */
 export function pickPath(options?: { file?: boolean }): Promise<string | null> {
   return bridge()?.pickPath(options) ?? Promise.resolve(null);
+}
+
+/** Open the native save-as picker. Resolves to null outside Electron, where there is none. */
+export function pickSavePath(options?: { defaultName?: string }): Promise<string | null> {
+  return bridge()?.pickSavePath(options) ?? Promise.resolve(null);
 }

@@ -27,6 +27,9 @@ function installFakeBridge() {
     pickPath() {
       return Promise.resolve(null);
     },
+    pickSavePath() {
+      return Promise.resolve(null);
+    },
   };
   return {
     sent,

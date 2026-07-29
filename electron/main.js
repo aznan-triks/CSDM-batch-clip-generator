@@ -184,6 +184,17 @@ ipcMain.handle("bridge:pick-path", async (_event, options) => {
   return result.filePaths[0];
 });
 
+// Same reasoning as bridge:pick-path -- the renderer has no filesystem
+// access, so the save-as dialog (used by tags export) has to live here too.
+ipcMain.handle("bridge:pick-save-path", async (_event, options) => {
+  const result = await dialog.showSaveDialog(mainWindow, {
+    defaultPath: (options && options.defaultName) || "tags-export.json",
+    filters: [{ name: "JSON", extensions: ["json"] }],
+  });
+  if (result.canceled || !result.filePath) return null;
+  return result.filePath;
+});
+
 app.whenReady().then(() => {
   startEngine();
   createWindow();

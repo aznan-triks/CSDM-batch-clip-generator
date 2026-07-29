@@ -176,6 +176,35 @@ def _cmd_tag_delete(host, command):
     return {"data": host.delete_tag(command.get("tag_id"))}
 
 
+def _cmd_tags_export(host, command):
+    """Write every tag (or only `tag_ids`, when given) and its assignments
+    to a JSON file at `path`."""
+    path = command.get("path")
+    if not path:
+        raise ValueError("tags_export needs a `path`")
+    return {"data": host.export_tags(path, command.get("tag_ids"))}
+
+
+def _cmd_tags_import_scan(host, command):
+    """Read a tags export file and report which tags it references that
+    don't exist in the DB yet. Writes nothing -- pair with
+    `tags_import_apply` once the caller has decided what to create."""
+    path = command.get("path")
+    if not path:
+        raise ValueError("tags_import_scan needs a `path`")
+    return {"data": host.scan_tag_import(path)}
+
+
+def _cmd_tags_import_apply(host, command):
+    """Create `tags_to_create`, then re-parse `path` and replay its
+    assignments."""
+    path = command.get("path")
+    if not path:
+        raise ValueError("tags_import_apply needs a `path`")
+    tags_to_create = command.get("tags_to_create") or []
+    return {"data": host.apply_tag_import(path, tags_to_create)}
+
+
 def _cmd_load_config(host, command):
     """Hand the saved configuration to the renderer, migrations already applied."""
     return {"data": load_config()}
@@ -284,6 +313,9 @@ COMMANDS = {
     "tags_remove": _cmd_tags_remove,
     "tag_create": _cmd_tag_create,
     "tag_delete": _cmd_tag_delete,
+    "tags_export": _cmd_tags_export,
+    "tags_import_scan": _cmd_tags_import_scan,
+    "tags_import_apply": _cmd_tags_import_apply,
 }
 
 

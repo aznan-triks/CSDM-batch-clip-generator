@@ -24,4 +24,8 @@ contextBridge.exposeInMainWorld("bridge", {
   pickPath(options) {
     return ipcRenderer.invoke("bridge:pick-path", options);
   },
+  // Ask the main process to open a native save-as picker. Resolves to a path or null.
+  pickSavePath(options) {
+    return ipcRenderer.invoke("bridge:pick-save-path", options);
+  },
 });

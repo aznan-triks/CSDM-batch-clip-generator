@@ -4834,6 +4834,46 @@ class EngineMixin:
         except Exception as e:
             return False, str(e)
 
+    def _tag_by_checksum(self, checksum, tag_id):
+        """Apply a tag using a checksum directly (no demo_path -> checksum
+        lookup). Ported from `_tag_by_checksum` unchanged -- used by
+        `apply_tag_import`, where the export file only carries checksums."""
+        ts = self._tags_schema
+        jt = ts.get("junction_table")
+        jt_tag = ts.get("jt_tag_col")
+        jt_match = ts.get("jt_match_col")
+        if not jt or not jt_tag or not jt_match:
+            return False, "Junction table not found"
+        try:
+            conn = self._pg_fresh()
+            with conn.cursor() as cur:
+                cur.execute(
+                    f'SELECT 1 FROM "{jt}" WHERE "{jt_match}"=%s AND "{jt_tag}"=%s LIMIT 1',
+                    (checksum, tag_id))
+                if not cur.fetchone():
+                    cur.execute(
+                        f'INSERT INTO "{jt}" ("{jt_match}","{jt_tag}") VALUES (%s,%s)',
+                        (checksum, tag_id))
+                conn.commit()
+            conn.close()
+            return True, ""
+        except Exception as e:
+            return False, str(e)
+
+    def _checksum_in_db(self, checksum, mkm_col):
+        """Return True if the given checksum exists in the matches table.
+        Ported from `_checksum_in_db` unchanged."""
+        try:
+            conn = self._pg_fresh()
+            with conn.cursor() as cur:
+                cur.execute(
+                    f'SELECT 1 FROM matches WHERE "{mkm_col}"=%s LIMIT 1', (checksum,))
+                exists = cur.fetchone() is not None
+            conn.close()
+            return exists
+        except Exception:
+            return False
+
     def _tags_dc_mkm(self):
         """Return (demo-path column, match-key column) of `matches`, or (None, None)."""
         dc = self._find_col("matches", ["demo_path", "demo_file_path", "demo_filepath",
@@ -5162,6 +5202,165 @@ class EngineMixin:
 
         self._tags_list = [t for t in self._tags_list if t[0] != tag_id]
         return {"ok": True}
+
+    def export_tags(self, path, tag_ids=None):
+        """Write every tag (or only `tag_ids`, when given) and its demo
+        assignments to a JSON file at `path`.
+
+        Ported from `_tags_export_worker`: the Tkinter error dialog and
+        `self.after`-posted success line are stripped -- failures raise, like
+        every other engine method, and the caller reads the return value for
+        the success summary instead of a log line pushed to a status label.
+        `tag_ids=None` exports every tag, matching the original's behaviour
+        when no tags were selected in the Tkinter listbox
+        (`self._tags_active` there, an explicit argument here).
+        """
+        ts = self._tags_schema
+        jt = ts.get("junction_table")
+        jt_tag = ts.get("jt_tag_col")
+        jt_match = ts.get("jt_match_col")
+        id_col = ts.get("id_col")
+        name_col = ts.get("name_col")
+        color_col = ts.get("color_col", "")
+        if not jt or not jt_tag or not jt_match or not id_col or not name_col:
+            raise ValueError("Tag schema not detected.")
+        mkm = self._find_col("matches", ["checksum", "id", "match_id"])
+        dc = self._find_col("matches", [
+            "demo_path", "demo_file_path", "demo_filepath", "file_path", "path"])
+
+        tag_ids = list(tag_ids) if tag_ids else None
+
+        conn = self._pg_fresh()
+        try:
+            with conn.cursor() as cur:
+                cols_sel = f'"{id_col}","{name_col}"' + (f',"{color_col}"' if color_col else "")
+                cur.execute(f'SELECT {cols_sel} FROM tags ORDER BY "{name_col}"')
+                tag_rows = cur.fetchall()
+                if tag_ids:
+                    tag_rows = [r for r in tag_rows if r[0] in set(tag_ids)]
+                tag_map = {
+                    r[0]: {"name": r[1], "color": (r[2] if len(r) > 2 and color_col else "") or ""}
+                    for r in tag_rows
+                }
+                exported_ids = set(tag_map)
+
+                ph_sql = (f' WHERE jt."{jt_tag}" IN ({",".join(["%s"] * len(tag_ids))})'
+                          if tag_ids else "")
+                ph_params = tuple(tag_ids) if tag_ids else ()
+                if dc and mkm:
+                    cur.execute(
+                        f'SELECT jt."{jt_match}", jt."{jt_tag}", m."{dc}"'
+                        f' FROM "{jt}" AS jt'
+                        f' LEFT JOIN matches AS m ON m."{mkm}"=jt."{jt_match}"'
+                        f'{ph_sql}', ph_params)
+                else:
+                    cur.execute(
+                        f'SELECT jt."{jt_match}", jt."{jt_tag}"'
+                        f' FROM "{jt}" AS jt{ph_sql}', ph_params)
+                rows = cur.fetchall()
+        finally:
+            conn.close()
+
+        by_chk = {}
+        for row in rows:
+            chk = str(row[0])
+            tag_id = row[1]
+            demo_nm = os.path.basename(str(row[2])) if len(row) > 2 and row[2] else ""
+            if tag_id not in exported_ids:
+                continue
+            if chk not in by_chk:
+                by_chk[chk] = {"checksum": chk, "demo_name": demo_nm, "tags": []}
+            tag_name = tag_map[tag_id]["name"]
+            if tag_name not in by_chk[chk]["tags"]:
+                by_chk[chk]["tags"].append(tag_name)
+
+        out = {
+            "version": 1,
+            "exported_at": datetime.now().isoformat(timespec="seconds"),
+            "tags": list(tag_map.values()),
+            "assignments": list(by_chk.values()),
+        }
+        Path(path).write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"tag_count": len(tag_map), "demo_count": len(by_chk), "path": str(path)}
+
+    @staticmethod
+    def _read_tags_import_file(path):
+        """Read and validate a tags export file. Shared by `scan_tag_import`
+        and `apply_tag_import` -- both re-parse the same file rather than
+        carry parsed state between the two round trips."""
+        try:
+            data = json.loads(Path(path).read_text(encoding="utf-8"))
+        except Exception as e:
+            raise ValueError(f"Could not read file: {e}") from e
+        if not isinstance(data, dict) or "assignments" not in data:
+            raise ValueError("Invalid tags export file.")
+        return data
+
+    def scan_tag_import(self, path):
+        """Read a tags export file and report which tags it references that
+        don't exist yet in the DB, without writing anything.
+
+        Ported from the first half of `_tags_import_worker` -- the blocking
+        `TagImportMissingDialog` this used to feed is gone. The renderer
+        calls this first, decides what to create, then calls
+        `apply_tag_import` with that list.
+        """
+        data = self._read_tags_import_file(path)
+
+        assignments = data.get("assignments", [])
+        all_names = {t for a in assignments for t in a.get("tags", [])}
+        exported_defs = {t["name"]: t for t in data.get("tags", []) if t.get("name")}
+        existing_names = {tn for _, tn, _ in self._tags_list}
+        missing = sorted(n for n in all_names if n not in existing_names)
+
+        missing_tags = [
+            {"name": n, "color": (exported_defs.get(n) or {}).get("color") or "#f97316"}
+            for n in missing
+        ]
+        return {"missing_tags": missing_tags, "assignment_count": len(assignments)}
+
+    def apply_tag_import(self, path, tags_to_create=None):
+        """Create `tags_to_create`, then re-parse `path` and replay its
+        assignments.
+
+        Ported from the second half of `_tags_import_worker` (post-dialog):
+        creation reuses `create_tag` instead of duplicating its SQL, and
+        assignment reuses `_tag_by_checksum` (the export file only carries
+        checksums, not demo paths, so `apply_tags` -- which resolves paths to
+        checksums itself -- does not fit here).
+        """
+        for t in (tags_to_create or []):
+            name = (t.get("name") or "").strip()
+            if not name:
+                continue
+            if any(tn == name for _, tn, _ in self._tags_list):
+                continue  # already exists -- nothing to create
+            self.create_tag(name, t.get("color"))
+
+        data = self._read_tags_import_file(path)
+
+        mkm = self._find_col("matches", ["checksum", "id", "match_id"])
+        if not mkm:
+            raise ValueError("Cannot find checksum column in matches table.")
+
+        ok_count = skip_count = fail_count = 0
+        for asgn in data.get("assignments", []):
+            chk = str(asgn.get("checksum", "")).strip()
+            if not chk or not self._checksum_in_db(chk, mkm):
+                skip_count += 1
+                continue
+            for tag_name in asgn.get("tags", []):
+                tag_id = next((tid for tid, tn, _ in self._tags_list if tn == tag_name), None)
+                if tag_id is None:
+                    fail_count += 1
+                    continue
+                ok, _ = self._tag_by_checksum(chk, tag_id)
+                if ok:
+                    ok_count += 1
+                else:
+                    fail_count += 1
+
+        return {"ok_count": ok_count, "skip_count": skip_count, "fail_count": fail_count}
 
     def _calc_summary(self, all_events, cfg):
         """Return (nb_demos, nb_clips, total_sec, avg_sec) from events and config."""
