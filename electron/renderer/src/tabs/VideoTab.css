@@ -1,0 +1,66 @@
+/*
+ * The Video tab's layout. Colours come from theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.video-tab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding: var(--sp-5) var(--sp-6);
+}
+
+.video-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.video-label {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-tight);
+  text-transform: uppercase;
+  color: var(--dim);
+  min-width: 96px;
+}
+
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sp-4) var(--sp-6);
+}
+
+.video-hint {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}
+
+.video-select {
+  background: var(--raise);
+  color: var(--txt);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-2) var(--sp-4);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+}
+
+.video-select:hover {
+  background: var(--raise-hi);
+  border-color: var(--line-hi);
+}
+
+.video-select:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* The wrapper the coverage guard looks for carries no styling of its own:
+   it must not change how anything inside it lays out. */
+.video-tab .setting {
+  min-width: 0;
+}

@@ -39,24 +39,11 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
 
 /** Has a control in Tkinter, not ported yet. MUST shrink at every chantier. */
 export const NOT_YET_PORTED: readonly string[] = [
-  "assemble_after",
-  "assemble_output",
-  "audio_bitrate",
-  "audio_codec",
   "close_game_after",
-  "concatenate_sequences",
-  "crf",
   "cs2_cfg_dir",
-  "cs2_send_to_back",
-  "cs2_window_mode",
   "csdm_exe",
   "death_notices_duration",
-  "delete_after_assemble",
   "dp2_threads",
-  "ffmpeg_input_params",
-  "ffmpeg_output_params",
-  "framerate",
-  "height",
   "hlae_afx_stream",
   "hlae_extra_args",
   "hlae_fix_scope_fov",
@@ -89,8 +76,4 @@ export const NOT_YET_PORTED: readonly string[] = [
   "ui_split_pct",
   "ui_window_h",
   "ui_window_w",
-  "video_codec",
-  "video_container",
-  "video_preset",
-  "width",
 ];
