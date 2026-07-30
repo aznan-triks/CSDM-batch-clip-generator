@@ -78,6 +78,19 @@ cyan/pink/yellow) instead of a hex string. `theme/accent.ts#applyAccent` only ev
 `hexToRgb`'s existing validation unchanged, so real corruption still fails fast. Root cause in
 `docs/audits/AUDIT_accent_preset_crash.md`.
 
+**Humanised:** Fixed two more things spotted the first time the window was opened for real, that
+made it look nothing like the intended design: the whole interface was rendering in a typewriter
+(monospace) font instead of the clean sans-serif from the mockup, and a background theme picked in
+the older window (the "terminal" look) wasn't recognised by the new window.
+**Technical:** `shell/AppShell.css` set `body { font-family: var(--font-mono) }`, so every label
+that did not explicitly opt into `--font-display` inherited monospace — the opposite of the mock,
+whose base is the Inter sans stack and which uses mono only for the console/buttons/values (all of
+which already declare it). Base changed to `var(--font-display)`; `shell/__tests__/AppShell.css.test.ts`
+added. `theme/mode.ts`'s `GROUND_MODES` omitted `terminal` (a real `csdm/theme.py` ground a saved
+config used), so `applyMode("terminal")` silently fell back to dark — the map's source of truth is
+`theme.py`'s five `_BG_PRESETS`, not `config.py`'s four-value comment. Mapped `terminal → dark`,
+`theme/__tests__/mode.test.ts` corrected. Both in `docs/audits/AUDIT_accent_preset_crash.md`.
+
 ---
 
 ## [Unreleased] — restyle 3/4: la coquille
