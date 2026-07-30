@@ -59,4 +59,16 @@ describe("Reticle", () => {
 
     expect(document.body.classList.contains("customcursor")).toBe(false);
   });
+
+  it("hides the custom cursor over the log console (.shell-logs)", () => {
+    const console_ = document.createElement("div");
+    console_.className = "shell-logs";
+    document.body.appendChild(console_);
+    render(<Reticle />);
+
+    fireEvent.mouseMove(console_, { clientX: 5, clientY: 5 });
+
+    expect(document.body.classList.contains("customcursor")).toBe(false);
+    console_.remove();
+  });
 });

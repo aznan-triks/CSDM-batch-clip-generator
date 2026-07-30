@@ -33,6 +33,10 @@ body.customcursor .reticle {
   .reticle {
     display: none;
   }
+
+  body.customcursor {
+    cursor: auto;
+  }
 }
 
 .reticle span {
