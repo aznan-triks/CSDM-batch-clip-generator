@@ -2,26 +2,27 @@
  * The Settings tab: PATHS, UI THEME, UI LAYOUT, POSTGRESQL CONNECTION,
  * PERFORMANCE and INJECTION PREVIEW.
  *
- * Ported from `_tab_outils` in csdm_batch_clips_generator.py. `theme_bg` is
- * NOT ported: the interface now runs a single ground palette (D9/D23) and
- * `--gold` -- driven here by `theme_accent` -- is the only colour the user
- * owns, so the five background presets the window offered have no equivalent
- * control here (see `NO_CONTROL_BY_DESIGN` in `../settings/coverage-ledger`).
+ * Ported from `_tab_outils` in csdm_batch_clips_generator.py. Both theme keys
+ * are ported: `theme_accent` drives `--gold` (the only colour the user owns),
+ * and `theme_bg` now selects the day/night ground -- it went from "no control
+ * by design" to a real control when the restyle brought the two palettes back.
  *
  * `PresetSection` (chantier 4d tâche 4) ports the preset save/load/delete
  * block the window's PATHS tab also carried.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Card from "../components/Card";
 import Chip from "../components/Chip";
 import Field from "../components/Field";
 import PathField from "../components/PathField";
+import Segmented from "../components/Segmented";
 import Slider from "../components/Slider";
 import { runCommand } from "../bridge";
 import SettingControl from "../settings/SettingControl";
 import { useSetting, useSettingsBatch } from "../settings/store";
 import { ACCENT_PRESETS, applyAccent } from "../theme/accent";
+import { applyMode, DEFAULT_GROUND, GROUND_MODES } from "../theme/mode";
 import PresetSection from "./PresetSection";
 import "./SettingsTab.css";
 
@@ -38,6 +39,14 @@ function asNumber(value: unknown, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+/**
+ * The grounds, taken from the mapping table so a value added there cannot be
+ * missing from the control. Shown as the raw config values -- they are the same
+ * names the window used, and prettier labels would mean teaching Segmented
+ * about label/value pairs, which is a component change of its own.
+ */
+const GROUND_OPTIONS: readonly string[] = Object.keys(GROUND_MODES);
+
 export default function SettingsTab() {
   const setMany = useSettingsBatch();
 
@@ -49,6 +58,13 @@ export default function SettingsTab() {
   const [subfolderPerDemo, setSubfolderPerDemo] = useSetting<boolean>("subfolder_per_demo");
 
   const [themeAccent, setThemeAccent] = useSetting<string>("theme_accent");
+  const [themeBg, setThemeBg] = useSetting<string>("theme_bg");
+
+  // The stored ground reaches the document as soon as the store has read it.
+  // `themeBg` is undefined until then, and applyMode falls back on its own.
+  useEffect(() => {
+    if (themeBg) applyMode(themeBg);
+  }, [themeBg]);
 
   const [windowW, setWindowW] = useSetting<number>("ui_window_w");
   const [windowH, setWindowH] = useSetting<number>("ui_window_h");
@@ -72,6 +88,11 @@ export default function SettingsTab() {
   function chooseAccent(hex: string) {
     setThemeAccent(hex);
     applyAccent(hex);
+  }
+
+  function chooseGround(ground: string) {
+    setThemeBg(ground);
+    applyMode(ground);
   }
 
   function applyLayout() {
@@ -196,6 +217,17 @@ export default function SettingsTab() {
                 />
               </label>
             </div>
+          </div>
+        </SettingControl>
+        <SettingControl settingKey="theme_bg">
+          <div className="settings-row">
+            <span className="settings-label">Mode</span>
+            <Segmented
+              options={GROUND_OPTIONS}
+              value={themeBg ?? DEFAULT_GROUND}
+              onChange={chooseGround}
+              label="Ground"
+            />
           </div>
         </SettingControl>
       </Card>

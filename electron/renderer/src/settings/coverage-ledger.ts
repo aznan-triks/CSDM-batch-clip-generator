@@ -35,9 +35,6 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   process_exit_poll_interval: "engine-only: how often the task list is polled",
   process_exit_timeout: "engine-only: how long the engine waits for cs2.exe to go",
   cs2_process_name: "engine-only: the image name the exit watcher looks for",
-  // The window offered five background presets; the renderer runs a single
-  // ground palette instead (D9/D23), so `theme_bg` has no equivalent control.
-  theme_bg: "single ground palette by design (D9)",
 };
 
 /** Has a control in Tkinter, not ported yet. MUST shrink at every chantier. */
