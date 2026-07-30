@@ -21,7 +21,7 @@ import Slider from "../components/Slider";
 import { runCommand } from "../bridge";
 import SettingControl from "../settings/SettingControl";
 import { useSetting, useSettingsBatch } from "../settings/store";
-import { ACCENT_PRESETS, applyAccent } from "../theme/accent";
+import { ACCENT_PRESETS, applyAccent, resolveAccent } from "../theme/accent";
 import { applyMode, DEFAULT_GROUND, GROUND_MODES } from "../theme/mode";
 import PresetSection from "./PresetSection";
 import "./SettingsTab.css";
@@ -84,7 +84,9 @@ export default function SettingsTab() {
   const currentW = asNumber(windowW, 1600);
   const currentH = asNumber(windowH, 900);
   const currentSplit = asNumber(splitPct, 60);
-  const currentAccent = themeAccent ?? ACCENT_PRESETS[0].hex;
+  // themeAccent may be a legacy Tkinter preset name ("green"), not always
+  // hex -- see theme/accent.ts's resolveAccent doc comment.
+  const currentAccent = resolveAccent(themeAccent ?? ACCENT_PRESETS[0].hex);
 
   function chooseAccent(hex: string) {
     setThemeAccent(hex);

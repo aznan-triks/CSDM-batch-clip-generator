@@ -10,7 +10,7 @@ import CaptureTab from "../tabs/CaptureTab";
 import SettingsTab from "../tabs/SettingsTab";
 import TagsTab from "../tabs/TagsTab";
 import VideoTab from "../tabs/VideoTab";
-import { applyAccent } from "../theme/accent";
+import { applyAccent, resolveAccent } from "../theme/accent";
 import { applyMode } from "../theme/mode";
 import WeaponBand from "../weapon/WeaponBand";
 import ActionBar from "./ActionBar";
@@ -43,7 +43,9 @@ export default function AppShell() {
   const [themeBg] = useSetting<string>("theme_bg");
 
   useEffect(() => {
-    if (themeAccent) applyAccent(themeAccent);
+    // themeAccent may be a legacy Tkinter preset name ("green"), not always
+    // hex -- see theme/accent.ts's resolveAccent doc comment.
+    if (themeAccent) applyAccent(resolveAccent(themeAccent));
   }, [themeAccent]);
 
   useEffect(() => {

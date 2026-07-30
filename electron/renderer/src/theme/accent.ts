@@ -36,6 +36,23 @@ export const ACCENT_PRESETS = [
 
 export const DEFAULT_ACCENT = ACCENT_PRESETS[0].hex;
 
+/**
+ * `theme_accent` is a config key shared with the Tkinter host (same
+ * `csdm_config.json`), which still writes a legacy preset NAME (lowercase:
+ * green|blue|orange|purple|red|cyan|pink|yellow -- `csdm/theme.py`'s
+ * `_ACCENT_PRESETS`, documented in `csdm/config.py:39`), not always a hex
+ * string. Electron only ever WRITES hex (`SettingsTab.tsx`'s `chooseAccent`),
+ * but must still READ whatever the other host wrote -- passing a bare name
+ * straight to `applyAccent` crashed on boot (`hexToRgb` rejects anything that
+ * is not `#rrggbb`). Anything that is not a known preset name passes through
+ * unchanged, so a genuinely corrupt value still fails fast in `hexToRgb`,
+ * exactly as before.
+ */
+export function resolveAccent(value: string): string {
+  const preset = ACCENT_PRESETS.find((candidate) => candidate.name.toLowerCase() === value.toLowerCase());
+  return preset ? preset.hex : value;
+}
+
 interface Rgb {
   r: number;
   g: number;
