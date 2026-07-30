@@ -22,10 +22,13 @@ const ACCENT = {
   onAccentLight: "#F0F4F8",
 } as const;
 
+// Blue first: it is the V12 mock's `--accent: #2563EB`, so it is BOTH the
+// default and the leftmost swatch. The other eight stay available -- the
+// accent is user-chosen (D9); only the default changed to match the mock.
 export const ACCENT_PRESETS = [
+  { name: "Blue", hex: "#2563EB" },
   { name: "Gold", hex: "#C8A24A" },
   { name: "Green", hex: "#22C55E" },
-  { name: "Blue", hex: "#3B82F6" },
   { name: "Orange", hex: "#F97316" },
   { name: "Purple", hex: "#A855F7" },
   { name: "Red", hex: "#EF4444" },

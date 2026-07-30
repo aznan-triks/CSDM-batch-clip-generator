@@ -34,8 +34,13 @@ export const GROUND_MODES: Record<string, Mode> = {
   terminal: "dark",
 };
 
-/** The fallback, and the same default the Python config ships. */
-export const DEFAULT_GROUND = "dark";
+/**
+ * The default ground AND the fallback for an unrecognised value. `white`
+ * (light mode) matches the V12 mock, which boots `apply('Light')` -- the mock
+ * is the reference, so a fresh install opens light, not the legacy Tkinter
+ * dark. Dark mode stays available; it is just no longer the default.
+ */
+export const DEFAULT_GROUND = "white";
 
 /**
  * Point the document at a palette. Returns the mode actually applied, so a

@@ -27,6 +27,12 @@ describe("applyMode maps the theme_bg setting onto the document", () => {
     }
   });
 
+  it("defaults to light mode, like the V12 mock (which boots apply('Light'))", () => {
+    // The mock is the reference and it opens in light mode. A fresh install
+    // must match it, not the legacy Tkinter dark default.
+    expect(GROUND_MODES[DEFAULT_GROUND]).toBe("light");
+  });
+
   it("falls back to the default ground on an unknown value, without throwing", () => {
     // A hand-edited config file must not leave the window unthemed.
     expect(applyMode("chartreuse")).toBe(GROUND_MODES[DEFAULT_GROUND]);
