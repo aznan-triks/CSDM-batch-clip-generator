@@ -9,7 +9,9 @@
 .tab-bar {
   display: flex;
   height: auto;
-  background: var(--void);
+  background: var(--band);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
   border-bottom: var(--bw) solid var(--line);
   padding-left: var(--sp-1);
 }
@@ -71,7 +73,7 @@
 
 .tab-active {
   color: var(--txt-hi);
-  background: linear-gradient(180deg, var(--raise-hi), var(--panel));
+  background: var(--surface);
   box-shadow: inset 0 1px 0 var(--sheen-edge);
 }
 
