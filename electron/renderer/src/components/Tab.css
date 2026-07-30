@@ -92,3 +92,15 @@
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: -2px;
 }
+
+.tab-ind {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: var(--bw-accent);
+  width: 100px; /* kept in step with IND_BASE_WIDTH in Tab.tsx */
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--gold-hi), var(--gold));
+  transition: transform calc(var(--dur-base) * 2) var(--ease);
+  pointer-events: none;
+}
