@@ -9,6 +9,47 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — restyle 2/4: composants en verre
+
+> Pas de bump de version : sous-chantier interne, deuxième des 4 plans du restyle UI (suite de
+> restyle 1). Le versioning sera décidé quand les 4 plans seront terminés.
+
+### Changed
+
+**Humanised:** Cards, tabs, buttons, text fields, chips, the segmented switch, and the slider now
+look like frosted glass instead of the old flat dark panels — matching the background from the
+previous update. Cards, fields, chips, the segmented switch and the slider also got rounder
+corners; tabs and most buttons kept their sharp cut corners, except the main "Run" button which
+is now a rounded pill.
+**Technical:** `Card.css`, `Tab.css`, `ActionButton.css`, `Field.css`, `Chip.css`,
+`Segmented.css`, `Slider.css` migrated from the flat token family (`--panel`/`--raise`/
+`--raise-hi`/`--void`, `--radius: 0` + `clip-path` bevels everywhere) to the glass token family
+already introduced by restyle 1 (`--surface`/`--surface-2`/`--band`/`--blur`,
+`--r-card`/`--r-mid`/`--r-pill`). No new tokens added. `ActionButton.css`'s `.btn-run` explicitly
+cancels its inherited `clip-path` (`clip-path: none`) to become the mock's rounded pill primary
+button; every other button variant keeps the bevel. `Card.css`'s decorative corner brackets were
+re-inset from `-1px` to `6px` (plus `overflow: hidden` on `.panel-box`) so they sit on the new
+18px rounded corner instead of floating outside it.
+
+### Added
+
+**Humanised:** N/A (visual-only change, no new behaviour).
+**Technical:** 6 new test files under `electron/renderer/src/components/__tests__/` (one per
+migration task) asserting the real shipped CSS content, plus `GlassMigration.css.test.ts`: one
+cross-file assertion sweeping all 7 migrated files for any lingering reference to the old flat
+token family (`--panel`/`--raise`/`--raise-hi`/`--void`), excluding the legitimate `color-mix()`
+border tints on `ActionButton.css`'s `preview`/`stop`/`kill` variants.
+
+### Guard rails
+
+**Humanised:** No safety net was loosened this round — this chantier only recolours and
+re-rounds existing components.
+**Technical:** `contrast.test.ts` and `no-hover-motion.test.ts` untouched, both re-verified green
+by the final whole-branch review; no `:hover` rule in the 7 migrated files changes anything but
+`background`/`color`/`border-color`.
+
+---
+
 ## [Unreleased] — restyle 1/4: fondation visuelle (jour/nuit + fond holographique)
 
 > Pas de bump de version : sous-chantier interne, premier des 4 plans du restyle UI. Le
