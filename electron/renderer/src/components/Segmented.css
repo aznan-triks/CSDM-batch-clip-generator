@@ -27,7 +27,7 @@
 }
 
 .segment:hover {
-  background: var(--raise-hi);
+  background: var(--surface);
   color: var(--txt-lo);
 }
 
