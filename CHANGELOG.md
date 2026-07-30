@@ -9,6 +9,54 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — restyle 3/4: la coquille
+
+> Pas de bump de version : sous-chantier interne, troisième des 4 plans du restyle UI (suite de
+> restyle 1 et 2). Le versioning sera décidé quand les 4 plans seront terminés.
+
+### Changed
+
+**Humanised:** The 4 tabs now live inside a full-width bar across the top of the window, next to
+the app's mark, instead of sitting alone in the left column. They overlap each other in slanted
+shapes, and a small glowing bar slides under whichever tab is open. The Run/Preview/Stop/Kill
+button row now stretches across the whole window at the bottom instead of being squeezed into the
+narrow right-hand column. Inside each tab, the settings are now arranged in two columns instead of
+one long list, so more fits on screen without scrolling as much — the busiest sections (filters,
+encoding, paths, database) still take the full width.
+**Technical:** New `shell/HudNav.tsx`/`.css` (brand mark + relocated `TabBar`), added as its own
+full-width grid row (`.shell`'s `grid-template-areas` grew from 2 to 4 rows: `nav` / `tabs logs` /
+`actionbar` / `band`). `Tab.css`'s clip-path is now cut on both sides (`var(--sp-7)`, was one-sided
+`12px`), tabs overlap via a negative `margin-left: calc(var(--sp-6) * -1)`, and `.tab-active` gains
+a permanent `transform: translateY(-2px)` pop (a selected-state style, not a `:hover` rule — D13/D16
+untouched). `TabBar` gained a new `.tab-ind` sliding indicator, measured via `offsetLeft`/
+`offsetWidth` on the active tab and positioned with `useLayoutEffect` (no dependency array — it
+re-measures on every render to always track whichever child carries `.tab-active`). `ActionBar`
+relocated out of the log column into its own `grid-area: actionbar` row and migrated from the flat
+`--panel`/`--gold` tokens to the glass family (`--band`/`--blur`) already used by the console and
+the new nav band. All 4 tab roots (`CaptureTab`/`TagsTab`/`VideoTab`/`SettingsTab`) switched from
+`flex-direction: column` to a 2-column CSS grid, with a `.wide` escape-hatch class (or, for
+`CaptureTab`'s non-`Card` sections, direct-child CSS selectors) spanning dense sections across both
+columns. No new design tokens.
+
+### Fixed
+
+**Humanised:** N/A (visual-only change, no new behaviour) — except two small polish fixes caught in
+review: the glowing tab indicator no longer visibly slides in from the window's edge on every app
+launch, and hovering the tab that's already open no longer makes its label look dimmer.
+**Technical:** `min-width: 0` added to `CaptureTab.css`'s 6 bespoke section roots and to
+`Card.css`'s `.panel-box` — CSS grid children default to `min-width: auto` and could otherwise
+refuse to shrink below their content's width inside a half-width bento cell, silently clipping
+against `.shell-tabs`'s `overflow: hidden` with no scrollbar to reveal it.
+
+### Added
+
+**Humanised:** N/A (visual-only change, no new behaviour).
+**Technical:** New test files: `shell/__tests__/HudNav.test.tsx`, `components/__tests__/Tab.test.tsx`
+(sliding indicator, with stubbed `offsetLeft`/`offsetWidth` since jsdom never performs real layout),
+`shell/__tests__/ActionBar.css.test.ts`, `tabs/__tests__/bento-layout.test.ts` (cross-file sweep of
+all 4 tab CSS files for the grid + `.wide` shape). `components/__tests__/Tab.css.test.ts` extended
+for the new overlap geometry.
+
 ## [Unreleased] — restyle 2/4: composants en verre
 
 > Pas de bump de version : sous-chantier interne, deuxième des 4 plans du restyle UI (suite de
