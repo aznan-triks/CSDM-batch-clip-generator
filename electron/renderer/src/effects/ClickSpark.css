@@ -1,0 +1,55 @@
+/* electron/renderer/src/effects/ClickSpark.css */
+/*
+ * ClickSpark: a HUD ring + particle burst on every mousedown, tinted by
+ * context via the `--sc` custom property set at spawn time (ClickSpark.tsx)
+ * -- so it also tracks accent changes and day/night with zero extra JS.
+ */
+.cspark-ring {
+  position: fixed;
+  z-index: 129;
+  pointer-events: none;
+  border: 1.5px solid var(--sc, var(--holo));
+  border-radius: 2px;
+  transform: translate(-50%, -50%);
+  animation-name: cspark-ring-pop;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
+
+@keyframes cspark-ring-pop {
+  0% {
+    width: var(--ring-start, 8px);
+    height: var(--ring-start, 8px);
+    opacity: 0.9;
+  }
+  100% {
+    width: var(--ring-end, 44px);
+    height: var(--ring-end, 44px);
+    opacity: 0;
+  }
+}
+
+.cspark {
+  position: fixed;
+  z-index: 130;
+  pointer-events: none;
+  width: 2px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--sc, var(--holo));
+  transform-origin: center top;
+  animation-name: cspark-fly;
+  animation-timing-function: ease-out;
+  animation-fill-mode: forwards;
+}
+
+@keyframes cspark-fly {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0) rotate(var(--r)) translateY(3px);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 0) rotate(var(--r)) translateY(18px);
+  }
+}

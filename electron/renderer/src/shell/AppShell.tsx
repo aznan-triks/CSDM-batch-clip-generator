@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { sendCommand } from "../bridge";
+import ClickSpark from "../effects/ClickSpark";
 import { ICONS } from "../icons";
 import { useEngineState } from "../motion/useEngineState";
 import { useSetting } from "../settings/store";
@@ -80,6 +81,7 @@ export default function AppShell() {
   return (
     <div className="shell">
       <Backdrop />
+      <ClickSpark />
       <HudNav tabs={hudTabs} active={active} onSelect={setActive} />
       <div className="shell-tabs">
         <div className="shell-panel" role="tabpanel" aria-label={active}>

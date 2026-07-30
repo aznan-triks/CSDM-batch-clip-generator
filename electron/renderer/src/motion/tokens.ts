@@ -157,6 +157,19 @@ export const MOTION = {
   scroll: { duration: 0.35, wheelMultiplier: 1 },
 
   /**
+   * ClickSpark: a HUD ring + a burst of particles on every mousedown, tinted
+   * by context. `count`/durations/ring sizes measured in the approved mock
+   * (`sparkfly .42s`, `cringpop .4s`, 8px -> 44px, 6 particles).
+   */
+  clickSpark: {
+    count: 6,
+    sparkDuration: 0.42,
+    ringDuration: 0.4,
+    ringStartSize: 8,
+    ringEndSize: 44,
+  },
+
+  /**
    * How the `sober` intensity is derived from `full`. Sober does not get its
    * own copy of every number -- it scales the one set, so the two can never
    * drift apart.
