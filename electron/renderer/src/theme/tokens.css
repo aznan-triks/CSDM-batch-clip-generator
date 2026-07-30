@@ -1,68 +1,59 @@
 /*
- * The design tokens, extracted from the validated mock (ui-v5.html).
+ * The design tokens.
  *
- * ONE global theme (D23): no per-tab tint, no page/section levels. The accent
- * is the only colour the user configures (D9) -- everything else must hold on
- * its own, which is why the hierarchy is carried by the four ground layers and
- * never by the accent.
+ * TWO MODES, ONE SET OF NAMES. Every token name here is the one the ~40 other
+ * stylesheets already reference; only the VALUES differ per mode. That is why
+ * the restyle does not touch those files: they inherit the new theme for free.
  *
- * Contrast corrections applied against the mock, measured with WCAG 2.1 on the
- * ground each colour actually sits on. The mock's values failed AA:
- *   --dim  #6B7887 on --raise  3.65:1  ->  #7B8897  4.55:1
- *   log timestamps #3E4C5A     2.20:1  ->  --dim     5.51:1 on --void
- *   strip counter  #46525E     2.44:1  ->  --dim     5.51:1 on --void
- *   strip status   #5A6875     3.41:1  ->  --dim
- *   error text     #C4453B     3.93:1  ->  --blood-t 4.68:1
- * `--dim` is calibrated on `--raise`, the LIGHTEST ground it lands on, not on
- * `--panel`: chips and fields sit on the raised layer, so passing on the panel
- * proves nothing. Calibrating on the comfortable ground is how the first
- * attempt shipped at 4.14:1.
- * `--blood` itself is unchanged: it stays the danger colour for fills, borders
- * and the C4 light, where the 4.5:1 text rule does not apply. `--blood-t` is
- * its text-legible sibling, the same pairing the mock already uses for
- * --gold / --gold-d.
+ * The ground ladder (--void < --base < --panel < --raise) is the hierarchy, and
+ * it must survive with the accent removed entirely (D9). It holds in BOTH
+ * modes: in light mode the ladder climbs from a mid grey to white, in dark mode
+ * from near-black to slate. `contrast.test.ts` proves both by splitting the
+ * file on the dark mode selector below -- renaming that selector without
+ * updating the test makes every dark assertion pass vacuously.
+ *
+ * MEASURED CORRECTION, do not "restore" the mock's value: the mock's quiet grey
+ * (--muted #5b6b83) scores 4.25:1 on the light --void and fails AA. Light --dim
+ * is #55647a (4.74:1) for that reason alone.
+ *
+ * `--gold*` is a HISTORICAL NAME: the accent's default is now electric blue.
+ * Renaming the token is a mechanical refactor of its own and is deliberately
+ * out of this plan's scope -- do not half-rename it here.
  */
 
 :root {
-  /* -- ground layers. Strictly increasing luminance: this is the hierarchy,
-        and it must survive with the accent removed entirely (D9). -- */
-  --void: #07090c; /* deepest ground, behind everything */
-  --base: #0d1116; /* app background */
-  --panel: #12171e; /* section card */
-  --raise: #182029; /* raised control: field, chip, segment */
-  --raise-hi: #1e2833; /* the same control, hovered */
+  /* ==================== MODE-INDEPENDENT ==================== */
 
-  /* -- lines -- */
-  --line: #222b36; /* hairline border */
-  --line-hi: #33404e; /* hairline border, hovered */
+  /* -- accent. `--gold` is the only user-configurable colour (D9); the other
+        three are derived from it by `applyAccent()` and must never be hand-set. -- */
+  --gold: #2563eb; /* accent: electric blue */
+  --gold-hi: #3b82f6; /* accent, lit: gradient top, active segment */
+  --gold-d: #1d4ed8; /* accent, shaded: brackets, gradient bottom */
+  --on-gold: #ffffff; /* label ON the accent, flipped by measured contrast */
 
-  /* -- text, from loudest to quietest -- */
-  --txt-hi: #f0f4f8; /* active tab, selected row */
-  --txt: #c6d0da; /* body text */
-  --txt-lo: #a8b6c4; /* section heading */
-  --dim: #7b8897; /* labels, descriptions, values, log timestamps, counters.
-                     The quietest legible text there is: the mock's three
-                     quieter greys all failed AA, and correcting them landed
-                     them here, so they are this one token now. */
+  /* -- the holographic hue: backdrop plate borders, glows, scanlines, the click
+        ripple. One variable drives all of them, so retinting the whole
+        holographic layer is a single edit. -- */
+  --holo: #22d3ee;
 
-  /* -- accent. `--gold` is the only user-configurable colour; the other three
-        are derived from it by `applyAccent()` and must never be hand-set. -- */
-  --gold: #c8a24a; /* accent */
-  --gold-hi: #e0bb68; /* accent, lit: gradient top, active segment */
-  --gold-d: #8a6e2e; /* accent, shaded: corner brackets, gradient bottom */
-  --on-gold: #0b0e12; /* label ON the accent, flipped by measured contrast */
+  /* -- secondary accent: the lime pairing from the approved direction. -- */
+  --lime: #d9f99d;
+  --lime-ink: #3f6212; /* text ON lime */
+  --lime-glow: #bef264;
 
-  /* -- semantic -- */
+  /* -- semantic. Same hues in both modes; the mode blocks re-point the TEXT
+        variants where a light ground needs a darker ink. -- */
   --steel: #6e8ba8; /* secondary information, PREVIEW reticle */
-  --ok: #7fa86a; /* success */
-  --fire: #ff8a2b; /* warning, explosion mid-tone */
-  --blood: #c4453b; /* danger: fills, borders, the C4 light */
-  --blood-t: #d0554a; /* danger, as TEXT. Only difference: it passes AA. */
+  --ok: #0ea86e; /* success */
+  --fire: #f59e0b; /* warning, explosion mid-tone */
+  --blood: #f43f5e; /* danger: fills, borders, the C4 light */
 
-  /* -- type. Two families, both present on Windows (D2), so nothing is
-        fetched: the app must run fully offline. -- */
-  --font-display: "Bahnschrift", "DIN Alternate", "Oswald", system-ui, sans-serif;
-  --font-mono: "Consolas", "Cascadia Mono", monospace;
+  /* -- type. Inter is the intended display face but its files are NOT vendored
+        (CSP forbids remote fonts, and the licence/source call is the user's).
+        The stack therefore resolves to Segoe UI, present on every Windows
+        target (D2), so the app is never unstyled and never reaches the network. -- */
+  --font-display: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Cascadia Mono", "Consolas", monospace;
 
   /* Sizes measured on the mock, collapsed from 9 near-duplicates to 7 steps. */
   --fs-micro: 9.5px; /* the C4 tag */
@@ -93,35 +84,139 @@
   --sp-7: 18px;
   --sp-8: 22px;
 
-  /* -- depth. The mock builds relief from white and black washes rather than
-        from extra ground colours; these are those washes, named. They repeated
-        across four component stylesheets as raw rgba() before landing here. -- */
-  --sheen-soft: rgba(255, 255, 255, 0.028); /* heading bar gradient */
-  --sheen: rgba(255, 255, 255, 0.045); /* panel inset top highlight */
-  --sheen-edge: rgba(255, 255, 255, 0.05); /* raised control inset highlight */
-  --gloss: rgba(255, 255, 255, 0.2); /* filled-button hover tint */
-  --gloss-hi: rgba(255, 255, 255, 0.22); /* the reflection sweep itself */
-  --sheen-strong: rgba(255, 255, 255, 0.45); /* filled-button inset highlight */
-  --shadow: rgba(0, 0, 0, 0.45); /* panel drop shadow */
-
-  /* -- duration, for CSS STATE transitions only: a hover tint, a focus ring,
-        a border colour. Timeline SEQUENCES (the four action animations) live
-        in the MOTION table instead -- these are two different things and
-        neither should reach into the other. -- */
+  /* -- duration, for CSS STATE transitions only: a hover tint, a focus ring, a
+        border colour. Timeline SEQUENCES live in the MOTION table, and backdrop
+        numbers live in the BACKDROP table. Three separate things; none of them
+        reaches into another. -- */
   --dur-fast: 0.16s;
   --dur-base: 0.2s;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.34, 1.5, 0.64, 1);
 
   /* -- lines and corners -- */
   --bw: 1px; /* hairline */
   --bw-accent: 2px; /* corner brackets, active-tab underline */
 
-  /* ONE radius, and it is zero. The direction is cut edges, not rounded ones:
-     shape comes from clip-path bevels, never from a corner radius. A non-zero
-     radius anywhere is a bug, which is why there is no second step to reach
-     for. */
+  /* HYBRID CORNERS. Two families, on purpose:
+       --radius stays 0 for the CUT family (tabs, badges, action buttons): their
+       shape comes from clip-path bevels, and a radius there is still a bug.
+       --r-* is the ROUNDED family (cards, fields, pills). Reach for the one
+       that matches the family, never a fourth value. */
   --radius: 0;
+  --r-card: 18px;
+  --r-mid: 13px;
+  --r-pill: 9999px;
 
-  /* -- focus. The mock had none: nothing in it was reachable by keyboard. -- */
+  /* -- focus -- */
   --focus-ring: var(--gold);
   --focus-ring-width: 2px;
+
+  /* ==================== LIGHT MODE (the default) ==================== */
+
+  /* -- ground layers, strictly increasing luminance. Solid hexes on purpose:
+        the contrast test measures these, and a translucent value cannot be
+        measured. The GLASS look comes from the --surface / --tile-* washes
+        below, which sit ON these grounds and are not contrast-tested. -- */
+  --void: #dde5ef; /* deepest ground, behind everything */
+  --base: #eaf0f6; /* app background */
+  --panel: #f2f6fa; /* section card */
+  --raise: #f8fbfd; /* raised control: field, chip, segment */
+  --raise-hi: #ffffff; /* the same control, hovered */
+
+  /* -- lines -- */
+  --line: rgba(30, 45, 70, 0.09);
+  --line-hi: rgba(30, 45, 70, 0.18);
+
+  /* -- text, from loudest to quietest -- */
+  --txt-hi: #0b1220; /* active tab, selected row */
+  --txt: #172033; /* body text */
+  --txt-lo: #33425c; /* section heading */
+  --dim: #55647a; /* labels, descriptions, values, timestamps, counters.
+                     NOT the mock's #5b6b83: that measures 4.25:1 on --void. */
+
+  /* -- danger, as TEXT. Only difference from --blood: it passes AA here. -- */
+  --blood-t: #be123c;
+
+  /* -- glass: frosted panels over the ground. Translucent by design. -- */
+  --surface: rgba(255, 255, 255, 0.72);
+  --surface-2: rgba(255, 255, 255, 0.5);
+  --band: rgba(246, 249, 252, 0.68); /* top bar and console */
+  --blur: blur(14px);
+
+  /* -- backdrop plates: flat translucent glass on the continuous ground. -- */
+  --tile-fill: rgba(255, 255, 255, 0.3);
+  --tile-fill-2: rgba(255, 255, 255, 0.12);
+  --tile-bevel: rgba(255, 255, 255, 0.75); /* hairline top reflection */
+  --tile-edge: rgba(20, 40, 75, 0.14);
+  --tile-lift: rgba(20, 40, 75, 0.3);
+  --tile-border: rgba(34, 211, 238, 0.3);
+
+  /* -- holographic glow strength. Weaker in light mode: the ground already
+        carries most of the brightness. -- */
+  --glow-in: rgba(34, 211, 238, 0.16);
+  --glow-out: rgba(34, 211, 238, 0.22);
+
+  /* -- ambient washes behind everything -- */
+  --amb-a: rgba(34, 211, 238, 0.16);
+  --amb-b: rgba(37, 99, 235, 0.1);
+  --amb-c: rgba(217, 249, 157, 0.16);
+
+  /* -- depth washes, named. They repeated as raw rgba() across four component
+        stylesheets before landing here. -- */
+  --sheen-soft: rgba(255, 255, 255, 0.4);
+  --sheen: rgba(255, 255, 255, 0.55);
+  --sheen-edge: rgba(255, 255, 255, 0.65);
+  --gloss: rgba(255, 255, 255, 0.2);
+  --gloss-hi: rgba(255, 255, 255, 0.35);
+  --sheen-strong: rgba(255, 255, 255, 0.8);
+  --shadow: rgba(30, 50, 90, 0.16);
+}
+
+/* ==================== DARK MODE (night) ====================
+   The dark override. `contrast.test.ts` splits tokens.css on this exact
+   selector string -- keep it literal. */
+:root[data-mode="dark"] {
+  --void: #070b12;
+  --base: #0b1220;
+  --panel: #0e1728;
+  --raise: #182238;
+  --raise-hi: #1e2a44;
+
+  --line: rgba(150, 200, 240, 0.12);
+  --line-hi: rgba(150, 200, 240, 0.22);
+
+  --txt-hi: #f0f4f8;
+  --txt: #c6d0da;
+  --txt-lo: #a8b6c4;
+  --dim: #8b9aad;
+
+  --blood-t: #fb7185;
+
+  --surface: rgba(30, 44, 70, 0.55);
+  --surface-2: rgba(22, 34, 58, 0.4);
+  --band: rgba(13, 22, 38, 0.72);
+
+  --tile-fill: rgba(48, 66, 98, 0.34);
+  --tile-fill-2: rgba(22, 34, 58, 0.2);
+  --tile-bevel: rgba(150, 200, 240, 0.3);
+  --tile-edge: rgba(0, 0, 0, 0.42);
+  --tile-lift: rgba(0, 0, 0, 0.5);
+  --tile-border: rgba(34, 211, 238, 0.42);
+
+  /* Stronger on a dark ground: the same glow that reads in light mode
+     disappears here. */
+  --glow-in: rgba(34, 211, 238, 0.3);
+  --glow-out: rgba(34, 211, 238, 0.46);
+
+  --amb-a: rgba(34, 211, 238, 0.15);
+  --amb-b: rgba(37, 99, 235, 0.16);
+  --amb-c: rgba(56, 189, 248, 0.1);
+
+  --sheen-soft: rgba(255, 255, 255, 0.028);
+  --sheen: rgba(255, 255, 255, 0.045);
+  --sheen-edge: rgba(255, 255, 255, 0.05);
+  --gloss: rgba(255, 255, 255, 0.2);
+  --gloss-hi: rgba(255, 255, 255, 0.22);
+  --sheen-strong: rgba(255, 255, 255, 0.45);
+  --shadow: rgba(0, 0, 0, 0.45);
 }

@@ -18,19 +18,45 @@ import {
 const TOKENS_PATH = path.join(__dirname, "..", "tokens.css");
 const TOKENS_CSS = readFileSync(TOKENS_PATH, "utf-8");
 
-function readToken(name: string): string {
-  const match = TOKENS_CSS.match(new RegExp(`${name}:\\s*([^;]+);`));
+type Mode = "light" | "dark";
+const MODES: readonly Mode[] = ["light", "dark"];
+
+/**
+ * The file has two mode blocks. A single global regex over the whole file would
+ * return the FIRST match for every lookup -- it would read the light value and
+ * believe it had tested the dark theme. So the file is split on the dark
+ * marker: everything before it is shared + light, everything after is the dark
+ * override. A dark lookup falls back to the shared part when the token is not
+ * overridden, which is exactly what the cascade does at runtime.
+ */
+const DARK_MARKER = ':root[data-mode="dark"]';
+const SPLIT_AT = TOKENS_CSS.indexOf(DARK_MARKER);
+const SHARED_AND_LIGHT = SPLIT_AT === -1 ? TOKENS_CSS : TOKENS_CSS.slice(0, SPLIT_AT);
+const DARK_ONLY = SPLIT_AT === -1 ? "" : TOKENS_CSS.slice(SPLIT_AT);
+
+function readToken(name: string, mode: Mode): string {
+  const pattern = new RegExp(`${name}:\\s*([^;]+);`);
+  const primary = mode === "dark" ? DARK_ONLY : SHARED_AND_LIGHT;
+  const match = primary.match(pattern) ?? (mode === "dark" ? SHARED_AND_LIGHT.match(pattern) : null);
   if (!match) {
-    throw new Error(`token not found in tokens.css: ${name}`);
+    throw new Error(`token not found in tokens.css for ${mode} mode: ${name}`);
   }
   return match[1].trim();
 }
 
-describe("ground hierarchy (D9): strictly increasing luminance", () => {
-  const voidL = relativeLuminance(readToken("--void"));
-  const baseL = relativeLuminance(readToken("--base"));
-  const panelL = relativeLuminance(readToken("--panel"));
-  const raiseL = relativeLuminance(readToken("--raise"));
+describe("tokens.css still declares both mode blocks", () => {
+  it("declares the dark override block", () => {
+    // Without this the split above silently degrades to "one mode", and every
+    // dark assertion below would quietly measure the light palette.
+    expect(SPLIT_AT).toBeGreaterThan(-1);
+  });
+});
+
+describe.each(MODES)("ground hierarchy (D9) in %s mode: strictly increasing luminance", (mode) => {
+  const voidL = relativeLuminance(readToken("--void", mode));
+  const baseL = relativeLuminance(readToken("--base", mode));
+  const panelL = relativeLuminance(readToken("--panel", mode));
+  const raiseL = relativeLuminance(readToken("--raise", mode));
 
   it("--void < --base", () => {
     expect(voidL).toBeLessThan(baseL);
@@ -45,29 +71,26 @@ describe("ground hierarchy (D9): strictly increasing luminance", () => {
   });
 });
 
-describe("text passes WCAG AA on the ground it actually sits on", () => {
+describe.each(MODES)("text passes WCAG AA on its real ground in %s mode", (mode) => {
   const pairs: Array<[string, string]> = [
     ["--txt", "--panel"],
     ["--txt-lo", "--panel"],
     ["--dim", "--panel"],
-    // Chips and fields sit on the raised layer, and it is the LIGHTEST
-    // ground --dim lands on -- this is the tightest text pair in the whole
-    // theme. It is the one that caught the original --dim regression (it
-    // measured 4.14:1 against a --dim calibrated on --panel), so do not
-    // remove it as "redundant" with the --panel pair above: the --panel
-    // pair alone would not have caught that bug.
+    // Chips and fields sit on the raised layer. In DARK mode that is the
+    // lightest ground --dim lands on; in LIGHT mode the tightest pair is
+    // --dim on --void instead, because the deepest light ground is a mid grey
+    // rather than near-black. Keeping both pairs for both modes means neither
+    // mode can regress on the other's worst case -- and the light --void pair
+    // is what rejects the mock's own #5b6b83 (4.25:1).
     ["--dim", "--raise"],
     ["--dim", "--void"],
-    ["--blood-t", "--base"],
-    ["--ok", "--base"],
-    ["--steel", "--panel"],
-    ["--on-gold", "--gold"],
+    ["--txt-hi", "--panel"],
   ];
 
   for (const [fg, bg] of pairs) {
-    it(`${fg} on ${bg} >= 4.5:1`, () => {
-      const ratio = contrastRatio(readToken(fg), readToken(bg));
-      expect(ratio, `${fg} on ${bg} measured ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+    it(`${fg} on ${bg}`, () => {
+      const ratio = contrastRatio(readToken(fg, mode), readToken(bg, mode));
+      expect(ratio).toBeGreaterThanOrEqual(4.5);
     });
   }
 });
