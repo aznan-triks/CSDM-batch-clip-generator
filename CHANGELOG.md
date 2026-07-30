@@ -9,6 +9,55 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — restyle 1/4: fondation visuelle (jour/nuit + fond holographique)
+
+> Pas de bump de version : sous-chantier interne, premier des 4 plans du restyle UI. Le
+> versioning sera décidé quand les 4 plans seront terminés.
+
+### Added
+
+**Humanised:** The window can now switch between a light and a dark look from Settings, and the
+background is no longer a flat colour — it's a soft grid of glass plates that light up gently
+near the mouse.
+**Technical:** `theme/tokens.css` ships two token blocks (default `:root` + `:root[data-mode="dark"]`
+override, same token names ~40 stylesheets already use); `theme/mode.ts` maps the existing
+`theme_bg` config key to the mode; `shell/backdropField.ts` + `shell/Backdrop.tsx` render the
+backdrop as a single `<canvas>` redrawn once per frame (zero per-tile DOM nodes), gated by the
+existing `motion/engine.ts` intensity system so `prefers-reduced-motion`/intensity `none` paints
+once and starts no animation loop.
+
+### Changed
+
+**Humanised:** The bottom console now looks like frosted glass instead of near-black, and its
+text finally lines up with the faint ruled lines behind it.
+**Technical:** `shell/LogConsole.css` drives both `line-height` and the ruled-line gradient period
+from one token (`--log-line`), and the gradient's origin from `--log-pad`, so the two can no
+longer drift apart; hardcoded `padding: 8px` removed from `#log`/`#ask-panel`.
+
+### Fixed
+
+**Humanised:** Some warning/success text in the console and a few tabs was nearly invisible in
+light mode; fixed so it reads clearly in both themes. Also: a saved theme choice now shows up
+immediately when you reopen the app, instead of only after visiting Settings once.
+**Technical:** added text-safe `--ok-t`/`--fire-t`/`--steel-t` token siblings (WCAG AA ≥4.5:1 in
+both modes, following the existing `--blood`/`--blood-t` precedent) and migrated every `color:`
+usage of the originals to the `-t` variant; hoisted the `theme_bg`/`theme_accent` re-apply effect
+from `SettingsTab.tsx` (only mounted on that tab) to `AppShell.tsx` (mounted for the app's whole
+life); wired `--glow-in`/`--glow-out` into `Backdrop.tsx`'s border-alpha computation so the
+backdrop's glow actually varies by mode, removing the now-dead fixed constants.
+
+### Guard rails (generalised, not removed)
+
+**Humanised:** Two safety nets from earlier work were loosened just enough to allow the new
+background effect, without weakening what they actually protect against.
+**Technical:** `contrast.test.ts` now loops its AA and luminance-ladder assertions over both
+modes instead of testing one hardcoded palette; `no-hover-motion.test.ts` now allows a small
+explicit `CURSOR_DRIVEN_ALLOWLIST` of files that may listen to the pointer (currently only
+`shell/Backdrop.tsx`), while keeping the "no layout-affecting style from a pointer handler" ban
+absolute even for allowlisted files.
+
+---
+
 ## [v215]
 
 ### Changed: database discovery runs without a window (Electron migration — stage 4a.1)
