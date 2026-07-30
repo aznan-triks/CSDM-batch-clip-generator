@@ -13,9 +13,9 @@
 }
 
 .field {
-  background: var(--raise);
+  background: var(--surface-2);
   border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--r-mid);
   padding: var(--sp-2) var(--sp-4);
   font-family: var(--font-display);
   font-size: var(--fs-sm);
@@ -28,12 +28,12 @@
 }
 
 .field:hover {
-  background: var(--raise-hi);
+  background: var(--surface);
   border-color: var(--line-hi);
 }
 
 .field:focus {
-  background: var(--raise-hi);
+  background: var(--surface);
   border-color: var(--line-hi);
 }
 

@@ -1,10 +1,4 @@
-/*
- * `.chip` from the mock (ui-v5.html lines 86-92).
- *
- * Literal not backed by a token: the notch depth in the clip-path (5px) --
- * geometry for the cut shape, the same category as the bevel size, not a
- * spacing value.
- */
+/* `.chip` from the mock (ui-v5.html lines 86-92), now glass/pill per restyle 2. */
 .chip {
   appearance: none;
   cursor: pointer;
@@ -13,15 +7,14 @@
   font-size: var(--fs-xs);
   letter-spacing: var(--tr-tight);
   border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
-  background: var(--raise);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
   color: var(--dim);
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 5px 100%, 0 calc(100% - 5px));
   transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
 }
 
 .chip:hover {
-  background: var(--raise-hi);
+  background: var(--surface);
   color: var(--txt-lo);
 }
 
@@ -46,6 +39,6 @@
 }
 
 .chip[aria-disabled="true"]:hover {
-  background: var(--raise);
+  background: var(--surface-2);
   color: var(--dim);
 }
