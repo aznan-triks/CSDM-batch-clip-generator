@@ -48,6 +48,11 @@
   --fire: #f59e0b; /* warning, explosion mid-tone */
   --blood: #f43f5e; /* danger: fills, borders, the C4 light */
 
+  /* -- fills/borders above ARE NOT text-legible on the light grounds (measured
+        --fire on --base 1.87:1, --ok on --base 2.67:1, --steel on --panel
+        3.27:1 -- all fail AA). Same precedent as --blood and its sibling:
+        each gets a darkened, mode-dependent TEXT variant below. -- */
+
   /* -- type. Inter is the intended display face but its files are NOT vendored
         (CSP forbids remote fonts, and the licence/source call is the user's).
         The stack therefore resolves to Segoe UI, present on every Windows
@@ -137,6 +142,13 @@
   /* -- danger, as TEXT. Only difference from --blood: it passes AA here. -- */
   --blood-t: #be123c;
 
+  /* -- success/warning/secondary, as TEXT. Darkened siblings of --ok/--fire/
+        --steel so the fill/border hues stay legible as text on --base and
+        --panel (both measured >= 4.5:1). -- */
+  --ok-t: #0a7550;
+  --fire-t: #8f5c05;
+  --steel-t: #4d6a86;
+
   /* -- glass: frosted panels over the ground. Translucent by design. -- */
   --surface: rgba(255, 255, 255, 0.72);
   --surface-2: rgba(255, 255, 255, 0.5);
@@ -191,6 +203,12 @@
   --dim: #8b9aad;
 
   --blood-t: #fb7185;
+
+  /* Dark grounds already give --ok/--fire/--steel enough contrast (measured
+     >= 5.05:1 on --base and --panel), so the text sibling is the same hex. */
+  --ok-t: #0ea86e;
+  --fire-t: #f59e0b;
+  --steel-t: #6e8ba8;
 
   --surface: rgba(30, 44, 70, 0.55);
   --surface-2: rgba(22, 34, 58, 0.4);

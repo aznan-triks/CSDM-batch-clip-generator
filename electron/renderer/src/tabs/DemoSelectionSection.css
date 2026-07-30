@@ -43,7 +43,7 @@
   border: var(--bw) solid var(--line);
   border-radius: var(--radius);
   background: var(--raise);
-  color: var(--ok);
+  color: var(--ok-t);
   transition: background var(--dur-fast), border-color var(--dur-fast);
 }
 

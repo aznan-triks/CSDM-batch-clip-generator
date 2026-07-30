@@ -31,13 +31,10 @@ export const BACKDROP = {
   band: { scaleX: 0.18, scaleY: 1.3, driftFactor: 0.3, weight: 0.4 },
   /** Falloff toward the edge of the window: `floor + (1 - cheb / reach)`. */
   falloffFloor: 0.45,
-  /** Paint: plate corner radius, and the resting border alpha of the holo hue. */
+  /** Paint: plate corner radius. */
   plateRadius: 5,
-  restBorderAlpha: 0.14,
   /** Sheen on an active plate, all scaled by the plate's intensity. */
   sheen: { tintAlpha: 0.16, topBarAlpha: 0.22, topBarHeight: 2, scanAlpha: 0.3, scanStep: 3 },
-  /** Border alpha on an active plate: `restBorderAlpha + a * activeBorderGain`. */
-  activeBorderGain: 0.7,
   /** Below this intensity a plate is not worth a second pass. */
   visibleFloor: 0.02,
   /** Device pixel ratio is capped: beyond this the extra pixels buy nothing. */
@@ -99,4 +96,25 @@ export function cellIntensity(
 
   if (field <= BACKDROP.threshold) return 0;
   return Math.min(1, (field - BACKDROP.threshold) / BACKDROP.rampWidth);
+}
+
+/**
+ * Pull the alpha channel out of an `rgba(r, g, b, a)` string, e.g. one read
+ * straight from `--glow-in` / `--glow-out` via `getComputedStyle`. Those
+ * tokens are already valid CSS colours; this is the one bit of them the
+ * canvas needs as a plain number.
+ */
+export function parseAlpha(rgba: string): number {
+  const match = rgba.match(/rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\)/);
+  return match ? Number(match[1]) : 1;
+}
+
+/**
+ * The plate border's alpha, interpolated from the resting glow (`--glow-in`)
+ * to the fully active glow (`--glow-out`) by the plate's own intensity. This
+ * is what makes the border react to day/night mode: the two inputs are
+ * mode-dependent tokens, not fixed constants.
+ */
+export function borderAlpha(glowInAlpha: number, glowOutAlpha: number, intensity: number): number {
+  return glowInAlpha + intensity * (glowOutAlpha - glowInAlpha);
 }

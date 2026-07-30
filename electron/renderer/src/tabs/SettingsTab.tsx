@@ -10,7 +10,7 @@
  * `PresetSection` (chantier 4d tâche 4) ports the preset save/load/delete
  * block the window's PATHS tab also carried.
  */
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import Card from "../components/Card";
 import Chip from "../components/Chip";
@@ -60,11 +60,12 @@ export default function SettingsTab() {
   const [themeAccent, setThemeAccent] = useSetting<string>("theme_accent");
   const [themeBg, setThemeBg] = useSetting<string>("theme_bg");
 
-  // The stored ground reaches the document as soon as the store has read it.
-  // `themeBg` is undefined until then, and applyMode falls back on its own.
-  useEffect(() => {
-    if (themeBg) applyMode(themeBg);
-  }, [themeBg]);
+  // The stored theme is re-applied once, at boot, by a `useEffect` in
+  // `AppShell.tsx` -- that shell is mounted for the app's whole life, unlike
+  // this tab, which only exists while "settings" is the active tab. This file
+  // still calls `applyAccent`/`applyMode` directly on user interaction below
+  // (`chooseAccent`/`chooseGround`), which is the immediate-feedback path, not
+  // the boot-time re-apply.
 
   const [windowW, setWindowW] = useSetting<number>("ui_window_w");
   const [windowH, setWindowH] = useSetting<number>("ui_window_h");

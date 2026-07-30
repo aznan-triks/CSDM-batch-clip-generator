@@ -100,11 +100,11 @@
 }
 
 .settings-btn-blue {
-  color: var(--steel);
+  color: var(--steel-t);
 }
 
 .settings-btn-yellow {
-  color: var(--fire);
+  color: var(--fire-t);
 }
 
 .settings-btn-orange {
@@ -120,7 +120,7 @@
 .settings-db-status {
   font-family: var(--font-display);
   font-size: var(--fs-sm);
-  color: var(--fire);
+  color: var(--fire-t);
 }
 
 .settings-injection-preview {

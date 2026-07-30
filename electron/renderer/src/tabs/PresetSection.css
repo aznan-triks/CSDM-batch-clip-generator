@@ -59,7 +59,7 @@
 }
 
 .preset-message-ok {
-  color: var(--ok);
+  color: var(--ok-t);
 }
 
 .preset-list {

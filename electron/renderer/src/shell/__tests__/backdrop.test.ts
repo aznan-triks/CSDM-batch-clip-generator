@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 // bundler resolution on a case-insensitive filesystem) rejects outright --
 // this is a real defect in the plan, not a Windows-only quirk. See the task
 // report for detail.
-import { BACKDROP, cellIntensity, valueNoise } from "../backdropField";
+import { BACKDROP, borderAlpha, cellIntensity, parseAlpha, valueNoise } from "../backdropField";
 
 describe("the noise field is deterministic", () => {
   it("returns the same value for the same coordinates", () => {
@@ -59,6 +59,29 @@ describe("plates only light up near the cursor", () => {
       }
     }
     expect(lit).toBeGreaterThan(0);
+  });
+});
+
+describe("the plate border reacts to the mode-dependent glow tokens", () => {
+  it("parseAlpha reads the alpha channel out of an rgba() string", () => {
+    expect(parseAlpha("rgba(34, 211, 238, 0.3)")).toBeCloseTo(0.3);
+    expect(parseAlpha("rgba(34,211,238,0.46)")).toBeCloseTo(0.46);
+  });
+
+  it("borderAlpha is the resting glow at zero intensity", () => {
+    expect(borderAlpha(0.16, 0.22, 0)).toBeCloseTo(0.16);
+  });
+
+  it("borderAlpha is the active glow at full intensity", () => {
+    expect(borderAlpha(0.16, 0.22, 1)).toBeCloseTo(0.22);
+  });
+
+  it("borderAlpha differs between light and dark glow pairs at the same intensity", () => {
+    // Light mode: rgba(34,211,238,0.16) / rgba(34,211,238,0.22).
+    // Dark mode: rgba(34,211,238,0.3) / rgba(34,211,238,0.46).
+    const light = borderAlpha(0.16, 0.22, 0.5);
+    const dark = borderAlpha(0.3, 0.46, 0.5);
+    expect(dark).toBeGreaterThan(light);
   });
 });
 

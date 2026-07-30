@@ -95,15 +95,15 @@
 }
 
 .tags-btn-blue {
-  color: var(--steel);
+  color: var(--steel-t);
 }
 
 .tags-btn-green {
-  color: var(--ok);
+  color: var(--ok-t);
 }
 
 .tags-btn-orange {
-  color: var(--fire);
+  color: var(--fire-t);
 }
 
 .tags-btn-red {

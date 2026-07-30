@@ -155,11 +155,11 @@
 }
 
 .line-warn {
-  color: var(--fire);
+  color: var(--fire-t);
 }
 
 .line-ok {
-  color: var(--ok);
+  color: var(--ok-t);
 }
 
 .line-dim {

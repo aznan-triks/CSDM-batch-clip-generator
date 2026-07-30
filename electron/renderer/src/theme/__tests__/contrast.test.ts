@@ -85,6 +85,14 @@ describe.each(MODES)("text passes WCAG AA on its real ground in %s mode", (mode)
     ["--dim", "--raise"],
     ["--dim", "--void"],
     ["--txt-hi", "--panel"],
+    // Text-legible siblings of fill/border colours (--ok/--fire/--steel), same
+    // precedent as --blood-t: these regressed silently once when light mode
+    // shrank this list, so they are pinned here on purpose.
+    ["--ok-t", "--base"],
+    ["--fire-t", "--base"],
+    ["--steel-t", "--panel"],
+    ["--blood-t", "--base"],
+    ["--on-gold", "--gold"],
   ];
 
   for (const [fg, bg] of pairs) {

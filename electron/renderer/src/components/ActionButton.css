@@ -97,7 +97,7 @@
 
 /* -- preview: steel-toned -- */
 .btn-preview {
-  color: var(--steel);
+  color: var(--steel-t);
   border-color: color-mix(in srgb, var(--steel) 35%, var(--void));
 }
 
@@ -118,7 +118,7 @@
 }
 
 .btn-armed {
-  color: var(--fire);
+  color: var(--fire-t);
   border-color: var(--blood);
   /* moves to MOTION in the next task */
   animation: armedPulse 1s ease-in-out infinite;

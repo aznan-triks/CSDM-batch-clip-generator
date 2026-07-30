@@ -42,7 +42,7 @@
 }
 
 .dp-btn-on {
-  color: var(--ok);
+  color: var(--ok-t);
 }
 
 .dp-btn-off {
@@ -111,7 +111,7 @@
 .dp-row-warn .dp-col-date,
 .dp-row-warn .dp-col-map,
 .dp-row-warn .dp-col-name {
-  color: var(--fire);
+  color: var(--fire-t);
 }
 
 .dp-row-missing .dp-col-date,
@@ -136,7 +136,7 @@
   border: var(--bw) solid var(--line);
   border-radius: var(--radius);
   background: var(--raise);
-  color: var(--ok);
+  color: var(--ok-t);
   transition: background var(--dur-fast), border-color var(--dur-fast);
 }
 

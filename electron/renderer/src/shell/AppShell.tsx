@@ -4,10 +4,13 @@ import { sendCommand } from "../bridge";
 import { Tab, TabBar } from "../components/Tab";
 import { ICONS } from "../icons";
 import { useEngineState } from "../motion/useEngineState";
+import { useSetting } from "../settings/store";
 import CaptureTab from "../tabs/CaptureTab";
 import SettingsTab from "../tabs/SettingsTab";
 import TagsTab from "../tabs/TagsTab";
 import VideoTab from "../tabs/VideoTab";
+import { applyAccent } from "../theme/accent";
+import { applyMode } from "../theme/mode";
 import WeaponBand from "../weapon/WeaponBand";
 import ActionBar from "./ActionBar";
 import Backdrop from "./Backdrop";
@@ -27,6 +30,22 @@ import "./AppShell.css";
 export default function AppShell() {
   const [active, setActive] = useState<TabSpec["id"]>(TABS[0].id);
   const engine = useEngineState();
+
+  // main.tsx applies the hardcoded defaults before first paint (the async
+  // settings store hasn't loaded yet). This shell is mounted for the app's
+  // whole life -- unlike SettingsTab, which only exists while that tab is
+  // active -- so it is the one place that can re-apply the STORED theme as
+  // soon as the store resolves, regardless of which tab the user has open.
+  const [themeAccent] = useSetting<string>("theme_accent");
+  const [themeBg] = useSetting<string>("theme_bg");
+
+  useEffect(() => {
+    if (themeAccent) applyAccent(themeAccent);
+  }, [themeAccent]);
+
+  useEffect(() => {
+    if (themeBg) applyMode(themeBg);
+  }, [themeBg]);
   // The action buttons a shot aims at, registered by name so the band never
   // has to know this file's markup.
   const actionButtons = useRef<Record<string, HTMLElement | null>>({});

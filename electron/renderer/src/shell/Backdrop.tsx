@@ -15,13 +15,18 @@ import { effectiveIntensity, onIntensityChange } from "../motion/engine";
 // "backdropField", not "backdrop": a file named "backdrop.ts" next to this
 // "Backdrop.tsx" differs only in casing, which TypeScript's own portability
 // check (forceConsistentCasingInFileNames) refuses regardless of host OS.
-import { BACKDROP, cellIntensity } from "./backdropField";
+import { BACKDROP, borderAlpha, cellIntensity, parseAlpha } from "./backdropField";
 
 /** The tokens the canvas needs as concrete values, since it cannot use var(). */
 interface Palette {
   fill: string;
   bevel: string;
   holo: [number, number, number];
+  /** Resting/active border alpha, read from `--glow-in`/`--glow-out` -- the
+   *  mode-reactive strength of the holographic glow (weaker in light mode,
+   *  where the ground already carries most of the brightness). */
+  glowInAlpha: number;
+  glowOutAlpha: number;
 }
 
 function readPalette(): Palette {
@@ -32,6 +37,8 @@ function readPalette(): Palette {
     fill: style.getPropertyValue("--tile-fill").trim(),
     bevel: style.getPropertyValue("--tile-bevel").trim(),
     holo: [parse(1), parse(3), parse(5)],
+    glowInAlpha: parseAlpha(style.getPropertyValue("--glow-in").trim()),
+    glowOutAlpha: parseAlpha(style.getPropertyValue("--glow-out").trim()),
   };
 }
 
@@ -80,7 +87,7 @@ export default function Backdrop() {
 
       // Pass 1 -- the plates themselves, all in one fill/stroke style.
       ctx!.fillStyle = palette.fill;
-      ctx!.strokeStyle = `rgba(${r},${g},${b},${BACKDROP.restBorderAlpha})`;
+      ctx!.strokeStyle = `rgba(${r},${g},${b},${palette.glowInAlpha})`;
       ctx!.lineWidth = 1;
       const active: number[] = [];
 
@@ -121,7 +128,7 @@ export default function Backdrop() {
           ctx!.fillRect(x + 2, line, plateSize - 4, 1);
         }
 
-        ctx!.strokeStyle = `rgba(${r},${g},${b},${BACKDROP.restBorderAlpha + a * BACKDROP.activeBorderGain})`;
+        ctx!.strokeStyle = `rgba(${r},${g},${b},${borderAlpha(palette.glowInAlpha, palette.glowOutAlpha, a)})`;
         ctx!.strokeRect(x + 0.5, y + 0.5, plateSize - 1, plateSize - 1);
       }
     }
