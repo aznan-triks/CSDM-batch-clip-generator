@@ -20,8 +20,9 @@ body {
   position: relative;
   display: grid;
   grid-template-columns: 3fr 2fr; /* the window's own PanedWindow weights */
-  grid-template-rows: 1fr auto;
+  grid-template-rows: auto 1fr auto;
   grid-template-areas:
+    "nav nav"
     "tabs logs"
     "band band";
   height: 100vh;
@@ -51,6 +52,7 @@ body {
    share the canvas's layer and paint under it. `.band` is WeaponBand's own
    root class (see weapon/WeaponBand.tsx) -- not `.shell-band`, which does
    not exist. */
+.hud-nav,
 .shell-tabs,
 .shell-log-column,
 .band {
@@ -96,6 +98,7 @@ body {
   .shell {
     grid-template-columns: 1fr;
     grid-template-areas:
+      "nav"
       "tabs"
       "band";
   }

@@ -1,0 +1,72 @@
+/*
+ * The top nav band (mock `.hud-nav`, mockup-v12-hologlass.html lines 61-74).
+ * Light frosted glass in both modes -- this bar never goes near-black
+ * (the same rule restyle 1 fixed for the console).
+ *
+ * `.hud-nav`'s `position: relative` and `z-index: 1` come from the shared
+ * rule in AppShell.css (same pattern as `.band`/WeaponBand).
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+.hud-nav {
+  grid-area: nav;
+  display: flex;
+  align-items: stretch;
+  height: 54px;
+  padding: 0 var(--sp-7);
+  background: var(--band);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border-bottom: var(--bw) solid var(--line);
+}
+
+.hud-nav::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: var(--bw-accent);
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--gold) 45%, transparent),
+    transparent
+  );
+}
+
+.hud-brand {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  gap: var(--sp-4);
+  padding-right: var(--sp-6);
+  border-right: var(--bw) solid var(--line);
+}
+
+.hud-mark {
+  width: 30px;
+  height: 30px;
+  display: block;
+  background: linear-gradient(135deg, var(--gold-hi), var(--gold));
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+}
+
+.hud-brand-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tr-snug);
+  color: var(--txt);
+}
+
+/* Inside the hud-nav, the tab row shares the band's own glass instead of
+   carrying a second, stacked one -- .tab-bar's default (Tab.css) is used
+   everywhere else it might ever be mounted standalone. */
+.hud-nav .tab-bar {
+  flex: 1;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: none;
+}

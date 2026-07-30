@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { sendCommand } from "../bridge";
-import { Tab, TabBar } from "../components/Tab";
 import { ICONS } from "../icons";
 import { useEngineState } from "../motion/useEngineState";
 import { useSetting } from "../settings/store";
@@ -14,6 +13,7 @@ import { applyMode } from "../theme/mode";
 import WeaponBand from "../weapon/WeaponBand";
 import ActionBar from "./ActionBar";
 import Backdrop from "./Backdrop";
+import HudNav from "./HudNav";
 import LogConsole from "./LogConsole";
 import { TABS } from "./tabs";
 import type { TabSpec } from "./tabs";
@@ -71,27 +71,16 @@ export default function AppShell() {
     sendCommand("hello");
   }, []);
 
+  const hudTabs = TABS.map((tab) => {
+    const Icon = ICONS[tab.icon];
+    return { id: tab.id, label: tab.label, icon: <Icon /> };
+  });
+
   return (
     <div className="shell">
       <Backdrop />
+      <HudNav tabs={hudTabs} active={active} onSelect={setActive} />
       <div className="shell-tabs">
-        <TabBar>
-          {TABS.map((tab) => {
-            // Pulled out of the table BEFORE rendering: `ICONS[tab.icon]({})`
-            // would call the function instead of mounting it, and React would
-            // then see no component at all.
-            const Icon = ICONS[tab.icon];
-            return (
-              <Tab
-                key={tab.id}
-                label={tab.label}
-                icon={<Icon />}
-                active={tab.id === active}
-                onSelect={() => setActive(tab.id)}
-              />
-            );
-          })}
-        </TabBar>
         <div className="shell-panel" role="tabpanel" aria-label={active}>
           {active === "capture" && <CaptureTab />}
           {active === "tags" && <TagsTab />}
