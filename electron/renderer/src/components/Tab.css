@@ -77,6 +77,10 @@
   box-shadow: inset 0 1px 0 var(--sheen-edge);
 }
 
+.tab-active:hover {
+  color: var(--txt-hi);
+}
+
 .tab-active::after {
   content: "";
   position: absolute;

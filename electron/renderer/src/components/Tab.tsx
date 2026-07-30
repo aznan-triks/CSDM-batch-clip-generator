@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 
 import "./Tab.css";
 
@@ -41,7 +41,7 @@ export function TabBar({ children }: TabBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const indRef = useRef<HTMLSpanElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     function moveIndicator() {
       const bar = barRef.current;
       const ind = indRef.current;

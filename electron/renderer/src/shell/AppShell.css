@@ -1,5 +1,6 @@
 /*
- * The frame. Two columns above, the weapon band below.
+ * The frame. Nav band on top, tabs and log console below it, the action bar
+ * below that, and the weapon band across the bottom.
  *
  * Every colour comes from theme/tokens.css: nothing here may introduce one,
  * because the accent is user-chosen (D9) and the hierarchy has to survive in

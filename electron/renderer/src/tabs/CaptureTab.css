@@ -52,3 +52,12 @@
 .capture-tab .setting {
   min-width: 0;
 }
+
+.capture-tab > .player-section,
+.capture-tab > .demo-selection,
+.capture-tab > .weapon-filter,
+.capture-tab > .kill-filters,
+.capture-tab > .match-types,
+.capture-tab > .map-filter {
+  min-width: 0;
+}

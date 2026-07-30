@@ -20,8 +20,9 @@ import type { TabSpec } from "./tabs";
 import "./AppShell.css";
 
 /**
- * The application's frame: tabs on the left, log console on the right, the
- * weapon band across the bottom.
+ * The application's frame: tabs in the top HudNav band, the tab panel and log
+ * console below it, the action bar below that, and the weapon band across
+ * the bottom.
  *
  * The tab panels are empty on purpose. This stage builds the shape; the 173
  * settings arrive in 4a.4 and 4b, one tab at a time, and the coverage test

@@ -17,6 +17,7 @@
 .panel-box {
   position: relative;
   overflow: hidden;
+  min-width: 0;
   background: var(--surface);
   border: var(--bw) solid var(--line-hi);
   border-radius: var(--r-card);
