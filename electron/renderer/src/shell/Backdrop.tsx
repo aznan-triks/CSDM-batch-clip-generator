@@ -1,0 +1,195 @@
+/**
+ * The backdrop: ONE canvas, redrawn in a single pass per frame.
+ *
+ * It reads its colours from the theme tokens at run time, so day/night and a
+ * changed accent need no JavaScript here -- only a re-read, triggered by the
+ * `data-mode` attribute changing on <html>.
+ *
+ * Under intensity `none` (or the system's reduced-motion preference, which
+ * wins) it paints the resting state ONCE and starts no loop at all: a work
+ * tool must be able to hold still.
+ */
+import { useEffect, useRef } from "react";
+
+import { effectiveIntensity, onIntensityChange } from "../motion/engine";
+// "backdropField", not "backdrop": a file named "backdrop.ts" next to this
+// "Backdrop.tsx" differs only in casing, which TypeScript's own portability
+// check (forceConsistentCasingInFileNames) refuses regardless of host OS.
+import { BACKDROP, cellIntensity } from "./backdropField";
+
+/** The tokens the canvas needs as concrete values, since it cannot use var(). */
+interface Palette {
+  fill: string;
+  bevel: string;
+  holo: [number, number, number];
+}
+
+function readPalette(): Palette {
+  const style = getComputedStyle(document.documentElement);
+  const holo = style.getPropertyValue("--holo").trim();
+  const parse = (from: number): number => parseInt(holo.slice(from, from + 2), 16);
+  return {
+    fill: style.getPropertyValue("--tile-fill").trim(),
+    bevel: style.getPropertyValue("--tile-bevel").trim(),
+    holo: [parse(1), parse(3), parse(5)],
+  };
+}
+
+export default function Backdrop() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    // jsdom has no 2D context. The backdrop is decoration: skip it rather
+    // than crash the whole shell in a test environment.
+    if (!ctx) return;
+
+    let palette = readPalette();
+    let plates: Float32Array = new Float32Array(0);
+    let cols = 0;
+    let rows = 0;
+    let cursorX = -1e4;
+    let cursorY = -1e4;
+    let frame = 0;
+
+    const plateSize = BACKDROP.cell - BACKDROP.gap;
+    const offset = BACKDROP.gap / 2;
+
+    function layout(): void {
+      const ratio = Math.min(BACKDROP.maxPixelRatio, window.devicePixelRatio || 1);
+      // Non-null assertions, same as every `ctx!` below: TS resets narrowing
+      // for a variable captured by a nested function declaration, even a
+      // `const` that was null-checked just above in the enclosing effect.
+      canvas!.width = Math.ceil(window.innerWidth * ratio);
+      canvas!.height = Math.ceil(window.innerHeight * ratio);
+      ctx!.setTransform(ratio, 0, 0, ratio, 0, 0);
+      cols = Math.ceil(window.innerWidth / BACKDROP.cell) + 1;
+      rows = Math.ceil(window.innerHeight / BACKDROP.cell) + 1;
+      plates = new Float32Array(cols * rows);
+    }
+
+    /** One full pass. `time` drifts the field; `animated` eases, else it snaps. */
+    function draw(time: number, animated: boolean): void {
+      const [r, g, b] = palette.holo;
+      const cursorCol = cursorX / BACKDROP.cell;
+      const cursorRow = cursorY / BACKDROP.cell;
+
+      ctx!.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      // Pass 1 -- the plates themselves, all in one fill/stroke style.
+      ctx!.fillStyle = palette.fill;
+      ctx!.strokeStyle = `rgba(${r},${g},${b},${BACKDROP.restBorderAlpha})`;
+      ctx!.lineWidth = 1;
+      const active: number[] = [];
+
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const index = row * cols + col;
+          const target = cellIntensity(col, row, cursorCol, cursorRow, time);
+          const previous = plates[index];
+          const value = animated ? previous + (target - previous) * BACKDROP.ease : target;
+          plates[index] = value;
+
+          const x = col * BACKDROP.cell + offset;
+          const y = row * BACKDROP.cell + offset;
+          ctx!.fillRect(x, y, plateSize, plateSize);
+          ctx!.strokeRect(x + 0.5, y + 0.5, plateSize - 1, plateSize - 1);
+          if (value > BACKDROP.visibleFloor) active.push(x, y, value);
+        }
+      }
+
+      // Pass 2 -- the holographic sheen, only where the cursor reaches.
+      const { tintAlpha, topBarAlpha, topBarHeight, scanAlpha, scanStep } = BACKDROP.sheen;
+      for (let i = 0; i < active.length; i += 3) {
+        const x = active[i];
+        const y = active[i + 1];
+        const a = active[i + 2];
+
+        ctx!.fillStyle = `rgba(${r},${g},${b},${a * tintAlpha})`;
+        ctx!.fillRect(x, y, plateSize, plateSize);
+
+        ctx!.fillStyle = palette.bevel;
+        ctx!.fillRect(x, y, plateSize, 1);
+
+        ctx!.fillStyle = `rgba(${r},${g},${b},${a * topBarAlpha})`;
+        ctx!.fillRect(x, y, plateSize, topBarHeight);
+
+        ctx!.fillStyle = `rgba(${r},${g},${b},${a * scanAlpha})`;
+        for (let line = y + topBarHeight; line < y + plateSize - 1; line += scanStep) {
+          ctx!.fillRect(x + 2, line, plateSize - 4, 1);
+        }
+
+        ctx!.strokeStyle = `rgba(${r},${g},${b},${BACKDROP.restBorderAlpha + a * BACKDROP.activeBorderGain})`;
+        ctx!.strokeRect(x + 0.5, y + 0.5, plateSize - 1, plateSize - 1);
+      }
+    }
+
+    function loop(time: number): void {
+      draw(time, true);
+      frame = requestAnimationFrame(loop);
+    }
+
+    /**
+     * Start or stop the loop for the intensity in force. `none` paints the
+     * resting state once and schedules nothing: no frame is ever requested,
+     * which is the difference between "still" and "animating invisibly".
+     */
+    function applyIntensity(): void {
+      cancelAnimationFrame(frame);
+      frame = 0;
+      if (effectiveIntensity() === "none") {
+        cursorX = -1e4;
+        cursorY = -1e4;
+        draw(0, false);
+        return;
+      }
+      frame = requestAnimationFrame(loop);
+    }
+
+    function onPointerMove(event: MouseEvent): void {
+      cursorX = event.clientX;
+      cursorY = event.clientY;
+    }
+
+    function onPointerLeave(): void {
+      cursorX = -1e4;
+      cursorY = -1e4;
+    }
+
+    function onResize(): void {
+      layout();
+      if (effectiveIntensity() === "none") draw(0, false);
+    }
+
+    // A theme change swaps every token; the canvas holds concrete values, so
+    // it has to re-read them. Cheap, and only when the attribute changes.
+    const themeWatcher = new MutationObserver(() => {
+      palette = readPalette();
+      if (effectiveIntensity() === "none") draw(0, false);
+    });
+    themeWatcher.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-mode"],
+    });
+
+    layout();
+    applyIntensity();
+    const stopIntensity = onIntensityChange(applyIntensity);
+    window.addEventListener("mousemove", onPointerMove, { passive: true });
+    document.addEventListener("mouseleave", onPointerLeave);
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      themeWatcher.disconnect();
+      stopIntensity();
+      window.removeEventListener("mousemove", onPointerMove);
+      document.removeEventListener("mouseleave", onPointerLeave);
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
+  return <canvas className="shell-backdrop" ref={canvasRef} aria-hidden="true" />;
+}

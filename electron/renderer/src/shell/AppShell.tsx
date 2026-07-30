@@ -10,6 +10,7 @@ import TagsTab from "../tabs/TagsTab";
 import VideoTab from "../tabs/VideoTab";
 import WeaponBand from "../weapon/WeaponBand";
 import ActionBar from "./ActionBar";
+import Backdrop from "./Backdrop";
 import LogConsole from "./LogConsole";
 import { TABS } from "./tabs";
 import type { TabSpec } from "./tabs";
@@ -53,6 +54,7 @@ export default function AppShell() {
 
   return (
     <div className="shell">
+      <Backdrop />
       <div className="shell-tabs">
         <TabBar>
           {TABS.map((tab) => {
