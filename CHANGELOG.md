@@ -9,6 +9,64 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — restyle 4/4: les effets
+
+> No version bump: internal sub-chantier, the fourth and last of the 4 restyle-UI plans (follows
+> restyle 1, 2 and 3). This closes the whole restyle series — versioning is decided next, outside
+> this entry.
+
+### Added
+
+**Humanised:** Hovering a card now lights up a soft glowing border that follows your mouse along
+the edge. Clicking anywhere sends out a little burst of particles from the click point — blue if
+you clicked a Run/Preview/Stop/Kill button, cyan everywhere else. Moving the mouse over the empty
+background or over an action button now shows a crosshair cursor instead of the normal arrow (it
+switches back to the normal cursor over cards, fields, tabs, and the log console).
+**Technical:** `components/Card.tsx` gained an `onMouseMove` handler that paints `--mx`/`--my` as
+CSS custom properties (never a layout style — the anti-hover-motion guard polices this), consumed
+by a new masked radial-gradient `.spot` overlay in `Card.css`, revealed on `:hover` via `opacity`
+only. New `effects/ClickSpark.tsx`/`.css` (mounted once in `AppShell.tsx`, next to `Backdrop`):
+listens to `mousedown` — outside the anti-hover-motion guard's scope, so it can legally spawn
+particles positioned with `style.left`/`.top` directly — spawns 6 particles + a HUD ring, tinted
+`var(--gold)` over a `.btn` or `var(--holo)` elsewhere, silent under motion intensity `none`. New
+`MOTION.clickSpark` entry in `motion/tokens.ts` (count, durations, ring sizes). New
+`cursor/Reticle.tsx`/`.css` (also mounted in `AppShell.tsx`): a CS2-style crosshair cursor that
+replaces the OS cursor over bare background or a button (snapping to the button's size), and stays
+hidden over real widgets (inputs, cards, tabs, the log console, chips, segments); listens to
+`mousemove`, so — unlike `ClickSpark` — it paints position/size ONLY through `--cx`/`--cy`/`--cw`/
+`--ch` custom properties, consumed by `left`/`top`/`width`/`height: var(...)` in CSS; hidden under
+`@media (hover: none)`. `Card.tsx` and `cursor/Reticle.tsx` both joined
+`CURSOR_DRIVEN_ALLOWLIST` in `__tests__/no-hover-motion.test.ts` (now `["shell/Backdrop.tsx",
+"components/Card.tsx", "cursor/Reticle.tsx"]`).
+
+### Changed
+
+**Humanised:** The bottom weapon band's background is now a clear glass panel that matches the top
+nav bar and the console, instead of an almost-black gradient that stayed dark even in light mode.
+The little progress rail inside it now uses the same translucent grey as the volume-style sliders
+elsewhere in the app.
+**Technical:** `weapon/WeaponBand.css`'s `.band` background changed from
+`linear-gradient(180deg, #0c1116, var(--void))` to `var(--band)` + `backdrop-filter: var(--blur)`;
+`.band-progress`'s background changed from a hardcoded `#11171e` to `var(--surface-2)` (the same
+rail token already used by `Slider.css`). The weapon FX colours in the same file (muzzle flash,
+tracer, spark, impact, C4, detonation) are deliberately untouched — real-world colour invariants
+(HC.1), not theme surfaces.
+
+### Fixed
+
+**Humanised:** Two small polish fixes caught in the final review before closing this chantier:
+hovering the log console no longer shows the crosshair cursor instead of the normal one (which
+made selecting log text awkward), and on the rare touch device that reports no hover support, the
+cursor no longer vanishes entirely — it now correctly falls back to the normal OS cursor.
+**Technical:** `cursor/Reticle.tsx`'s `WIDGET_SELECTOR` referenced a nonexistent `.console` class
+(the log console's real root class is `.shell-logs`) — corrected, with a regression test.
+`cursor/Reticle.css`'s `body.customcursor { cursor: none; }` is now neutralized
+(`cursor: auto`) inside `@media (hover: none)`, so a hover-incapable device that still dispatches
+`mousemove` never loses the cursor entirely (the reticle element was already hidden there, but the
+OS cursor stayed suppressed) — new `cursor/__tests__/Reticle.css.test.ts`.
+
+---
+
 ## [Unreleased] — restyle 3/4: la coquille
 
 > Pas de bump de version : sous-chantier interne, troisième des 4 plans du restyle UI (suite de
