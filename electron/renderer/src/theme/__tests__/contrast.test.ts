@@ -110,14 +110,14 @@ describe("--blood is documented as NOT text-legible", () => {
   // --blood-t is its text-legible sibling. If someone "fixes" --blood to
   // pass, this test tells them they changed its role.
   it("--blood on --base fails AA", () => {
-    const ratio = contrastRatio(readToken("--blood"), readToken("--base"));
+    const ratio = contrastRatio(readToken("--blood", "light"), readToken("--base", "light"));
     expect(ratio, `--blood on --base measured ${ratio.toFixed(2)}:1`).toBeLessThan(4.5);
   });
 });
 
 describe("one radius, and it is zero", () => {
   it("--radius parses to 0", () => {
-    expect(parseFloat(readToken("--radius"))).toBe(0);
+    expect(parseFloat(readToken("--radius", "light"))).toBe(0);
   });
 
   it("no other radius-ish token exists", () => {
