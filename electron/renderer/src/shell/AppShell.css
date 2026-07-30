@@ -20,10 +20,11 @@ body {
   position: relative;
   display: grid;
   grid-template-columns: 3fr 2fr; /* the window's own PanedWindow weights */
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto auto;
   grid-template-areas:
     "nav nav"
     "tabs logs"
+    "actionbar actionbar"
     "band band";
   height: 100vh;
   /* A continuous ground, not a flat fill: the backdrop plates float on it and
@@ -55,6 +56,7 @@ body {
 .hud-nav,
 .shell-tabs,
 .shell-log-column,
+.action-bar,
 .band {
   position: relative;
   z-index: 1;
@@ -75,8 +77,8 @@ body {
 }
 
 /*
- * The right column: the run bar (ActionBar) above the console (LogConsole),
- * the same stack the window's `run_bar` + log panel formed in `right_frame`.
+ * The right column: just the console (LogConsole) now -- ActionBar moved out
+ * to its own full-width `actionbar` grid row below (see ActionBar.css).
  * `.shell-logs` (LogConsole's own root) is a flex child in here, not the
  * grid cell itself -- see LogConsole.css.
  */
@@ -100,6 +102,7 @@ body {
     grid-template-areas:
       "nav"
       "tabs"
+      "actionbar"
       "band";
   }
 

@@ -1,32 +1,47 @@
 /*
- * The run bar (D11's neighbour): buttons and progress on one row, the
- * summary line below -- the same two-row shape the window's `run_bar` used,
- * with a top accent line reused from that frame.
+ * The bottom action band (mock `.actbar`, mockup-v12-hologlass.html lines
+ * 192-199): buttons and progress on one row, the summary line below. Now
+ * its own full-width grid row (`grid-area: actionbar` in AppShell.css)
+ * instead of being confined to the log column's width.
  *
- * NO :hover rule in this file may translate or scale anything (D13/D16); the
+ * `.action-bar`'s `position: relative` and `z-index: 1` come from the shared
+ * rule in AppShell.css (same pattern as `.band`/WeaponBand).
+ *
+ * No hover rule in this file may translate or scale anything (D13/D16); the
  * buttons themselves already carry the one allowed hover motion (the
  * reflection sweep, in ActionButton.css).
  */
 
 .action-bar {
+  grid-area: actionbar;
   display: flex;
   flex-direction: column;
-  border-bottom: var(--bw) solid var(--line);
-  background: var(--panel);
+  background: var(--band);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border-top: var(--bw) solid var(--line);
 }
 
 .action-bar::before {
   content: "";
-  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
   height: var(--bw-accent);
-  background: var(--gold);
+  width: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--gold) 45%, transparent),
+    transparent
+  );
 }
 
 .action-bar-row {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  padding: var(--sp-4) var(--sp-5);
+  padding: var(--sp-4) var(--sp-6);
 }
 
 .action-bar-btn {
@@ -48,7 +63,7 @@
 }
 
 .action-bar-summary {
-  padding: var(--sp-3) var(--sp-5);
+  padding: var(--sp-3) var(--sp-6);
   border-top: var(--bw) solid var(--line);
   font-family: var(--font-mono);
   font-size: var(--fs-sm);

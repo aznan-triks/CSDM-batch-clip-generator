@@ -90,9 +90,10 @@ export default function AppShell() {
       </div>
 
       <div className="shell-log-column">
-        <ActionBar registerButton={registerButton} />
         <LogConsole />
       </div>
+
+      <ActionBar registerButton={registerButton} />
 
       <WeaponBand
         status={engine.progress ?? (engine.busy ? "working…" : "idle")}
