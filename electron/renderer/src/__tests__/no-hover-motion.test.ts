@@ -213,36 +213,78 @@ describe("no hover rule in the SHIPPED stylesheet moves anything", () => {
   });
 });
 
-describe("no hover handler in the source moves anything from JavaScript", () => {
+/**
+ * Files allowed to listen to the pointer. The restyle needs cursor-driven
+ * PAINTING (a spotlight that follows the cursor, a backdrop that lights up),
+ * which the previous blanket ban made impossible.
+ *
+ * The ban that matters is unchanged and is enforced below: such a file may
+ * write CSS CUSTOM PROPERTIES only. The moment it writes `style.transform` or
+ * `style.left`, the label moves and we are back to the bug D13 existed to
+ * prevent -- so being on this list buys the right to paint, never the right to
+ * move something.
+ */
+const CURSOR_DRIVEN_ALLOWLIST: readonly string[] = ["shell/Backdrop.tsx"];
+
+describe("pointer handlers in the source paint, they never move anything", () => {
   // The stylesheet scan cannot see this: an onMouseEnter that writes
   // `style.transform`, or fires a GSAP tween, never appears in the CSS.
-  const POINTER_HANDLERS = /on(MouseEnter|MouseOver|MouseMove|PointerEnter|PointerOver)\s*=/;
+  const POINTER_HANDLERS =
+    /on(MouseEnter|MouseOver|MouseMove|PointerEnter|PointerOver)\s*=|addEventListener\(\s*["'](mousemove|mouseover|mouseenter|pointermove)["']/;
 
-  it("declares no pointer-enter handler that writes a motion style", () => {
+  /** Writing a layout style directly. `--foo` custom properties are not this. */
+  const WRITES_LAYOUT_STYLE =
+    /\.style\s*\.\s*(transform|translate|rotate|scale|top|left|right|bottom|width|height|margin|padding)\b/;
+  /** `setProperty` is only acceptable for a custom property. */
+  const SETS_NON_CUSTOM_PROPERTY = /setProperty\(\s*["'](?!--)/;
+  const RUNS_TWEEN = /\bgsap\s*\.\s*(to|from|fromTo|set)\b|\.animate\s*\(/;
+
+  it("no pointer-handler file writes a layout style, allowlisted or not", () => {
+    // This half applies to EVERY file: the allowlist buys the right to paint,
+    // not the right to move. A regression here is the session-2 bug returning.
     const violations: string[] = [];
 
     for (const file of sourceFiles()) {
       const text = readFileSync(file, "utf-8");
       if (!POINTER_HANDLERS.test(text)) continue;
-
-      // A pointer handler exists in this file. That is allowed only if the
-      // file never touches a motion style at all -- an exact call graph is
-      // out of reach for a static scan, so the rule is deliberately blunt.
-      const writesMotion =
-        /\.style\s*\.\s*(transform|translate|rotate|scale|top|left|width|height|margin|padding)\b/.test(
-          text,
-        ) ||
-        /\bgsap\s*\.\s*(to|from|fromTo|set)\b/.test(text) ||
-        /\.animate\s*\(/.test(text);
-
-      if (writesMotion) {
-        violations.push(path.relative(SOURCE_DIR, file));
+      if (WRITES_LAYOUT_STYLE.test(text) || SETS_NON_CUSTOM_PROPERTY.test(text) || RUNS_TWEEN.test(text)) {
+        violations.push(path.relative(SOURCE_DIR, file).split(path.sep).join("/"));
       }
     }
 
     expect(
       violations,
-      `files with both a pointer-enter handler and motion writes:\n${violations.join("\n")}`,
+      `pointer handlers that move something instead of painting:\n${violations.join("\n")}`,
     ).toEqual([]);
+  });
+
+  it("only allowlisted files listen to the pointer at all", () => {
+    // Keeps the surface deliberate: a new cursor-driven effect has to be an
+    // explicit edit to the list, not a side effect of adding a handler.
+    const unexpected: string[] = [];
+
+    for (const file of sourceFiles()) {
+      const text = readFileSync(file, "utf-8");
+      if (!POINTER_HANDLERS.test(text)) continue;
+      const relative = path.relative(SOURCE_DIR, file).split(path.sep).join("/");
+      if (!CURSOR_DRIVEN_ALLOWLIST.includes(relative)) unexpected.push(relative);
+    }
+
+    expect(
+      unexpected,
+      `files listening to the pointer without being on the allowlist:\n${unexpected.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  it("the allowlist names files that exist", () => {
+    // A stale entry would silently widen the ban's blind spot.
+    for (const entry of CURSOR_DRIVEN_ALLOWLIST) {
+      expect(
+        sourceFiles().some(
+          (file) => path.relative(SOURCE_DIR, file).split(path.sep).join("/") === entry,
+        ),
+        `allowlist entry no longer exists: ${entry}`,
+      ).toBe(true);
+    }
   });
 });
