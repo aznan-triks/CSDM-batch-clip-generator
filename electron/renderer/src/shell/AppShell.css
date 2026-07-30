@@ -10,10 +10,16 @@
  */
 
 /* The page itself. skeleton.css used to reset this; the shell owns it now,
-   and a stray body margin would push the 100vh grid into a scrollbar. */
+   and a stray body margin would push the 100vh grid into a scrollbar.
+
+   The base face is the SANS stack (--font-display), matching the mock, whose
+   base font is its Inter --font. Mono is the exception -- the console, the
+   action buttons, and numeric values each set --font-mono themselves. A
+   monospace BASE made every un-overridden label render like a terminal, the
+   opposite of the soft-HUD look. */
 body {
   margin: 0;
-  font-family: var(--font-mono);
+  font-family: var(--font-display);
   font-size: var(--fs-base);
 }
 

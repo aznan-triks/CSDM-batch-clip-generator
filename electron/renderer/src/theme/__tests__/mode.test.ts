@@ -18,10 +18,11 @@ describe("applyMode maps the theme_bg setting onto the document", () => {
   });
 
   it("treats every night preset as dark", () => {
-    // The window offered four grounds; three of them are night variants. They
-    // share one mode until someone asks for separate palettes -- but they must
-    // never land in light mode by accident.
-    for (const ground of ["dark", "amoled", "deepblue"]) {
+    // The window offers five grounds; four of them are night variants
+    // (`terminal` is a dark green terminal look, BG #0a0c10). They share one
+    // mode until someone asks for separate palettes -- but they must never
+    // land in light mode by accident.
+    for (const ground of ["dark", "amoled", "deepblue", "terminal"]) {
       expect(applyMode(ground)).toBe("dark");
     }
   });
@@ -32,9 +33,11 @@ describe("applyMode maps the theme_bg setting onto the document", () => {
     expect(document.documentElement.getAttribute("data-mode")).toBe(GROUND_MODES[DEFAULT_GROUND]);
   });
 
-  it("covers every ground the Python config declares", () => {
-    // The four documented values of theme_bg in csdm/config.py. A fifth value
-    // added there without a mapping here would silently fall back.
-    expect(Object.keys(GROUND_MODES).sort()).toEqual(["amoled", "dark", "deepblue", "white"]);
+  it("covers every ground the Python theme presets declare", () => {
+    // The real source of truth is `_BG_PRESETS` in csdm/theme.py (the themes
+    // the Tkinter UI actually offers), NOT the config.py comment -- which lists
+    // only four and omits `terminal`, the very value a real saved config used.
+    // A theme added there without a mapping here would silently fall back.
+    expect(Object.keys(GROUND_MODES).sort()).toEqual(["amoled", "dark", "deepblue", "terminal", "white"]);
   });
 });
