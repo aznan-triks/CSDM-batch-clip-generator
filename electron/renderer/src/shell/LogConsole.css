@@ -11,17 +11,26 @@
  */
 
 .shell-logs {
+  /* The console's own rhythm. These two feed BOTH the text and the ruled
+     lines, so the two can never drift apart -- see console-rules.test.ts. */
+  --log-line: 22px;
+  --log-pad: 8px;
+
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
+  /* Light frosted glass, driven by the theme: no near-black panel any more. */
+  background: var(--band);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
 }
 
 #ask-panel {
-  padding: 8px;
-  border-bottom: 1px solid var(--line);
+  padding: var(--sp-4);
+  border-bottom: var(--bw) solid var(--line);
 }
 
 #ask-panel button {
@@ -125,10 +134,20 @@
 
 #log {
   white-space: pre-wrap;
-  padding: 8px;
+  padding: var(--log-pad);
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+  /* ONE period for the text and the rules. */
+  line-height: var(--log-line);
+  background-image: repeating-linear-gradient(
+    180deg,
+    transparent 0 calc(var(--log-line) - 1px),
+    var(--line) calc(var(--log-line) - 1px) var(--log-line)
+  );
+  /* The rules start where the first line of text starts, not at the box edge. */
+  background-position: 0 var(--log-pad);
+  background-repeat: repeat;
 }
 
 .line-err {
