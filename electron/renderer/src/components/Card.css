@@ -80,3 +80,48 @@
   flex-wrap: wrap;
   align-items: center;
 }
+
+/*
+ * The cursor-follow spotlight border (restyle 4, mockup-v12-hologlass.html
+ * `.sec .spot`). `--mx`/`--my` are painted by Card.tsx on mousemove -- never
+ * a layout style, see the guard in __tests__/no-hover-motion.test.ts. Masked
+ * to a ring (mask-composite: exclude) rather than a filled halo, so only the
+ * border glows.
+ */
+.panel-box .spot {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 5;
+  padding: 1.5px;
+  opacity: 0;
+  transition: opacity var(--dur-base);
+  background: radial-gradient(
+    150px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--gold) 95%, #fff),
+    color-mix(in srgb, var(--gold) 45%, transparent) 32%,
+    transparent 62%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.panel-box:hover .spot {
+  opacity: 1;
+}
+
+.panel-box .spot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    220px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--gold) 16%, transparent),
+    transparent 55%
+  );
+}

@@ -66,3 +66,35 @@ describe("the corner brackets sit inside the rounded curve, not outside it", () 
     expect(individualAfter).toMatch(/right:\s*6px;/);
   });
 });
+
+describe(".spot is the cursor-follow spotlight border, masked to a ring", () => {
+  const rule = block(".panel-box .spot");
+
+  it("tracks the custom properties Card.tsx paints, never a hardcoded position", () => {
+    expect(rule).toMatch(/var\(--mx/);
+    expect(rule).toMatch(/var\(--my/);
+  });
+
+  it("is invisible until hovered", () => {
+    expect(rule).toMatch(/opacity:\s*0;/);
+  });
+
+  it("is masked to a ring, not a filled halo", () => {
+    expect(rule).toMatch(/mask-composite:\s*exclude;/);
+  });
+});
+
+describe(".panel-box:hover .spot reveals it without moving anything", () => {
+  function lastBlock(selector: string): string {
+    const marker = `${selector} {`;
+    const start = CSS.lastIndexOf(marker);
+    if (start === -1) throw new Error(`selector not found in Card.css: ${selector}`);
+    const bodyStart = start + marker.length;
+    return CSS.slice(bodyStart, CSS.indexOf("}", bodyStart));
+  }
+  const rule = lastBlock(".panel-box:hover .spot");
+
+  it("only changes opacity", () => {
+    expect(rule.trim()).toBe("opacity: 1;");
+  });
+});

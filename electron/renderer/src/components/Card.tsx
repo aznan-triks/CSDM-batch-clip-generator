@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 import "./Card.css";
 
@@ -7,6 +7,18 @@ interface CardProps {
   icon?: ReactNode;
   children: ReactNode;
   className?: string;
+}
+
+/**
+ * The spotlight border (restyle 4): a mousemove handler that paints ONLY
+ * custom properties (`--mx`/`--my`), never a layout style. This is why
+ * `Card.tsx` is on `CURSOR_DRIVEN_ALLOWLIST` in `no-hover-motion.test.ts`
+ * instead of being banned outright -- painting is allowed, moving is not.
+ */
+function paintSpotlight(event: MouseEvent<HTMLElement>) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty("--mx", `${event.clientX - rect.left}px`);
+  event.currentTarget.style.setProperty("--my", `${event.clientY - rect.top}px`);
 }
 
 /**
@@ -20,7 +32,8 @@ interface CardProps {
 export default function Card({ title, icon, children, className }: CardProps) {
   const classes = className ? `panel-box ${className}` : "panel-box";
   return (
-    <section className={classes}>
+    <section className={classes} onMouseMove={paintSpotlight}>
+      <span className="spot" aria-hidden="true" />
       <h5 className="panel-heading">
         {icon && <span className="panel-heading-icon">{icon}</span>}
         {title}
