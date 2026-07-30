@@ -1,4 +1,6 @@
-/* `.seg` from the mock (ui-v5.html lines 93-98). No un-tokenized literals. */
+/* `.seg` originally from ui-v5.html lines 93-98; the glass background on
+ * `.segmented` per restyle 2 comes from mockup-v12-hologlass.html `.seg`
+ * (line 139). Local 10px radius: see restyle 2 plan's Task 3 rationale. */
 .segmented {
   display: inline-flex;
   border: var(--bw) solid var(--line);

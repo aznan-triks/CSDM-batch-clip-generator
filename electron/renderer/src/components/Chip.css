@@ -1,4 +1,5 @@
-/* `.chip` from the mock (ui-v5.html lines 86-92), now glass/pill per restyle 2. */
+/* `.chip` originally from ui-v5.html lines 86-92; glass/pill values per
+ * restyle 2 now come from mockup-v12-hologlass.html `.chip` (line 125-131). */
 .chip {
   appearance: none;
   cursor: pointer;
