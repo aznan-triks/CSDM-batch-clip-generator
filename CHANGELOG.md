@@ -65,6 +65,19 @@ cursor no longer vanishes entirely — it now correctly falls back to the normal
 `mousemove` never loses the cursor entirely (the reticle element was already hidden there, but the
 OS cursor stayed suppressed) — new `cursor/__tests__/Reticle.css.test.ts`.
 
+**Humanised:** Fixed a crash that happened when opening the Electron window right after this
+chantier: if your accent colour had been set from the older Tkinter window using one of its named
+colour swatches (green, blue, orange…) instead of a picked hex colour, the new window refused to
+start at all.
+**Technical:** `theme_accent` is a config key shared with the Tkinter host, which can still write a
+legacy lowercase preset name (`csdm/theme.py`'s `_ACCENT_PRESETS`: green/blue/orange/purple/red/
+cyan/pink/yellow) instead of a hex string. `theme/accent.ts#applyAccent` only ever accepted hex, so
+`AppShell.tsx`'s boot-time re-apply crashed (`hexToRgb` threw `"not a hex colour: green"`). New
+`theme/accent.ts#resolveAccent()` maps a recognised preset name to its Electron hex before
+`applyAccent`/`SettingsTab`'s `currentAccent` consume it; anything else still passes through to
+`hexToRgb`'s existing validation unchanged, so real corruption still fails fast. Root cause in
+`docs/audits/AUDIT_accent_preset_crash.md`.
+
 ---
 
 ## [Unreleased] — restyle 3/4: la coquille
