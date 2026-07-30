@@ -17,7 +17,9 @@
   position: relative;
   height: 94px;
   border-top: var(--bw) solid var(--line);
-  background: linear-gradient(180deg, #0c1116, var(--void));
+  background: var(--band);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
   overflow: hidden;
 }
 
@@ -42,7 +44,7 @@
 .band-progress {
   margin-top: var(--sp-4);
   height: 4px;
-  background: #11171e;
+  background: var(--surface-2);
   border: var(--bw) solid var(--line);
 }
 
