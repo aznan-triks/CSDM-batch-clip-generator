@@ -7,10 +7,15 @@
  */
 
 .tags-tab {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--sp-5);
   padding: var(--sp-5) var(--sp-6);
+  align-content: start;
+}
+
+.wide {
+  grid-column: 1 / -1;
 }
 
 .tags-error {

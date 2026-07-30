@@ -126,7 +126,7 @@ export default function SettingsTab() {
 
   return (
     <div className="settings-tab">
-      <Card title="PATHS">
+      <Card title="PATHS" className="wide">
         <SettingControl settingKey="csdm_exe">
           <PathField
             id="csdm-exe"
@@ -287,7 +287,7 @@ export default function SettingsTab() {
         </div>
       </Card>
 
-      <Card title="POSTGRESQL CONNECTION">
+      <Card title="POSTGRESQL CONNECTION" className="wide">
         <div className="settings-row">
           <SettingControl settingKey="pg_host">
             <Field id="pg-host" label="Host" value={pgHost ?? ""} onChange={setPgHost} />

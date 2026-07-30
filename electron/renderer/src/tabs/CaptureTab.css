@@ -5,10 +5,20 @@
  */
 
 .capture-tab {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--sp-5);
   padding: var(--sp-5) var(--sp-6);
+  align-content: start;
+}
+
+/* Dense, chip-heavy sections (and the field grids already 2-wide inside
+   themselves) span both columns instead of being squeezed to a half. */
+.capture-tab > .capture-grid,
+.capture-tab > .kill-filters,
+.capture-tab > .match-types,
+.capture-tab > .map-filter {
+  grid-column: 1 / -1;
 }
 
 /* A label followed by its controls on one line, wrapping on a narrow window

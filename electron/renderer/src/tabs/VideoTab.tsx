@@ -141,7 +141,7 @@ export default function VideoTab() {
         </SettingControl>
       </Card>
 
-      <Card title="RESOLUTION, FRAMERATE & WINDOW">
+      <Card title="RESOLUTION, FRAMERATE & WINDOW" className="wide">
         {!tables ? (
           <p className="video-hint">Loading tables…</p>
         ) : (
@@ -211,7 +211,7 @@ export default function VideoTab() {
         </SettingControl>
       </Card>
 
-      <Card title="ENCODING">
+      <Card title="ENCODING" className="wide">
         {/* Always mounted, options empty until `useTables()` resolves -- same
             reason as the FPS control above. */}
         <SettingControl settingKey="video_codec">
@@ -382,7 +382,7 @@ export default function VideoTab() {
         </Card>
       )}
 
-      <Card title="🎮 CS2 EFFECTS">
+      <Card title="🎮 CS2 EFFECTS" className="wide">
         <Cs2EffectsSection />
       </Card>
     </div>

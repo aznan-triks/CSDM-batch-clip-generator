@@ -258,7 +258,7 @@ export default function TagsTab() {
 
   return (
     <div className="tags-tab">
-      <Card title="TAGS -- click to select/deselect">
+      <Card title="TAGS -- click to select/deselect" className="wide">
         {dbError && <p className="tags-error">{dbError}</p>}
 
         <div className="tags-grid">
@@ -349,7 +349,7 @@ export default function TagsTab() {
         </div>
       </Card>
 
-      <Card title="OPERATIONS">
+      <Card title="OPERATIONS" className="wide">
         <div className="tags-toolbar">
           <span className="tags-label">Search:</span>
           <button type="button" className="tags-btn tags-btn-primary" onClick={searchByTag}>
