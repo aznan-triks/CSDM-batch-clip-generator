@@ -78,6 +78,17 @@ cyan/pink/yellow) instead of a hex string. `theme/accent.ts#applyAccent` only ev
 `hexToRgb`'s existing validation unchanged, so real corruption still fails fast. Root cause in
 `docs/audits/AUDIT_accent_preset_crash.md`.
 
+**Humanised:** The app now opens looking like the V12 mockup by default — a light background with
+an electric-blue accent — instead of the old dark background with a gold accent it inherited from
+the legacy window. (The other themes and accent colours are still there in Settings; only the
+starting point changed.)
+**Technical:** The restyle targeted `mockup-v12-hologlass.html`, which boots light (`apply('Light')`)
+with `--accent: #2563EB`, but the app defaulted to the legacy Tkinter dark ground and a gold
+first-preset. `theme/mode.ts`'s `DEFAULT_GROUND` changed `"dark"` → `"white"` (light); `ACCENT_PRESETS`
+reordered so the mock's electric blue `#2563EB` is first and therefore `DEFAULT_ACCENT` (the token
+default `--gold: #2563eb` already agreed). All nine swatches remain — only the default moved.
+`theme/__tests__/accent-default.test.ts` and a mode-default assertion pin both to the mock.
+
 **Humanised:** Fixed two more things spotted the first time the window was opened for real, that
 made it look nothing like the intended design: the whole interface was rendering in a typewriter
 (monospace) font instead of the clean sans-serif from the mockup, and a background theme picked in
