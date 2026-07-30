@@ -31,4 +31,38 @@ describe(".panel-box is glass, rounded", () => {
   it("blurs what is behind it", () => {
     expect(rule).toMatch(/backdrop-filter:\s*var\(--blur\);/);
   });
+
+  it("clips its own content so the rounded corner has no square overflow", () => {
+    expect(rule).toMatch(/overflow:\s*hidden;/);
+  });
+});
+
+describe("the corner brackets sit inside the rounded curve, not outside it", () => {
+  // `.panel-box::before` and `.panel-box::after` each appear twice: once in the
+  // shared combined selector (size/pointer-events only), once as their own rule
+  // (position). `block()` returns the FIRST match, which is the shared one for
+  // `::after` (it's the second name in that combined selector, immediately
+  // before the `{`) -- so the individual rule is matched positionally instead.
+  function lastBlock(selector: string): string {
+    const marker = `${selector} {`;
+    const start = CSS.lastIndexOf(marker);
+    if (start === -1) throw new Error(`selector not found in Card.css: ${selector}`);
+    const bodyStart = start + marker.length;
+    return CSS.slice(bodyStart, CSS.indexOf("}", bodyStart));
+  }
+
+  const individualBefore = lastBlock(".panel-box::before");
+  const individualAfter = lastBlock(".panel-box::after");
+
+  it("is inset far enough to clear --r-card, not still at the old square-corner -1px", () => {
+    expect(individualBefore).not.toMatch(/top:\s*-1px;/);
+    expect(individualBefore).not.toMatch(/left:\s*-1px;/);
+    expect(individualBefore).toMatch(/top:\s*6px;/);
+    expect(individualBefore).toMatch(/left:\s*6px;/);
+
+    expect(individualAfter).not.toMatch(/top:\s*-1px;/);
+    expect(individualAfter).not.toMatch(/right:\s*-1px;/);
+    expect(individualAfter).toMatch(/top:\s*6px;/);
+    expect(individualAfter).toMatch(/right:\s*6px;/);
+  });
 });

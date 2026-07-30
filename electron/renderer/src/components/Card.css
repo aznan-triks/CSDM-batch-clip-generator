@@ -1,13 +1,22 @@
 /*
  * .pbox from the mock (ui-v5.html lines 67-80), renamed `panel-box` per the
  * mock's own comment: `.card` collided with a third-party hover-lift class.
+ * Glass surface and rounded corner from restyle 2 (mockup-v12-hologlass.html
+ * `.sec`).
  *
  * Literals not backed by a token (reported, not tokenized):
  *  - the corner-bracket size (9px) -- explicitly allowed as geometry, not a
  *    spacing value.
+ *  - the corner-bracket inset (6px) -- restyle 2 rounded the card to
+ *    --r-card (18px); at the old -1px inset the brackets floated outside
+ *    the curve instead of sitting on it. 6px ~= r-card * (1 - cos 45 deg),
+ *    the point where a straight L-bracket tucks inside a rounded corner.
+ *    `overflow: hidden` below is required for the same reason: without it,
+ *    .panel-heading's top-corner gradient paints past the curve.
  */
 .panel-box {
   position: relative;
+  overflow: hidden;
   background: var(--surface);
   border: var(--bw) solid var(--line-hi);
   border-radius: var(--r-card);
@@ -28,15 +37,15 @@
 }
 
 .panel-box::before {
-  top: -1px;
-  left: -1px;
+  top: 6px;
+  left: 6px;
   border-top: var(--bw-accent) solid var(--gold-d);
   border-left: var(--bw-accent) solid var(--gold-d);
 }
 
 .panel-box::after {
-  top: -1px;
-  right: -1px;
+  top: 6px;
+  right: 6px;
   border-top: var(--bw-accent) solid var(--gold-d);
   border-right: var(--bw-accent) solid var(--gold-d);
 }
