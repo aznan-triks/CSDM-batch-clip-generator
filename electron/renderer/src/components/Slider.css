@@ -52,16 +52,16 @@
 
 .slider-input::-webkit-slider-runnable-track {
   height: 4px;
-  background: var(--void);
+  background: var(--surface-2);
   border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--r-pill);
 }
 
 .slider-input::-moz-range-track {
   height: 4px;
-  background: var(--void);
+  background: var(--surface-2);
   border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--r-pill);
 }
 
 /* -- the thumb -- */

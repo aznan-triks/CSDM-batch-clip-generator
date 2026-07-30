@@ -2,8 +2,8 @@
 .segmented {
   display: inline-flex;
   border: var(--bw) solid var(--line);
-  background: var(--raise);
-  border-radius: var(--radius);
+  background: var(--surface-2);
+  border-radius: 10px;
   overflow: hidden;
 }
 
