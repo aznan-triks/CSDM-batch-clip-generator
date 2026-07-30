@@ -224,7 +224,11 @@ describe("no hover rule in the SHIPPED stylesheet moves anything", () => {
  * prevent -- so being on this list buys the right to paint, never the right to
  * move something.
  */
-const CURSOR_DRIVEN_ALLOWLIST: readonly string[] = ["shell/Backdrop.tsx", "components/Card.tsx"];
+const CURSOR_DRIVEN_ALLOWLIST: readonly string[] = [
+  "shell/Backdrop.tsx",
+  "components/Card.tsx",
+  "cursor/Reticle.tsx",
+];
 
 describe("pointer handlers in the source paint, they never move anything", () => {
   // The stylesheet scan cannot see this: an onMouseEnter that writes

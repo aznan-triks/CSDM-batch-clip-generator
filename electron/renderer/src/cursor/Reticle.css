@@ -1,0 +1,87 @@
+/* electron/renderer/src/cursor/Reticle.css */
+/*
+ * The crosshair reticle. Replaces the OS cursor ONLY over the background and
+ * over buttons (`body.customcursor` toggles `cursor: none` below) -- over a
+ * real widget (card, field, tab, console) the native cursor stays, so click
+ * targets and text selection never feel fought over.
+ */
+body.customcursor {
+  cursor: none;
+}
+
+.reticle {
+  position: fixed;
+  left: var(--cx, 50%);
+  top: var(--cy, 50%);
+  width: var(--cw, 26px);
+  height: var(--ch, 26px);
+  z-index: 120;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition:
+    width var(--dur-fast) var(--ease),
+    height var(--dur-fast) var(--ease),
+    opacity var(--dur-fast);
+}
+
+body.customcursor .reticle {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .reticle {
+    display: none;
+  }
+}
+
+.reticle span {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: var(--bw-accent) solid var(--gold);
+}
+
+.rc-tl {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+}
+
+.rc-tr {
+  top: 0;
+  right: 0;
+  border-left: none;
+  border-bottom: none;
+}
+
+.rc-bl {
+  bottom: 0;
+  left: 0;
+  border-right: none;
+  border-top: none;
+}
+
+.rc-br {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+}
+
+.rc-dot {
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border: none;
+  background: var(--gold);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: opacity var(--dur-fast);
+}
+
+.reticle.snap .rc-dot {
+  opacity: 0;
+}
