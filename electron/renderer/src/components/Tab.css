@@ -1,19 +1,26 @@
 /*
- * `.tab` / `.tabs` from the mock (ui-v5.html lines 45-59).
+ * `.tab` / `.tab-bar` — overlapping parallelogram tabs, mock's `.tab`/
+ * `.tabs` (mockup-v12-hologlass.html lines 76-92). `.tab`'s height is 100%
+ * so its shape reaches the full 54px of the hud-nav band that hosts it
+ * (shell/HudNav.css).
  *
- * Literals not backed by a token (reported, not tokenized):
- *  - the diagonal-cut clip-path offset (12px) -- explicitly allowed geometry,
- *    not a spacing value. Reused for the active underline's right inset so
- *    the underline stops short of the same diagonal.
+ * `.tab-active`'s `translateY(-2px)` is a SELECTED-state pop, not a hover
+ * effect -- D13/D16 forbid movement "au survol" (on hover) only. No :hover
+ * rule below gains a transform; only the persistent active state does, the
+ * same reading `.segment-selected`'s flat background swap already relies on.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
  */
 .tab-bar {
+  position: relative;
   display: flex;
-  height: auto;
+  align-items: stretch;
+  height: 100%;
   background: var(--band);
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
   border-bottom: var(--bw) solid var(--line);
-  padding-left: var(--sp-1);
+  padding-left: var(--sp-7);
 }
 
 .tab {
@@ -22,7 +29,9 @@
   cursor: pointer;
   appearance: none;
   border: 0;
-  padding: var(--sp-4) var(--sp-7) var(--sp-4) var(--sp-6);
+  height: 100%;
+  padding: 0 var(--sp-8);
+  margin-left: calc(var(--sp-6) * -1);
   display: flex;
   align-items: center;
   gap: var(--sp-3);
@@ -32,9 +41,15 @@
   letter-spacing: var(--tr-wide);
   text-transform: uppercase;
   color: var(--dim);
-  background: transparent;
-  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
-  transition: color var(--dur-base) ease-out;
+  background: var(--surface-2);
+  clip-path: polygon(var(--sp-7) 0, 100% 0, calc(100% - var(--sp-7)) 100%, 0 100%);
+  transition:
+    color var(--dur-base) ease-out,
+    background var(--dur-base) ease-out;
+}
+
+.tab:first-child {
+  margin-left: 0;
 }
 
 .tab-icon,
@@ -49,30 +64,15 @@
   line-height: 1;
 }
 
-.tab::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  opacity: 0;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--gold) 4%, transparent),
-    color-mix(in srgb, var(--gold) 20%, transparent)
-  );
-  transition: opacity var(--dur-base) ease-out;
-}
-
-.tab:hover::before {
-  opacity: 1;
-}
-
 .tab:hover {
   color: var(--txt);
+  background: var(--surface);
 }
 
 .tab-active {
   color: var(--txt-hi);
+  z-index: 6;
+  transform: translateY(-2px);
   background: var(--surface);
   box-shadow: inset 0 1px 0 var(--sheen-edge);
 }
@@ -80,12 +80,12 @@
 .tab-active::after {
   content: "";
   position: absolute;
-  left: 0;
-  right: 12px;
+  left: var(--sp-7);
+  right: 0;
   top: 0;
   height: var(--bw-accent);
   z-index: 2;
-  background: linear-gradient(90deg, var(--gold), var(--gold-d));
+  background: linear-gradient(90deg, var(--gold-hi), var(--gold));
 }
 
 .tab:focus-visible {

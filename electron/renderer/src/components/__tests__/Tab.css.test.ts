@@ -19,6 +19,25 @@ describe(".tab-bar is a light frosted band", () => {
     expect(rule).not.toMatch(/var\(--void\);/);
     expect(rule).toMatch(/backdrop-filter:\s*var\(--blur\);/);
   });
+
+  it("is a positioning context for the sliding indicator", () => {
+    expect(rule).toMatch(/position:\s*relative;/);
+  });
+});
+
+describe(".tab overlaps its neighbour in a two-sided parallelogram", () => {
+  const rule = block(".tab");
+
+  it("cuts both sides on the --sp-7 token, matching the overlapping mock geometry", () => {
+    expect(rule).toMatch(
+      /clip-path:\s*polygon\(var\(--sp-7\) 0, 100% 0, calc\(100% - var\(--sp-7\)\) 100%, 0 100%\);/,
+    );
+  });
+
+  it("overlaps the previous tab by --sp-6, except the first", () => {
+    expect(rule).toMatch(/margin-left:\s*calc\(var\(--sp-6\) \* -1\);/);
+    expect(block(".tab:first-child")).toMatch(/margin-left:\s*0;/);
+  });
 });
 
 describe(".tab-active is glass, keeps its bevel", () => {
@@ -29,7 +48,8 @@ describe(".tab-active is glass, keeps its bevel", () => {
     expect(rule).not.toMatch(/var\(--raise-hi\)/);
   });
 
-  it("the bevel clip-path is untouched on .tab", () => {
-    expect(block(".tab")).toMatch(/clip-path:\s*polygon\(0 0, 100% 0, calc\(100% - 12px\) 100%, 0 100%\);/);
+  it("pops on translateY -- a selected-state change, never a :hover one", () => {
+    expect(rule).toMatch(/transform:\s*translateY\(-2px\);/);
+    expect(block(".tab:hover")).not.toMatch(/transform/);
   });
 });
