@@ -9,6 +9,48 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — restyle 5, pass 2: the last three tabs, the wheel, the dark ground
+
+> No version bump: internal sub-chantier, closing the restyle-5 series. Versioning is decided next,
+> outside this entry.
+
+### Fixed
+
+**Humanised:** The mouse wheel did nothing — not in the tab, not in the log panel. And on the dark
+theme, the open tab and the little selectors stayed bright white under pale text, which made them
+unreadable.
+**Technical:**
+- `motion/scroll.ts` installed Lenis on the WINDOW. That was right when it landed (v214): the
+  renderer was one long demo page. The shell arrived after it and made the window a fixed 100vh
+  frame with the scrolling inside (`.scrollwrap`, `.console .body`), so the library had nothing to
+  move — and since a smooth-scroll library must `preventDefault()` every notch to take it over, no
+  notch reached the panes. Measured: a wheel event on `.scrollwrap` came back
+  `defaultPrevented === true`, the same event that did not bubble came back `false`, and the pane
+  scrolled perfectly from JavaScript. Removed, along with the `lenis` dependency and
+  `MOTION.scroll`; guarded by `src/__tests__/wheel-reaches-the-pane.test.ts`.
+- The approved mock writes four surfaces as literals (`.tab.active`, `.tab:hover`, `.seg`,
+  `.seg span.on`) where it takes every other one from a token, so they could not follow the ground.
+  Re-pointed at `--solid` / `--surface` / `--recess`, which ARE those literals in light mode.
+  `theme/__tests__/dark-ground.test.ts` reads the literals out of the mock and demands a verdict for
+  each: corrected, a flash of light that is right on any ground, or an element never mounted here.
+
+### Changed
+
+**Humanised:** The Video, Tags and Settings tabs now speak the same design language as the rest —
+same cards, same rows, same small buttons. Fourteen different button styles became one.
+**Technical:** The three tabs and their sections (`PresetSection`, `Cs2EffectsSection`,
+`HlaeOptionsSection`) wear the mock's `.bento` / `.wide` / `.row` / `.lab` / `.chip` / `.chips` /
+`.fld`, and their stylesheets keep only the hints, swatches, lists and status lines the mock never
+drew. One new modifier, `.chip.danger`, for actions that cannot be undone: the mock has no
+destructive chip, so it borrows the meaning (the same rose tokens) and not the pixels. The Encoding
+card pairs its controls the way the mock pairs its own — a lone `.fld` takes `flex: 1` and the whole
+card, which is how a codec dropdown measured 825px. Fields wider than 400px: Video 11 → 2 (both hold
+whole FFmpeg command lines), Settings 1 → 0. Shipped CSS 53.10 kB → 47.45 kB.
+`tabs/__tests__/bento-layout.test.ts` no longer lists unported tabs — there are none — and now fails
+if any tab stylesheet redefines one of the mock's classes.
+
+---
+
 ## [Unreleased] — restyle 5, pass 1: the mock becomes the stylesheet
 
 > No version bump: internal sub-chantier. Pass 1 covers the shell and the Capture tab; the Video,
