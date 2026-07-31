@@ -8,11 +8,24 @@ const SNAP_PADDING = 10;
 const DEFAULT_SIZE = 26;
 
 /**
- * Elements over which the native cursor stays -- cards, form fields, tabs,
- * the console. The reticle only replaces the OS cursor over a button or over
- * bare background (see `onMove` below).
+ * The BACKGROUND -- the only place, besides a button, where the reticle
+ * replaces the OS cursor.
+ *
+ * An ALLOWLIST, matched on the target itself, exactly as the approved mock
+ * does it (`BG_SEL` there). It used to be a denylist of widgets, and that is
+ * how this broke: restyle 5 renamed the card and the segmented control, and
+ * the list kept naming their two old names -- both dead, zero usages. A
+ * denylist that goes stale shows the reticle EVERYWHERE, which is why it
+ * stopped reading as an accroche on a button: something already on screen
+ * over every card cannot be seen to arrive on one.
+ *
+ * An allowlist fails the safe way round -- a renamed container means the
+ * reticle stops appearing there, which is visible immediately.
+ *
+ * `.shell-backdrop` is this window's own: the mock's grid canvas is `.grid`.
  */
-const WIDGET_SELECTOR = "input, textarea, select, a[href], label, .panel-box, .tab, .console, .chip, .segment";
+const BACKGROUND_SELECTOR =
+  "body, .app, .shell, .scrollwrap, .bento, .amb, .shell-backdrop";
 
 /**
  * The CS2 crosshair cursor (mockup-v12-hologlass.html `.tcursor`). Position
@@ -58,7 +71,12 @@ export default function Reticle() {
         return;
       }
 
-      if (target?.closest(WIDGET_SELECTOR)) {
+      // `matches`, not `closest`: the background is the element under the
+      // pointer ITSELF. A card sitting inside `.scrollwrap` must keep the
+      // native cursor, and `closest` would have found the wrapper and shown
+      // the reticle over the whole workspace.
+      const onBackground = target === null || target.matches(BACKGROUND_SELECTOR);
+      if (!onBackground) {
         hide();
         return;
       }
