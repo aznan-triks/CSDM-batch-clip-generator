@@ -46,35 +46,44 @@ body.customcursor .cursor-reticle {
   border: var(--bw-accent) solid var(--gold);
 }
 
-.rc-tl {
+/*
+ * Each rule below is scoped through `.cursor-reticle` ON PURPOSE.
+ *
+ * `.cursor-reticle span` above sets the `border` SHORTHAND, which writes all
+ * four sides, and its specificity (0,1,1) beat a bare `.rc-tl` (0,1,0). The
+ * four corners therefore drew complete squares and the dot wore a ring, while
+ * this file has said otherwise since the day it was written. Scoping each
+ * piece to (0,2,0) puts the intent back in charge. Do not un-scope them.
+ */
+.cursor-reticle .rc-tl {
   top: 0;
   left: 0;
   border-right: none;
   border-bottom: none;
 }
 
-.rc-tr {
+.cursor-reticle .rc-tr {
   top: 0;
   right: 0;
   border-left: none;
   border-bottom: none;
 }
 
-.rc-bl {
+.cursor-reticle .rc-bl {
   bottom: 0;
   left: 0;
   border-right: none;
   border-top: none;
 }
 
-.rc-br {
+.cursor-reticle .rc-br {
   bottom: 0;
   right: 0;
   border-left: none;
   border-top: none;
 }
 
-.rc-dot {
+.cursor-reticle .rc-dot {
   left: 50%;
   top: 50%;
   width: 3px;
