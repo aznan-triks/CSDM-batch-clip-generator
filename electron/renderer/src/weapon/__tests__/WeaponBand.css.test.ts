@@ -12,25 +12,23 @@ function block(selector: string): string {
   return match[1];
 }
 
-// The band is the mock's `.wband`: a ROW INSIDE the action bar, not a slab of
-// its own. It must carry no ground and no blur -- the action bar around it
-// already does, and a second frosted layer stacked on the first is exactly
-// what made the old 94px band read as a separate strip glued to the window.
-describe(".band rides inside the action bar and carries no ground of its own", () => {
-  const rule = block(".band");
+// The band IS the mock's `.wband`: a row inside the action bar, not a slab of
+// its own. The row itself -- flex, gap, and the `flex: 1` that pushes the
+// buttons to the right edge -- is stated once, in theme/mock-v12.css. This
+// file must not restate it, and must not put a second frosted layer on top of
+// the action bar's: that is what made the old 94px band read as a separate
+// strip glued to the window.
+describe(".wband rides inside the action bar and carries no ground of its own", () => {
+  const rule = block(".wband");
 
-  it("declares no background at all", () => {
+  it("declares no background and no blur -- the action bar owns the glass", () => {
     expect(rule).not.toMatch(/background:/);
-    expect(rule).not.toMatch(/#0c1116/);
-  });
-
-  it("declares no blur -- the action bar owns the glass", () => {
     expect(rule).not.toMatch(/backdrop-filter:/);
   });
 
-  it("is a flex row that grows to fill the bar", () => {
-    expect(rule).toMatch(/display:\s*flex;/);
-    expect(rule).toMatch(/flex:\s*1;/);
+  it("re-states neither the row nor the growth -- the mock says both", () => {
+    expect(rule).not.toMatch(/display:\s*flex;/);
+    expect(rule).not.toMatch(/flex:\s*1;/);
   });
 });
 

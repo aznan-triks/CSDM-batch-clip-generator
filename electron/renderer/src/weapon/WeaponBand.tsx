@@ -87,7 +87,7 @@ export default function WeaponBand({
   }, [buttonRef, frameRef]);
 
   return (
-    <div className="band" ref={bandRef}>
+    <div className="wband" ref={bandRef}>
       <div className="band-meta">
         <div className="band-status">{status}</div>
         <div className="band-progress">
