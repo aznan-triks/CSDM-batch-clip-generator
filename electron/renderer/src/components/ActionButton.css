@@ -1,133 +1,27 @@
 /*
- * `.btn` and its variants, extracted from the mock (ui-v5.html lines 105-131).
+ * The action buttons.
  *
- * Literals not backed by a token (reported, not tokenized):
- *  - the bevelled clip-path offset (10px) -- explicitly allowed geometry, not
- *    a spacing value.
- *  - the reflection sweep's `0.6s` animation and the armed button's `1s`
- *    pulse -- timeline sequences, not state transitions; they move to the
- *    MOTION table in the next task.
+ * THE FACES AND THE EFFECT LAYERS ARE THE MOCK'S: `.btn`, `.btn.ghost`,
+ * `.btn.danger`, `.btn.primary`, plus `.bx` / `.fl` / `.brs` / `.sb` and the
+ * `hit`, `flash`, `burst` and `starspin` keyframes -- all in
+ * theme/mock-v12.css, drift-locked against the approved mock. The old
+ * reflection sweep and hover tint are gone with them: the mock answers a hover
+ * with the glitch grid, and two effects stacked on one gesture read as a bug.
+ *
+ * What is left is what the mock has no way to know: a disabled button, a
+ * keyboard focus ring, and the armed pulse -- a state the mock never drew.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
  */
-.btn {
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
-  user-select: none;
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-5) var(--sp-8);
-  /* The mock's `.btn` is MONO: the run bar is the machine talking back, and a
-     proportional face there made the buttons read as web links. */
-  font-family: var(--font-mono);
-  font-size: var(--fs-md);
-  font-weight: var(--fw-heavy);
-  letter-spacing: var(--tr-tight);
-  text-transform: uppercase;
-  border: var(--bw) solid var(--line);
-  /* Opaque face (the mock's `--solid`), and the bevel cuts the top-left AND
-     bottom-right corners -- a single-sided cut reads as a broken rectangle. */
-  background: var(--solid);
-  color: var(--txt);
-  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-  box-shadow: none;
-}
 
-.btn-icon,
-.btn-label {
-  position: relative;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-}
-
-.btn::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  background: linear-gradient(
-    100deg,
-    transparent 30%,
-    var(--gloss-hi) 50%,
-    transparent 70%
-  );
-  transform: translateX(-115%);
-}
-
-.btn:hover:not(:disabled)::before {
-  /* moves to MOTION in the next task */
-  animation: sweep 0.6s cubic-bezier(0.3, 0.7, 0.4, 1);
-}
-
-@keyframes sweep {
-  from {
-    transform: translateX(-115%);
-  }
-  to {
-    transform: translateX(115%);
-  }
-}
-
-.btn::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  opacity: 0;
-  background: color-mix(in srgb, var(--gold) 14%, transparent);
-  transition: opacity var(--dur-base) ease-out;
-}
-
-.btn:hover:not(:disabled)::after {
-  opacity: 1;
-}
-
-/* -- run: filled accent, pill-shaped (the mock's `.btn.primary`) -- */
-.btn-run {
-  color: var(--on-gold);
-  border-color: transparent;
-  padding: var(--sp-5) var(--sp-8);
-  clip-path: none;
-  border-radius: var(--r-pill);
-  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
-  /* The mock's own drop glow under the primary pill, not an inset highlight. */
-  box-shadow: 0 7px 18px -8px color-mix(in srgb, var(--gold) 75%, transparent);
-}
-
-.btn-run::after {
-  background: var(--gloss);
-}
-
-/* -- preview: the mock's `.ghost` -- the plain white face, no tint at all. -- */
-.btn-preview {
-  color: var(--txt);
-  border-color: var(--line);
-}
-
-/* -- stop: the mock's `.danger` -- a rose WASH, not just a rose outline. -- */
-.btn-stop {
-  color: var(--blood-t);
-  background: color-mix(in srgb, var(--blood) 8%, var(--solid));
-  border-color: color-mix(in srgb, var(--blood) 30%, transparent);
-}
-
-.btn-stop::after {
-  background: color-mix(in srgb, var(--blood) 26%, transparent);
-}
-
-/* -- kill: the same danger family, one notch quieter -- */
-.btn-kill {
-  color: var(--blood-t);
-  background: color-mix(in srgb, var(--blood) 8%, var(--solid));
-  border-color: color-mix(in srgb, var(--blood) 30%, transparent);
-}
-
+/* The armed state: a charge is waiting for confirmation. The mock has no such
+   state, so this is the window's own -- and it pulses a SHADOW, never a size. */
 .btn-armed {
   color: var(--fire-t);
   border-color: var(--blood);
-  /* moves to MOTION in the next task */
+  /* A CSS state animation, so its duration is CSS -- the MOTION table holds
+     the numbers JavaScript reads, and its own header excludes state
+     transitions. It was mirrored in both places and read from neither. */
   animation: armedPulse 1s ease-in-out infinite;
 }
 
@@ -145,16 +39,15 @@
   }
 }
 
-.btn-disabled,
 .btn:disabled {
   cursor: default;
   opacity: 0.5;
 }
 
-.btn-disabled::before,
-.btn:disabled::before,
-.btn-disabled::after,
-.btn:disabled::after {
+/* A disabled button answers nothing -- no glitch grid, no flash, no burst. */
+.btn:disabled .bx,
+.btn:disabled .fl,
+.btn:disabled .brs {
   display: none;
 }
 
@@ -164,10 +57,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .btn:hover::before {
-    animation: none;
-  }
-
+  .btn .bx,
+  .btn .sb,
   .btn-armed {
     animation: none;
   }

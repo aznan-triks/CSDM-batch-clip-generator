@@ -1,46 +1,60 @@
+/**
+ * What is LEFT in ActionButton.css.
+ *
+ * The faces (`.btn`, `.ghost`, `.danger`, `.primary`) and the four effect
+ * layers (`.bx`, `.fl`, `.brs`, `.sb`) are the approved mock's, held once in
+ * theme/mock-v12.css and drift-locked there. This file used to restate the
+ * face, the bevel and the pill, and to add a reflection sweep the mock never
+ * had. The guard now checks the opposite: that it says none of it.
+ */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const CSS = readFileSync(path.join(__dirname, "..", "ActionButton.css"), "utf-8");
+const BARE = CSS.replace(/\/\*[\s\S]*?\*\//g, "");
 
-function block(selector: string): string {
-  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = CSS.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`));
-  if (!match) throw new Error(`selector not found in ActionButton.css: ${selector}`);
-  return match[1];
-}
-
-describe(".btn base wears the mock's opaque face and two-corner bevel", () => {
-  const rule = block(".btn");
-
-  it("uses the opaque --solid face, not a glass wash", () => {
-    expect(rule).toMatch(/background:\s*var\(--solid\);/);
-    expect(rule).not.toMatch(/var\(--raise\);/);
-    expect(rule).not.toMatch(/var\(--surface-2\);/);
+describe("ActionButton.css re-states nothing the mock already says", () => {
+  it("leaves the face, the bevel and the pill to the mock", () => {
+    for (const property of [
+      "background",
+      "clip-path",
+      "border-radius",
+      "padding",
+      "font-family",
+      "font-size",
+      "letter-spacing",
+      "text-transform",
+    ]) {
+      expect(BARE, `ActionButton.css sets ${property}; the mock's .btn owns it`).not.toMatch(
+        new RegExp(`^\\s*${property}\\s*:`, "m"),
+      );
+    }
   });
 
-  // The mock cuts the top-left AND bottom-right corners. The old single-sided
-  // cut sheared one edge only and read as a rectangle drawn wrong.
-  it("cuts both diagonal corners, not just one edge", () => {
-    expect(rule).toMatch(
-      /clip-path:\s*polygon\(8px 0, 100% 0, 100% calc\(100% - 8px\), calc\(100% - 8px\) 100%, 0 100%, 0 8px\);/,
-    );
+  it("no longer carries its own hover effect", () => {
+    // The mock answers a hover with the `.bx` glitch grid. The old reflection
+    // sweep was a second answer to the same gesture -- and the one entry in
+    // no-hover-motion.test.ts's allowlist, now empty.
+    expect(BARE).not.toMatch(/sweep/);
+    expect(BARE).not.toMatch(/:hover/);
   });
 });
 
-describe(".btn-run breaks from the bevel family into a pill", () => {
-  const rule = block(".btn-run");
-
-  it("cancels the base clip-path", () => {
-    expect(rule).toMatch(/clip-path:\s*none;/);
+describe("ActionButton.css keeps what the mock cannot know", () => {
+  it("silences every effect layer on a disabled button", () => {
+    expect(BARE).toMatch(/\.btn:disabled \.bx/);
+    expect(BARE).toMatch(/\.btn:disabled \.brs/);
   });
 
-  it("is rounded pill, not the cut family", () => {
-    expect(rule).toMatch(/border-radius:\s*var\(--r-pill\);/);
+  it("keeps a visible keyboard focus ring", () => {
+    expect(BARE).toMatch(/\.btn:focus-visible\s*\{[^}]*var\(--focus-ring\)/);
   });
 
-  it("keeps its existing accent gradient untouched", () => {
-    expect(rule).toMatch(/linear-gradient\(180deg, var\(--gold-hi\), var\(--gold\)\)/);
+  it("pulses the armed state on a shadow, never on a size", () => {
+    const keyframes = BARE.match(/@keyframes armedPulse\s*\{[\s\S]*?\n\}/)?.[0] ?? "";
+    expect(keyframes, "the armed pulse is gone").not.toBe("");
+    expect(keyframes).toMatch(/box-shadow/);
+    expect(keyframes).not.toMatch(/transform|width|height|padding/);
   });
 });

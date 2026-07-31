@@ -59,12 +59,18 @@ const ELECTRON_DIR = path.join(__dirname, "..", "..", "..");
 const SOURCE_DIR = path.join(ELECTRON_DIR, "renderer", "src");
 
 /**
- * The single documented exception (D16): the action button's reflection is a
- * gradient on a pseudo-element BEHIND the label, and the label does not move.
- * Allowlisted by animation name so that adding a second moving hover effect
- * has to be a deliberate edit to this list, not a side effect.
+ * EMPTY, and it should stay that way.
+ *
+ * It used to hold `sweep`, the action button's reflection: a gradient on a
+ * pseudo-element behind the label, allowlisted because the keyframes
+ * translated it. That effect is gone -- the approved mock answers a hover with
+ * the `.bx` glitch grid, which animates `clip-path` and moves nothing, and two
+ * effects stacked on one gesture read as a bug.
+ *
+ * Adding a name here is adding a hover animation that MOVES something, so it
+ * has to be a deliberate edit with its own guard, never a side effect.
  */
-const ALLOWED_HOVER_ANIMATIONS = ["sweep"];
+const ALLOWED_HOVER_ANIMATIONS: readonly string[] = [];
 
 /** Build the real bundle in memory, so the scan can never read a stale file. */
 async function buildStylesheets(): Promise<{ name: string; css: string }[]> {
@@ -171,10 +177,12 @@ describe("no hover rule in the SHIPPED stylesheet moves anything", () => {
     ).toEqual([]);
   });
 
-  it("the allowlisted sweep is still what we think it is", () => {
-    // The exception is only acceptable while it stays a background effect on a
-    // pseudo-element. If `sweep` is ever attached to a real element, the
-    // label moves and the exception silently stops being one.
+  it("keeps every allowlisted animation on a pseudo-element", () => {
+    // An exception is only acceptable while it stays a background effect on a
+    // pseudo-element: attached to a real element, the label moves and the
+    // exception silently stops being one. The list is empty today, so this
+    // passes over nothing -- it is the guard that has to exist BEFORE the next
+    // name is added, not after.
     const offenders: string[] = [];
 
     for (const sheet of sheets) {

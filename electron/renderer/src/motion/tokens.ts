@@ -11,11 +11,16 @@
  */
 
 export const MOTION = {
-  /** Action button reflection. Mirrors the `sweep` keyframes in ActionButton.css. */
-  sweep: { duration: 0.6, ease: "cubic-bezier(.3,.7,.4,1)" },
-
-  /** The armed pulse, while a charge waits for confirmation. */
-  armedPulse: { duration: 1.0, ease: "ease-in-out" },
+  /**
+   * Local click feedback on an action button: the squash, the flash and the
+   * conic burst. The approved mock runs the three together off a single `.hit`
+   * class (`hit` .28s, `flash` .35s, `burst` .4s), so the class comes off on
+   * the LONGEST of them -- taken off earlier, the burst is cut mid-flight.
+   *
+   * This is the button saying "I took your click", not the weapon saying a run
+   * started (D18). The two never share a trigger.
+   */
+  buttonImpact: { duration: 0.4 },
 
   /** Muzzle flash at the barrel. */
   flash: { duration: 0.095, ease: "ease-out" },
