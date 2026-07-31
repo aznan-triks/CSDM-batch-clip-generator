@@ -9,6 +9,57 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — three confirmed root causes: the blocking dialog, the invisible selection, the square reticle
+
+> No version bump yet: the decision has been deferred twice and belongs to the user. These three
+> come out of `docs/audits/AUDIT_retours_restyle5.md`, the audit of fifteen reports made after the
+> window was opened for real at the close of restyle 5.
+
+### Fixed
+
+**Humanised:** Clicking RUN without picking a player froze the app for good. An error message
+appeared with no button on it — nothing to press, no way to dismiss it — and behind the scenes the
+engine sat waiting for an answer that could never be sent. Every further click piled on another
+stuck request.
+**Technical:** `csdm/engine/core.py::validate_run_inputs` refuses an incomplete run or preview with
+`ask("error", "…", [])` — a blocking dialog carrying no options — and `csdm/bridge/ports.py::ask`
+then waits on `done.wait()` with no timeout. `shell/LogConsole.tsx` rendered `options.slice(1)`,
+which on an empty array is no buttons at all, with no cancel outside that loop: `answer()` was
+unreachable, `resolve_answer` was never called, the engine thread never woke, and the command's
+`result` was never sent. The Tkinter host has always handled both shapes — `kind == "error"` opens a
+`showerror` with one OK button and always answers `"ok"`, ignoring `options`; anything else is
+titled by `options[0]`, offers `options[1..]`, and cancels to null. `PendingAsk` now carries `kind`
+and the panel always renders a closing button. The null also revives a live engine branch: `if
+answer is None` on the already-tagged-demos question unchecks them and restarts the preview, and it
+was unreachable from this window. Guarded by `shell/__tests__/LogConsole.ask.test.tsx`.
+
+**Humanised:** Nothing showed what was selected. A checked weapon, an active kill filter, a chosen
+map, a retained video preset — all of them looked exactly like the ones next to them that were not
+chosen.
+**Technical:** The approved design styles `.chip.on` (lime fill, lime border, dark-green ink) and
+restyle 5 emptied `components/Chip.css` of everything the design states — its own comment says so.
+But the component was never renamed onto that class: it wrote `chip chip-selected`, and
+`chip-selected` has no rule in any stylesheet (`rg -c "chip-selected"` over the shipped bundle
+returns 0). One line, 27 call sites across 10 files. `TagsTab` was the only place selection was ever
+visible, because it writes `chip on` by hand. Guarded by `components/__tests__/Chip.test.tsx`.
+
+**Humanised:** The crosshair that follows the mouse drew four small filled squares instead of four
+corner brackets, and its centre dot wore a ring. It now matches the bracket the cards wear at their
+own corners, which is what it was asked to look like.
+**Technical:** `.cursor-reticle span` sets the `border` shorthand — all four sides — at specificity
+(0,1,1); `.rc-tl` and its three siblings remove two sides each, and `.rc-dot` removes all four and
+shrinks to 3px, all at (0,1,0). The shorthand outranked every one of them. Measured on the running
+page: `solid/solid/solid/solid` on all five pieces, against `solid/none/none/solid` for the card
+bracket `.cbr.tl`. Each piece is now scoped through `.cursor-reticle`, taking it to (0,2,0).
+This also closes the separate report that the reticle does not lock onto buttons: it does, and
+always did — the `snap` class lands and `--cw` goes 26px → 127px for a 117px button. Four small
+squares spreading to a button's corners simply do not read as a lock-on. Guarded by
+`cursor/__tests__/Reticle.shape.test.ts`, which loads the sheet into the document and asks the
+engine what applies, rather than grepping the file — the existing `Reticle.css.test.ts` has
+contained `border-right: none` since the day it was written and passed on every broken build.
+
+---
+
 ## [Unreleased] — restyle 5, pass 2: the last three tabs, the wheel, the dark ground
 
 > No version bump: internal sub-chantier, closing the restyle-5 series. Versioning is decided next,
