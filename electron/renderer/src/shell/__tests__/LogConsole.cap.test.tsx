@@ -26,6 +26,19 @@ vi.mock("../../bridge", () => ({
   send: () => {},
 }));
 
+/**
+ * The typewriter is off here, on purpose.
+ *
+ * This file is about the CAP -- how many lines reach the DOM -- and the
+ * typewriter leaves the newest line half-written, which would make an
+ * assertion on its text about animation timing instead. `LogConsole.typing`
+ * covers the writing itself.
+ */
+vi.mock("../../motion/engine", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  effectiveIntensity: () => "none",
+}));
+
 function emit(message: BridgeMessage): void {
   for (const cb of listeners) cb(message);
 }
