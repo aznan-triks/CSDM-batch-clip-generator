@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
 import { onMessage, send } from "../bridge";
-import type { BridgeMessage } from "../bridge";
+import { PROMPT_COMMANDS, narrate, promptFor } from "./consoleNarrative";
+import type { Run } from "./consoleNarrative";
 import "./LogConsole.css";
 
 /**
@@ -14,12 +15,20 @@ import "./LogConsole.css";
  */
 export const LOG_CONSOLE = { maxRendered: 1500 } as const;
 
-/** One rendered console line. `key` is a counter: two identical lines are distinct events. */
+/**
+ * One rendered console line.
+ *
+ * `runs` is the line as the engine sends it -- a list of [text, level] pieces,
+ * which is what makes a multicolour line possible. `text` is the same content
+ * flattened, kept because search and export both work on plain text.
+ * `key` is a counter: two identical lines are distinct events.
+ */
 interface Line {
   key: number;
+  runs: Run[];
   text: string;
   cssClass: string;
-  /** The level the line carries (only "log" messages have one), for the badge toggle. */
+  /** The level the line carries, for the badge toggle. */
   level: string;
   /** When the line arrived, for the timestamp toggle. */
   ts: number;
@@ -52,50 +61,6 @@ function levelClass(level: string | undefined): string {
       return "line-dim";
     default:
       return "";
-  }
-}
-
-/** Render one protocol message the way the skeleton page did, verbatim. */
-function describe(message: BridgeMessage): { text: string; cssClass: string } {
-  switch (message.type) {
-    case "log":
-      return {
-        text: `[log:${message.level || "-"}] ${message.message}`,
-        cssClass: levelClass(message.level),
-      };
-    case "log_parts":
-      return {
-        text: `[log_parts] ${message.parts.map(([text]) => text).join("")}`,
-        cssClass: "",
-      };
-    case "state":
-      return {
-        text: `[state] ${message.name} ${JSON.stringify(message.payload)}`,
-        cssClass: "line-dim",
-      };
-    case "ask":
-      return { text: `[ask:${message.kind}] ${message.message}`, cssClass: "" };
-    case "result":
-      return {
-        text:
-          `[result] id=${message.id} ok=${message.ok}` +
-          (message.error ? ` error=${message.error}` : ""),
-        cssClass: "",
-      };
-    case "fatal":
-      return { text: `[fatal] ${message.error}`, cssClass: "line-err" };
-    case "child_exit":
-      return {
-        text: `[bridge] python engine exited (code=${message.code}, signal=${message.signal})`,
-        cssClass: "line-err",
-      };
-    case "child_error":
-      return {
-        text: `[bridge] failed to start python engine: ${message.error}`,
-        cssClass: "line-err",
-      };
-    default:
-      return { text: `[unknown] ${JSON.stringify(message)}`, cssClass: "line-dim" };
   }
 }
 
@@ -168,7 +133,10 @@ export default function LogConsole() {
   const [asks, setAsks] = useState<PendingAsk[]>([]);
   const [search, setSearch] = useState("");
   const [autoScroll, setAutoScroll] = useState(true);
-  const [showTimestamps, setShowTimestamps] = useState(false);
+  // ON by default: the approved mock timestamps every line, and a run's log is
+  // read afterwards to find out WHEN something happened.
+  const [showTimestamps, setShowTimestamps] = useState(true);
+  const [prompt, setPrompt] = useState(PROMPT_COMMANDS.idle);
   const [showBadges, setShowBadges] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const ask = asks[0] ?? null;
@@ -177,11 +145,27 @@ export default function LogConsole() {
 
   useEffect(() => {
     return onMessage((message) => {
-      const { text, cssClass } = describe(message);
-      const level = message.type === "log" ? message.level || "" : "";
-      nextKey.current += 1;
-      const key = nextKey.current;
-      setLines((previous) => [...previous, { key, text, cssClass, level, ts: Date.now() }]);
+      const nextPrompt = promptFor(message);
+      if (nextPrompt !== null) setPrompt(nextPrompt);
+
+      const narrated = narrate(message);
+      // `null` means the event steers the window without being worth a line.
+      if (narrated) {
+        const text = narrated.runs.map(([piece]) => piece).join("");
+        nextKey.current += 1;
+        const key = nextKey.current;
+        setLines((previous) => [
+          ...previous,
+          {
+            key,
+            runs: narrated.runs,
+            text,
+            cssClass: levelClass(narrated.level),
+            level: narrated.level,
+            ts: Date.now(),
+          },
+        ]);
+      }
 
       if (message.type === "ask") {
         // `options[0]` is the dialog title, the rest are the answers.
@@ -347,7 +331,15 @@ export default function LogConsole() {
             {showBadges && line.level && (
               <span className={`log-badge ${line.cssClass}`}>{line.level.toUpperCase()}</span>
             )}
-            {line.text}
+            {/* One <span> per run, each tinted by its own level. The engine
+                sends its lines as coloured pieces and they used to be joined
+                into one grey string here -- the capability existed at both
+                ends of the pipe and died at the last step. */}
+            {line.runs.map(([piece, level], index) => (
+              <span key={index} className={levelClass(level)}>
+                {piece}
+              </span>
+            ))}
           </div>
         ))}
 
@@ -357,6 +349,7 @@ export default function LogConsole() {
             the mock's, the lie is not. */}
         <div className="promptline">
           <span className="prompt">csdm&gt;</span>
+          {prompt && <span className="prompt-cmd"> {prompt}</span>}
           <span className="cur" aria-hidden="true" />
         </div>
       </div>

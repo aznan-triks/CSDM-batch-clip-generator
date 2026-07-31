@@ -149,3 +149,15 @@
 .line-dim {
   color: var(--dim);
 }
+
+/*
+ * What the engine is doing, shown after the prompt.
+ *
+ * The mock loops a fake typed command here. This window has no command line,
+ * so it does not pretend to be typed into -- but the prompt can say which
+ * action is under way, which is the half of the mock's behaviour that carries
+ * information rather than decoration. Empty when nothing is running.
+ */
+.console .prompt-cmd {
+  color: var(--dim);
+}
