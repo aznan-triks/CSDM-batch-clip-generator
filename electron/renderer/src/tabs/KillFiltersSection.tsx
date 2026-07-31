@@ -109,7 +109,7 @@ function FilterExtras({ filterKey }: { filterKey: string }) {
     case "kill_mod_flick":
       return (
         <div className="kf-extra">
-          <span className="kf-mini-label">Min angle</span>
+          <span className="lab">Min angle</span>
           <SettingControl settingKey="kill_mod_flick_deg">
             <Field
               id="kill-mod-flick-deg"
@@ -125,7 +125,7 @@ function FilterExtras({ filterKey }: { filterKey: string }) {
     case "kill_mod_one_tap":
       return (
         <div className="kf-extra">
-          <span className="kf-mini-label">Window</span>
+          <span className="lab">Window</span>
           <SettingControl settingKey="kill_mod_one_tap_s">
             <Field
               id="kill-mod-one-tap-s"
@@ -141,7 +141,7 @@ function FilterExtras({ filterKey }: { filterKey: string }) {
     case "kill_mod_multi_kill":
       return (
         <div className="kf-extra">
-          <span className="kf-mini-label">Min kills</span>
+          <span className="lab">Min kills</span>
           <SettingControl settingKey="kill_mod_multi_kill_n">
             <Segmented
               options={KILL_COUNT_OPTIONS}
@@ -150,7 +150,7 @@ function FilterExtras({ filterKey }: { filterKey: string }) {
               label="Min kills"
             />
           </SettingControl>
-          <span className="kf-mini-label">within</span>
+          <span className="lab">within</span>
           <SettingControl settingKey="kill_mod_multi_kill_s">
             <Field
               id="kill-mod-multi-kill-s"
@@ -166,7 +166,7 @@ function FilterExtras({ filterKey }: { filterKey: string }) {
     case "kill_mod_bully":
       return (
         <div className="kf-extra">
-          <span className="kf-mini-label">From kill #</span>
+          <span className="lab">From kill #</span>
           <SettingControl settingKey="kill_mod_bully_n">
             <Segmented
               options={KILL_COUNT_OPTIONS}
@@ -271,10 +271,10 @@ export default function KillFiltersSection() {
 
   return (
     <div className="kill-filters">
-      <div className="kf-top-row">
+      <div className="row">
         <SettingControl settingKey="suicides_mode">
           <div className="kf-top-group">
-            <span className="kf-mini-label">Suicides</span>
+            <span className="lab">Suicides</span>
             <Segmented
               options={SUICIDE_TK_MODES}
               value={suicidesMode ?? SUICIDE_TK_MODES[0]}
@@ -285,7 +285,7 @@ export default function KillFiltersSection() {
         </SettingControl>
         <SettingControl settingKey="teamkills_mode">
           <div className="kf-top-group">
-            <span className="kf-mini-label">TK</span>
+            <span className="lab">TK</span>
             <Segmented
               options={SUICIDE_TK_MODES}
               value={teamkillsMode ?? SUICIDE_TK_MODES[0]}
@@ -296,7 +296,7 @@ export default function KillFiltersSection() {
         </SettingControl>
         <SettingControl settingKey="headshots_mode">
           <div className="kf-top-group">
-            <span className="kf-mini-label">Headshots</span>
+            <span className="lab">Headshots</span>
             <Segmented
               options={HEADSHOT_MODES}
               value={headshotsMode ?? HEADSHOT_MODES[0]}
@@ -308,11 +308,11 @@ export default function KillFiltersSection() {
         </SettingControl>
       </div>
 
-      <div className="kf-heading-row">
-        <span className="kf-section-heading">Mods + demoparser2</span>
+      <div className="row">
+        <span className="lab">Mods + demoparser2</span>
         <button
           type="button"
-          className="kf-clear-btn"
+          className="chip push-right"
           onClick={() => setMany(buildClearChanges(tables))}
         >
           Clear
@@ -324,7 +324,7 @@ export default function KillFiltersSection() {
         if (defs.length === 0) return null;
         return (
           <div key={category} className="kf-group">
-            <span className="kf-section-heading">{CATEGORY_HEADING[category]}</span>
+            <span className="lab">{CATEGORY_HEADING[category]}</span>
             {defs.map((def) => (
               <FilterRow key={def.key} def={def} hasExclude={!NO_EXCLUDE_BOX.has(def.key)}>
                 <FilterExtras filterKey={def.key} />

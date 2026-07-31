@@ -1,47 +1,16 @@
 /*
- * The mock's `.stats` / `.st` / `.st .k` / `.st .v`, value for value.
+ * The counter strip closing the Capture tab.
  *
- * NO :hover rule in this file may translate or scale anything (D13/D16) --
- * the strip is not interactive at all.
+ * IT IS THE MOCK'S `.stats` / `.st` / `.k` / `.v`, tones included (`.v.a` for
+ * the accent, `.v.g` for the green), all in theme/mock-v12.css. The strip is
+ * read, never operated, so there is nothing the mock cannot know about it --
+ * except that a real counter can outgrow its cell.
  */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--sp-4);
-}
 
-.stat {
-  padding: var(--sp-4) var(--sp-5);
-  border-radius: var(--r-mid);
-  background: var(--surface-2);
-  border: var(--bw) solid var(--hair-2);
-  min-width: 0;
-}
-
-.stat-key {
-  font-size: var(--fs-micro);
-  text-transform: uppercase;
-  letter-spacing: var(--tr-tight);
-  color: var(--dim);
-}
-
-/* The mock's value is 17px/800 with a tight negative track: it is the one
-   place in the window where a number is allowed to shout. */
-.stat-value {
-  margin-top: 1px;
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--txt);
+/* A duration like 1:04:37 is longer than any number the mock ever showed. It
+   clips rather than reflowing the four-column grid into five lines. */
+.st .v {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.stat-value-accent {
-  color: var(--gold);
-}
-
-.stat-value-ok {
-  color: var(--ok-t);
 }

@@ -161,39 +161,39 @@ export default function DemoSelectionSection() {
 
   return (
     <div className="demo-selection">
-      <div className="ds-date-row">
+      <div className="row">
         <SettingControl settingKey="date_from">
           <DateField id="date-from" label="From" value={dateFrom ?? ""} onChange={setDateFrom} />
         </SettingControl>
         <SettingControl settingKey="date_to">
           <div className="ds-date-to">
             <DateField id="date-to" label="To" value={dateTo ?? ""} onChange={setDateTo} />
-            <button type="button" className="ds-today-btn" onClick={setToday}>
+            <button type="button" className="chip" onClick={setToday}>
               Today
             </button>
           </div>
         </SettingControl>
       </div>
 
-      <div className="ds-shortcut-row">
-        <span className="ds-mini-label">Shortcuts:</span>
+      <div className="row">
+        <span className="lab">Shortcuts:</span>
         {DATE_SHORTCUTS.map((shortcut) => (
           <button
             key={shortcut.label}
             type="button"
-            className="ds-shortcut-btn"
+            className="chip"
             onClick={() => applyShortcut(shortcut)}
           >
             {shortcut.label}
           </button>
         ))}
-        <button type="button" className="ds-clear-btn" onClick={clearAll}>
+        <button type="button" className="chip" onClick={clearAll}>
           Clear all
         </button>
       </div>
 
-      <div className="ds-mode-row">
-        <span className="ds-mini-label">Demo selection:</span>
+      <div className="row">
+        <span className="lab">Demo selection:</span>
         <Chip
           label="Manual mode (load ALL demos from DB)"
           selected={manualMode}

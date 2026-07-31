@@ -67,16 +67,22 @@ export default function PlayerSection() {
 
   return (
     <div className="player-section">
-      <SettingControl settingKey="player_name">
-        <span className="ps-active-label">{activeLabel}</span>
-      </SettingControl>
+      {/* One row: who is active, and the box that narrows the list. The mock
+          keeps its own "+ add player" field on the row beside the player
+          pills, capped rather than spanning the card -- a search box as wide
+          as the window is what made this card read as a banner. */}
+      <div className="row">
+        <SettingControl settingKey="player_name">
+          <span className="lab">{activeLabel}</span>
+        </SettingControl>
 
-      <Field
-        id="player-search"
-        value={search}
-        onChange={setSearch}
-        placeholder="Search by name or Steam ID…"
-      />
+        <Field
+          id="player-search"
+          value={search}
+          onChange={setSearch}
+          placeholder="Search by name or Steam ID…"
+        />
+      </div>
 
       {!database ? (
         <p className="capture-hint">Waiting for DB…</p>

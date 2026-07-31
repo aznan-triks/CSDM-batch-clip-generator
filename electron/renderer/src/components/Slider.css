@@ -11,26 +11,10 @@
  * the motion the no-hover-motion lock forbids.
  */
 
-/* The mock's slider is ONE row -- label, rail, value -- not a stacked block
-   with a caption above it. Stacking doubled every slider's height and is what
-   turned the Capture tab into a column of half-empty cards. */
-.slider {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: var(--sp-5);
-  min-width: 0;
-}
-
-.slider-label {
-  flex: none;
-  min-width: 76px;
-  font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  letter-spacing: 0;
-  color: var(--dim);
-  text-transform: none;
-}
+/* The row and the label are the mock's `.row` and `.lab` (theme/mock-v12.css);
+   the slider wears them rather than restating them. The rail below is this
+   file's own, because the mock's `.slider` is a PICTURE of a rail -- a 6px div
+   with two pseudo-elements -- and a real range input cannot be that. */
 
 .slider-readout {
   flex: none;

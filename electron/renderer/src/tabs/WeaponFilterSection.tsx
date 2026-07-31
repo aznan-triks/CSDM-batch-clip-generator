@@ -52,23 +52,23 @@ export default function WeaponFilterSection() {
 
   return (
     <div className="weapon-filter">
-      <div className="wf-heading-row">
-        <span className="wf-section-heading">empty = all</span>
-        <div className="wf-buttons">
-          <button type="button" className="wf-btn" onClick={() => setWeapons([...allWeapons])}>
+      <div className="row">
+        <span className="lab">empty = all</span>
+        <div className="chips push-right">
+          <button type="button" className="chip" onClick={() => setWeapons([...allWeapons])}>
             Select all
           </button>
-          <button type="button" className="wf-btn" onClick={() => setWeapons([])}>
+          <button type="button" className="chip" onClick={() => setWeapons([])}>
             Deselect all
           </button>
         </div>
       </div>
       <SettingControl settingKey="weapons">
-        <div className="weapon-grid">
+        <div className="chips">
           {categories.map(([category, names]) => (
             <div key={category} className="wf-category">
-              <span className="wf-mini-label">{category}</span>
-              <div className="wf-chips">
+              <span className="lab">{category}</span>
+              <div className="chips">
                 {names.map((name) => (
                   <Chip
                     key={name}

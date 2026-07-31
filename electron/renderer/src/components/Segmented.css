@@ -1,60 +1,37 @@
-/* `.seg` originally from ui-v5.html lines 93-98; the glass background on
- * `.segmented` per restyle 2 comes from mockup-v12-hologlass.html `.seg`
- * (line 139). Local 10px radius: see restyle 2 plan's Task 3 rationale. */
-/* The mock's `.seg`: a recessed tray holding loose pills, gap-separated --
-   no dividers, and the SELECTED pill is a plain white card with accent text,
-   not a saturated blue block. */
-.segmented {
-  display: inline-flex;
-  gap: 2px;
-  padding: var(--sp-1);
-  border: var(--bw) solid var(--line);
-  background: var(--recess);
-  border-radius: 10px;
-}
+/*
+ * The segmented control.
+ *
+ * THE CONTROL IS THE MOCK'S `.seg`, and each segment is the mock's `.seg span`
+ * with its `.on` state (theme/mock-v12.css): the tray, the padding, the
+ * radius, the selected white card with accent ink -- all stated there.
+ *
+ * What is left is the shell. The mock's segments are spans in a div; these are
+ * radio buttons, because this control is operated rather than looked at. So
+ * the button gives up every pixel it would otherwise claim and lets the span
+ * it wraps BE the segment, instead of a second copy of the mock's rule.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
 
-.segment {
+.seg button {
   appearance: none;
-  cursor: pointer;
-  padding: var(--sp-3) var(--sp-5);
-  font-family: var(--font-display);
-  font-size: var(--fs-md);
-  font-weight: var(--fw-bold);
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--dim);
-  background: transparent;
+  display: flex;
+  padding: 0;
   border: 0;
-  border-radius: 8px;
-  transition: background var(--dur-fast), color var(--dur-fast);
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
 }
 
-.segment:hover {
-  color: var(--txt-lo);
-}
-
-.segment-selected {
-  color: var(--gold);
-  background: var(--solid);
-  box-shadow: var(--elev-sm);
-}
-
-.segment-selected:hover {
-  color: var(--gold);
-  background: var(--solid);
-}
-
-.segment:focus-visible {
+.seg button:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: -2px;
+  outline-offset: 1px;
+  border-radius: 8px;
 }
 
-.segment[aria-disabled="true"] {
+/* Disabled, not hidden -- the rule it enforces has to stay visible. */
+.seg button[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.45;
-}
-
-.segment[aria-disabled="true"]:hover {
-  background: transparent;
-  color: var(--dim);
 }

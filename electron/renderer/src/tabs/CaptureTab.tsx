@@ -106,7 +106,7 @@ export default function CaptureTab() {
     // instead of each triggering its own bridge command and Python thread.
     <TablesProvider>
       <DatabaseProvider>
-        <div className="capture-tab">
+        <div className="bento capture-tab">
           <Card
             title="Player"
             icon={<ICONS.player />}
@@ -135,8 +135,8 @@ export default function CaptureTab() {
             count={perspective ?? PERSPECTIVES[0]}
           >
             <SettingControl settingKey="events">
-            <div className="capture-row">
-              <span className="capture-label">Capture</span>
+            <div className="row">
+              <span className="lab">Capture</span>
               {EVENT_KINDS.map((kind) => (
                 <Chip
                   key={kind.value}
@@ -149,8 +149,8 @@ export default function CaptureTab() {
           </SettingControl>
 
           <SettingControl settingKey="perspective">
-            <div className="capture-row">
-              <span className="capture-label">Perspective</span>
+            <div className="row">
+              <span className="lab">Perspective</span>
               <Segmented
                 options={PERSPECTIVES}
                 value={perspective ?? PERSPECTIVES[0]}
@@ -177,8 +177,8 @@ export default function CaptureTab() {
 
           {/* Mate POV replaces the victim camera, so it is meaningless on the killer. */}
           {(perspective === "victim" || perspective === "both") && (
-            <div className="capture-row">
-              <span className="capture-label">Mate POV</span>
+            <div className="row">
+              <span className="lab">Mate POV</span>
               <SettingControl settingKey="kill_mod_mate_pov">
                 <Chip label="Enable" selected={!!matePov} onToggle={toggleMatePov} />
               </SettingControl>
@@ -192,20 +192,22 @@ export default function CaptureTab() {
             </div>
           )}
 
-          <SettingControl settingKey="player_name_override">
-            <Field
-              id="player-name-override"
-              label="Name override"
-              value={nameOverride ?? ""}
-              onChange={setNameOverride}
-              placeholder="name stored in the demo"
-            />
-          </SettingControl>
+          <div className="row">
+            <SettingControl settingKey="player_name_override">
+              <Field
+                id="player-name-override"
+                label="Name override"
+                value={nameOverride ?? ""}
+                onChange={setNameOverride}
+                placeholder="name stored in the demo"
+              />
+            </SettingControl>
+          </div>
 
-          {/* Sliders stack full width, they do NOT share a two-column grid:
-              in a half-width card that left each rail 92px long against the
-              mock's 202px, and a rail that short cannot be aimed. */}
-          <div className="capture-sliders">
+          {/* Each slider is a row of its own (mock `.row`: label, rail,
+              readout). They are not columns in a grid: in a half-width card
+              that left each rail 92px long against the mock's 202px, and a
+              rail that short cannot be aimed. */}
             <SettingControl settingKey="before">
               <Slider
                 id="seconds-before"
@@ -228,9 +230,8 @@ export default function CaptureTab() {
                 readout={`${asNumber(after, AFTER_RANGE.min)}s`}
               />
             </SettingControl>
-          </div>
 
-          <div className="capture-grid">
+          <div className="row">
             <SettingControl settingKey="retry_count">
               <Field
                 id="retry-count"
@@ -270,8 +271,8 @@ export default function CaptureTab() {
           </div>
 
             <SettingControl settingKey="clip_order">
-              <div className="capture-row">
-                <span className="capture-label">Order</span>
+              <div className="row">
+                <span className="lab">Order</span>
                 <Segmented
                   options={CLIP_ORDERS}
                   value={clipOrder ?? CLIP_ORDERS[0]}

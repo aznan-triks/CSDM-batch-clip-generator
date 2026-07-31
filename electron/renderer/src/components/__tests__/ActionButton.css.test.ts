@@ -27,7 +27,7 @@ describe("ActionButton.css re-states nothing the mock already says", () => {
       "text-transform",
     ]) {
       expect(BARE, `ActionButton.css sets ${property}; the mock's .btn owns it`).not.toMatch(
-        new RegExp(`^\\s*${property}\\s*:`, "m"),
+        new RegExp(`^[ \\t]*${property}\\s*:`, "m"),
       );
     }
   });

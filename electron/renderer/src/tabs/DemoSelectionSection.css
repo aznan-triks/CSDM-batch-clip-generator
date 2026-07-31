@@ -12,101 +12,10 @@
   border-top: var(--bw) solid var(--line);
 }
 
-.ds-section-heading {
-  /* The mock's `.sh .cnt`: a quiet counter beside the card's own title, never
-     a second heading competing with it. */
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
-  text-transform: uppercase;
-  color: var(--dim);
-}
-
-.ds-date-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--sp-5);
-}
-
 .ds-date-to {
   display: flex;
   align-items: flex-end;
   gap: var(--sp-2);
-}
-
-.ds-today-btn {
-  appearance: none;
-  cursor: pointer;
-  padding: var(--sp-2) var(--sp-4);
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
-  background: var(--raise);
-  color: var(--ok-t);
-  transition: background var(--dur-fast), border-color var(--dur-fast);
-}
-
-.ds-today-btn:hover {
-  background: var(--raise-hi);
-  border-color: var(--line-hi);
-}
-
-.ds-mini-label {
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
-  text-transform: uppercase;
-  color: var(--dim);
-}
-
-.ds-shortcut-row,
-.ds-mode-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-2);
-}
-
-.ds-shortcut-btn {
-  appearance: none;
-  cursor: pointer;
-  padding: var(--sp-1) var(--sp-4);
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
-  background: var(--raise);
-  color: var(--txt);
-  transition: background var(--dur-fast), border-color var(--dur-fast);
-}
-
-.ds-shortcut-btn:hover {
-  background: var(--raise-hi);
-  border-color: var(--line-hi);
-}
-
-.ds-clear-btn {
-  appearance: none;
-  cursor: pointer;
-  padding: var(--sp-1) var(--sp-4);
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
-  background: var(--raise);
-  color: var(--dim);
-  transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast);
-}
-
-.ds-clear-btn:hover {
-  background: var(--raise-hi);
-  border-color: var(--line-hi);
-  color: var(--txt-lo);
 }
 
 .ds-error {

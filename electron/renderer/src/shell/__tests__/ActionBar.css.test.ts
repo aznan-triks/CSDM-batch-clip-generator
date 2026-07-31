@@ -18,7 +18,7 @@ describe("ActionBar.css re-states nothing the mock already says", () => {
   it("leaves the band's ground, hairline and lift to the mock", () => {
     for (const property of ["background", "backdrop-filter", "border-top", "box-shadow", "padding"]) {
       expect(CSS, `ActionBar.css sets ${property}; the mock's .actbar owns it`).not.toMatch(
-        new RegExp(`^\\s*${property}\\s*:`, "m"),
+        new RegExp(`^[ \\t]*${property}\\s*:`, "m"),
       );
     }
   });

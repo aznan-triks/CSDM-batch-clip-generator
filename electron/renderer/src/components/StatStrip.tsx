@@ -24,6 +24,9 @@ function hms(seconds: number): string {
 
 const NOTHING_YET = "--";
 
+/** The mock's own one-letter tone classes: `.st .v.a` accent, `.st .v.g` green. */
+const TONE_CLASS = { accent: "a", ok: "g" } as const;
+
 export default function StatStrip() {
   const { summary } = useEngineState();
 
@@ -51,11 +54,9 @@ export default function StatStrip() {
   return (
     <div className="stats">
       {cells.map((cell) => (
-        <div className="stat" key={cell.key}>
-          <div className="stat-key">{cell.key}</div>
-          <div className={cell.tone ? `stat-value stat-value-${cell.tone}` : "stat-value"}>
-            {cell.value}
-          </div>
+        <div className="st" key={cell.key}>
+          <div className="k">{cell.key}</div>
+          <div className={cell.tone ? `v ${TONE_CLASS[cell.tone]}` : "v"}>{cell.value}</div>
         </div>
       ))}
     </div>

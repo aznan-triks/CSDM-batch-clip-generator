@@ -54,7 +54,7 @@ describe("Tab.css states only what the mock does not", () => {
       "transform",
     ]) {
       expect(CSS, `Tab.css re-states ${property}; the mock already says it`).not.toMatch(
-        new RegExp(`^\\s*${property}\\s*:`, "m"),
+        new RegExp(`^[ \\t]*${property}\\s*:`, "m"),
       );
     }
   });

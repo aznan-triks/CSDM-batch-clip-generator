@@ -17,7 +17,7 @@ describe("Card's cursor-follow spotlight", () => {
         <p>content</p>
       </Card>,
     );
-    const card = screen.getByText("Demo").closest(".panel-box") as HTMLElement;
+    const card = screen.getByText("Demo").closest(".sec") as HTMLElement;
     stubRect(card, 10, 20);
     fireEvent.mouseMove(card, { clientX: 60, clientY: 70 });
 

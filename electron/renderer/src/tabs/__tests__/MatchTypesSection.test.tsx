@@ -58,7 +58,7 @@ describe("MatchTypesSection", () => {
     // Scoped to the grid: the section's own master switch
     // (`match_type_filter_enabled`) also carries a `data-config-key` and
     // would otherwise pollute this list.
-    const grid = container.querySelector(".mt-grid") as HTMLElement;
+    const grid = container.querySelector(".chips") as HTMLElement;
     const keys = [...grid.querySelectorAll("[data-config-key]")].map((n) =>
       n.getAttribute("data-config-key"),
     );

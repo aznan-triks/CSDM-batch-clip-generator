@@ -1,69 +1,32 @@
 /*
- * The Capture tab's layout. Colours come from theme/tokens.css only.
+ * The Capture tab's layout.
+ *
+ * THE GRID IS THE MOCK'S `.bento` AND ITS `.wide`, the rows are the mock's
+ * `.row`, the labels its `.lab`, the chip groups its `.chips` -- all in
+ * theme/mock-v12.css. This file used to restate every one of them under a
+ * `capture-` prefix, alongside eight small-button variants that are now the
+ * mock's single `.chip`.
  *
  * NO :hover rule in this file may translate or scale anything (D13/D16).
  */
 
-/* The mock's `.bento`: a 2-column grid, 10px gutter, no padding of its own --
-   the workspace column (AppShell.css) already owns the inset. */
-.capture-tab {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sp-4);
-  align-content: start;
+/*
+ * A card pushes its trailing group to the right edge of a row -- "all / none"
+ * beside a section's caption. The mock does this with `margin-left: auto` on
+ * its `.excl`, but that name means "exclude"; the mechanism gets its own name
+ * here rather than borrowing a word for it.
+ */
+.push-right {
+  margin-left: auto;
 }
 
-/* Dense, chip-heavy cards span both columns instead of being squeezed to a
-   half. `.wide` is the mock's own name for this and Card passes it through. */
-.capture-tab > .wide {
-  grid-column: 1 / -1;
-}
-
-/* A label followed by its controls on one line, wrapping on a narrow window
-   the way the window's own WrapRow does. */
-.capture-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-3);
-}
-
-.capture-label {
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
-  text-transform: uppercase;
-  color: var(--dim);
-  min-width: 96px;
-}
-
-/* Two columns on a comfortable window, one when the console shares the
-   width. `auto-fit` means no breakpoint has to be maintained by hand. */
-.capture-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--sp-4) var(--sp-6);
-}
-
-/* Sliders stack, one per row: the rail needs the card's full width to be
-   aimable (the mock's is ~200px long). */
-.capture-sliders {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-4);
-}
-
-/* The wrapper the coverage guard looks for carries no styling of its own:
-   it must not change how anything inside it lays out. */
-.capture-tab .setting {
-  min-width: 0;
-}
-
-.capture-tab .player-section,
-.capture-tab .demo-selection,
-.capture-tab .weapon-filter,
-.capture-tab .kill-filters,
-.capture-tab .match-types,
-.capture-tab .map-filter {
+/*
+ * A grid item's default `min-width: auto` refuses to shrink below its content,
+ * so a single long chip row could push a half-width card past its column and
+ * stretch the whole tab. Nothing the mock had to answer: its cards hold
+ * exactly as much as its picture showed.
+ */
+.capture-tab > *,
+.capture-tab .sb {
   min-width: 0;
 }

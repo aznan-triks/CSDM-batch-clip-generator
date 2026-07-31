@@ -1,189 +1,57 @@
 /*
- * .pbox from the mock (ui-v5.html lines 67-80), renamed `panel-box` per the
- * mock's own comment: `.card` collided with a third-party hover-lift class.
- * Glass surface and rounded corner from restyle 2 (mockup-v12-hologlass.html
- * `.sec`).
+ * The folding card.
  *
- * Literals not backed by a token (reported, not tokenized):
- *  - the corner-bracket size (9px) -- explicitly allowed as geometry, not a
- *    spacing value.
- *  - the corner-bracket inset (6px) -- restyle 2 rounded the card to
- *    --r-card (18px); at the old -1px inset the brackets floated outside
- *    the curve instead of sitting on it. 6px ~= r-card * (1 - cos 45 deg),
- *    the point where a straight L-bracket tucks inside a rounded corner.
- *    `overflow: hidden` below is required for the same reason: without it,
- *    .panel-heading's top-corner gradient paints past the curve.
+ * THE CARD IS THE MOCK'S `.sec`: the glass, the rim, the radius, the lift, the
+ * glitch veil (`.glx`), the corner brackets (`.cbr`), the header row (`.sh`
+ * with its `.gl` / `.t` / `.cnt` / `.car`), the body (`.sb`) and the
+ * cursor-follow spotlight (`.spot`) all live in theme/mock-v12.css. None of it
+ * is restated here.
+ *
+ * What is left is what the mock cannot know: that this card's header is a real
+ * button inside a real heading, and that every card in this window stacks rows
+ * in its body.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
  */
-.panel-box {
-  position: relative;
-  overflow: hidden;
-  min-width: 0;
-  background: var(--surface);
-  /* The mock's rim is the LIT edge of a glass plate (--edge-hi, near-white),
-     not a dark hairline: a dark border draws the card as an outline on the
-     ground instead of a pane floating above it. */
-  border: var(--bw) solid var(--edge-hi);
-  border-radius: var(--r-card);
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
-  box-shadow: var(--elev);
-}
 
-/* The mock's `.cbr` pair sits top-left and bottom-right (a diagonal), quiet at
-   30% opacity -- not two brackets crowding the same top edge. */
-.panel-box::before,
-.panel-box::after {
-  content: "";
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  opacity: 0.3;
-  pointer-events: none;
-  border: var(--bw-accent) solid color-mix(in srgb, var(--gold) 50%, transparent);
-}
-
-.panel-box::before {
-  top: 7px;
-  left: 7px;
-  border-right: none;
-  border-bottom: none;
-}
-
-.panel-box::after {
-  right: 7px;
-  bottom: 7px;
-  border-left: none;
-  border-top: none;
-}
-
-/* The mock's `.sh`: a plain readable title, NOT a tracked-out uppercase label.
-   The uppercase micro-caps version was the old military-flat look and it is
-   what made every section read as a form legend instead of a card. */
+/*
+ * The heading keeps its semantics and loses its box. A screen reader still
+ * walks the tab by card title; the layout sees `.sh` as a direct child of
+ * `.sec`, which is what the mock's rules assume. Wrapping the button in a
+ * heading that generates a block is why the header never looked like the mock:
+ * a flex row inside a block is not a flex row.
+ */
 .panel-heading {
-  position: relative;
-  z-index: 4;
-  margin: 0;
-  font-size: var(--fs-xl);
-  font-weight: var(--fw-heavy);
+  display: contents;
 }
 
-/* The whole header is the fold toggle (the mock's `.sh`, cursor: pointer). */
-.panel-heading-btn {
+/* The mock's header is a `<div>`; this one is a `<button>`, which inherits no
+   font and arrives with the browser's own chrome. */
+.sh {
   appearance: none;
-  cursor: pointer;
-  width: 100%;
   border: 0;
-  background: transparent;
-  padding: var(--sp-5) var(--sp-6);
-  display: flex;
-  align-items: center;
-  gap: var(--sp-5);
+  width: 100%;
   font: inherit;
-  color: var(--txt);
   text-align: left;
+  color: inherit;
+  background: transparent;
 }
 
-.panel-heading-title {
-  flex: 1;
-  min-width: 0;
-  letter-spacing: 0.01em;
-}
-
-/* The mock's `.sh .cnt`: the card's own summary, quiet and right-aligned. */
-.panel-heading-count {
-  flex: none;
-  font-size: var(--fs-xs);
-  font-weight: var(--fw-normal);
-  letter-spacing: var(--tr-tight);
-  text-transform: uppercase;
-  color: var(--dim);
-}
-
-.panel-heading-caret {
-  flex: none;
-  font-size: 16px;
-  line-height: 1;
-  color: var(--dim);
-  transition: transform var(--dur-base) var(--ease);
-}
-
-.panel-closed .panel-heading-caret {
-  transform: rotate(-90deg);
-}
-
-.panel-heading-btn:focus-visible {
+.sh:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: -2px;
 }
 
-/* The mock's `.sh .gl`: the glyph rides in its own bevelled accent tile. */
-.panel-heading-icon {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 30px;
-  height: 30px;
-  font-size: 16px;
-  line-height: 1;
-  color: var(--gold);
-  background: var(--accent-soft);
-  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
-}
-
-/* The mock's `.sb`: no divider, no second background -- the body continues the
-   header's own surface, which is what keeps the card reading as one pane. */
-.panel-content {
-  position: relative;
-  z-index: 4;
-  padding: 0 var(--sp-6) var(--sp-6);
+/*
+ * The mock spells this out per card, inline (`style="display:flex;
+ * flex-direction:column;gap:8px"`), because only some of its cards stack rows.
+ * Every card in this window does, so it is the default here rather than a
+ * decision repeated on each one.
+ */
+.sb {
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: var(--sp-4);
   min-width: 0;
-}
-
-/*
- * The cursor-follow spotlight border (restyle 4, mockup-v12-hologlass.html
- * `.sec .spot`). `--mx`/`--my` are painted by Card.tsx on mousemove -- never
- * a layout style, see the guard in __tests__/no-hover-motion.test.ts. Masked
- * to a ring (mask-composite: exclude) rather than a filled halo, so only the
- * border glows.
- */
-.panel-box .spot {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: 5;
-  padding: 1.5px;
-  opacity: 0;
-  transition: opacity var(--dur-base);
-  background: radial-gradient(
-    150px circle at var(--mx, 50%) var(--my, 50%),
-    color-mix(in srgb, var(--gold) 95%, #fff),
-    color-mix(in srgb, var(--gold) 45%, transparent) 32%,
-    transparent 62%
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-}
-
-.panel-box:hover .spot {
-  opacity: 1;
-}
-
-.panel-box .spot::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(
-    220px circle at var(--mx, 50%) var(--my, 50%),
-    color-mix(in srgb, var(--gold) 16%, transparent),
-    transparent 55%
-  );
 }

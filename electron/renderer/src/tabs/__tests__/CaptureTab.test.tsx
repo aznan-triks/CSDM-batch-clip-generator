@@ -170,4 +170,20 @@ describe("CaptureTab conditional rows", () => {
     choosePerspective("both");
     expect(screen.getByText(/total before: 5s/)).toBeTruthy();
   });
+
+  it("keeps every field inside a row, never as a full-width block", async () => {
+    // jsdom lays nothing out, so this asserts the STRUCTURE that produces the
+    // width: the mock shares a row out with `.fld { flex: 1; min-width: 90px }`
+    // and a field with no row to sit in stretches to the card instead -- one
+    // reached 1246px, which is what made this tab read as a stack of banners.
+    // The rendered widths are checked by the task's on-screen probe.
+    const { container } = await renderTab();
+    const orphans = [...container.querySelectorAll(".fld")].filter(
+      (field) => field.closest(".row") === null,
+    );
+    expect(
+      orphans.map((f) => f.id || f.className),
+      "these fields sit outside a row and will stretch to the card's width",
+    ).toEqual([]);
+  });
 });

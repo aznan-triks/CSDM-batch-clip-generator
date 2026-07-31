@@ -1,56 +1,21 @@
-/* `.chip` originally from ui-v5.html lines 86-92; glass/pill values per
- * restyle 2 now come from mockup-v12-hologlass.html `.chip` (line 125-131). */
+/*
+ * The toggle chip.
+ *
+ * THE CHIP IS THE MOCK'S: `.chip`, its `.d` dot and its `.on` state all live
+ * in theme/mock-v12.css. Nothing about the face, the pill, the border or the
+ * selected lime is restated here -- and the dot is a real element now, the
+ * mock's own, rather than a pseudo-element copy of it.
+ *
+ * What is left is what the mock cannot know: the chip is a real <button>, it
+ * gets tabbed to, and it can be disabled.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+/* A <button> inherits no font family and arrives with the browser's chrome. */
 .chip {
   appearance: none;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-5);
-  font-family: var(--font-display);
-  font-size: var(--fs-lg);
-  font-weight: var(--fw-bold);
-  letter-spacing: 0;
-  border: var(--bw) solid var(--line);
-  border-radius: var(--r-pill);
-  /* An OPAQUE face on the glass ground, per the mock's `--solid`: a
-     translucent chip on a translucent card washed out to nothing. */
-  background: var(--solid);
-  color: var(--dim);
-  transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
-}
-
-/* The mock's `.chip .d`: a status dot leading every chip, inheriting the
-   chip's own ink so it turns lime-green the moment the chip is picked. */
-.chip::before {
-  content: "";
-  flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.5;
-}
-
-.chip-selected::before {
-  opacity: 1;
-}
-
-.chip:hover {
-  border-color: color-mix(in srgb, var(--gold) 28%, transparent);
-}
-
-/* The mock's ON state is LIME, not a blue wash: the accent is reserved for
-   what the app is DOING (buttons, active tab), the lime for what the user has
-   PICKED. Losing that split made every selected chip compete with the run bar. */
-.chip-selected {
-  background: var(--lime);
-  border-color: var(--lime-glow);
-  color: var(--lime-ink);
-}
-
-.chip-selected:hover {
-  border-color: var(--lime-glow);
+  font-family: inherit;
 }
 
 .chip:focus-visible {
@@ -58,13 +23,11 @@
   outline-offset: 2px;
 }
 
+/*
+ * Disabled, not hidden: a filter that vanishes reads as a filter that does not
+ * exist. It stays on screen, greyed, and answers nothing.
+ */
 .chip[aria-disabled="true"] {
   cursor: not-allowed;
   opacity: 0.45;
-}
-
-.chip[aria-disabled="true"]:hover {
-  background: var(--solid);
-  border-color: var(--line);
-  color: var(--dim);
 }

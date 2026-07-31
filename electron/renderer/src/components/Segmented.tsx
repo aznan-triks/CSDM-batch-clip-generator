@@ -16,10 +16,18 @@ interface SegmentedProps {
   disabled?: boolean;
 }
 
-/** A joined segmented control, extracted from the mock's `.seg` (ui-v5.html lines 93-98). */
+/**
+ * A joined segmented control, wearing the approved mock's `.seg`.
+ *
+ * The mock's segments are bare `<span>`s -- it is a picture, and a picture is
+ * never operated. Here each segment is a real radio button, so the button is a
+ * transparent shell around the span the mock's rules style. The keyboard and
+ * the screen reader keep working, and the mock's segment styling is not
+ * copied out to reach a different element.
+ */
 export default function Segmented({ options, value, onChange, label, disabled }: SegmentedProps) {
   return (
-    <div className="segmented" role="radiogroup" aria-label={label}>
+    <div className="seg" role="radiogroup" aria-label={label}>
       {options.map((option) => {
         const checked = option === value;
         return (
@@ -29,12 +37,11 @@ export default function Segmented({ options, value, onChange, label, disabled }:
             role="radio"
             aria-checked={checked}
             aria-disabled={!!disabled}
-            className={checked ? "segment segment-selected" : "segment"}
             onClick={() => {
               if (!disabled) onChange(option);
             }}
           >
-            {option}
+            <span className={checked ? "on" : undefined}>{option}</span>
           </button>
         );
       })}

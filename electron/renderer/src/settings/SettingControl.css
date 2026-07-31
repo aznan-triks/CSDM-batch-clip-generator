@@ -1,0 +1,15 @@
+/*
+ * The coverage marker carries no box.
+ *
+ * `.setting` exists so `settings/__tests__/coverage.test.tsx` can find a
+ * DEFAULT_CONFIG key on screen. It must not also decide layout: the mock puts
+ * a label and its field side by side inside a `.row`, and a block wrapper
+ * around each of them gives every control its own line. That is how a field
+ * ended up 1246px wide.
+ *
+ * `display: contents` keeps the element and its attribute in the DOM -- the
+ * guard still sees it -- while its children become children of the row.
+ */
+.setting {
+  display: contents;
+}

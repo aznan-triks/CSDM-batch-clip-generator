@@ -1,42 +1,26 @@
-/* `.fld` from the mock (ui-v5.html lines 82-85). No un-tokenized literals. */
-.field-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
+/*
+ * The text field.
+ *
+ * THE FIELD IS THE MOCK'S `.fld` and its label the mock's `.lab`
+ * (theme/mock-v12.css): the face, the rim, the radius, the size, the colour,
+ * and the `flex: 1; min-width: 90px` that lets several fields share one row
+ * are all stated there, once.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
 
-.field-label {
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-snug);
-  text-transform: uppercase;
-  color: var(--dim);
-}
-
-/* The mock's `.fld`: an opaque white face, 10px corner, 8px/12px inset. */
-.field {
-  background: var(--solid);
-  border: var(--bw) solid var(--line);
-  border-radius: 10px;
-  padding: var(--sp-3) var(--sp-5);
-  font-family: var(--font-display);
-  font-size: var(--fs-lg);
-  color: var(--txt);
-  transition: background var(--dur-fast), border-color var(--dur-fast);
-}
-
-.field-mono {
+/* Numeric fields read as numbers. The mock has no numeric field, so it never
+   had to say this; here Retries, Delay, Demo pause and Timeout sit in one row,
+   and a proportional face makes equal numbers look like unequal widths. */
+.fld-mono {
   font-family: var(--font-mono);
 }
 
-.field:hover {
-  border-color: var(--line-hi);
-}
-
-.field:focus {
+.fld:focus {
   border-color: color-mix(in srgb, var(--gold) 38%, transparent);
 }
 
-.field:focus-visible {
+.fld:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 1px;
 }

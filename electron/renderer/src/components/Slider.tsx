@@ -40,9 +40,15 @@ export default function Slider({
   const span = max - min;
   const filled = span > 0 ? ((value - min) / span) * 100 : 0;
 
+  // The mock's slider IS a row: `<div class="row"><span class="lab">…</span>
+  // <div class="slider"></div><b>1.8s</b></div>`. Wearing `.row` here is what
+  // puts the label, the rail and the readout on one line instead of stacking
+  // three full-width blocks. The rail keeps its own class: the mock's
+  // `.slider` is a picture of a rail, six pixels tall, and would flatten a
+  // real range input to nothing.
   return (
-    <div className="slider" style={{ ["--fill" as string]: `${filled}%` }}>
-      <label className="slider-label" htmlFor={id}>
+    <div className="row" style={{ ["--fill" as string]: `${filled}%` }}>
+      <label className="lab" htmlFor={id}>
         {label}
       </label>
       <input

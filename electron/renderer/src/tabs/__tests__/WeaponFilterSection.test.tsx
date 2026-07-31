@@ -97,7 +97,7 @@ describe("WeaponFilterSection", () => {
     const { container } = await renderTabConnected();
     expect(screen.queryByText("Desert Eagle")).toBeNull();
     expect(screen.queryByText("MAC-10")).toBeNull();
-    expect(container.querySelectorAll(".weapon-grid [aria-pressed]").length).toBe(
+    expect(container.querySelectorAll(".chips [aria-pressed]").length).toBe(
       DB_FIXTURE.weapons.length,
     );
   });
@@ -108,7 +108,7 @@ describe("WeaponFilterSection", () => {
     // buttons and getByRole would throw on ambiguity.
     const { container } = await renderTabConnected();
     act(() => screen.getByRole("button", { name: "Select all" }).click());
-    const chips = [...container.querySelectorAll(".weapon-grid [aria-pressed]")];
+    const chips = [...container.querySelectorAll(".chips [aria-pressed]")];
     expect(chips.every((c) => c.getAttribute("aria-pressed") === "true")).toBe(true);
 
     act(() => screen.getByRole("button", { name: "Deselect all" }).click());

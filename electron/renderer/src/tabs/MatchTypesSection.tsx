@@ -54,7 +54,7 @@ export default function MatchTypesSection() {
 
   return (
     <div className="match-types">
-      <div className="mt-heading-row">
+      <div className="row">
         <SettingControl settingKey="match_type_filter_enabled">
           <Chip
             label="Filter by type"
@@ -63,7 +63,7 @@ export default function MatchTypesSection() {
           />
         </SettingControl>
       </div>
-      <div className="mt-grid">
+      <div className="chips">
         {tables.matchTypes.map((matchType) => (
           <MatchTypeChip
             key={matchType.key}

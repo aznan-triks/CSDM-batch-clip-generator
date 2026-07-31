@@ -1,54 +1,73 @@
+/**
+ * What is LEFT in Segmented.css and Slider.css.
+ *
+ * The segmented control is the approved mock's `.seg` and `.seg span.on`, held
+ * once in theme/mock-v12.css. The slider is the one control the mock CANNOT
+ * hand over: its `.slider` is a picture of a rail -- a 6px div with two
+ * pseudo-elements -- and this one is a real `<input type="range">`, which
+ * paints its own track and thumb in the platform's blue unless every part is
+ * taken over by hand. So Slider.css keeps its rail, and wears the mock's
+ * `.row` and `.lab` around it.
+ */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-function readBlock(file: string, selector: string): string {
-  const css = readFileSync(path.join(__dirname, "..", file), "utf-8");
-  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`));
-  if (!match) throw new Error(`selector not found in ${file}: ${selector}`);
-  return match[1];
+const strip = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
+const SEGMENTED = strip(readFileSync(path.join(__dirname, "..", "Segmented.css"), "utf-8"));
+const SLIDER = strip(readFileSync(path.join(__dirname, "..", "Slider.css"), "utf-8"));
+
+/** Every `property: value` declaration, in source order. */
+function declarations(css: string): [string, string][] {
+  return [...css.matchAll(/^[ \t]*([a-z-]+)[ \t]*:[ \t]*([^;]+);/gm)].map((m) => [
+    m[1],
+    m[2].trim(),
+  ]);
 }
 
-describe(".segmented container is glass, rounded", () => {
-  const rule = readBlock("Segmented.css", ".segmented");
-
-  // The mock's tray is a SLATE recess, not white glass: a white well on a
-  // white card reads as a raised pill, the opposite of what a track says.
-  it("uses the slate recess, not a white wash", () => {
-    expect(rule).toMatch(/background:\s*var\(--recess\);/);
-    expect(rule).not.toMatch(/var\(--raise\);/);
-    expect(rule).not.toMatch(/var\(--surface-2\)/);
+describe("Segmented.css", () => {
+  it("re-states neither the tray nor the selected segment", () => {
+    // `background: none` is the shell reset: it paints nothing. The 8px radius
+    // is the focus ring's, matching the segment it outlines.
+    const owned = ["background", "font-size", "font-weight"];
+    for (const [property, value] of declarations(SEGMENTED)) {
+      if (!owned.includes(property)) continue;
+      expect(["none", "transparent"], `Segmented.css paints ${property}: ${value}`).toContain(
+        value,
+      );
+    }
+    expect(SEGMENTED).not.toMatch(/--recess|--solid/);
   });
 
-  it("is rounded 10px, not the cut family", () => {
-    expect(rule).toMatch(/border-radius:\s*10px;/);
+  it("reduces the radio button to a transparent shell around the mock's span", () => {
+    expect(SEGMENTED).toMatch(/\.seg button\s*\{[^}]*appearance:\s*none;/);
+    expect(SEGMENTED).toMatch(/\.seg button\s*\{[^}]*padding:\s*0;/);
+    expect(SEGMENTED).toMatch(/\.seg button:focus-visible\s*\{[^}]*var\(--focus-ring\)/);
   });
 });
 
-// The mock's rail is an OPAQUE recess (`rgba(210,222,238,.9)`, the --void
-// ground) with no border: a translucent rail over the backdrop plates picked
-// up the moving grid through itself and read as a rendering fault.
-describe(".slider-input track is the mock's 6px opaque rail", () => {
-  // The rail is the --void ground with the lime-to-accent FILL painted over
-  // it up to `--fill`, the percentage Slider.tsx sets. A rail with no fill was
-  // the giveaway that these were not the mock's sliders.
-  it("webkit track is 6px, filled lime-to-accent over the slate recess, pill, borderless", () => {
-    const rule = readBlock("Slider.css", ".slider-input::-webkit-slider-runnable-track");
-    expect(rule).toMatch(/height:\s*6px;/);
-    expect(rule).toMatch(/var\(--lime-glow\), var\(--gold\)/);
-    expect(rule).toMatch(/var\(--fill, 0%\)/);
-    expect(rule).toMatch(/var\(--recess-deep\);/);
-    expect(rule).toMatch(/border:\s*0;/);
-    expect(rule).toMatch(/border-radius:\s*var\(--r-pill\);/);
+describe("Slider.css", () => {
+  it("wears the mock's row and label instead of restating them", () => {
+    expect(SLIDER).not.toMatch(/^\.slider\s*\{/m);
+    expect(SLIDER).not.toMatch(/\.slider-label/);
   });
 
-  it("moz track matches the webkit one exactly", () => {
-    const rule = readBlock("Slider.css", ".slider-input::-moz-range-track");
-    expect(rule).toMatch(/height:\s*6px;/);
-    expect(rule).toMatch(/var\(--lime-glow\), var\(--gold\)/);
-    expect(rule).toMatch(/var\(--fill, 0%\)/);
-    expect(rule).toMatch(/var\(--recess-deep\);/);
-    expect(rule).toMatch(/border-radius:\s*var\(--r-pill\);/);
+  it("still takes over every native part, or the platform paints its own blue", () => {
+    for (const part of [
+      "::-webkit-slider-runnable-track",
+      "::-moz-range-track",
+      "::-webkit-slider-thumb",
+      "::-moz-range-thumb",
+    ]) {
+      expect(SLIDER, `the native ${part} is left to the platform`).toContain(part);
+    }
+    expect(SLIDER).toMatch(/appearance:\s*none;/);
+  });
+
+  it("moves nothing on hover -- the thumb changes colour only (D13/D16)", () => {
+    const hovers = SLIDER.match(/[^}]*:hover[^{]*\{[^}]*\}/g) ?? [];
+    for (const rule of hovers) {
+      expect(rule, rule).not.toMatch(/transform|width|height|padding|margin/);
+    }
   });
 });
