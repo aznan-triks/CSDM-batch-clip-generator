@@ -270,11 +270,17 @@ export default function TagsTab() {
                 key={String(tagId)}
                 type="button"
                 className={active ? "chip on" : "chip"}
-                style={active ? { borderColor: color, color } : undefined}
                 aria-pressed={active}
                 aria-label={`tag-${tagName}`}
                 onClick={() => toggleTag(tagId)}
               >
+                {/* The mock's own `.d` dot, which exists for exactly this and
+                    was never used here. The tag's colour rides on the dot in
+                    BOTH states: painting the border and the text instead meant
+                    a tag showed nothing at rest -- the state it is in when the
+                    tab opens -- and once picked, `.chip.on` kept its lime fill
+                    on top, so a blue tag read as green either way. */}
+                <span className="d" style={{ background: color }} aria-hidden="true" />
                 {tagName}
               </button>
             );

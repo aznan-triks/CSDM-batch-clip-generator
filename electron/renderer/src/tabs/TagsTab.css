@@ -50,3 +50,11 @@
   color: var(--dim);
   margin-top: var(--sp-3);
 }
+
+/*
+ * The tag dot is the tag's identity, so it keeps full opacity at rest -- the
+ * mock dims its own dots to .5 because they only decorate a filter name.
+ */
+.tags-tab .chip .d {
+  opacity: 1;
+}
