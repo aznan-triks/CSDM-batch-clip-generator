@@ -83,12 +83,12 @@ describe("WeaponFilterSection silhouettes", () => {
   it("shows a silhouette for each SELECTED weapon and none for the others", async () => {
     const { container } = await renderSection();
     pick("AWP");
-    const shown = [...container.querySelectorAll(".casc .gun")];
+    const shown = [...container.querySelectorAll<HTMLElement>(".casc .gun")];
     expect(shown).toHaveLength(1);
     // The database's own name, not an internal id: a class silhouette has no
     // weapon id to carry.
     expect(shown[0].getAttribute("data-weapon")).toBe("AWP");
-    expect(shown[0].innerHTML).toContain("<svg");
+    expect(shown[0].style.getPropertyValue("--gun-art")).toMatch(/^url\(/);
   });
 
   it("draws a weapon with no specific art, using its class", async () => {
@@ -96,10 +96,10 @@ describe("WeaponFilterSection silhouettes", () => {
     // show nothing at all when picked.
     const { container } = await renderSection();
     pick("AWP", "SSG 08");
-    const shown = [...container.querySelectorAll(".casc .gun")];
+    const shown = [...container.querySelectorAll<HTMLElement>(".casc .gun")];
     expect(shown).toHaveLength(2);
     expect(shown[1].getAttribute("data-weapon")).toBe("SSG 08");
-    expect(shown[1].innerHTML).toContain("<svg");
+    expect(shown[1].style.getPropertyValue("--gun-art")).toMatch(/^url\(/);
   });
 
   it("never offers a weapon the engine has not classed", async () => {

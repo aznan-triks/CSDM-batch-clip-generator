@@ -18,3 +18,25 @@
   gap: var(--sp-2);
 }
 
+
+/*
+ * The cascade's silhouettes, painted through a CSS mask.
+ *
+ * The mock draws its two guns as inline `<svg>` and colours them with
+ * `.gun svg { fill: currentColor }`. There are forty-one of them here, at
+ * ~11 kB each, so they are asset URLs rather than markup -- 461 kB that never
+ * enters the JavaScript bundle. A mask over `currentColor` gets the same
+ * result: the icon still takes the accent, and the cascade no longer needs
+ * `dangerouslySetInnerHTML`.
+ *
+ * The width is stated because the mock sizes its two inline (`style="width:
+ * 150px"`) and a shared `.gun { width: 100% }` would stretch each one across
+ * the whole row.
+ */
+.casc .gun {
+  flex: 0 0 auto;
+  width: 96px;
+  background: currentColor;
+  -webkit-mask: var(--gun-art) center / contain no-repeat;
+  mask: var(--gun-art) center / contain no-repeat;
+}

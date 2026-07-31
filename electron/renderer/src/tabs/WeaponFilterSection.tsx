@@ -105,11 +105,13 @@ export default function WeaponFilterSection() {
               key={weapon.name}
               className="gun casc-g in"
               data-weapon={weapon.name}
-              style={{ animationDelay: `${index * MOTION.weaponCascade.stagger}s` }}
-              /* Safe HERE AND ONLY HERE: the markup is a repository asset
-                 imported with `?raw` at build time, never a string from the
-                 engine or the database. */
-              dangerouslySetInnerHTML={{ __html: weapon.art }}
+              style={{
+                animationDelay: `${index * MOTION.weaponCascade.stagger}s`,
+                // A CSS mask over `currentColor`, not injected markup: the icon
+                // stays on the accent, never enters the JavaScript bundle, and
+                // the cascade no longer needs dangerouslySetInnerHTML at all.
+                ["--gun-art" as string]: `url(${weapon.art})`,
+              }}
             />
           ))}
         </div>

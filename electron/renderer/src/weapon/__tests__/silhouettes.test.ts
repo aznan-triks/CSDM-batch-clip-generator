@@ -11,8 +11,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { DRAWN_CLASSES, classOf, silhouetteFor } from "../silhouettes";
-import { WEAPONS } from "../weapons";
+import { DRAWN_CLASSES, PACK_NAMES, classOf, silhouetteFor } from "../silhouettes";
 
 /** `connect_db`'s `weapons` field, verbatim. */
 const FROM_DATABASE = [
@@ -64,20 +63,37 @@ describe("coverage: no weapon in the database draws a blank", () => {
   });
 });
 
-describe("real art wins over a class silhouette", () => {
-  it("uses the firing table's own AK-47, not the generic rifle", () => {
-    expect(silhouetteFor("AK-47", CATEGORIES)).toBe(WEAPONS.ak47.art);
+describe("the game's own icon wins over a class silhouette", () => {
+  it("covers all but one of the database's weapons from the vendored pack", () => {
+    // "World" is the database's pseudo-weapon for world damage; the pack ships
+    // an empty frame for it, so it is deliberately absent and falls to a class.
+    const missing = FROM_DATABASE.filter((name) => !PACK_NAMES.includes(name));
+    expect(missing).toEqual(["World"]);
   });
 
-  it("uses the firing table's own AWP, not the generic sniper", () => {
-    expect(silhouetteFor("AWP", CATEGORIES)).toBe(WEAPONS.awp.art);
+  it("gives each weapon its OWN icon, not one shared per class", () => {
+    // The whole point of the pack: a Deagle no longer looks like a Glock.
+    expect(silhouetteFor("Desert Eagle", CATEGORIES)).not.toBe(
+      silhouetteFor("Glock-18", CATEGORIES),
+    );
+    expect(silhouetteFor("AK-47", CATEGORIES)).not.toBe(silhouetteFor("M4A4", CATEGORIES));
   });
 
-  it("gives a weapon with no specific art its class instead", () => {
-    const deagle = silhouetteFor("Desert Eagle", CATEGORIES);
-    expect(deagle).not.toBeNull();
-    expect(deagle).not.toBe(WEAPONS.ak47.art);
-    expect(deagle).toBe(silhouetteFor("Glock-18", CATEGORIES));
+  it("falls back to a class for what the pack does not cover", () => {
+    // C4 IS in the pack; World is not, so the two must not resolve alike even
+    // though they share a class.
+    const world = silhouetteFor("World", CATEGORIES);
+    expect(world).not.toBeNull();
+    expect(world).not.toBe(silhouetteFor("C4", CATEGORIES));
+  });
+
+  it("hands back a URL, not markup -- 41 icons must stay out of the bundle", () => {
+    // The build emits the big ones as files and inlines the tiny class shapes
+    // as data URIs; either way it is a URL a CSS mask can consume, never
+    // markup a component has to inject.
+    const url = silhouetteFor("AK-47", CATEGORIES)!;
+    expect(url).not.toContain("<svg");
+    expect(url === encodeURI(url) || url.startsWith("data:")).toBe(true);
   });
 });
 
@@ -98,8 +114,11 @@ describe("an unclassed weapon is a real gap, not something to paper over", () =>
     expect(silhouetteFor("Rocket Launcher", CATEGORIES)).toBeNull();
   });
 
-  it("returns null when the categories have not arrived yet", () => {
-    expect(silhouetteFor("AK-47", undefined)).not.toBeNull(); // specific art, no table needed
-    expect(silhouetteFor("Desert Eagle", undefined)).toBeNull();
+  it("still draws a packed weapon before the categories arrive", () => {
+    // The pack is keyed by the database's own name, so it needs no table.
+    expect(silhouetteFor("AK-47", undefined)).not.toBeNull();
+    expect(silhouetteFor("Desert Eagle", undefined)).not.toBeNull();
+    // Only the fallback needs the categories.
+    expect(silhouetteFor("World", undefined)).toBeNull();
   });
 });
