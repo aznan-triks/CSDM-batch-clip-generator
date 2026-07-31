@@ -1,3 +1,18 @@
+// ORDER IS THE DESIGN, AND IT IS THE ORDER OF THESE LINES. The approved mock
+// first -- it is the base vocabulary, verbatim and never edited. The bridge
+// next: the only file allowed to disagree with it, one measured reason per
+// line. The app's own tokens last, so a corrected value wins over the mock's.
+// Component stylesheets arrive with `App` below and refine, never restate.
+//
+// THESE THREE LINES MUST STAY ABOVE `import App`. ES modules are evaluated in
+// source order, so an `import App` placed first pulls in every component
+// stylesheet BEFORE these -- which put the mock last and let it overrule every
+// component rule, the exact opposite of the sentence above. Measured in the
+// built bundle: Tab.css at byte 37125, mock-v12.css at 47897.
+import "./theme/mock-v12.css";
+import "./theme/mock-bridge.css";
+import "./theme/tokens.css";
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -6,14 +21,6 @@ import ErrorBoundary from "./ErrorBoundary";
 import { installSmoothScroll } from "./motion/scroll";
 import { applyAccent, DEFAULT_ACCENT } from "./theme/accent";
 import { applyMode, DEFAULT_GROUND } from "./theme/mode";
-// ORDER IS THE DESIGN. The approved mock first -- it is the base vocabulary,
-// verbatim and never edited. The bridge next: the only file allowed to
-// disagree with it, one measured reason per line. The app's own tokens last,
-// so a corrected value wins over the mock's. Component stylesheets arrive with
-// `App` below and refine, never restate.
-import "./theme/mock-v12.css";
-import "./theme/mock-bridge.css";
-import "./theme/tokens.css";
 
 // The accent's three derived siblings are computed, never written by hand, so
 // they have to be applied once before the first paint -- tokens.css ships the
