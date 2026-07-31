@@ -66,7 +66,14 @@
   --fs-sm: 11px; /* section headings, log body, fields */
   --fs-md: 11.5px; /* descriptions */
   --fs-lg: 12px; /* action buttons */
-  --fs-base: 13px; /* tabs, body */
+  /* The INHERITED base, and the browser's own default on purpose: the approved
+     mock never sets a font-size on the body element, so everything that does
+     not size itself reads at 16px there. This said 13px, which left the brand
+     block and every unsized run inside a card 19% small -- the one measured
+     difference left between the two pages once every sized element was
+     checked (buttons 11.5, chips 12, fields 12.5, console 11, tabs 11.5, card
+     titles 13.5: all identical). */
+  --fs-base: 16px;
   --fs-xl: 14px; /* card titles */
 
   --fw-normal: 400;

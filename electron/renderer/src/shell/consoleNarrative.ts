@@ -200,3 +200,85 @@ export function promptFor(message: BridgeMessage): string | null {
       return null;
   }
 }
+
+/**
+ * The selection, recited when an action starts.
+ *
+ * The report asked for lines "selon ce qui est sélectionné", and the approved
+ * mock shows the shape: `maps: mirage, inferno · weapons: awp, ak-47` and
+ * `filters: AWP, AK-47 · headshot, 1-tap`, written when Preview or Run begins.
+ * The engine reports what it DOES; nothing on the pipe reports what the user
+ * had picked, so the window says it -- it is the one thing here it knows and
+ * the engine does not.
+ *
+ * A line per group, and a group with nothing in it says nothing at all: "maps:
+ * (none)" is noise, and an empty filter means every map, which the summary
+ * line already covers.
+ */
+const SELECTION_GROUPS: ReadonlyArray<{ label: string; read: (s: Settings) => string[] }> = [
+  { label: "players", read: (s) => asList(s.steam_ids).map(playerLabel(s)) },
+  { label: "events", read: (s) => asList(s.events) },
+  { label: "weapons", read: (s) => asList(s.weapons) },
+  { label: "maps", read: (s) => (s.map_filter_enabled ? asList(s.map_filter) : []) },
+  { label: "filters", read: (s) => killFilters(s) },
+  { label: "match types", read: (s) => (s.match_type_filter_enabled ? matchTypes(s) : []) },
+];
+
+/** The window's settings, as `useAllSettings()` hands them over. */
+type Settings = Record<string, unknown>;
+
+const asList = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((v): v is string => typeof v === "string" && v !== "") : [];
+
+/**
+ * A player reads better by name than by Steam ID, and the window already holds
+ * the active one's name. The rest stay as IDs rather than being guessed at.
+ */
+const playerLabel = (s: Settings) => (id: string): string =>
+  id === s.steam_id && typeof s.player_name === "string" && s.player_name ? s.player_name : id;
+
+/**
+ * The kill filters that are ON, by the name the window shows them under.
+ *
+ * Derived from the `kill_mod_*` keys rather than from a second list: the
+ * registry is Python's (`KILL_FILTER_REGISTRY`), and a copy here would be one
+ * more thing to keep in step. `_exclude` and `_req` are companions of a filter,
+ * not filters, and the numeric ones (`_n`, `_deg`, `_s`) are its parameters.
+ */
+function killFilters(s: Settings): string[] {
+  return Object.keys(s)
+    .filter((key) => key.startsWith("kill_mod_") && s[key] === true)
+    .filter((key) => !key.endsWith("_exclude") && !key.endsWith("_req"))
+    .map((key) => key.slice("kill_mod_".length).replace(/_/g, " "));
+}
+
+/** The match types that are ON, same reasoning as the kill filters. */
+function matchTypes(s: Settings): string[] {
+  return Object.keys(s)
+    .filter((key) => key.startsWith("match_type_") && s[key] === true)
+    .filter((key) => key !== "match_type_filter_enabled")
+    .map((key) => key.slice("match_type_".length).replace(/_/g, " "));
+}
+
+/**
+ * The lines to write when an action starts, or none when the event is not one
+ * that starts something.
+ */
+export function reciteSelection(message: BridgeMessage, settings: Settings): NarratedLine[] {
+  if (message.type !== "state") return [];
+  if (message.name !== "run_started" && message.name !== "preview_started") return [];
+
+  const lines: NarratedLine[] = [];
+  for (const group of SELECTION_GROUPS) {
+    const picked = group.read(settings);
+    if (!picked.length) continue;
+    lines.push({
+      runs: [
+        [`${group.label}: `, "dim"],
+        [picked.join(", "), ""],
+      ],
+      level: "",
+    });
+  }
+  return lines;
+}

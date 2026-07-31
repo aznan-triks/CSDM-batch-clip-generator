@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 
 import { onMessage, send } from "../bridge";
-import { PROMPT_COMMANDS, narrate, promptFor } from "./consoleNarrative";
+import { useAllSettings } from "../settings/store";
+import { PROMPT_COMMANDS, narrate, promptFor, reciteSelection } from "./consoleNarrative";
 import { useTypewriter } from "./useTypewriter";
 import type { Run } from "./consoleNarrative";
 import "./LogConsole.css";
@@ -144,28 +145,41 @@ export default function LogConsole() {
   const logRef = useRef<HTMLDivElement>(null);
   const nextKey = useRef(0);
 
+  // What the user picked. Read through a ref because the subscription below is
+  // installed once: reading `settings` from the closure would freeze it at the
+  // values it held on mount, and a run started an hour later would recite them.
+  const settings = useAllSettings();
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+
   useEffect(() => {
     return onMessage((message) => {
       const nextPrompt = promptFor(message);
       if (nextPrompt !== null) setPrompt(nextPrompt);
 
+      // The event's own line, then -- when it starts something -- the
+      // selection it is about to act on. The engine reports what it DOES and
+      // never what was picked, so this is the one thing the window can say
+      // that the pipe cannot.
       const narrated = narrate(message);
-      // `null` means the event steers the window without being worth a line.
-      if (narrated) {
-        const text = narrated.runs.map(([piece]) => piece).join("");
-        nextKey.current += 1;
-        const key = nextKey.current;
-        setLines((previous) => [
-          ...previous,
-          {
-            key,
-            runs: narrated.runs,
-            text,
-            cssClass: levelClass(narrated.level),
-            level: narrated.level,
+      const written = [
+        // `null` means the event steers the window without being worth a line.
+        ...(narrated ? [narrated] : []),
+        ...reciteSelection(message, settingsRef.current),
+      ];
+      if (written.length) {
+        const stamped = written.map((line) => {
+          nextKey.current += 1;
+          return {
+            key: nextKey.current,
+            runs: line.runs,
+            text: line.runs.map(([piece]) => piece).join(""),
+            cssClass: levelClass(line.level),
+            level: line.level,
             ts: Date.now(),
-          },
-        ]);
+          };
+        });
+        setLines((previous) => [...previous, ...stamped]);
       }
 
       if (message.type === "ask") {

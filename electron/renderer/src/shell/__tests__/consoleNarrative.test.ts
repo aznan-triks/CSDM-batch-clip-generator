@@ -12,7 +12,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { PROMPT_COMMANDS, narrate, promptFor } from "../consoleNarrative";
+import { PROMPT_COMMANDS, narrate, promptFor, reciteSelection } from "../consoleNarrative";
 
 const text = (message: Parameters<typeof narrate>[0]): string =>
   (narrate(message)?.runs ?? []).map(([t]) => t).join("");
@@ -109,5 +109,78 @@ describe("the prompt follows the action", () => {
   it("leaves the prompt alone for anything else", () => {
     expect(promptFor({ type: "log", message: "x", level: "" })).toBeNull();
     expect(promptFor({ type: "state", name: "progress", payload: {} })).toBeNull();
+  });
+});
+
+describe("an action recites what it is about to act on", () => {
+  const PICKED: Record<string, unknown> = {
+    steam_ids: ["76561198000000001", "76561198000000002"],
+    steam_id: "76561198000000001",
+    player_name: "s1mple",
+    events: ["Kills"],
+    weapons: ["AWP", "AK-47"],
+    map_filter_enabled: true,
+    map_filter: ["mirage", "inferno"],
+    kill_mod_headshot: true,
+    kill_mod_headshot_exclude: false,
+    kill_mod_one_tap: true,
+    kill_mod_one_tap_s: 3,
+    kill_mod_ace: false,
+    match_type_filter_enabled: true,
+    match_type_competitive: true,
+    match_type_wingman: false,
+  };
+
+  const said = (name: string, settings = PICKED) =>
+    reciteSelection({ type: "state", name, payload: {} }, settings)
+      .map((line) => line.runs.map(([piece]) => piece).join(""));
+
+  it("says nothing for an event that starts nothing", () => {
+    expect(said("progress")).toEqual([]);
+    expect(reciteSelection({ type: "log", message: "x", level: "" }, PICKED)).toEqual([]);
+  });
+
+  it.each(["run_started", "preview_started"])("recites on %s", (name) => {
+    expect(said(name).length).toBeGreaterThan(0);
+  });
+
+  it("writes the groups the approved mock writes", () => {
+    const lines = said("preview_started").join("\n");
+    expect(lines).toContain("weapons: AWP, AK-47");
+    expect(lines).toContain("maps: mirage, inferno");
+    expect(lines).toContain("events: Kills");
+  });
+
+  it("names the active player instead of its Steam ID", () => {
+    expect(said("run_started").join("\n")).toContain("s1mple");
+  });
+
+  it("reads the kill filters that are ON, and only those", () => {
+    const filters = said("run_started").find((line) => line.startsWith("filters:")) ?? "";
+    expect(filters).toContain("headshot");
+    expect(filters).toContain("one tap");
+    expect(filters).not.toContain("ace");
+    // `_exclude` and `_req` are a filter's companions; `_s` is its parameter.
+    expect(filters).not.toContain("exclude");
+    expect(filters).not.toContain("_s");
+  });
+
+  it("stays silent about a group that is empty or switched off", () => {
+    const lines = said("run_started", {
+      ...PICKED,
+      weapons: [],
+      map_filter_enabled: false,
+      match_type_filter_enabled: false,
+    }).join("\n");
+    // "maps: (none)" is noise, and an empty filter means every map.
+    expect(lines).not.toContain("weapons:");
+    expect(lines).not.toContain("maps:");
+    expect(lines).not.toContain("match types:");
+    expect(lines).toContain("events:");
+  });
+
+  it("survives settings that have not loaded yet", () => {
+    expect(() => reciteSelection({ type: "state", name: "run_started", payload: {} }, {})).not.toThrow();
+    expect(said("run_started", {})).toEqual([]);
   });
 });

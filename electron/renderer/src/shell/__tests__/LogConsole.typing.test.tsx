@@ -23,6 +23,14 @@ vi.mock("../../bridge", () => ({
   send: () => {},
 }));
 
+// LogConsole reads the picked settings to recite them when a run starts. The
+// store needs a provider; this file is not about the settings, so it gets the
+// one function the console calls.
+vi.mock("../../settings/store", () => ({
+  useAllSettings: () => ({}),
+}));
+
+
 /** Motion intensity: the typewriter must be silent under `none`. */
 let intensity = "full";
 vi.mock("../../motion/engine", async (importOriginal) => ({

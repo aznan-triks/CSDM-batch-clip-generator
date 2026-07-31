@@ -5,9 +5,20 @@
  * fake command into it, and this window has no command line to type into.
  */
 import { render } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import LogConsole from "../LogConsole";
+
+// LogConsole reads the picked settings to recite them when a run starts, and
+// subscribes to the pipe. Neither is what this file is about.
+vi.mock("../../bridge", () => ({
+  onMessage: () => () => {},
+  send: () => {},
+}));
+
+vi.mock("../../settings/store", () => ({
+  useAllSettings: () => ({}),
+}));
 
 describe("LogConsole", () => {
   it("wears the mock's titled header", () => {
