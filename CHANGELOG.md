@@ -9,6 +9,73 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — restyle 5, pass 1: the mock becomes the stylesheet
+
+> No version bump: internal sub-chantier. Pass 1 covers the shell and the Capture tab; the Video,
+> Tags and Settings tabs are pass 2. Versioning is decided next, outside this entry.
+
+### Changed
+
+**Humanised:** The window's look is no longer a hand-made copy of the approved design — it IS the
+approved design. The design file's own stylesheet is now the one the window loads, and every screen
+piece was renamed to the words that design uses, so a rule written once reaches the screen instead
+of being retyped in forty places and drifting a little each time.
+**Technical:** `main.tsx` loads `theme/mock-v12.css` → `mock-bridge.css` → `tokens.css` before
+`App`, and every component in the shell and the Capture tab was renamed onto the mock's own
+selectors (`.hud-inner` / `.brand` / `.mark` / `.navtools .p`, `.tabs` / `.tab.active` / `.ic` /
+`.tk` / `.ind`, `.app` / `.shell` / `.scrollwrap` / `.amb`, `.actbar` / `.wband`, `.btn` with
+`ghost` / `danger` / `primary`, `.console` / `.ch` / `.body` / `.prompt` / `.cur`, `.bento` /
+`.wide`, `.sec` / `.sh` / `.gl` / `.t` / `.cnt` / `.car` / `.sb`, `.row` / `.chips` / `.chip` +
+`.d` / `.fld` / `.lab` / `.seg` + `.on`, `.stats` / `.st` / `.k` / `.v`). Each component
+stylesheet was emptied of everything the mock states and keeps only what a picture cannot know:
+button resets, focus rings, disabled states, the narrow-window layout (D24), and three measured
+disagreements. Shipped CSS: 71.15 kB → 53.10 kB. Eight small-button variants collapsed into the
+mock's single `.chip`.
+
+### Added
+
+**Humanised:** Buttons now react to a click with the design's own flash, spark and glitch, the Run
+button wears a slowly turning ring, the log panel has a titled header and a `csdm>` prompt with a
+blinking cursor, and picking weapons in the filter now shows their silhouettes sliding in.
+**Technical:** `ActionButton` renders the mock's `.bx` / `.fl` / `.brs` layers plus `.sb` on the
+primary; the impact class is cleared on a timer (`MOTION.buttonImpact`), never on `onfinish`
+(section 10). `LogConsole` gained `.ch` and an inert `.promptline` — shape of the mock, without its
+fake typed command, since this window has no command line. `WeaponFilterSection` renders the mock's
+`.casc` from the existing `WEAPONS` table (`MOTION.weaponCascade.stagger`), skipping weapons with
+no art.
+
+### Fixed
+
+**Humanised:** Four real defects found while doing the work: the stylesheets were loading in the
+wrong order so the design file was overruling every component instead of founding them; a leftover
+grid instruction was silently deforming the whole window frame; the design file's words collided
+with three of the window's own elements, turning an ejected cartridge case into a two-column
+layout and drawing an unwanted cross through the mouse cursor; and every setting's invisible
+wrapper was forcing labels and fields onto separate lines, which is what made fields stretch across
+the whole card.
+**Technical:**
+- `main.tsx`: ES modules evaluate in source order, so `import App` above the theme imports pulled
+  every component stylesheet in first (measured: Tab.css at byte 37125, mock-v12.css at 47897).
+  Guarded by `__tests__/stylesheet-order.test.ts`.
+- `HudNav.css`: a leftover `grid-area: nav` against a grid with no named areas invents implicit
+  lines rather than being ignored — the frame measured five rows and two columns.
+- `motion/engine.ts`: every spawned particle is namespaced through `FX_CLASS_PREFIX`; the crosshair
+  moved to `.cursor-reticle`. The mock owns `shell`, `spark` and `reticle` as global class names.
+- `settings/SettingControl.css` + `components/Field.tsx`: `display: contents` on the coverage
+  marker, and no wrapper around label + input. Fields wider than 400px went from 4 (one at 1246px)
+  to 0.
+
+### Removed
+
+**Humanised:** The button's old reflection sweep is gone — the approved design answers a hover with
+its glitch grid, and two effects on one gesture read as a bug.
+**Technical:** `ActionButton.css`'s `sweep` keyframes and its `::before`/`::after` hover layers,
+plus `MOTION.sweep` and `MOTION.armedPulse` (two entries no code ever read). `sweep` was the single
+entry in `no-hover-motion.test.ts`'s allowlist, which is now empty: the guard has no exception
+left.
+
+---
+
 ## [Unreleased] — restyle 4/4: les effets
 
 > No version bump: internal sub-chantier, the fourth and last of the 4 restyle-UI plans (follows
