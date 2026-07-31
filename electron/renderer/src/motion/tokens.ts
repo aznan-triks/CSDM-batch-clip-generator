@@ -22,6 +22,14 @@ export const MOTION = {
    */
   buttonImpact: { duration: 0.4 },
 
+  /**
+   * The silhouettes arriving beside the weapon filter's chips: each one slides
+   * in behind the one before it. The mock's `casc` keyframes run .55s; the
+   * stagger is what makes it read as a cascade rather than a single block
+   * appearing.
+   */
+  weaponCascade: { stagger: 0.06 },
+
   /** Muzzle flash at the barrel. */
   flash: { duration: 0.095, ease: "ease-out" },
 
