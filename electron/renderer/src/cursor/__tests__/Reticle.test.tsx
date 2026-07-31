@@ -60,9 +60,9 @@ describe("Reticle", () => {
     expect(document.body.classList.contains("customcursor")).toBe(false);
   });
 
-  it("hides the custom cursor over the log console (.shell-logs)", () => {
+  it("hides the custom cursor over the log console (.console)", () => {
     const console_ = document.createElement("div");
-    console_.className = "shell-logs";
+    console_.className = "console";
     document.body.appendChild(console_);
     render(<Reticle />);
 

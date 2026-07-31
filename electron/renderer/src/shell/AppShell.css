@@ -48,7 +48,7 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .shell-logs {
+  .console {
     display: none;
   }
 }

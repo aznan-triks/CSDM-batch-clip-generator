@@ -49,7 +49,7 @@ describe("AppShell", () => {
     // The narrow layout hides the console with CSS, never by unmounting it:
     // an unmounted console loses every line already written.
     renderShell();
-    expect(document.querySelector(".shell-logs")).not.toBeNull();
+    expect(document.querySelector(".console")).not.toBeNull();
   });
 
   it("mounts without a bridge instead of blanking the page", () => {

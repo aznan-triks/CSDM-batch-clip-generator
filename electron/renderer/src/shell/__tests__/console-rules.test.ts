@@ -1,50 +1,70 @@
+/**
+ * The console's ruled lines and its text share ONE period.
+ *
+ * They were two independent numbers once (14px rules under ~21px lines), so
+ * the text could never sit on the rules -- a mismatch no amount of nudging
+ * fixes, because the two values had no reason to ever be equal. The fix was to
+ * feed both from one token.
+ *
+ * That single source now lives in the approved mock itself (`.console .body`
+ * and its `::after` ruling, theme/mock-v12.css, drift-locked by
+ * theme/__tests__/mock-v12.test.ts). So this file guards two things: that the
+ * mock's three numbers still agree with each other, and that LogConsole.css
+ * does not quietly set a fourth.
+ */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-/**
- * The console's ruled lines and its text share ONE period. They were two
- * independent numbers on the mock (14px rules under ~21px lines), so the text
- * could never sit on the rules -- a mismatch no amount of nudging fixes,
- * because the two values had no reason to ever be equal.
- *
- * This reads the real stylesheet: the point is to fail when someone edits one
- * of the two numbers without the other.
- */
-const CSS_PATH = path.join(__dirname, "..", "LogConsole.css");
-const CSS = readFileSync(CSS_PATH, "utf-8");
+const THEME_DIR = path.join(__dirname, "..", "..", "theme");
+const MOCK = readFileSync(path.join(THEME_DIR, "mock-v12.css"), "utf-8");
+const CONSOLE_CSS = readFileSync(path.join(__dirname, "..", "LogConsole.css"), "utf-8").replace(
+  /\/\*[\s\S]*?\*\//g,
+  "",
+);
 
-function declaration(name: string): string {
-  const match = CSS.match(new RegExp(`${name}:\\s*([^;]+);`));
-  if (!match) throw new Error(`declaration not found in LogConsole.css: ${name}`);
-  return match[1].trim();
+/** The body rule and the ruling rule, as raw declaration text. */
+const bodyRule = MOCK.match(/\.console \.body\{([^}]*)\}/)?.[1] ?? "";
+const rulingRule = MOCK.match(/\.console \.body::after\{([^}]*)\}/)?.[1] ?? "";
+
+function px(source: string, pattern: RegExp): number {
+  const match = source.match(pattern);
+  if (!match) throw new Error(`not found: ${pattern}`);
+  return Number(match[1]);
 }
 
-describe("the console's ruled lines match its text line height", () => {
-  it("declares the line height as a token, not a bare number", () => {
-    // A unitless line-height cannot be compared with a px gradient period,
-    // and that mismatch is the whole bug. One token feeds both.
-    expect(CSS).toMatch(/--log-line:\s*\d+px;/);
+describe("the mock's console rhythm is internally consistent", () => {
+  it("found both rules to compare", () => {
+    // Without this the two assertions below would compare 0 with 0 and pass
+    // over nothing -- the vacuous-guard failure this suite exists to avoid.
+    expect(bodyRule, "the mock's .console .body rule is gone").not.toBe("");
+    expect(rulingRule, "the mock's .console .body::after ruling is gone").not.toBe("");
   });
 
-  it("uses the same token for the text and for the rules", () => {
-    expect(declaration("line-height")).toBe("var(--log-line)");
-    // The gradient's period is the token; the transparent stop is the token
-    // minus the 1px rule itself.
-    const gradient = declaration("background-image");
-    expect(gradient).toContain("var(--log-line)");
+  it("repeats the rules exactly one text line apart", () => {
+    const lineHeight = px(bodyRule, /line-height:\s*(\d+)px/);
+    // The gradient's last colour stop closes the repeat: `... 21px 22px)`.
+    // Its second number IS the period.
+    const period = px(rulingRule, /\d+px\s+(\d+)px\)/);
+    expect(period, "the ruling period drifted from the line height").toBe(lineHeight);
   });
 
-  it("anchors the rules on the same padding the text starts at", () => {
-    // Matching periods with mismatched origins still floats the text: the
-    // rules must start where the first line starts.
-    expect(CSS).toMatch(/--log-pad:\s*\d+px;/);
-    expect(declaration("background-position")).toContain("var(--log-pad)");
+  it("starts the rules where the first line of text starts", () => {
+    const topPadding = px(bodyRule, /padding:\s*(\d+)px/);
+    const rulesTop = px(rulingRule, /top:\s*(\d+)px/);
+    expect(rulesTop, "the rules no longer start at the body's top padding").toBe(topPadding);
+  });
+});
+
+describe("LogConsole.css adds no fourth number to that rhythm", () => {
+  it("sets neither a line height nor a padding on the body", () => {
+    const body = CONSOLE_CSS.match(/\.console \.body\s*\{[^}]*\}/)?.[0] ?? "";
+    expect(body).not.toMatch(/line-height/);
+    expect(body).not.toMatch(/padding/);
   });
 
-  it("carries no hardcoded pixel padding on the log body", () => {
-    // HC.1: `padding: 8px` was in here twice.
-    const logBlock = CSS.match(/#log\s*\{[^}]*\}/)?.[0] ?? "";
-    expect(logBlock).not.toMatch(/padding:\s*\d+px/);
+  it("draws no ruling of its own", () => {
+    expect(CONSOLE_CSS).not.toMatch(/repeating-linear-gradient/);
+    expect(CONSOLE_CSS).not.toMatch(/--log-line|--log-pad/);
   });
 });

@@ -12,7 +12,7 @@ const DEFAULT_SIZE = 26;
  * the console. The reticle only replaces the OS cursor over a button or over
  * bare background (see `onMove` below).
  */
-const WIDGET_SELECTOR = "input, textarea, select, a[href], label, .panel-box, .tab, .shell-logs, .chip, .segment";
+const WIDGET_SELECTOR = "input, textarea, select, a[href], label, .panel-box, .tab, .console, .chip, .segment";
 
 /**
  * The CS2 crosshair cursor (mockup-v12-hologlass.html `.tcursor`). Position

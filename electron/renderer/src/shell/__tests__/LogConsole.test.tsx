@@ -1,6 +1,6 @@
 /**
  * LogConsole's tools: auto-scroll, search, and the always-mounted requirement
- * the narrow layout depends on (`shell-logs` is hidden by CSS, never
+ * the narrow layout depends on (`console` is hidden by CSS, never
  * unmounted -- see AppShell.css).
  *
  * `../../bridge` is mocked the way `ActionBar.test.tsx` mocks it, so `emit`
@@ -38,9 +38,9 @@ describe("LogConsole tools", () => {
     // record of a run.
     const { emit, container } = await renderConsole();
     act(() => emit({ type: "log", message: "first", level: "info" }));
-    expect(container.querySelectorAll("#log > div")).toHaveLength(1);
+    expect(container.querySelectorAll("#log > div:not(.promptline)")).toHaveLength(1);
     // The narrow layout is CSS-only, so the node must still be in the tree.
-    expect(container.querySelector(".shell-logs")).not.toBeNull();
+    expect(container.querySelector(".console")).not.toBeNull();
   });
 
   it("filters the lines when a search is typed", async () => {

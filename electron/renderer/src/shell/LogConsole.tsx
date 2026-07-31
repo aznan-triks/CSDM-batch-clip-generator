@@ -201,7 +201,83 @@ export default function LogConsole() {
     : lines;
 
   return (
-    <div className="shell-logs">
+    <div className="console">
+      {/* The mock's `.ch`: a titled bar, its own hairline, the tools closing it
+          on the right. The title is what makes the column read as an
+          instrument rather than a stray box of text. */}
+      <div className="ch">
+        <b>Console</b>
+        <div className="tools">
+          <label className="log-search">
+            Search
+            <input
+              type="text"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="filter…"
+            />
+          </label>
+
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={autoScroll}
+            aria-label="Auto-scroll"
+            className={autoScroll ? "log-toggle log-toggle-on" : "log-toggle"}
+            onClick={() => setAutoScroll((previous) => !previous)}
+          >
+            ↓
+          </button>
+
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={showTimestamps}
+            aria-label="Timestamps"
+            className={showTimestamps ? "log-toggle log-toggle-on" : "log-toggle"}
+            onClick={() => setShowTimestamps((previous) => !previous)}
+          >
+            TS
+          </button>
+
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={showBadges}
+            aria-label="Level badges"
+            className={showBadges ? "log-toggle log-toggle-on" : "log-toggle"}
+            onClick={() => setShowBadges((previous) => !previous)}
+          >
+            Badges
+          </button>
+
+          <div className="log-export">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={exportMenuOpen}
+              onClick={() => setExportMenuOpen((previous) => !previous)}
+            >
+              Export ▾
+            </button>
+            {exportMenuOpen && (
+              <div className="log-export-menu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    exportLinesAsHtml(lines);
+                    setExportMenuOpen(false);
+                  }}
+                >
+                  HTML (.html)
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       {ask && (
         <div id="ask-panel">
           <span>{ask.title} </span>
@@ -213,77 +289,9 @@ export default function LogConsole() {
         </div>
       )}
 
-      <div className="log-tools">
-        <label className="log-search">
-          Search
-          <input
-            type="text"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="filter…"
-          />
-        </label>
-
-        <button
-          type="button"
-          role="checkbox"
-          aria-checked={autoScroll}
-          aria-label="Auto-scroll"
-          className={autoScroll ? "log-toggle log-toggle-on" : "log-toggle"}
-          onClick={() => setAutoScroll((previous) => !previous)}
-        >
-          ↓
-        </button>
-
-        <button
-          type="button"
-          role="checkbox"
-          aria-checked={showTimestamps}
-          aria-label="Timestamps"
-          className={showTimestamps ? "log-toggle log-toggle-on" : "log-toggle"}
-          onClick={() => setShowTimestamps((previous) => !previous)}
-        >
-          TS
-        </button>
-
-        <button
-          type="button"
-          role="checkbox"
-          aria-checked={showBadges}
-          aria-label="Level badges"
-          className={showBadges ? "log-toggle log-toggle-on" : "log-toggle"}
-          onClick={() => setShowBadges((previous) => !previous)}
-        >
-          Badges
-        </button>
-
-        <div className="log-export">
-          <button
-            type="button"
-            aria-haspopup="menu"
-            aria-expanded={exportMenuOpen}
-            onClick={() => setExportMenuOpen((previous) => !previous)}
-          >
-            Export ▾
-          </button>
-          {exportMenuOpen && (
-            <div className="log-export-menu" role="menu">
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  exportLinesAsHtml(lines);
-                  setExportMenuOpen(false);
-                }}
-              >
-                HTML (.html)
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div id="log" ref={logRef}>
+      {/* The mock's `.body`. It keeps `id="log"`: the auto-scroll aims at it,
+          and so does every test that counts lines. */}
+      <div className="body" id="log" ref={logRef}>
         {visibleLines.map((line) => (
           <div key={line.key} className={line.cssClass}>
             {showTimestamps && <span className="log-ts">{formatTimestamp(line.ts)} </span>}
@@ -293,6 +301,15 @@ export default function LogConsole() {
             {line.text}
           </div>
         ))}
+
+        {/* The prompt, and it is MUTE. The mock types a fake command into it;
+            this window has no command line, and a line that writes itself
+            would invite the user to type where nothing listens. The shape is
+            the mock's, the lie is not. */}
+        <div className="promptline">
+          <span className="prompt">csdm&gt;</span>
+          <span className="cur" aria-hidden="true" />
+        </div>
       </div>
     </div>
   );

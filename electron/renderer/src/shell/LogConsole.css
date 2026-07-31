@@ -1,50 +1,37 @@
 /*
- * The log console's own styling.
+ * The log console.
  *
- * skeleton.css carried these rules with hardcoded hexes while it existed to
- * prove the build chain. It is gone; the rules survive here on theme tokens,
- * because deleting them outright would have cost the console its level colours
- * and its line wrapping -- a visible regression dressed up as a cleanup.
+ * THE CARD, THE TITLED HEADER, THE RULED BODY AND THE PROMPT ARE THE MOCK'S:
+ * `.console`, `.console::before`, `.console .ch`, `.console .body` (and its
+ * `::after` ruling), `.console .prompt`, `.console .cur` -- all in
+ * theme/mock-v12.css. The rhythm that used to be maintained here as
+ * `--log-line` / `--log-pad` is one number over there: the body's line-height
+ * is 22px, its ruling repeats every 22px, and both start at the same 12px top
+ * padding. Nothing below may set a line-height or a padding on the body, or
+ * the text floats off the rules again.
  *
- * The height is no longer `calc(100vh - 100px)`: the shell grid owns the
- * column now, so the console fills the cell it is given.
+ * What is left is the toolbar the mock never drew -- its console has three
+ * decorative glyphs, this one has a working search, three toggles and an
+ * export menu -- plus the level colours, and one measured disagreement.
  */
 
-.shell-logs {
-  /* The console's own rhythm. These two feed BOTH the text and the ruled
-     lines, so the two can never drift apart -- see console-rules.test.ts.
-     The mock's body pads 12px 15px, not 8px all round. */
-  --log-line: 22px;
-  --log-pad: 12px;
-
-  position: relative;
+/*
+ * The mock's `.tools` is three inline glyphs, so it needs no layout. This one
+ * carries real controls, in a 288px column, in a 46px header: ONE row that
+ * never wraps. It was measured at 127px tall when it did, and three stacked
+ * rows of chrome ate the log itself. The search field is the only elastic
+ * part, so it is what gives way.
+ */
+.console .tools {
   display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  font-family: var(--font-mono);
-  font-size: var(--fs-sm);
-  /* Light frosted glass, driven by the theme: no near-black panel any more. */
-  background: var(--band);
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
-  /* The mock's `.console` is a CARD, not a bare column: rounded, rimmed in a
-     tinted accent, lifted off the ground, and capped by a 2px accent bar. */
-  border: var(--bw) solid color-mix(in srgb, var(--gold) 20%, var(--line));
-  border-radius: var(--r-card);
-  box-shadow: var(--elev);
-  overflow: hidden;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
-.shell-logs::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  z-index: 3;
-  height: var(--bw-accent);
-  width: 100%;
-  background: linear-gradient(90deg, var(--lime-glow), var(--gold), transparent);
+.console .tools > * {
+  flex: none;
 }
 
 #ask-panel {
@@ -54,33 +41,6 @@
 
 #ask-panel button {
   margin-right: 8px;
-}
-
-/*
- * The console's own toolbar: search, auto-scroll, timestamps, badges, export.
- * Ported from the window's log toolbar row (`_build_log_panel`), muted
- * buttons on the raised ground the same way the rest of the shell's chrome
- * sits on it.
- */
-/* The mock's `.ch`: the console's own header sits ON the glass, tinted by the
-   accent -- an opaque `--raise` strip there cut the card in two. */
-/* ONE row, never wrapping. The mock's console header is 46px tall; this one
-   was measured at 127px because `flex-wrap: wrap` broke it over three lines in
-   the 288px column, and three stacked rows of chrome ate the log itself. The
-   search field is the only elastic part, so it is what gives way. */
-.log-tools {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-4) var(--sp-6);
-  border-bottom: var(--bw) solid color-mix(in srgb, var(--gold) 16%, var(--line));
-  background: transparent;
-  flex-wrap: nowrap;
-  min-width: 0;
-}
-
-.log-tools > * {
-  flex: none;
 }
 
 .log-search {
@@ -105,7 +65,6 @@
   border: var(--bw) solid var(--line);
   border-radius: 8px;
   padding: var(--sp-2) var(--sp-4);
-  min-width: 0;
 }
 
 .log-toggle,
@@ -129,7 +88,6 @@
 
 .log-export {
   position: relative;
-  margin-left: auto;
 }
 
 .log-export-menu {
@@ -155,6 +113,19 @@
   cursor: pointer;
 }
 
+/*
+ * MEASURED DISAGREEMENT: the mock paints its log ink `#3b4a61`, a fixed slate
+ * that works on its light ground and disappears on the dark one -- and unlike
+ * its other colours, it is not re-declared under `:root[data-mode="dark"]`.
+ * `--txt-lo` is the same softness in both grounds. A wall of monospace at full
+ * contrast reads as an error dump, which is why it is not `--txt` either.
+ */
+.console .body {
+  color: var(--txt-lo);
+  /* Engine lines arrive pre-formatted, with their own alignment. */
+  white-space: pre-wrap;
+}
+
 .log-ts {
   color: var(--dim);
 }
@@ -168,27 +139,8 @@
   border: var(--bw) solid currentColor;
 }
 
-#log {
-  /* The mock's log ink is a softer slate than body text: a wall of monospace
-     at full contrast reads as an error dump. */
-  color: var(--txt-lo);
-  white-space: pre-wrap;
-  padding: var(--log-pad) var(--sp-6);
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-  /* ONE period for the text and the rules. */
-  line-height: var(--log-line);
-  background-image: repeating-linear-gradient(
-    180deg,
-    transparent 0 calc(var(--log-line) - 1px),
-    var(--line) calc(var(--log-line) - 1px) var(--log-line)
-  );
-  /* The rules start where the first line of text starts, not at the box edge. */
-  background-position: 0 var(--log-pad);
-  background-repeat: repeat;
-}
-
+/* The engine's four levels. The mock's console has no levels at all: its lines
+   are a fixed picture of a good run. */
 .line-err {
   color: var(--blood-t);
 }
