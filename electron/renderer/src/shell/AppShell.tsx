@@ -55,6 +55,14 @@ export default function AppShell() {
   useEffect(() => {
     if (themeBg) applyMode(themeBg);
   }, [themeBg]);
+
+  // The open tab, on the document, so the backdrop can draw a different field
+  // per screen (`BACKDROP_BY_TAB` in shell/backdropField.ts). An attribute
+  // rather than a prop: the canvas is a sibling of `.app`, not a child of the
+  // tab, and it already watches <html> for the theme.
+  useEffect(() => {
+    document.documentElement.setAttribute("data-tab", active);
+  }, [active]);
   // The action buttons a shot aims at, registered by name so the band never
   // has to know this file's markup.
   const actionButtons = useRef<Record<string, HTMLElement | null>>({});

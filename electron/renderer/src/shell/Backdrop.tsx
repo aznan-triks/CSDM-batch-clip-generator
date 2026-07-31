@@ -15,7 +15,8 @@ import { effectiveIntensity, onIntensityChange } from "../motion/engine";
 // "backdropField", not "backdrop": a file named "backdrop.ts" next to this
 // "Backdrop.tsx" differs only in casing, which TypeScript's own portability
 // check (forceConsistentCasingInFileNames) refuses regardless of host OS.
-import { BACKDROP, borderAlpha, cellIntensity, parseAlpha } from "./backdropField";
+import { borderAlpha, cellIntensity, fieldForTab, parseAlpha } from "./backdropField";
+import type { BackdropField } from "./backdropField";
 
 /** The tokens the canvas needs as concrete values, since it cannot use var(). */
 interface Palette {
@@ -61,27 +62,31 @@ export default function Backdrop() {
     let cursorY = -1e4;
     let frame = 0;
 
-    const plateSize = BACKDROP.cell - BACKDROP.gap;
-    const offset = BACKDROP.gap / 2;
+    // The field is per TAB (`BACKDROP_BY_TAB`): a `let`, re-read whenever the
+    // shell stamps a different `data-tab` on <html>. `plateSize` and `offset`
+    // derive from it, so they move with it.
+    let field: BackdropField = fieldForTab(document.documentElement.dataset.tab);
+    let plateSize = field.cell - field.gap;
+    let offset = field.gap / 2;
 
     function layout(): void {
-      const ratio = Math.min(BACKDROP.maxPixelRatio, window.devicePixelRatio || 1);
+      const ratio = Math.min(field.maxPixelRatio, window.devicePixelRatio || 1);
       // Non-null assertions, same as every `ctx!` below: TS resets narrowing
       // for a variable captured by a nested function declaration, even a
       // `const` that was null-checked just above in the enclosing effect.
       canvas!.width = Math.ceil(window.innerWidth * ratio);
       canvas!.height = Math.ceil(window.innerHeight * ratio);
       ctx!.setTransform(ratio, 0, 0, ratio, 0, 0);
-      cols = Math.ceil(window.innerWidth / BACKDROP.cell) + 1;
-      rows = Math.ceil(window.innerHeight / BACKDROP.cell) + 1;
+      cols = Math.ceil(window.innerWidth / field.cell) + 1;
+      rows = Math.ceil(window.innerHeight / field.cell) + 1;
       plates = new Float32Array(cols * rows);
     }
 
     /** One full pass. `time` drifts the field; `animated` eases, else it snaps. */
     function draw(time: number, animated: boolean): void {
       const [r, g, b] = palette.holo;
-      const cursorCol = cursorX / BACKDROP.cell;
-      const cursorRow = cursorY / BACKDROP.cell;
+      const cursorCol = cursorX / field.cell;
+      const cursorRow = cursorY / field.cell;
 
       ctx!.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
@@ -94,21 +99,21 @@ export default function Backdrop() {
       for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
           const index = row * cols + col;
-          const target = cellIntensity(col, row, cursorCol, cursorRow, time);
+          const target = cellIntensity(col, row, cursorCol, cursorRow, time, field);
           const previous = plates[index];
-          const value = animated ? previous + (target - previous) * BACKDROP.ease : target;
+          const value = animated ? previous + (target - previous) * field.ease : target;
           plates[index] = value;
 
-          const x = col * BACKDROP.cell + offset;
-          const y = row * BACKDROP.cell + offset;
+          const x = col * field.cell + offset;
+          const y = row * field.cell + offset;
           ctx!.fillRect(x, y, plateSize, plateSize);
           ctx!.strokeRect(x + 0.5, y + 0.5, plateSize - 1, plateSize - 1);
-          if (value > BACKDROP.visibleFloor) active.push(x, y, value);
+          if (value > field.visibleFloor) active.push(x, y, value);
         }
       }
 
       // Pass 2 -- the holographic sheen, only where the cursor reaches.
-      const { tintAlpha, topBarAlpha, topBarHeight, scanAlpha, scanStep } = BACKDROP.sheen;
+      const { tintAlpha, topBarAlpha, topBarHeight, scanAlpha, scanStep } = field.sheen;
       for (let i = 0; i < active.length; i += 3) {
         const x = active[i];
         const y = active[i + 1];
@@ -174,6 +179,18 @@ export default function Backdrop() {
     // it has to re-read them. Cheap, and only when the attribute changes.
     const themeWatcher = new MutationObserver(() => {
       palette = readPalette();
+      // The tab may have changed too, which changes the FIELD, which changes
+      // the grid size -- so the plate buffer has to be rebuilt, not just
+      // repainted. Cheap, and only when an attribute actually moved.
+      const next = fieldForTab(document.documentElement.dataset.tab);
+      if (next.cell !== field.cell || next.gap !== field.gap) {
+        field = next;
+        plateSize = field.cell - field.gap;
+        offset = field.gap / 2;
+        layout();
+      } else {
+        field = next;
+      }
       if (effectiveIntensity() === "none") draw(0, false);
     });
     // `style` as well as `data-mode`: theme/accent.ts writes the accent -- and
@@ -183,7 +200,7 @@ export default function Backdrop() {
     // every surface in the window except this one.
     themeWatcher.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["data-mode", "style"],
+      attributeFilter: ["data-mode", "style", "data-tab"],
     });
 
     layout();

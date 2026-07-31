@@ -13,7 +13,36 @@
  * drawing function is a bug.
  */
 
-export const BACKDROP = {
+/**
+ * The shape of a ground. Written out rather than inferred from the table
+ * below: `as const` would freeze every number to its own literal type, and a
+ * per-tab override of `cell: 32` against a literal `38` is a type error rather
+ * than the point of the exercise.
+ */
+export interface BackdropField {
+  cell: number;
+  gap: number;
+  reach: number;
+  ease: number;
+  threshold: number;
+  rampWidth: number;
+  drift: { x: number; y: number };
+  cluster: { scale: number; weight: number };
+  band: { scaleX: number; scaleY: number; driftFactor: number; weight: number };
+  falloffFloor: number;
+  plateRadius: number;
+  sheen: {
+    tintAlpha: number;
+    topBarAlpha: number;
+    topBarHeight: number;
+    scanAlpha: number;
+    scanStep: number;
+  };
+  visibleFloor: number;
+  maxPixelRatio: number;
+}
+
+export const BACKDROP: BackdropField = {
   /** Plate pitch in px, and the empty gap between two plates. */
   cell: 38,
   gap: 4,
@@ -39,7 +68,42 @@ export const BACKDROP = {
   visibleFloor: 0.02,
   /** Device pixel ratio is capped: beyond this the extra pixels buy nothing. */
   maxPixelRatio: 2,
-} as const;
+};
+
+/**
+ * The ground, per tab.
+ *
+ * Each entry states ONLY what it changes; the rest falls back to `BACKDROP`
+ * above, so a tab that wants the default writes nothing and one that wants a
+ * denser field writes one line. This is the whole of "the background should be
+ * configurable per page" -- the drawing code is untouched and knows nothing
+ * about tabs.
+ *
+ * The four values below are a starting point with a reason each, not a taste:
+ * Capture is the working screen and stays the reference; Tags is a reading
+ * screen, so its field is calmer and reaches less far; Video carries dense
+ * forms, so its plates are larger and quieter behind them; Settings is the
+ * furthest from the work, so it is the liveliest. Change them here, never in
+ * a drawing function.
+ *
+ * `maxPixelRatio` and `plateRadius` are deliberately NOT varied: the first is
+ * a hardware cap, the second is the shape of a plate, and neither is a mood.
+ */
+export const BACKDROP_BY_TAB: Readonly<Record<string, Partial<BackdropField>>> = {
+  capture: {},
+  tags: { cell: 44, reach: 6, threshold: 0.68 },
+  video: { cell: 52, gap: 6, threshold: 0.7, falloffFloor: 0.35 },
+  settings: { cell: 32, reach: 10, threshold: 0.56 },
+};
+
+/**
+ * The field a tab draws with. An unknown tab -- or none yet -- gets the
+ * reference field rather than nothing, so the ground is never blank while the
+ * shell decides which tab is open.
+ */
+export function fieldForTab(tab: string | null | undefined): BackdropField {
+  return { ...BACKDROP, ...(tab ? (BACKDROP_BY_TAB[tab] ?? {}) : {}) };
+}
 
 /** Deterministic integer hash, mapped into [0, 1). */
 function hash(x: number, y: number): number {
@@ -79,23 +143,26 @@ export function cellIntensity(
   cursorCol: number,
   cursorRow: number,
   time: number,
+  // The field is a PARAMETER, defaulting to the reference one: the tab decides
+  // which numbers apply, and this function still knows nothing about tabs.
+  field_: BackdropField = BACKDROP,
 ): number {
   const cheb = Math.max(Math.abs(col - cursorCol), Math.abs(row - cursorRow));
-  if (cheb > BACKDROP.reach) return 0;
+  if (cheb > field_.reach) return 0;
 
-  const nx = time * BACKDROP.drift.x;
-  const ny = time * BACKDROP.drift.y;
-  const cluster = valueNoise(col * BACKDROP.cluster.scale + nx, row * BACKDROP.cluster.scale + ny);
+  const nx = time * field_.drift.x;
+  const ny = time * field_.drift.y;
+  const cluster = valueNoise(col * field_.cluster.scale + nx, row * field_.cluster.scale + ny);
   const band = valueNoise(
-    col * BACKDROP.band.scaleX + nx * BACKDROP.band.driftFactor,
-    row * BACKDROP.band.scaleY,
+    col * field_.band.scaleX + nx * field_.band.driftFactor,
+    row * field_.band.scaleY,
   );
   const field =
-    (cluster * BACKDROP.cluster.weight + band * BACKDROP.band.weight) *
-    (BACKDROP.falloffFloor + (1 - cheb / BACKDROP.reach));
+    (cluster * field_.cluster.weight + band * field_.band.weight) *
+    (field_.falloffFloor + (1 - cheb / field_.reach));
 
-  if (field <= BACKDROP.threshold) return 0;
-  return Math.min(1, (field - BACKDROP.threshold) / BACKDROP.rampWidth);
+  if (field <= field_.threshold) return 0;
+  return Math.min(1, (field - field_.threshold) / field_.rampWidth);
 }
 
 /**
