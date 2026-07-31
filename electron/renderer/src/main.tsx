@@ -12,6 +12,10 @@
 import "./theme/mock-v12.css";
 import "./theme/mock-bridge.css";
 import "./theme/tokens.css";
+// After tokens.css, and for the same reason tokens.css comes after the mock: a
+// night ground refines the dark block rather than replacing it, so it has to be
+// able to win on the handful of tokens that make it itself.
+import "./theme/grounds.css";
 
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";

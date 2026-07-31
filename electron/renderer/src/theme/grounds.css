@@ -1,0 +1,145 @@
+/*
+ * The night grounds, one block each.
+ *
+ * theme/mode.ts used to map `dark`, `amoled`, `deepblue` and `terminal` onto a
+ * single dark palette -- its own comment said so, "until someone asks for
+ * distinct ones". Four of the five choices in Settings therefore produced a
+ * byte-identical screen. Someone asked.
+ *
+ * THE VALUES ARE NOT INVENTED. They come from `_BG_PRESETS` in csdm/theme.py,
+ * the grounds the Tkinter window has always offered, and which theme/mode.ts
+ * already cites as its source of truth. Each Tkinter preset gives four steps
+ * (BG / BG2 / BG3 / LOG_BG) where this ladder needs five and demands STRICTLY
+ * increasing luminance (D9), so `--raise-hi` is extended one step past BG3 in
+ * the preset's own hue -- never borrowed from another ground.
+ *
+ * A block here overrides only what makes a ground ITSELF: the ladder, the ink,
+ * the hairlines, and the glass drawn on them. Everything else -- the accent,
+ * the holographic hue, the semantic colours, the sheens -- keeps coming from
+ * the dark block in tokens.css, which still applies because `data-mode` stays
+ * `dark` for all four night grounds.
+ *
+ * SEPARATE FILE ON PURPOSE: `theme/__tests__/contrast.test.ts` splits
+ * tokens.css on the literal string `:root[data-mode="dark"]` and treats
+ * everything after it as the dark override. Appending these blocks there would
+ * have made its lookups read whichever ground came last. They live here, and
+ * `theme/__tests__/grounds.test.ts` holds them to the same two rules.
+ *
+ * ⚠️ `--page-0` / `--page-1` are set in EVERY block below, and they have to be.
+ * They draw the page's own gradient -- the largest surface on screen -- and
+ * `theme/mock-bridge.css` already points them at `--base` / `--void`. That
+ * mapping loses: the mock writes them as literals inside its own
+ * `:root[data-mode="dark"]` (specificity 0,2,0) where the bridge speaks at
+ * `:root` (0,1,0), so the more specific rule wins whatever the load order.
+ * Measured: all four night grounds came back with the same `rgb(11,18,32)`
+ * page while their cards and ink already differed. Same trap as the four
+ * surfaces the mock writes literally (context_guide section 10).
+ */
+
+/* -- amoled: true black, for a panel that can switch pixels off entirely.
+      `_BG_PRESETS` has BG and BG2 both at #000000, which cannot be a ladder;
+      the steps below climb from that floor in neutral greys, ending at the
+      preset's own BORDER (#1a1a1a). -- */
+:root[data-ground="amoled"] {
+  --page-0: #050505;
+  --page-1: #000000;
+  --void: #000000;
+  --base: #050505;
+  --panel: #0a0a0a;
+  --raise: #121212;
+  --raise-hi: #1a1a1a;
+
+  --line: rgba(255, 255, 255, 0.09);
+  --line-hi: rgba(255, 255, 255, 0.18);
+
+  --txt-hi: #ffffff;
+  --txt: #e0e0e0;
+  --txt-lo: #b4b4b4;
+  --dim: #949494; /* the preset's #888888 lifted to clear AA on --panel */
+
+  --recess: rgba(255, 255, 255, 0.05);
+  --recess-deep: rgba(0, 0, 0, 0.85);
+
+  --surface: rgba(20, 20, 20, 0.62);
+  --surface-2: rgba(12, 12, 12, 0.45);
+  --band: rgba(6, 6, 6, 0.78);
+  --solid: #141414;
+
+  --tile-fill: rgba(255, 255, 255, 0.05);
+  --tile-fill-2: rgba(255, 255, 255, 0.025);
+  --tile-bevel: rgba(255, 255, 255, 0.22);
+
+  --edge-hi: rgba(255, 255, 255, 0.12);
+  --hair-2: rgba(255, 255, 255, 0.06);
+}
+
+/* -- deepblue: the preset's own navy, BG #0a0f1e / BG2 #0d1526 / BG3 #111d35,
+      with LOG_BG #080d18 as the floor. -- */
+:root[data-ground="deepblue"] {
+  --page-0: #0a0f1e;
+  --page-1: #080d18;
+  --void: #080d18;
+  --base: #0a0f1e;
+  --panel: #0d1526;
+  --raise: #111d35;
+  --raise-hi: #16264a;
+
+  --line: rgba(122, 143, 186, 0.16);
+  --line-hi: rgba(122, 143, 186, 0.3);
+
+  --txt-hi: #e8eeff;
+  --txt: #cdd6f4;
+  --txt-lo: #a9b6dc;
+  --dim: #8fa3ca; /* the preset's #7a8fba lifted to clear AA on --panel */
+
+  --recess: rgba(8, 13, 24, 0.7);
+  --recess-deep: rgba(5, 9, 18, 0.85);
+
+  --surface: rgba(17, 29, 53, 0.6);
+  --surface-2: rgba(13, 21, 38, 0.45);
+  --band: rgba(10, 15, 30, 0.78);
+  --solid: #111d35;
+
+  --tile-fill: rgba(122, 143, 186, 0.14);
+  --tile-fill-2: rgba(122, 143, 186, 0.07);
+  --tile-bevel: rgba(180, 205, 245, 0.28);
+
+  --edge-hi: rgba(150, 200, 240, 0.16);
+  --hair-2: rgba(122, 143, 186, 0.08);
+}
+
+/* -- terminal: the preset's industrial look, BG #0a0c10 / BG2 #0d1015 /
+      BG3 #12161c, floor LOG_BG #070a0d, with the greenish ink its comment in
+      csdm/theme.py calls for. -- */
+:root[data-ground="terminal"] {
+  --page-0: #0a0c10;
+  --page-1: #070a0d;
+  --void: #070a0d;
+  --base: #0a0c10;
+  --panel: #0d1015;
+  --raise: #12161c;
+  --raise-hi: #182029;
+
+  --line: rgba(111, 138, 120, 0.22);
+  --line-hi: rgba(111, 138, 120, 0.38);
+
+  --txt-hi: #e4efe8;
+  --txt: #c8d3cc;
+  --txt-lo: #a3b3aa;
+  --dim: #86a58f; /* the preset's #6f8a78 lifted to clear AA on --panel */
+
+  --recess: rgba(7, 10, 13, 0.72);
+  --recess-deep: rgba(4, 6, 8, 0.86);
+
+  --surface: rgba(18, 22, 28, 0.62);
+  --surface-2: rgba(13, 16, 21, 0.45);
+  --band: rgba(8, 11, 14, 0.8);
+  --solid: #12161c;
+
+  --tile-fill: rgba(111, 138, 120, 0.14);
+  --tile-fill-2: rgba(111, 138, 120, 0.07);
+  --tile-bevel: rgba(160, 200, 175, 0.28);
+
+  --edge-hi: rgba(140, 190, 160, 0.16);
+  --hair-2: rgba(111, 138, 120, 0.08);
+}

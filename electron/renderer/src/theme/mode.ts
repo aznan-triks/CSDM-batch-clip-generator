@@ -45,9 +45,21 @@ export const DEFAULT_GROUND = "white";
 /**
  * Point the document at a palette. Returns the mode actually applied, so a
  * caller can tell that its value was not recognised.
+ *
+ * TWO attributes, and they answer two different questions. `data-mode` is
+ * light-or-night, which the ~40 component stylesheets and the contrast guard
+ * already key on; `data-ground` is WHICH night, which theme/grounds.css keys
+ * on. Four of the five grounds used to collapse into one screen because only
+ * the first was ever written -- `dark`, `amoled`, `deepblue` and `terminal`
+ * came back byte-identical when measured.
+ *
+ * An unrecognised value falls back to the default for BOTH, so a stale config
+ * can never leave the document stamped with a ground no stylesheet defines.
  */
 export function applyMode(themeBg: string): Mode {
-  const mode = GROUND_MODES[themeBg] ?? GROUND_MODES[DEFAULT_GROUND];
+  const known = themeBg in GROUND_MODES ? themeBg : DEFAULT_GROUND;
+  const mode = GROUND_MODES[known];
   document.documentElement.setAttribute("data-mode", mode);
+  document.documentElement.setAttribute("data-ground", known);
   return mode;
 }
