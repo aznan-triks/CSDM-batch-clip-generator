@@ -128,7 +128,7 @@ from csdm.static_data import DELAYED_EFFECT_WEAPONS, SUICIDE_WEAPONS
 from csdm.static_data import (
     CSDM_RUNTIME_CFG_NAME, CSDM_RUNTIME_BLOCK_START, CSDM_RUNTIME_BLOCK_END,
 )
-from csdm.engine.core import EngineMixin
+from csdm.engine.core import EngineMixin, PG_PARAM_KEYS
 from csdm.engine.state import EngineStateMixin
 
 # ── Configuration : defauts, presets, persistance (Phase 1.1) ──────────────
@@ -333,7 +333,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         self.bind("<Configure>", self._on_window_configure, add="+")
         self.after(60, self._update_res_preview)
 
-        self._sync_pg_params()
+        self._watch_pg_params()
 
         self._auto_save()
         self.after(80, self._apply_dark_titlebar)
@@ -341,18 +341,36 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         if HAS_PG:
             self.after(500, self._connect_and_load)
 
-    def _sync_pg_params(self):
+    def _sync_pg_params(self, *_trace_args):
         """Copy the five PostgreSQL identifier widgets into `self._pg_params`,
         the plain dict `_pg`/`_pg_fresh` (moved to `EngineMixin`) actually read.
-        Called after the widgets exist, and again whenever the values may have
-        changed before a connection is opened — never assume it stays fresh."""
-        self._pg_params = {
-            "pg_host": self.v["pg_host"].get(),
-            "pg_port": self.v["pg_port"].get(),
-            "pg_user": self.v["pg_user"].get(),
-            "pg_pass": self.v["pg_pass"].get(),
-            "pg_db":   self.v["pg_db"].get(),
-        }
+
+        Bound to the widgets by `_watch_pg_params`, so it runs on every edit
+        rather than at three chosen moments. `*_trace_args` swallows the
+        `(name, index, mode)` triple Tk passes a trace callback.
+        """
+        # PG_PARAM_KEYS comes from the engine: one list, so a sixth
+        # identifier can never be added there and forgotten here.
+        self._pg_params = {key: self.v[key].get() for key in PG_PARAM_KEYS}
+
+    def _watch_pg_params(self):
+        """Keep `_pg_params` live for the rest of the session.
+
+        Before this, the dict was refilled in exactly three places, and none of
+        the twelve `_pg_fresh()` call sites (tags, players, maps...) was one of
+        them. `_collect_config()` runs from `_auto_save()` every five seconds,
+        so the window was bounded -- but real: changing a host or a password
+        and acting within that second opened the connection on the old value.
+        Before the chantier 1.5 refactor the read was always live; this puts
+        that back rather than adding a fourth place to remember.
+
+        A trace, not a poll: Tk tells us when a variable is written, so the
+        dict cannot be stale by construction. The initial fill is the same
+        method, called once here.
+        """
+        self._sync_pg_params()
+        for key in PG_PARAM_KEYS:
+            self.v[key].trace_add("write", self._sync_pg_params)
 
     def _on_player_change(self, name, sid):
         """Called when the DB search list selection changes.
@@ -377,7 +395,10 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         self._log("[PRE] OK\n", "ok")
 
     def _collect_config(self):
-        self._sync_pg_params()
+        # No `_sync_pg_params()` here any more: `_watch_pg_params` traces the
+        # five widgets, so the dict is live by construction. Calling it from
+        # chosen moments is what left the twelve `_pg_fresh()` sites reading a
+        # value up to five seconds old.
         cfg = {}
         for k, var in self.v.items():
             if k == "resolution":
@@ -490,7 +511,8 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
 
 
     def _connect_and_load(self):
-        self._sync_pg_params()
+        # See `_watch_pg_params`: the identifiers are traced, never copied on
+        # demand.
         self.db_status.set("[DB:...]")
         self.db_status_lbl.config(fg=YELLOW)
 
