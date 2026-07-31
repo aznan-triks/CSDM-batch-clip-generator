@@ -1,27 +1,30 @@
+/**
+ * What is LEFT in ActionBar.css.
+ *
+ * The band's whole look -- the frosted ground, the top hairline, the upward
+ * lift, the accent line -- is the approved mock's `.actbar`, held in
+ * theme/mock-v12.css and drift-locked by theme/__tests__/mock-v12.test.ts.
+ * This file used to restate all four, which is how a component sheet and the
+ * design start disagreeing. The guard now checks the opposite: that it says
+ * none of it.
+ */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const CSS = readFileSync(path.join(__dirname, "..", "ActionBar.css"), "utf-8");
 
-function block(selector: string): string {
-  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = CSS.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`));
-  if (!match) throw new Error(`selector not found in ActionBar.css: ${selector}`);
-  return match[1];
-}
-
-describe(".action-bar is its own full-width grid row", () => {
-  const rule = block(".action-bar");
-
-  it("claims the actionbar grid area", () => {
-    expect(rule).toMatch(/grid-area:\s*actionbar;/);
+describe("ActionBar.css re-states nothing the mock already says", () => {
+  it("leaves the band's ground, hairline and lift to the mock", () => {
+    for (const property of ["background", "backdrop-filter", "border-top", "box-shadow", "padding"]) {
+      expect(CSS, `ActionBar.css sets ${property}; the mock's .actbar owns it`).not.toMatch(
+        new RegExp(`^\\s*${property}\\s*:`, "m"),
+      );
+    }
   });
 
-  it("is glass, like the top nav and the console", () => {
-    expect(rule).toMatch(/background:\s*var\(--band\);/);
-    expect(rule).toMatch(/backdrop-filter:\s*var\(--blur\);/);
-    expect(rule).not.toMatch(/var\(--panel\);/);
+  it("no longer claims a grid area -- the band IS the shell's third row", () => {
+    expect(CSS).not.toMatch(/grid-area/);
   });
 });
 

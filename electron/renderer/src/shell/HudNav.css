@@ -4,20 +4,18 @@
  * Its whole look -- the frosted ground, the topographic dot texture, the
  * accent hairline along the bottom, the brand mark's bevel, the status pills
  * -- lives in theme/mock-v12.css under `.hud-nav`, `.hud-inner`, `.brand`,
- * `.mark` and `.navtools`. Two rules survive here, and both are things the
+ * `.mark` and `.navtools`. One rule survives here, and it is something the
  * mock cannot know.
  *
- * `.hud-nav`'s `position: relative` and `z-index: 1` come from the shared rule
- * in AppShell.css (same pattern as `.band`/WeaponBand).
+ * The band no longer claims a named grid area. The frame is the mock's `.app`
+ * (`grid-template-rows: auto 1fr auto`) and its three children fall into those
+ * three rows in source order. A leftover `grid-area: nav` against a grid with
+ * no named areas is not ignored -- it invents implicit lines called `nav`, and
+ * the frame came out as five rows and two columns with the band 55px tall in
+ * the last one.
  *
  * NO :hover rule in this file may translate or scale anything (D13/D16).
  */
-
-/* Where the band sits in the shell's grid. The mock's page has no grid at all:
-   it stacks three blocks and never names a cell. */
-.hud-nav {
-  grid-area: nav;
-}
 
 /* MEASURED: the mock paints the brand mark's glyph a flat #ffffff, which is
    right for its own blue and wrong the moment the user picks a pale accent

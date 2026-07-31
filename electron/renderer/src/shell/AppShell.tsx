@@ -86,40 +86,46 @@ export default function AppShell() {
   });
 
   return (
-    <div className="shell">
+    <>
+      {/* The mock's three ground layers, in its own order: the ambient wash,
+          the holographic plate canvas, then the cursor. All three are siblings
+          of `.app`, not children of it -- `.app` carries `z-index: 1` and
+          lifts the whole interface off them in one move. The wash used to be
+          baked into the shell's own `background`; it is its own layer here
+          because that is where the mock puts it, and because a fixed layer
+          keeps still while the workspace scrolls. */}
+      <div className="amb" aria-hidden="true" />
       <Backdrop />
       <ClickSpark />
       <Reticle />
-      <HudNav
-        tabs={hudTabs}
-        active={active}
-        onSelect={setActive}
-        database={database}
-        preset={preset}
-      />
-      <div className="shell-tabs">
-        <div className="shell-panel" role="tabpanel" aria-label={active}>
-          {active === "capture" && <CaptureTab />}
-          {active === "tags" && <TagsTab />}
-          {active === "video" && <VideoTab />}
-          {active === "settings" && <SettingsTab />}
+      <div className="app">
+        <HudNav
+          tabs={hudTabs}
+          active={active}
+          onSelect={setActive}
+          database={database}
+          preset={preset}
+        />
+        <div className="shell">
+          <div className="scrollwrap" role="tabpanel" aria-label={active}>
+            {active === "capture" && <CaptureTab />}
+            {active === "tags" && <TagsTab />}
+            {active === "video" && <VideoTab />}
+            {active === "settings" && <SettingsTab />}
+          </div>
+          <LogConsole />
         </div>
+        <ActionBar
+          registerButton={registerButton}
+          weapon={
+            <WeaponBand
+              status={engine.progress ?? (engine.busy ? "working…" : "idle")}
+              counter={engine.summary?.text ?? ""}
+              buttonRef={buttonRef}
+            />
+          }
+        />
       </div>
-
-      <div className="shell-log-column">
-        <LogConsole />
-      </div>
-
-      <ActionBar
-        registerButton={registerButton}
-        weapon={
-          <WeaponBand
-            status={engine.progress ?? (engine.busy ? "working…" : "idle")}
-            counter={engine.summary?.text ?? ""}
-            buttonRef={buttonRef}
-          />
-        }
-      />
-    </div>
+    </>
   );
 }

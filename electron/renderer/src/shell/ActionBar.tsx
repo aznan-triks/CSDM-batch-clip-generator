@@ -61,45 +61,43 @@ export default function ActionBar({
   }, []);
 
   return (
-    <div className="action-bar">
-      <div className="action-bar-row">
-        {weapon}
-        <span className="action-bar-btn" ref={registerButton("preview")}>
-          <ActionButton
-            label="PREVIEW"
-            icon={<ICONS.preview />}
-            variant="preview"
-            onClick={onPreview}
-          />
-        </span>
-        <span className="action-bar-btn" ref={registerButton("stop")}>
-          <ActionButton
-            label={engine.stopLabel.toLowerCase().includes("preview") ? "STOP PREVIEW" : "STOP"}
-            icon={<ICONS.stop />}
-            variant="stop"
-            disabled={!engine.stopEnabled}
-            onClick={onStop}
-          />
-        </span>
-        <span className="action-bar-btn" ref={registerButton("kill")}>
-          <ActionButton
-            label="KILL"
-            icon={<ICONS.kill />}
-            variant="kill"
-            disabled={!engine.killEnabled}
-            onClick={onKill}
-          />
-        </span>
-        <span className="action-bar-btn" ref={registerButton("run")}>
-          <ActionButton
-            label="RUN"
-            icon={<ICONS.run />}
-            variant="run"
-            disabled={!engine.runEnabled}
-            onClick={onRun}
-          />
-        </span>
-      </div>
+    <div className="actbar">
+      {weapon}
+      <span className="action-bar-btn" ref={registerButton("preview")}>
+        <ActionButton
+          label="PREVIEW"
+          icon={<ICONS.preview />}
+          variant="preview"
+          onClick={onPreview}
+        />
+      </span>
+      <span className="action-bar-btn" ref={registerButton("stop")}>
+        <ActionButton
+          label={engine.stopLabel.toLowerCase().includes("preview") ? "STOP PREVIEW" : "STOP"}
+          icon={<ICONS.stop />}
+          variant="stop"
+          disabled={!engine.stopEnabled}
+          onClick={onStop}
+        />
+      </span>
+      <span className="action-bar-btn" ref={registerButton("kill")}>
+        <ActionButton
+          label="KILL"
+          icon={<ICONS.kill />}
+          variant="kill"
+          disabled={!engine.killEnabled}
+          onClick={onKill}
+        />
+      </span>
+      <span className="action-bar-btn" ref={registerButton("run")}>
+        <ActionButton
+          label="RUN"
+          icon={<ICONS.run />}
+          variant="run"
+          disabled={!engine.runEnabled}
+          onClick={onRun}
+        />
+      </span>
     </div>
   );
 }

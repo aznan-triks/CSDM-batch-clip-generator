@@ -1,60 +1,35 @@
 /*
- * The frame. Nav band on top, tabs and log console below it, the action bar
- * below that, and the weapon band across the bottom.
+ * The frame.
  *
- * Every colour comes from theme/tokens.css: nothing here may introduce one,
- * because the accent is user-chosen (D9) and the hierarchy has to survive in
- * greyscale alone.
+ * THE FRAME ITSELF IS IN theme/mock-v12.css: `.app` is the three rows (nav /
+ * workspace / action bar), `.shell` is the two columns (`1fr 288px`, 12px
+ * gutter, 12px/14px inset), `.scrollwrap` is the scrolling tab panel, `.amb`
+ * is the ambient wash and `body` is the ground gradient. None of that is
+ * restated here.
+ *
+ * What is left below is what the mock has no way to know: the base type size
+ * this window chose, where the plate canvas sits, and what happens when the
+ * window gets too narrow for two columns -- a case a fixed-width picture never
+ * had to answer.
  *
  * NO :hover rule in this file may translate or scale anything (D13/D16).
  */
 
-/* The page itself. skeleton.css used to reset this; the shell owns it now,
-   and a stray body margin would push the 100vh grid into a scrollbar.
-
-   The base face is the SANS stack (--font-display), matching the mock, whose
-   base font is its Inter --font. Mono is the exception -- the console, the
-   action buttons, and numeric values each set --font-mono themselves. A
-   monospace BASE made every un-overridden label render like a terminal, the
-   opposite of the soft-HUD look. */
+/* The mock never sets a base size, so its unstyled text falls back to the
+   browser's 16px. This window is denser on purpose. The face is the mock's
+   (`body { font-family: var(--font) }`, bridged to the sans display stack) --
+   a monospace base once made every un-overridden label render like a terminal,
+   which is the regression AppShell.css.test.ts still guards. */
 body {
-  margin: 0;
-  font-family: var(--font-display);
   font-size: var(--fs-base);
 }
 
-/* The mock's own frame: `.app` is three rows (nav / workspace / action bar) and
-   the workspace is `1fr 288px` with a 12px gutter and a 12px/14px inset
-   (mockup-v12-hologlass.html `.app` and `.shell`). The console is a FIXED
-   288px column there, not a fraction: it is a fixed-width instrument, and a
-   proportional one swallowed 40% of the window. The weapon band is no longer a
-   row of its own -- in the mock it rides INSIDE the action bar (`.wband`). */
-.shell {
-  position: relative;
-  display: grid;
-  grid-template-columns: 1fr 288px;
-  grid-template-rows: auto 1fr auto;
-  grid-template-areas:
-    "nav nav"
-    "tabs logs"
-    "actionbar actionbar";
-  column-gap: var(--sp-5);
-  row-gap: 0;
-  height: 100vh;
-  /* A continuous ground, not a flat fill: the backdrop plates float on it and
-     the gaps between them show it through. */
-  background:
-    radial-gradient(1100px 560px at 84% -4%, var(--amb-a), transparent 56%),
-    radial-gradient(900px 640px at 112% 46%, var(--amb-b), transparent 55%),
-    radial-gradient(760px 480px at -6% 116%, var(--amb-c), transparent 55%),
-    linear-gradient(165deg, var(--base), var(--void));
-  color: var(--txt);
-}
-
-/* The canvas covers the whole shell and never takes a click: it is decoration
-   that must not shadow a single control. */
+/* The plate canvas, on the mock's own footing: fixed to the viewport, under
+   `.app`, and never taking a click -- decoration must not shadow a control.
+   (The mock calls its canvas `.grid`; this one keeps its own name because the
+   drawing code is the window's, not the mock's.) */
 .shell-backdrop {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 0;
   display: block;
@@ -63,70 +38,17 @@ body {
   pointer-events: none;
 }
 
-/* Everything real sits above the backdrop. Without this the grid children
-   share the canvas's layer and paint under it. `.band` is WeaponBand's own
-   root class (see weapon/WeaponBand.tsx) -- not `.shell-band`, which does
-   not exist. */
-.hud-nav,
-.shell-tabs,
-.shell-log-column,
-.action-bar {
-  position: relative;
-  z-index: 1;
-}
-
-/* The workspace inset comes from the two columns themselves, so the nav and
-   the action bar stay full-bleed while the content breathes (mock `.shell`
-   padding: 12px 14px, gutter 12px). */
-.shell-tabs {
-  grid-area: tabs;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
-  padding: var(--sp-5) 0 var(--sp-5) var(--sp-6);
-}
-
-.shell-panel {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-}
-
 /*
- * The right column: just the console (LogConsole) now -- ActionBar moved out
- * to its own full-width `actionbar` grid row below (see ActionBar.css).
- * `.shell-logs` (LogConsole's own root) is a flex child in here, not the
- * grid cell itself -- see LogConsole.css.
- */
-.shell-log-column {
-  grid-area: logs;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-width: 0;
-  padding: var(--sp-5) var(--sp-6) var(--sp-5) 0;
-}
-
-/*
- * Narrow window (D24, minimum 900 x 640): the console gives its column to the
- * tabs. It is HIDDEN, never unmounted -- an unmounted console loses every line
- * already written, and the lines are the only record of a run.
+ * Narrow window (D24, minimum 900 x 640): the console gives its column back to
+ * the workspace. It is HIDDEN, never unmounted -- an unmounted console loses
+ * every line already written, and those lines are the only record of a run.
  */
 @media (max-width: 1000px) {
   .shell {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "nav"
-      "tabs"
-      "actionbar";
   }
 
-  .shell-tabs {
-    padding: var(--sp-5) var(--sp-6);
-  }
-
-  .shell-log-column {
+  .shell-logs {
     display: none;
   }
 }
