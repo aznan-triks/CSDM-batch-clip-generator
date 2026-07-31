@@ -13,27 +13,33 @@
  * other one.
  */
 
+/* THE MOCK'S `.wband`, not a band of its own: a single row that RIDES INSIDE
+   the action bar (mockup-v12-hologlass.html `.actbar > .wband`), weapon first,
+   status next, and the buttons trailing. It carries no glass and no border --
+   the action bar around it already does, and a second frosted layer stacked on
+   the first is exactly what made the old 94px band read as a separate slab. */
 .band {
   position: relative;
-  height: 94px;
-  border-top: var(--bw) solid var(--line);
-  background: var(--band);
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  flex: 1;
+  min-width: 0;
 }
 
 .band-meta {
-  position: absolute;
-  left: var(--sp-6);
-  top: 20px;
-  right: 340px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  min-width: 0;
+  flex: 1;
 }
 
 .band-status {
   font-family: var(--font-mono);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-md);
   color: var(--dim);
+  white-space: nowrap;
 }
 
 .band-status b {
@@ -42,10 +48,14 @@
 }
 
 .band-progress {
-  margin-top: var(--sp-4);
+  flex: 1;
+  min-width: 60px;
+  max-width: 220px;
   height: 4px;
+  border-radius: var(--r-pill);
   background: var(--surface-2);
   border: var(--bw) solid var(--line);
+  overflow: hidden;
 }
 
 .band-progress i {
@@ -55,22 +65,23 @@
 }
 
 .band-counter {
-  margin-top: var(--sp-3);
   font-family: var(--font-mono);
   font-size: var(--fs-xs);
   color: var(--dim);
   letter-spacing: var(--tr-snug);
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* The weapon. `bottom` and the fixed height are what keep it whole: it is
-   anchored inside the band, not centred on a line that could clip it. */
+/* The weapon: the mock's 64x22 `.gunmini`, leading the row. */
 .band-weapon {
-  position: absolute;
-  right: 24px;
-  bottom: var(--sp-5);
+  position: relative;
   z-index: 2;
+  flex: none;
   pointer-events: none;
+  order: -1;
 }
 
 .band-kick {
@@ -80,14 +91,13 @@
 
 .band-weapon svg.gun-art {
   display: block;
-  height: 70px;
+  height: 22px;
   width: auto;
-  transform: scaleX(-1); /* drawn pointing right, shown pointing left */
 }
 
 .band-weapon svg.gun-art * {
   fill: var(--gold);
-  opacity: 0.82;
+  opacity: 0.85;
 }
 
 /* A zero-size anchor at the barrel's end. Every shot leaves from here. */
@@ -99,12 +109,15 @@
 
 /* -- the effects layer. Every spawned element lands here and nowhere else. -- */
 
+/* `overflow: visible`: the row is 22px tall now, and a shot travels from the
+   muzzle to a BUTTON outside it. Clipping to the row would swallow every
+   tracer the moment the band stopped being 94px tall. */
 .fx {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 9;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .fx .flash {

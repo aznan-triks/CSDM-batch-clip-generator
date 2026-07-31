@@ -41,6 +41,10 @@ export default function AppShell() {
   // soon as the store resolves, regardless of which tab the user has open.
   const [themeAccent] = useSetting<string>("theme_accent");
   const [themeBg] = useSetting<string>("theme_bg");
+  // The nav's status pills (the mock's `.navtools`). Read here, not in HudNav:
+  // HudNav is presentational and is rendered bare by its own tests.
+  const [database] = useSetting<string>("pg_db");
+  const [preset] = useSetting<string>("video_preset");
 
   useEffect(() => {
     // themeAccent may be a legacy Tkinter preset name ("green"), not always
@@ -86,7 +90,13 @@ export default function AppShell() {
       <Backdrop />
       <ClickSpark />
       <Reticle />
-      <HudNav tabs={hudTabs} active={active} onSelect={setActive} />
+      <HudNav
+        tabs={hudTabs}
+        active={active}
+        onSelect={setActive}
+        database={database}
+        preset={preset}
+      />
       <div className="shell-tabs">
         <div className="shell-panel" role="tabpanel" aria-label={active}>
           {active === "capture" && <CaptureTab />}
@@ -100,12 +110,15 @@ export default function AppShell() {
         <LogConsole />
       </div>
 
-      <ActionBar registerButton={registerButton} />
-
-      <WeaponBand
-        status={engine.progress ?? (engine.busy ? "working…" : "idle")}
-        counter={engine.summary?.text ?? ""}
-        buttonRef={buttonRef}
+      <ActionBar
+        registerButton={registerButton}
+        weapon={
+          <WeaponBand
+            status={engine.progress ?? (engine.busy ? "working…" : "idle")}
+            counter={engine.summary?.text ?? ""}
+            buttonRef={buttonRef}
+          />
+        }
       />
     </div>
   );

@@ -70,7 +70,8 @@
   --fs-xl: 14px; /* card titles */
 
   --fw-normal: 400;
-  --fw-bold: 600; /* the mock has no third weight -- do not add one */
+  --fw-bold: 600;
+  --fw-heavy: 700; /* card titles and stat values -- the mock's `.sh .t` / `.st .v` */
 
   /* Uppercase tracking, collapsed from 8 values to 5. */
   --tr-tight: 0.08em;
@@ -96,7 +97,12 @@
   --dur-fast: 0.16s;
   --dur-base: 0.2s;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --spring: cubic-bezier(0.34, 1.5, 0.64, 1);
+
+  /* ONE easing, and it decelerates. Do NOT restore the mock's `--spring`: its
+     curve overshoots, the mock spends it on hover bounces this window forbids
+     outright (D13/D16), so nothing here ever consumed it -- and the one time
+     an overshoot did reach the screen, the C4 plant read as a toy and was
+     reverted in v214. A dead token is how that comes back. */
 
   /* -- lines and corners -- */
   --bw: 1px; /* hairline */
@@ -149,6 +155,12 @@
   --fire-t: #8f5c05;
   --steel-t: #4d6a86;
 
+  /* -- a RECESSED well: the segmented tray and the slider rail. Slate, not
+        white -- a white recess on a white card reads as a raised pill, which
+        is the opposite of what a track is supposed to say. -- */
+  --recess: rgba(226, 232, 240, 0.7);
+  --recess-deep: rgba(210, 222, 238, 0.9);
+
   /* -- glass: frosted panels over the ground. Translucent by design. -- */
   --surface: rgba(255, 255, 255, 0.72);
   --surface-2: rgba(255, 255, 255, 0.5);
@@ -182,6 +194,21 @@
   --gloss-hi: rgba(255, 255, 255, 0.35);
   --sheen-strong: rgba(255, 255, 255, 0.8);
   --shadow: rgba(30, 50, 90, 0.16);
+
+  /* -- the mock's own surface vocabulary (mockup-v12-hologlass.html :root).
+        These are the values `.sec`, `.chip`, `.fld` and `.console` are drawn
+        with; without them the glass reads as a flat outline. -- */
+  --solid: #ffffff; /* opaque control face: chip, field, ghost button */
+  --edge-hi: rgba(255, 255, 255, 0.75); /* the lit rim of a glass card */
+  --hair-2: rgba(30, 45, 70, 0.06); /* the quietest divider */
+  /* Derived from the accent so a user-chosen colour carries through (D9). */
+  --accent-soft: color-mix(in srgb, var(--gold) 12%, transparent);
+  /* Soft floating shadows. `--shadow` above is a COLOUR; these are complete
+     box-shadow values, which is what makes a card look lifted off the ground
+     instead of outlined on it. */
+  --elev:
+    0 8px 22px -10px rgba(30, 50, 90, 0.16), 0 2px 6px -3px rgba(30, 50, 90, 0.1);
+  --elev-sm: 0 4px 12px -6px rgba(30, 50, 90, 0.16);
 }
 
 /* ==================== DARK MODE (night) ====================
@@ -210,6 +237,9 @@
   --fire-t: #f59e0b;
   --steel-t: #6e8ba8;
 
+  --recess: rgba(12, 20, 36, 0.6);
+  --recess-deep: rgba(8, 14, 28, 0.75);
+
   --surface: rgba(30, 44, 70, 0.55);
   --surface-2: rgba(22, 34, 58, 0.4);
   --band: rgba(13, 22, 38, 0.72);
@@ -237,4 +267,10 @@
   --gloss-hi: rgba(255, 255, 255, 0.22);
   --sheen-strong: rgba(255, 255, 255, 0.45);
   --shadow: rgba(0, 0, 0, 0.45);
+
+  --solid: #16213a;
+  --edge-hi: rgba(150, 200, 240, 0.14);
+  --hair-2: rgba(150, 200, 240, 0.07);
+  --elev: 0 10px 26px -12px rgba(0, 0, 0, 0.6), 0 2px 8px -4px rgba(0, 0, 0, 0.5);
+  --elev-sm: 0 6px 14px -8px rgba(0, 0, 0, 0.55);
 }

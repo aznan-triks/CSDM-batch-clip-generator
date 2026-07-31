@@ -20,8 +20,12 @@ describe(".panel-box is glass, rounded", () => {
     expect(rule).not.toMatch(/var\(--panel\)/);
   });
 
-  it("uses the mode-aware bright border, not the flat hairline", () => {
-    expect(rule).toMatch(/border:\s*var\(--bw\)\s*solid\s*var\(--line-hi\);/);
+  // The mock's rim is the LIT edge of a glass plate, not a dark hairline: a
+  // dark border draws the card as an outline ON the ground instead of a pane
+  // floating above it.
+  it("uses the lit glass rim, not a dark hairline", () => {
+    expect(rule).toMatch(/border:\s*var\(--bw\)\s*solid\s*var\(--edge-hi\);/);
+    expect(rule).not.toMatch(/var\(--line-hi\)/);
   });
 
   it("is rounded, not the cut family", () => {
@@ -54,16 +58,18 @@ describe("the corner brackets sit inside the rounded curve, not outside it", () 
   const individualBefore = lastBlock(".panel-box::before");
   const individualAfter = lastBlock(".panel-box::after");
 
+  // The mock puts the pair on a DIAGONAL (top-left, bottom-right) at a 7px
+  // inset -- not two brackets crowding the same top edge.
   it("is inset far enough to clear --r-card, not still at the old square-corner -1px", () => {
     expect(individualBefore).not.toMatch(/top:\s*-1px;/);
     expect(individualBefore).not.toMatch(/left:\s*-1px;/);
-    expect(individualBefore).toMatch(/top:\s*6px;/);
-    expect(individualBefore).toMatch(/left:\s*6px;/);
+    expect(individualBefore).toMatch(/top:\s*7px;/);
+    expect(individualBefore).toMatch(/left:\s*7px;/);
 
     expect(individualAfter).not.toMatch(/top:\s*-1px;/);
     expect(individualAfter).not.toMatch(/right:\s*-1px;/);
-    expect(individualAfter).toMatch(/top:\s*6px;/);
-    expect(individualAfter).toMatch(/right:\s*6px;/);
+    expect(individualAfter).toMatch(/bottom:\s*7px;/);
+    expect(individualAfter).toMatch(/right:\s*7px;/);
   });
 });
 

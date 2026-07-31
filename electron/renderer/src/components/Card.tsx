@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from "react";
+import { type MouseEvent, type ReactNode, useState } from "react";
 
 import "./Card.css";
 
@@ -7,6 +7,12 @@ interface CardProps {
   icon?: ReactNode;
   children: ReactNode;
   className?: string;
+  /**
+   * The mock's `.sh .cnt`: the card's own summary, right-aligned in the
+   * header -- "2 SELECTED", "4 RULES", "KILLER". Omitted when the card has
+   * nothing to count.
+   */
+  count?: ReactNode;
 }
 
 /**
@@ -29,16 +35,34 @@ function paintSpotlight(event: MouseEvent<HTMLElement>) {
  * that `.card` collided with a third-party class animating `translateY(-2px)`
  * on hover, which is exactly the motion-on-hover rule this project forbids.
  */
-export default function Card({ title, icon, children, className }: CardProps) {
-  const classes = className ? `panel-box ${className}` : "panel-box";
+export default function Card({ title, icon, children, className, count }: CardProps) {
+  // The mock's `.sec.closed`: the header is the toggle and the body folds
+  // away. The window's own `Sec` has always worked this way -- a card that
+  // cannot be folded turns a dense tab into a scroll marathon.
+  const [open, setOpen] = useState(true);
+  const classes = ["panel-box", className, open ? null : "panel-closed"]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <section className={classes} onMouseMove={paintSpotlight}>
       <span className="spot" aria-hidden="true" />
       <h5 className="panel-heading">
-        {icon && <span className="panel-heading-icon">{icon}</span>}
-        {title}
+        <button
+          type="button"
+          className="panel-heading-btn"
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
+          {icon && <span className="panel-heading-icon">{icon}</span>}
+          <span className="panel-heading-title">{title}</span>
+          {count != null && <span className="panel-heading-count">{count}</span>}
+          <span className="panel-heading-caret" aria-hidden="true">
+            ▾
+          </span>
+        </button>
       </h5>
-      <div className="panel-content">{children}</div>
+      {open && <div className="panel-content">{children}</div>}
     </section>
   );
 }

@@ -53,7 +53,7 @@ export default function WeaponFilterSection() {
   return (
     <div className="weapon-filter">
       <div className="wf-heading-row">
-        <span className="wf-section-heading">Weapon filter (empty = all)</span>
+        <span className="wf-section-heading">empty = all</span>
         <div className="wf-buttons">
           <button type="button" className="wf-btn" onClick={() => setWeapons([...allWeapons])}>
             Select all

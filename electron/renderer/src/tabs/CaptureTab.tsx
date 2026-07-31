@@ -11,9 +11,12 @@
  *   - Mate POV exists in `victim` and `both`;
  *   - Mate POV's "Must" box follows its Enable box (`_wire_enable_must`).
  */
+import Card from "../components/Card";
 import Chip from "../components/Chip";
 import Field from "../components/Field";
+import { ICONS } from "../icons";
 import Segmented from "../components/Segmented";
+import StatStrip from "../components/StatStrip";
 import Slider from "../components/Slider";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
@@ -70,6 +73,12 @@ export default function CaptureTab() {
   const [demoPause, setDemoPause] = useSetting<string>("delay_between_demos");
   const [timeout, setTimeout] = useSetting<string>("recording_timeout");
   const [clipOrder, setClipOrder] = useSetting<string>("clip_order");
+  // Header counters (the mock's `.sh .cnt`). Read-only: they summarise what
+  // the section already holds, they never become a second source of truth.
+  const [steamIdsRaw] = useSetting<string[]>("steam_ids");
+  const [weaponsRaw] = useSetting<string[]>("weapons");
+  const steamIds = Array.isArray(steamIdsRaw) ? steamIdsRaw : [];
+  const weapons = Array.isArray(weaponsRaw) ? weaponsRaw : [];
 
   const selectedEvents = Array.isArray(events) ? events : [];
   const beforeSeconds = asNumber(before, BEFORE_RANGE.min);
@@ -98,10 +107,34 @@ export default function CaptureTab() {
     <TablesProvider>
       <DatabaseProvider>
         <div className="capture-tab">
-          <PlayerSection />
-          <DemoSelectionSection />
-          <WeaponFilterSection />
-          <SettingControl settingKey="events">
+          <Card
+            title="Player"
+            icon={<ICONS.player />}
+            className="wide"
+            count={`${steamIds.length} selected`}
+          >
+            <PlayerSection />
+          </Card>
+
+          <Card title="Demo Selection" icon={<ICONS.demoSelection />}>
+            <DemoSelectionSection />
+          </Card>
+
+          <Card
+            title="Weapon Filter"
+            icon={<ICONS.weaponFilter />}
+            className="wide"
+            count={weapons.length ? `${weapons.length} active` : "all"}
+          >
+            <WeaponFilterSection />
+          </Card>
+
+          <Card
+            title="Capture &amp; Timing"
+            icon={<ICONS.captureTiming />}
+            count={perspective ?? PERSPECTIVES[0]}
+          >
+            <SettingControl settingKey="events">
             <div className="capture-row">
               <span className="capture-label">Capture</span>
               {EVENT_KINDS.map((kind) => (
@@ -169,7 +202,10 @@ export default function CaptureTab() {
             />
           </SettingControl>
 
-          <div className="capture-grid">
+          {/* Sliders stack full width, they do NOT share a two-column grid:
+              in a half-width card that left each rail 92px long against the
+              mock's 202px, and a rail that short cannot be aimed. */}
+          <div className="capture-sliders">
             <SettingControl settingKey="before">
               <Slider
                 id="seconds-before"
@@ -233,21 +269,35 @@ export default function CaptureTab() {
             </SettingControl>
           </div>
 
-          <SettingControl settingKey="clip_order">
-            <div className="capture-row">
-              <span className="capture-label">Order</span>
-              <Segmented
-                options={CLIP_ORDERS}
-                value={clipOrder ?? CLIP_ORDERS[0]}
-                onChange={setClipOrder}
-                label="Order"
-              />
-            </div>
-          </SettingControl>
+            <SettingControl settingKey="clip_order">
+              <div className="capture-row">
+                <span className="capture-label">Order</span>
+                <Segmented
+                  options={CLIP_ORDERS}
+                  value={clipOrder ?? CLIP_ORDERS[0]}
+                  onChange={setClipOrder}
+                  label="Order"
+                />
+              </div>
+            </SettingControl>
+          </Card>
 
-          <KillFiltersSection />
-          <MatchTypesSection />
-          <MapFilterSection />
+          <Card title="Kill Filters" icon={<ICONS.killFilters />}>
+            <KillFiltersSection />
+          </Card>
+
+          <Card title="Match Types" icon={<ICONS.matchTypes />}>
+            <MatchTypesSection />
+          </Card>
+
+          <Card title="Map Filter" icon={<ICONS.mapFilter />}>
+            <MapFilterSection />
+          </Card>
+
+          {/* The mock closes the Capture view with its counter strip. */}
+          <div className="wide">
+            <StatStrip />
+          </div>
         </div>
       </DatabaseProvider>
     </TablesProvider>

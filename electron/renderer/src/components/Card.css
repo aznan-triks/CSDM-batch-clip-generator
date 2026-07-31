@@ -19,66 +19,128 @@
   overflow: hidden;
   min-width: 0;
   background: var(--surface);
-  border: var(--bw) solid var(--line-hi);
+  /* The mock's rim is the LIT edge of a glass plate (--edge-hi, near-white),
+     not a dark hairline: a dark border draws the card as an outline on the
+     ground instead of a pane floating above it. */
+  border: var(--bw) solid var(--edge-hi);
   border-radius: var(--r-card);
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
-  box-shadow:
-    inset 0 1px 0 var(--sheen),
-    0 1px 3px var(--shadow);
+  box-shadow: var(--elev);
 }
 
+/* The mock's `.cbr` pair sits top-left and bottom-right (a diagonal), quiet at
+   30% opacity -- not two brackets crowding the same top edge. */
 .panel-box::before,
 .panel-box::after {
   content: "";
   position: absolute;
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
+  opacity: 0.3;
   pointer-events: none;
+  border: var(--bw-accent) solid color-mix(in srgb, var(--gold) 50%, transparent);
 }
 
 .panel-box::before {
-  top: 6px;
-  left: 6px;
-  border-top: var(--bw-accent) solid var(--gold-d);
-  border-left: var(--bw-accent) solid var(--gold-d);
+  top: 7px;
+  left: 7px;
+  border-right: none;
+  border-bottom: none;
 }
 
 .panel-box::after {
-  top: 6px;
-  right: 6px;
-  border-top: var(--bw-accent) solid var(--gold-d);
-  border-right: var(--bw-accent) solid var(--gold-d);
+  right: 7px;
+  bottom: 7px;
+  border-left: none;
+  border-top: none;
 }
 
+/* The mock's `.sh`: a plain readable title, NOT a tracked-out uppercase label.
+   The uppercase micro-caps version was the old military-flat look and it is
+   what made every section read as a form legend instead of a card. */
 .panel-heading {
+  position: relative;
+  z-index: 4;
   margin: 0;
-  padding: var(--sp-4) var(--sp-6);
-  display: flex;
-  align-items: center;
-  gap: var(--sp-4);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-normal);
-  letter-spacing: var(--tr-wider);
-  text-transform: uppercase;
-  color: var(--txt-lo);
-  border-bottom: var(--bw) solid var(--line);
-  background: linear-gradient(180deg, var(--sheen-soft), transparent);
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-heavy);
 }
 
-.panel-heading-icon {
-  display: inline-flex;
-  color: var(--gold);
-  font-size: 1.15em;
-  line-height: 1;
-}
-
-.panel-content {
+/* The whole header is the fold toggle (the mock's `.sh`, cursor: pointer). */
+.panel-heading-btn {
+  appearance: none;
+  cursor: pointer;
+  width: 100%;
+  border: 0;
+  background: transparent;
   padding: var(--sp-5) var(--sp-6);
   display: flex;
-  gap: var(--sp-3);
-  flex-wrap: wrap;
   align-items: center;
+  gap: var(--sp-5);
+  font: inherit;
+  color: var(--txt);
+  text-align: left;
+}
+
+.panel-heading-title {
+  flex: 1;
+  min-width: 0;
+  letter-spacing: 0.01em;
+}
+
+/* The mock's `.sh .cnt`: the card's own summary, quiet and right-aligned. */
+.panel-heading-count {
+  flex: none;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-normal);
+  letter-spacing: var(--tr-tight);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.panel-heading-caret {
+  flex: none;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--dim);
+  transition: transform var(--dur-base) var(--ease);
+}
+
+.panel-closed .panel-heading-caret {
+  transform: rotate(-90deg);
+}
+
+.panel-heading-btn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/* The mock's `.sh .gl`: the glyph rides in its own bevelled accent tile. */
+.panel-heading-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--gold);
+  background: var(--accent-soft);
+  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
+}
+
+/* The mock's `.sb`: no divider, no second background -- the body continues the
+   header's own surface, which is what keeps the card reading as one pane. */
+.panel-content {
+  position: relative;
+  z-index: 4;
+  padding: 0 var(--sp-6) var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--sp-4);
+  min-width: 0;
 }
 
 /*

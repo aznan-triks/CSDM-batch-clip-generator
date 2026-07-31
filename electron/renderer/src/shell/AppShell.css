@@ -23,16 +23,23 @@ body {
   font-size: var(--fs-base);
 }
 
+/* The mock's own frame: `.app` is three rows (nav / workspace / action bar) and
+   the workspace is `1fr 288px` with a 12px gutter and a 12px/14px inset
+   (mockup-v12-hologlass.html `.app` and `.shell`). The console is a FIXED
+   288px column there, not a fraction: it is a fixed-width instrument, and a
+   proportional one swallowed 40% of the window. The weapon band is no longer a
+   row of its own -- in the mock it rides INSIDE the action bar (`.wband`). */
 .shell {
   position: relative;
   display: grid;
-  grid-template-columns: 3fr 2fr; /* the window's own PanedWindow weights */
-  grid-template-rows: auto 1fr auto auto;
+  grid-template-columns: 1fr 288px;
+  grid-template-rows: auto 1fr auto;
   grid-template-areas:
     "nav nav"
     "tabs logs"
-    "actionbar actionbar"
-    "band band";
+    "actionbar actionbar";
+  column-gap: var(--sp-5);
+  row-gap: 0;
   height: 100vh;
   /* A continuous ground, not a flat fill: the backdrop plates float on it and
      the gaps between them show it through. */
@@ -63,18 +70,21 @@ body {
 .hud-nav,
 .shell-tabs,
 .shell-log-column,
-.action-bar,
-.band {
+.action-bar {
   position: relative;
   z-index: 1;
 }
 
+/* The workspace inset comes from the two columns themselves, so the nav and
+   the action bar stay full-bleed while the content breathes (mock `.shell`
+   padding: 12px 14px, gutter 12px). */
 .shell-tabs {
   grid-area: tabs;
   display: flex;
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
+  padding: var(--sp-5) 0 var(--sp-5) var(--sp-6);
 }
 
 .shell-panel {
@@ -93,9 +103,9 @@ body {
   grid-area: logs;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--line);
   overflow: hidden;
   min-width: 0;
+  padding: var(--sp-5) var(--sp-6) var(--sp-5) 0;
 }
 
 /*
@@ -109,8 +119,11 @@ body {
     grid-template-areas:
       "nav"
       "tabs"
-      "actionbar"
-      "band";
+      "actionbar";
+  }
+
+  .shell-tabs {
+    padding: var(--sp-5) var(--sp-6);
   }
 
   .shell-log-column {

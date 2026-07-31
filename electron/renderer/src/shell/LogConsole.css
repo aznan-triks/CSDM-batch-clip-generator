@@ -12,10 +12,12 @@
 
 .shell-logs {
   /* The console's own rhythm. These two feed BOTH the text and the ruled
-     lines, so the two can never drift apart -- see console-rules.test.ts. */
+     lines, so the two can never drift apart -- see console-rules.test.ts.
+     The mock's body pads 12px 15px, not 8px all round. */
   --log-line: 22px;
-  --log-pad: 8px;
+  --log-pad: 12px;
 
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -26,6 +28,23 @@
   background: var(--band);
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
+  /* The mock's `.console` is a CARD, not a bare column: rounded, rimmed in a
+     tinted accent, lifted off the ground, and capped by a 2px accent bar. */
+  border: var(--bw) solid color-mix(in srgb, var(--gold) 20%, var(--line));
+  border-radius: var(--r-card);
+  box-shadow: var(--elev);
+  overflow: hidden;
+}
+
+.shell-logs::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  height: var(--bw-accent);
+  width: 100%;
+  background: linear-gradient(90deg, var(--lime-glow), var(--gold), transparent);
 }
 
 #ask-panel {
@@ -43,17 +62,30 @@
  * buttons on the raised ground the same way the rest of the shell's chrome
  * sits on it.
  */
+/* The mock's `.ch`: the console's own header sits ON the glass, tinted by the
+   accent -- an opaque `--raise` strip there cut the card in two. */
+/* ONE row, never wrapping. The mock's console header is 46px tall; this one
+   was measured at 127px because `flex-wrap: wrap` broke it over three lines in
+   the 288px column, and three stacked rows of chrome ate the log itself. The
+   search field is the only elastic part, so it is what gives way. */
 .log-tools {
   display: flex;
   align-items: center;
   gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
-  border-bottom: var(--bw) solid var(--line);
-  background: var(--raise);
-  flex-wrap: wrap;
+  padding: var(--sp-4) var(--sp-6);
+  border-bottom: var(--bw) solid color-mix(in srgb, var(--gold) 16%, var(--line));
+  background: transparent;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.log-tools > * {
+  flex: none;
 }
 
 .log-search {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: var(--sp-2);
@@ -64,12 +96,15 @@
 }
 
 .log-search input {
+  flex: 1 1 auto;
+  min-width: 0;
   font-family: var(--font-mono);
   font-size: var(--fs-sm);
   color: var(--txt);
-  background: var(--panel);
+  background: var(--solid);
   border: var(--bw) solid var(--line);
-  padding: var(--sp-1) var(--sp-3);
+  border-radius: 8px;
+  padding: var(--sp-2) var(--sp-4);
   min-width: 0;
 }
 
@@ -80,8 +115,9 @@
   letter-spacing: var(--tr-snug);
   text-transform: uppercase;
   color: var(--dim);
-  background: var(--panel);
-  border: var(--bw) solid var(--line);
+  background: var(--surface-2);
+  border: var(--bw) solid var(--hair-2);
+  border-radius: 6px;
   padding: var(--sp-1) var(--sp-3);
   cursor: pointer;
 }
@@ -133,8 +169,11 @@
 }
 
 #log {
+  /* The mock's log ink is a softer slate than body text: a wall of monospace
+     at full contrast reads as an error dump. */
+  color: var(--txt-lo);
   white-space: pre-wrap;
-  padding: var(--log-pad);
+  padding: var(--log-pad) var(--sp-6);
   overflow-y: auto;
   flex: 1;
   min-height: 0;

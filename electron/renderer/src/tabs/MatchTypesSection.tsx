@@ -55,7 +55,6 @@ export default function MatchTypesSection() {
   return (
     <div className="match-types">
       <div className="mt-heading-row">
-        <span className="mt-section-heading">Match types</span>
         <SettingControl settingKey="match_type_filter_enabled">
           <Chip
             label="Filter by type"

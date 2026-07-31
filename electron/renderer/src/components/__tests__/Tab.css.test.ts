@@ -40,12 +40,16 @@ describe(".tab overlaps its neighbour in a two-sided parallelogram", () => {
   });
 });
 
-describe(".tab-active is glass, keeps its bevel", () => {
+describe(".tab-active is the opaque front of the stack, keeps its bevel", () => {
   const rule = block(".tab-active");
 
-  it("uses --surface instead of the flat gradient", () => {
-    expect(rule).toMatch(/background:\s*var\(--surface\);/);
+  // The mock's open tab is solid white, not another sheet of glass: a
+  // translucent one let the moving backdrop plates crawl through the tab the
+  // user is standing on.
+  it("is opaque --solid, not a translucent surface", () => {
+    expect(rule).toMatch(/background:\s*var\(--solid\);/);
     expect(rule).not.toMatch(/var\(--raise-hi\)/);
+    expect(rule).not.toMatch(/var\(--surface\)/);
   });
 
   it("pops on translateY -- a selected-state change, never a :hover one", () => {

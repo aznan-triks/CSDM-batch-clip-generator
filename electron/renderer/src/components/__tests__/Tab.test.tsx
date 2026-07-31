@@ -16,7 +16,7 @@ describe("TabBar's sliding indicator", () => {
         <Tab label="Tags" onSelect={() => {}} />
       </TabBar>,
     );
-    const active = screen.getByRole("button", { name: /capture/i });
+    const active = screen.getByRole("tab", { name: /capture/i });
     stubRect(active, 40, 130);
     // The effect already ran once on mount, before the stub existed; firing
     // resize re-measures with the stubbed values in place -- jsdom never

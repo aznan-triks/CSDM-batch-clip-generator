@@ -150,7 +150,7 @@ async function renderedKeys(): Promise<Set<string>> {
     // raw .click() would let the guard read the tree BEFORE the branch it
     // just opened has rendered -- reporting a ported setting as missing.
     act(() => {
-      screen.getByRole("button", { name: new RegExp(tab.label, "i") }).click();
+      screen.getByRole("tab", { name: new RegExp(tab.label, "i") }).click();
     });
     collectInto(found, container);
 

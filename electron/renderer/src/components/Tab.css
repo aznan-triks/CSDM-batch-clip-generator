@@ -20,7 +20,7 @@
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
   border-bottom: var(--bw) solid var(--line);
-  padding-left: var(--sp-7);
+  padding-left: var(--sp-4);
 }
 
 .tab {
@@ -28,15 +28,21 @@
   overflow: hidden;
   cursor: pointer;
   appearance: none;
-  border: 0;
+  /* The mock outlines each tab except along the bottom, where it meets the
+     band it sits in. With no border at all the strip read as flat colour
+     blocks instead of overlapping cards. */
+  border: var(--bw) solid var(--line);
+  border-bottom: none;
   height: 100%;
-  padding: 0 var(--sp-8);
+  /* The mock leads with more room than it trails (26px / 22px): the left edge
+     is the sheared one, and equal padding pushed the label into the slant. */
+  padding: 0 var(--sp-8) 0 26px;
   margin-left: calc(var(--sp-6) * -1);
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
+  gap: var(--sp-4);
   font-family: var(--font-display);
-  font-size: var(--fs-base);
+  font-size: var(--fs-md);
   font-weight: var(--fw-bold);
   letter-spacing: var(--tr-wide);
   text-transform: uppercase;
@@ -60,8 +66,34 @@
 
 .tab-icon {
   display: inline-flex;
-  font-size: 1em;
+  font-size: 15px;
   line-height: 1;
+  opacity: 0.6;
+  transition: opacity var(--dur-base), color var(--dur-base);
+}
+
+.tab-active .tab-icon {
+  opacity: 1;
+  color: var(--gold);
+}
+
+/* The mock's `.tk` diamond. */
+.tab-tick {
+  position: relative;
+  z-index: 2;
+  width: 6px;
+  height: 6px;
+  flex: none;
+  background: currentColor;
+  opacity: 0.35;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  transition: opacity var(--dur-base), background var(--dur-base);
+}
+
+.tab-active .tab-tick {
+  opacity: 1;
+  background: var(--gold);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--gold) 75%, transparent);
 }
 
 .tab:hover {
@@ -69,12 +101,19 @@
   background: var(--surface);
 }
 
+.tab-active:hover {
+  background: var(--solid);
+}
+
+/* The open tab is OPAQUE white in the mock, not another sheet of glass: it has
+   to look like the front of the stack, and a translucent one let the backdrop
+   plates crawl through the tab the user is standing on. */
 .tab-active {
   color: var(--txt-hi);
   z-index: 6;
   transform: translateY(-2px);
-  background: var(--surface);
-  box-shadow: inset 0 1px 0 var(--sheen-edge);
+  background: var(--solid);
+  box-shadow: none;
 }
 
 .tab-active:hover {

@@ -17,6 +17,7 @@
  * for that block reads "both HLAE and CS modes".
  */
 import Card from "../components/Card";
+import { ICONS } from "../icons";
 import Chip from "../components/Chip";
 import Field from "../components/Field";
 import Segmented from "../components/Segmented";
@@ -108,7 +109,7 @@ export default function VideoTab() {
 
   return (
     <div className="video-tab">
-      <Card title="FINAL ASSEMBLY">
+      <Card title="Final Assembly" icon={<ICONS.finalAssembly />}>
         <SettingControl settingKey="assemble_after">
           <Chip
             label="Assemble all clips at the end"
@@ -141,7 +142,7 @@ export default function VideoTab() {
         </SettingControl>
       </Card>
 
-      <Card title="RESOLUTION, FRAMERATE & WINDOW" className="wide">
+      <Card title="Resolution, Framerate &amp; Window" icon={<ICONS.resolution />} className="wide">
         {!tables ? (
           <p className="video-hint">Loading tables…</p>
         ) : (
@@ -211,7 +212,7 @@ export default function VideoTab() {
         </SettingControl>
       </Card>
 
-      <Card title="ENCODING" className="wide">
+      <Card title="Encoding" icon={<ICONS.encoding />} className="wide">
         {/* Always mounted, options empty until `useTables()` resolves -- same
             reason as the FPS control above. */}
         <SettingControl settingKey="video_codec">
@@ -316,7 +317,7 @@ export default function VideoTab() {
         </SettingControl>
       </Card>
 
-      <Card title="IN-GAME OPTIONS">
+      <Card title="In-Game Options" icon={<ICONS.inGameOptions />}>
         <SettingControl settingKey="true_view">
           <Chip
             label="TrueView"
@@ -356,7 +357,7 @@ export default function VideoTab() {
         </SettingControl>
       </Card>
 
-      <Card title="RECORDING SYSTEM">
+      <Card title="Recording System" icon={<ICONS.recordingSystem />}>
         <SettingControl settingKey="recsys">
           <div className="video-row">
             <span className="video-label">System</span>
@@ -377,12 +378,12 @@ export default function VideoTab() {
       </Card>
 
       {isHlae && (
-        <Card title="⚡ HLAE OPTIONS">
+        <Card title="HLAE Options" icon={<ICONS.hlaeOptions />}>
           <HlaeOptionsSection />
         </Card>
       )}
 
-      <Card title="🎮 CS2 EFFECTS" className="wide">
+      <Card title="CS2 Effects" icon={<ICONS.cs2Effects />} className="wide">
         <Cs2EffectsSection />
       </Card>
     </div>

@@ -1,46 +1,47 @@
 /* `.seg` originally from ui-v5.html lines 93-98; the glass background on
  * `.segmented` per restyle 2 comes from mockup-v12-hologlass.html `.seg`
  * (line 139). Local 10px radius: see restyle 2 plan's Task 3 rationale. */
+/* The mock's `.seg`: a recessed tray holding loose pills, gap-separated --
+   no dividers, and the SELECTED pill is a plain white card with accent text,
+   not a saturated blue block. */
 .segmented {
   display: inline-flex;
+  gap: 2px;
+  padding: var(--sp-1);
   border: var(--bw) solid var(--line);
-  background: var(--surface-2);
+  background: var(--recess);
   border-radius: 10px;
-  overflow: hidden;
 }
 
 .segment {
   appearance: none;
   cursor: pointer;
-  padding: var(--sp-1) var(--sp-5);
+  padding: var(--sp-3) var(--sp-5);
   font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
-  text-transform: uppercase;
+  font-size: var(--fs-md);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--dim);
   background: transparent;
   border: 0;
-  border-right: var(--bw) solid var(--line);
+  border-radius: 8px;
   transition: background var(--dur-fast), color var(--dur-fast);
 }
 
-.segment:last-child {
-  border-right: 0;
-}
-
 .segment:hover {
-  background: var(--surface);
   color: var(--txt-lo);
 }
 
 .segment-selected {
-  color: var(--on-gold);
-  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
-  font-weight: var(--fw-bold);
+  color: var(--gold);
+  background: var(--solid);
+  box-shadow: var(--elev-sm);
 }
 
 .segment-selected:hover {
-  background: linear-gradient(180deg, var(--gold-hi), var(--gold));
+  color: var(--gold);
+  background: var(--solid);
 }
 
 .segment:focus-visible {

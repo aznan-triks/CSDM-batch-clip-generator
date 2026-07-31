@@ -11,14 +11,14 @@ const TABS = [
 describe("HudNav", () => {
   it("renders one button per tab, marking the active one", () => {
     render(<HudNav tabs={TABS} active="tags" onSelect={() => {}} />);
-    expect(screen.getByRole("button", { name: /capture/i }).getAttribute("aria-current")).toBeNull();
-    expect(screen.getByRole("button", { name: /tags/i }).getAttribute("aria-current")).toBe("true");
+    expect(screen.getByRole("tab", { name: /capture/i }).getAttribute("aria-current")).toBeNull();
+    expect(screen.getByRole("tab", { name: /tags/i }).getAttribute("aria-current")).toBe("true");
   });
 
   it("calls onSelect with the clicked tab's id", () => {
     const onSelect = vi.fn();
     render(<HudNav tabs={TABS} active="capture" onSelect={onSelect} />);
-    screen.getByRole("button", { name: /tags/i }).click();
+    screen.getByRole("tab", { name: /tags/i }).click();
     expect(onSelect).toHaveBeenCalledWith("tags");
   });
 

@@ -3,30 +3,54 @@
 .chip {
   appearance: none;
   cursor: pointer;
-  padding: var(--sp-1) var(--sp-4);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
   font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
   border: var(--bw) solid var(--line);
   border-radius: var(--r-pill);
-  background: var(--surface-2);
+  /* An OPAQUE face on the glass ground, per the mock's `--solid`: a
+     translucent chip on a translucent card washed out to nothing. */
+  background: var(--solid);
   color: var(--dim);
   transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
 }
 
-.chip:hover {
-  background: var(--surface);
-  color: var(--txt-lo);
+/* The mock's `.chip .d`: a status dot leading every chip, inheriting the
+   chip's own ink so it turns lime-green the moment the chip is picked. */
+.chip::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.5;
 }
 
+.chip-selected::before {
+  opacity: 1;
+}
+
+.chip:hover {
+  border-color: color-mix(in srgb, var(--gold) 28%, transparent);
+}
+
+/* The mock's ON state is LIME, not a blue wash: the accent is reserved for
+   what the app is DOING (buttons, active tab), the lime for what the user has
+   PICKED. Losing that split made every selected chip compete with the run bar. */
 .chip-selected {
-  color: var(--gold-hi);
-  border-color: var(--gold-d);
-  background: color-mix(in srgb, var(--gold) 13%, transparent);
+  background: var(--lime);
+  border-color: var(--lime-glow);
+  color: var(--lime-ink);
 }
 
 .chip-selected:hover {
-  background: color-mix(in srgb, var(--gold) 22%, transparent);
+  border-color: var(--lime-glow);
 }
 
 .chip:focus-visible {
@@ -40,6 +64,7 @@
 }
 
 .chip[aria-disabled="true"]:hover {
-  background: var(--surface-2);
+  background: var(--solid);
+  border-color: var(--line);
   color: var(--dim);
 }

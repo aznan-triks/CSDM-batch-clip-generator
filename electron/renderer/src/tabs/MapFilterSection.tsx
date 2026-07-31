@@ -36,7 +36,7 @@ export default function MapFilterSection() {
   return (
     <div className="map-filter">
       <div className="mf-heading-row">
-        <span className="mf-section-heading">Map filter (empty = all maps)</span>
+        <span className="mf-section-heading">empty = all maps</span>
         <SettingControl settingKey="map_filter_enabled">
           <Chip label="Filter by map" selected={!!enabled} onToggle={() => setEnabled(!enabled)} />
         </SettingControl>

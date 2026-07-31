@@ -20,6 +20,8 @@
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
   border-top: var(--bw) solid var(--line);
+  /* Mirrors the nav band's lift, upward (mock `.actbar`). */
+  box-shadow: 0 -6px 18px -12px rgba(30, 50, 90, 0.2);
 }
 
 .action-bar::before {
@@ -40,32 +42,16 @@
 .action-bar-row {
   display: flex;
   align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-4) var(--sp-6);
+  gap: var(--sp-5);
+  padding: var(--sp-5) var(--sp-7);
 }
 
 .action-bar-btn {
   display: inline-flex;
 }
 
+/* The mock's bar has no dividers between the buttons -- their bevels already
+   separate them, and a hairline between each one read as a toolbar. */
 .action-bar-sep {
-  width: var(--bw);
-  align-self: stretch;
-  background: var(--line);
-}
-
-.action-bar-progress {
-  margin-left: auto;
-  font-family: var(--font-mono);
-  font-size: var(--fs-sm);
-  color: var(--dim);
-  white-space: nowrap;
-}
-
-.action-bar-summary {
-  padding: var(--sp-3) var(--sp-6);
-  border-top: var(--bw) solid var(--line);
-  font-family: var(--font-mono);
-  font-size: var(--fs-sm);
-  color: var(--dim);
+  display: none;
 }

@@ -161,8 +161,6 @@ export default function DemoSelectionSection() {
 
   return (
     <div className="demo-selection">
-      <span className="ds-section-heading">Demo selection</span>
-
       <div className="ds-date-row">
         <SettingControl settingKey="date_from">
           <DateField id="date-from" label="From" value={dateFrom ?? ""} onChange={setDateFrom} />

@@ -30,14 +30,9 @@ describe("every tab panel is a densified bento grid", () => {
     });
   }
 
-  it("CaptureTab.css marks its dense sections .wide via direct-child selectors", () => {
-    const css = readFileSync(path.join(TABS_DIR, "CaptureTab.css"), "utf-8");
-    expect(css).toMatch(
-      /\.capture-tab\s*>\s*\.capture-grid,\s*\n?\s*\.capture-tab\s*>\s*\.kill-filters,\s*\n?\s*\.capture-tab\s*>\s*\.match-types,\s*\n?\s*\.capture-tab\s*>\s*\.map-filter\s*\{[^}]*grid-column:\s*1\s*\/\s*-1;[^}]*\}/,
-    );
-  });
-
-  for (const panel of PANELS.filter((p) => p.css !== "CaptureTab.css")) {
+  // CaptureTab's sections are Cards now, like every other tab's, so it uses
+  // the same `.wide` escape hatch instead of naming each section by hand.
+  for (const panel of PANELS) {
     it(`${panel.css} declares a .wide escape hatch that spans both columns`, () => {
       const css = readFileSync(path.join(TABS_DIR, panel.css), "utf-8");
       expect(css).toMatch(/\.wide\s*\{[^}]*grid-column:\s*1\s*\/\s*-1;[^}]*\}/);

@@ -11,38 +11,41 @@
  * the motion the no-hover-motion lock forbids.
  */
 
+/* The mock's slider is ONE row -- label, rail, value -- not a stacked block
+   with a caption above it. Stacking doubled every slider's height and is what
+   turned the Capture tab into a column of half-empty cards. */
 .slider {
   display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-5);
   min-width: 0;
 }
 
-.slider-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-3);
-}
-
 .slider-label {
+  flex: none;
+  min-width: 76px;
   font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
+  font-size: var(--fs-sm);
+  letter-spacing: 0;
   color: var(--dim);
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .slider-readout {
+  flex: none;
   font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  color: var(--gold);
+  font-size: var(--fs-sm);
+  color: var(--txt);
+  white-space: nowrap;
 }
 
 .slider-input {
   appearance: none;
   -webkit-appearance: none;
-  width: 100%;
+  flex: 1;
+  min-width: 90px;
+  width: auto;
   height: 18px; /* the hit area, not the visible rail */
   background: transparent;
   cursor: pointer;
@@ -51,49 +54,60 @@
 /* -- the rail -- */
 
 .slider-input::-webkit-slider-runnable-track {
-  height: 4px;
-  background: var(--surface-2);
-  border: var(--bw) solid var(--line);
+  height: 6px;
+  /* The mock fills the rail lime-to-accent up to the thumb. `--fill` is the
+     percentage Slider.tsx paints; the hard colour stop is what makes it read
+     as a filled bar and not a gradient wash across the whole rail. */
+  background:
+    linear-gradient(90deg, var(--lime-glow), var(--gold)) 0 / var(--fill, 0%) 100% no-repeat,
+    var(--recess-deep);
+  border: 0;
   border-radius: var(--r-pill);
 }
 
 .slider-input::-moz-range-track {
-  height: 4px;
-  background: var(--surface-2);
-  border: var(--bw) solid var(--line);
+  height: 6px;
+  background:
+    linear-gradient(90deg, var(--lime-glow), var(--gold)) 0 / var(--fill, 0%) 100% no-repeat,
+    var(--recess-deep);
+  border: 0;
   border-radius: var(--r-pill);
 }
 
 /* -- the thumb -- */
 
+/* The mock's thumb is a 15px WHITE disc ringed in the accent, not an accent
+   block: on a 6px rail the block read as a notch cut out of the track. */
 .slider-input::-webkit-slider-thumb {
   appearance: none;
   -webkit-appearance: none;
-  width: 10px;
-  height: 14px;
-  /* Centres the thumb on a 4px track with a 1px border: (4 + 2 - 14) / 2. */
-  margin-top: -4px;
-  background: var(--gold);
-  border: 0;
-  border-radius: var(--radius);
-  transition: background var(--dur-fast);
+  width: 15px;
+  height: 15px;
+  /* Centres the disc on the 6px rail: (6 - 15) / 2. */
+  margin-top: -4.5px;
+  background: var(--solid);
+  border: var(--bw-accent) solid var(--gold);
+  border-radius: 50%;
+  box-shadow: var(--elev-sm);
+  transition: border-color var(--dur-fast);
 }
 
 .slider-input::-moz-range-thumb {
-  width: 10px;
-  height: 14px;
-  background: var(--gold);
-  border: 0;
-  border-radius: var(--radius);
-  transition: background var(--dur-fast);
+  width: 15px;
+  height: 15px;
+  background: var(--solid);
+  border: var(--bw-accent) solid var(--gold);
+  border-radius: 50%;
+  box-shadow: var(--elev-sm);
+  transition: border-color var(--dur-fast);
 }
 
 .slider-input:hover::-webkit-slider-thumb {
-  background: var(--gold-hi);
+  border-color: var(--gold-hi);
 }
 
 .slider-input:hover::-moz-range-thumb {
-  background: var(--gold-hi);
+  border-color: var(--gold-hi);
 }
 
 .slider-input:focus-visible {

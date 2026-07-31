@@ -12,13 +12,14 @@
   color: var(--dim);
 }
 
+/* The mock's `.fld`: an opaque white face, 10px corner, 8px/12px inset. */
 .field {
-  background: var(--surface-2);
+  background: var(--solid);
   border: var(--bw) solid var(--line);
-  border-radius: var(--r-mid);
-  padding: var(--sp-2) var(--sp-4);
+  border-radius: 10px;
+  padding: var(--sp-3) var(--sp-5);
   font-family: var(--font-display);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-lg);
   color: var(--txt);
   transition: background var(--dur-fast), border-color var(--dur-fast);
 }
@@ -28,13 +29,11 @@
 }
 
 .field:hover {
-  background: var(--surface);
   border-color: var(--line-hi);
 }
 
 .field:focus {
-  background: var(--surface);
-  border-color: var(--line-hi);
+  border-color: color-mix(in srgb, var(--gold) 38%, transparent);
 }
 
 .field:focus-visible {

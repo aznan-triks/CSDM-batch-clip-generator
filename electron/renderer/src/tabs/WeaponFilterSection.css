@@ -20,11 +20,13 @@
 }
 
 .wf-section-heading {
+  /* The mock's `.sh .cnt`: a quiet counter beside the card's own title, never
+     a second heading competing with it. */
   font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  letter-spacing: var(--tr-snug);
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-tight);
   text-transform: uppercase;
-  color: var(--txt-lo);
+  color: var(--dim);
 }
 
 .wf-buttons {

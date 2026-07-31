@@ -9,7 +9,7 @@
  * Capture tab reads real configuration keys, and a shell rendered bare would
  * be testing a tree the application never builds.
  */
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -35,13 +35,13 @@ describe("AppShell", () => {
   it("shows the four tabs", () => {
     renderShell();
     for (const label of ["CAPTURE", "TAGS", "VIDEO", "SETTINGS"]) {
-      expect(screen.getByRole("button", { name: new RegExp(label, "i") })).toBeTruthy();
+      expect(screen.getByRole("tab", { name: new RegExp(label, "i") })).toBeTruthy();
     }
   });
 
   it("opens on Capture", () => {
     renderShell();
-    const capture = screen.getByRole("button", { name: /capture/i });
+    const capture = screen.getByRole("tab", { name: /capture/i });
     expect(capture.getAttribute("aria-current")).toBe("true");
   });
 
@@ -54,6 +54,29 @@ describe("AppShell", () => {
 
   it("mounts without a bridge instead of blanking the page", () => {
     expect(() => renderShell()).not.toThrow();
+  });
+
+  // The progress and summary lines used to be rendered by ActionBar. They are
+  // the weapon row's now (the mock's `.wband`), and the shell is what wires the
+  // engine's own events into it -- so this is where that wiring is proved.
+  it("feeds the engine's progress and summary lines into the weapon row", () => {
+    let deliver: ((message: unknown) => void) | null = null;
+    window.bridge = {
+      send() {},
+      onMessage(cb: (message: unknown) => void) {
+        deliver = cb;
+        return () => {};
+      },
+    } as unknown as typeof window.bridge;
+
+    renderShell();
+    act(() => {
+      deliver?.({ type: "state", name: "progress", payload: { text: "demo 2/7" } });
+      deliver?.({ type: "state", name: "summary", payload: { text: "12 clips" } });
+    });
+
+    expect(screen.getByText("demo 2/7")).toBeTruthy();
+    expect(screen.getByText("12 clips")).toBeTruthy();
   });
 
   it("greets the engine on mount so the console is never blank", () => {

@@ -9,12 +9,31 @@ interface TabProps {
   onSelect: () => void;
 }
 
-/** One tab, extracted from the mock's `.tab` (mockup-v12-hologlass.html lines 76-89). */
+/**
+ * One tab, extracted from the mock's `.tab` (mockup-v12-hologlass.html).
+ *
+ * `role="tab"`, not a bare button: a card header is a button too, and once
+ * the cards got fold toggles, "CAPTURE" the tab and "Capture & Timing" the
+ * card became two buttons matching the same name. The tab role is both the
+ * correct ARIA for a strip that switches a `tabpanel` and the thing that
+ * keeps the two apart -- for a screen reader as much as for a test.
+ */
 export function Tab({ label, icon, active, onSelect }: TabProps) {
   const classes = active ? "tab tab-active" : "tab";
   return (
-    <button type="button" className={classes} onClick={onSelect} aria-current={active ? "true" : undefined}>
+    <button
+      type="button"
+      role="tab"
+      className={classes}
+      onClick={onSelect}
+      aria-selected={active ? "true" : "false"}
+      aria-current={active ? "true" : undefined}
+    >
       {icon && <span className="tab-icon">{icon}</span>}
+      {/* The mock's `.tk`: a small diamond tick between glyph and label. It
+          lights up on the open tab -- part of how the strip reads as a HUD
+          rather than a row of words. */}
+      <span className="tab-tick" aria-hidden="true" />
       <span className="tab-label">{label}</span>
     </button>
   );
@@ -58,7 +77,7 @@ export function TabBar({ children }: TabBarProps) {
   });
 
   return (
-    <div className="tab-bar" ref={barRef}>
+    <div className="tab-bar" role="tablist" ref={barRef}>
       {children}
       <span className="tab-ind" ref={indRef} />
     </div>

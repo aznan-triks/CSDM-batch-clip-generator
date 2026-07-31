@@ -309,7 +309,7 @@ export default function KillFiltersSection() {
       </div>
 
       <div className="kf-heading-row">
-        <span className="kf-section-heading">Kill filters (Mods + demoparser2)</span>
+        <span className="kf-section-heading">Mods + demoparser2</span>
         <button
           type="button"
           className="kf-clear-btn"

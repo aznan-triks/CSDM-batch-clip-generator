@@ -23,6 +23,14 @@ import { onMessage } from "../bridge";
 export interface SummaryLine {
   text: string;
   level: string;
+  /** The same four numbers the sentence in `text` renders, unformatted --
+   *  the engine sends both (`_summary_counts` in csdm/engine/core.py) so the
+   *  counter strip never has to parse the prose back apart. Absent until a
+   *  run or preview has computed them. */
+  demos?: number;
+  clips?: number;
+  totalSeconds?: number;
+  avgSeconds?: number;
 }
 
 export interface EngineState {
@@ -88,7 +96,14 @@ export function reduceEngineState(
     case "summary":
       return {
         ...state,
-        summary: { text: String(payload.text ?? ""), level: String(payload.level ?? "") },
+        summary: {
+          text: String(payload.text ?? ""),
+          level: String(payload.level ?? ""),
+          ...(typeof payload.demos === "number" ? { demos: payload.demos } : {}),
+          ...(typeof payload.clips === "number" ? { clips: payload.clips } : {}),
+          ...(typeof payload.total_s === "number" ? { totalSeconds: payload.total_s } : {}),
+          ...(typeof payload.avg_s === "number" ? { avgSeconds: payload.avg_s } : {}),
+        },
       };
     case "demos_unchecked":
       return {

@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 
 import Card from "../components/Card";
+import { ICONS } from "../icons";
 import Field from "../components/Field";
 import { pickPath, pickSavePath, runCommand } from "../bridge";
 import SettingControl from "../settings/SettingControl";
@@ -258,7 +259,7 @@ export default function TagsTab() {
 
   return (
     <div className="tags-tab">
-      <Card title="TAGS -- click to select/deselect" className="wide">
+      <Card title="Tags" icon={<ICONS.tags />} className="wide">
         {dbError && <p className="tags-error">{dbError}</p>}
 
         <div className="tags-grid">
@@ -317,7 +318,7 @@ export default function TagsTab() {
         </SettingControl>
       </Card>
 
-      <Card title="TAG RANGE">
+      <Card title="Tag Range" icon={<ICONS.tagRange />}>
         <p className="tags-hint">
           Calculates the first and last demo with the selected tags, and suggests applying these
           dates as a filter in Capture.
@@ -349,7 +350,7 @@ export default function TagsTab() {
         </div>
       </Card>
 
-      <Card title="OPERATIONS" className="wide">
+      <Card title="Operations" icon={<ICONS.operations />} className="wide">
         <div className="tags-toolbar">
           <span className="tags-label">Search:</span>
           <button type="button" className="tags-btn tags-btn-primary" onClick={searchByTag}>

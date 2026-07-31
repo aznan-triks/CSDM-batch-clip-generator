@@ -21,6 +21,7 @@
 import { useEffect, useState } from "react";
 
 import Card from "../components/Card";
+import { ICONS } from "../icons";
 import Field from "../components/Field";
 import Chip from "../components/Chip";
 import { runCommand } from "../bridge";
@@ -130,7 +131,7 @@ export default function PresetSection() {
   }
 
   return (
-    <Card title="PRESETS">
+    <Card title="Presets" icon={<ICONS.presets />}>
       <Field id="preset-name" label="Name" value={name} onChange={setName} placeholder="Preset name" />
 
       <div className="preset-categories" role="group" aria-label="Categories">

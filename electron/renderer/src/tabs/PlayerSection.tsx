@@ -67,8 +67,6 @@ export default function PlayerSection() {
 
   return (
     <div className="player-section">
-      <span className="ps-section-heading">Player</span>
-
       <SettingControl settingKey="player_name">
         <span className="ps-active-label">{activeLabel}</span>
       </SettingControl>

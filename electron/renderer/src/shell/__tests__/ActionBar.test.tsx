@@ -1,6 +1,6 @@
 /**
- * ActionBar: the four action buttons (RUN, PREVIEW, STOP, KILL), the
- * progress line and the summary line.
+ * ActionBar: the four action buttons (RUN, PREVIEW, STOP, KILL) and the
+ * weapon-row slot that leads them.
  *
  * `../../bridge` is mocked directly, the way `PresetSection.test.tsx` mocks
  * it: `runCommand` records what was sent, `onMessage` hands the test an
@@ -72,16 +72,17 @@ describe("ActionBar", () => {
     expect(screen.getByRole("button", { name: /KILL/ })).toHaveProperty("disabled", false);
   });
 
-  it("shows the progress line the engine sends", async () => {
-    const { emit } = await renderBar();
-    act(() => emit({ type: "state", name: "progress", payload: { text: "demo 2/7" } }));
-    expect(screen.getByText("demo 2/7")).toBeTruthy();
-  });
-
-  it("shows the summary line the engine sends", async () => {
-    const { emit } = await renderBar();
-    act(() => emit({ type: "state", name: "summary", payload: { text: "12 clips" } }));
-    expect(screen.getByText("12 clips")).toBeTruthy();
+  // The progress and summary lines moved OUT of this component: in the mock
+  // they belong to `.wband`, the weapon row that rides inside the bar, and the
+  // bar now renders it through a slot. What is testable here is the slot; the
+  // lines themselves are asserted where they are now wired, in AppShell.
+  it("renders whatever weapon row it is handed, ahead of the buttons", async () => {
+    sent.length = 0;
+    render(<ActionBar registerButton={() => () => {}} weapon={<i>weapon slot</i>} />);
+    const slot = screen.getByText("weapon slot");
+    const run = screen.getByRole("button", { name: /RUN/ });
+    expect(slot).toBeTruthy();
+    expect(slot.compareDocumentPosition(run) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("switches the STOP label to STOP PREVIEW when the engine sends stop_label for a preview", async () => {

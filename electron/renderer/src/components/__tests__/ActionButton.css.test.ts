@@ -11,16 +11,21 @@ function block(selector: string): string {
   return match[1];
 }
 
-describe(".btn base is glass, keeps its bevel", () => {
+describe(".btn base wears the mock's opaque face and two-corner bevel", () => {
   const rule = block(".btn");
 
-  it("uses --surface-2 instead of --raise", () => {
-    expect(rule).toMatch(/background:\s*var\(--surface-2\);/);
+  it("uses the opaque --solid face, not a glass wash", () => {
+    expect(rule).toMatch(/background:\s*var\(--solid\);/);
     expect(rule).not.toMatch(/var\(--raise\);/);
+    expect(rule).not.toMatch(/var\(--surface-2\);/);
   });
 
-  it("the bevel clip-path is untouched", () => {
-    expect(rule).toMatch(/clip-path:\s*polygon\(0 0, 100% 0, calc\(100% - 10px\) 100%, 0 100%\);/);
+  // The mock cuts the top-left AND bottom-right corners. The old single-sided
+  // cut sheared one edge only and read as a rectangle drawn wrong.
+  it("cuts both diagonal corners, not just one edge", () => {
+    expect(rule).toMatch(
+      /clip-path:\s*polygon\(8px 0, 100% 0, 100% calc\(100% - 8px\), calc\(100% - 8px\) 100%, 0 100%, 0 8px\);/,
+    );
   });
 });
 

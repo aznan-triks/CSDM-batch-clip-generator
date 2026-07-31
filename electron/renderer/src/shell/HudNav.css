@@ -14,10 +14,14 @@
   align-items: stretch;
   height: 54px;
   padding: 0 var(--sp-7);
+  gap: 16px;
   background: var(--band);
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
   border-bottom: var(--bw) solid var(--line);
+  /* The mock casts the band over the workspace; without it the bar and the
+     content behind it read as one flat sheet. */
+  box-shadow: 0 6px 18px -12px rgba(30, 50, 90, 0.2);
 }
 
 .hud-nav::after {
@@ -47,16 +51,63 @@
 .hud-mark {
   width: 30px;
   height: 30px;
-  display: block;
+  display: grid;
+  place-items: center;
+  flex: none;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--on-gold);
   background: linear-gradient(135deg, var(--gold-hi), var(--gold));
   clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
 }
 
+.hud-brand-text {
+  display: block;
+}
+
 .hud-brand-name {
+  display: block;
   font-family: var(--font-display);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-lg);
   font-weight: var(--fw-bold);
   letter-spacing: var(--tr-snug);
+  color: var(--txt);
+}
+
+/* The mock's `.brand span`: the quiet product line under the wordmark. */
+.hud-brand-sub {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tr-wider);
+  color: var(--dim);
+}
+
+/* The mock's `.navtools`: quiet status pills closing the band on the right. */
+.hud-tools {
+  display: flex;
+  align-items: center;
+  align-self: center;
+  gap: var(--sp-3);
+  padding-left: var(--sp-6);
+}
+
+.hud-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-5);
+  border-radius: var(--r-pill);
+  border: var(--bw) solid var(--line);
+  background: var(--surface);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.hud-pill b {
+  font-weight: var(--fw-bold);
   color: var(--txt);
 }
 

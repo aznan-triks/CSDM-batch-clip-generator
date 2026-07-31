@@ -3424,7 +3424,8 @@ class EngineMixin:
         # Compute summary once (reused at the end)
         _nd, _nc, _ts, _as = self._calc_summary(all_events, cfg)
         _stxt = self._fmt_summary(_nd, _nc, _ts, _as)
-        self.state("summary", {"text": _stxt + "  [running…]", "level": "running"})
+        self.state("summary", {"text": _stxt + "  [running…]", "level": "running",
+                               **self._summary_counts(_nd, _nc, _ts, _as)})
         self.log(f"OK: {len(all_events)} demo(s), {te} events  ⏱ DB {t_query*1000:.0f}ms", "ok")
         self.log("-" * 56, "dim")
 
@@ -3790,7 +3791,8 @@ class EngineMixin:
         _level = "ok" if fail == 0 else ("warn" if ok > 0 else "err")
         _status = f"  ✓ {ok}/{len(demo_list)} demos OK" if fail == 0 else f"  ⚠ {ok} OK / {fail} failed"
         _stxt_final = self._fmt_summary(_nd, _nc, _ts, _as) + f"  —  {fmt_duration(bd)}{_status}"
-        self.state("summary", {"text": _stxt_final, "level": _level})
+        self.state("summary", {"text": _stxt_final, "level": _level,
+                               **self._summary_counts(_nd, _nc, _ts, _as)})
 
         if ok > 0 and cfg.get("assemble_after") and not self._kill_triggered:
             self.log("\n⚙  Final assembly in progress...", "info")
@@ -5378,6 +5380,18 @@ class EngineMixin:
         total_sec = total_ticks / tickrate if tickrate else 0
         avg_sec = (total_sec / nb_clips) if nb_clips else 0
         return nb_demos, nb_clips, total_sec, avg_sec
+
+    def _summary_counts(self, nb_demos, nb_clips, total_sec, avg_sec):
+        """The summary's numbers, unformatted.
+
+        `_fmt_summary` already renders them into a sentence, and the sentence
+        is what the Tkinter window shows. A second host (the Electron window)
+        puts the same four values in a counter strip, and parsing them back out
+        of the prose would break the first time the wording changed. Same
+        event, extra keys: no existing consumer sees a difference.
+        """
+        return {"demos": nb_demos, "clips": nb_clips,
+                "total_s": total_sec, "avg_s": avg_sec}
 
     def _fmt_summary(self, nb_demos, nb_clips, total_sec, avg_sec):
         h = self._hms

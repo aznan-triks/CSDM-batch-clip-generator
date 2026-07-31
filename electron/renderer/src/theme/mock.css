@@ -1,0 +1,406 @@
+/*
+ * THE MOCK, PORTED WHOLE.
+ *
+ * `docs/ui-restyle-mockups/mockup-v12-hologlass.html` is the approved design
+ * and it is not a suggestion: where this file and a component stylesheet
+ * disagree, this one is right. It is imported LAST (see main.tsx), so on equal
+ * specificity it wins -- which is the point. The alternative, editing forty
+ * component stylesheets one at a time, is exactly what left the window looking
+ * like something else after four passes: every file drifted a little and the
+ * total drifted a lot.
+ *
+ * The mock's own class names are quoted beside each block so any rule here can
+ * be checked against the source in one search.
+ *
+ * WHAT THIS FILE DOES NOT DO: it sets no layout that belongs to a screen
+ * (which section is wide, which grid has three columns). Those stay with the
+ * screen. This file owns the VOCABULARY -- surfaces, corners, type, spacing,
+ * the look of a label, a small button, a list row -- because the vocabulary is
+ * what has to be identical everywhere for the window to read as one design.
+ */
+
+/* ===================== the page ===================== (mock `body`, `.amb`) */
+
+body {
+  font-family: var(--font-display);
+  font-size: var(--fs-base);
+  color: var(--txt);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===================== type: the mock has no shouty micro-caps =====================
+   Uppercase survives ONLY where the mock uses it: tab labels, card counters,
+   the console header, the action buttons, stat keys. Everywhere else a label
+   is a plain sentence -- the tracked-out capitals were the military-flat look
+   this restyle replaced. */
+
+.capture-label,
+.video-label,
+.tags-label,
+.settings-label,
+.slider-label,
+.field-label,
+.ds-mini-label,
+.kf-mini-label,
+.wf-mini-label,
+.cs2-heading,
+.hlae-heading,
+.hlae-desc {
+  /* mock `.lab` */
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-normal);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--dim);
+}
+
+.capture-label,
+.video-label,
+.tags-label,
+.settings-label {
+  min-width: 76px;
+}
+
+.capture-hint,
+.video-hint,
+.tags-hint,
+.settings-hint,
+.cs2-hint,
+.hlae-hint,
+.preset-empty {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--dim);
+}
+
+/* ===================== rows ===================== (mock `.row`, `.chips`) */
+
+.capture-row,
+.video-row,
+.tags-toolbar,
+.tags-create-row,
+.tags-auto-row,
+.settings-row,
+.ds-mode-row,
+.ds-shortcut-row,
+.ds-date-row,
+.wf-heading-row,
+.kf-heading-row,
+.kf-top-row,
+.mt-heading-row,
+.mf-heading-row,
+.hlae-row,
+.hlae-quick-row,
+.cs2-quick-row {
+  display: flex;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.wf-chips,
+.tags-grid,
+.mt-grid,
+.map-grid,
+.weapon-grid {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+/* ===================== small buttons =====================
+   The mock has exactly two button shapes: the pill `.chip` for anything that
+   sits inside a card, and the bevelled `.btn` for the run bar. Every screen
+   had grown its own -- `.ds-shortcut-btn`, `.wf-btn`, `.kf-clear-btn`,
+   `.preset-btn`, `.settings-btn`, `.tags-btn`, `.cs2-quick-btn`,
+   `.hlae-quick-btn` -- with its own padding, corner and grey. They are one
+   button now. */
+
+.ds-shortcut-btn,
+.ds-today-btn,
+.ds-clear-btn,
+.wf-btn,
+.kf-clear-btn,
+.preset-btn,
+.settings-btn,
+.tags-btn,
+.cs2-quick-btn,
+.hlae-quick-btn,
+.log-toggle,
+.log-export > button {
+  appearance: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-pill);
+  border: var(--bw) solid var(--line);
+  background: var(--solid);
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--dim);
+  transition: border-color var(--dur-fast), color var(--dur-fast);
+}
+
+.ds-shortcut-btn:hover,
+.ds-today-btn:hover,
+.ds-clear-btn:hover,
+.wf-btn:hover,
+.kf-clear-btn:hover,
+.preset-btn:hover,
+.settings-btn:hover,
+.tags-btn:hover,
+.cs2-quick-btn:hover,
+.hlae-quick-btn:hover,
+.log-toggle:hover,
+.log-export > button:hover {
+  background: var(--solid);
+  color: var(--txt);
+  border-color: color-mix(in srgb, var(--gold) 28%, transparent);
+}
+
+/* The accented one in a group (Save, Apply, Run tag ops): the mock's
+   `.chip.blue.on` -- an accent WASH, never a filled block inside a card. */
+.preset-btn-primary,
+.tags-btn-primary,
+.ds-today-btn {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--gold) 38%, transparent);
+  color: var(--gold);
+}
+
+.preset-btn-primary:hover,
+.tags-btn-primary:hover {
+  background: var(--accent-soft);
+  color: var(--gold);
+}
+
+/* Destructive stays in the danger family, same shape. */
+.preset-btn-delete,
+.tags-btn-red {
+  color: var(--blood-t);
+  border-color: color-mix(in srgb, var(--blood) 30%, transparent);
+}
+
+.tags-btn-green {
+  color: var(--ok-t);
+  border-color: color-mix(in srgb, var(--ok) 30%, transparent);
+}
+
+.tags-btn-orange,
+.settings-btn-orange {
+  color: var(--fire-t);
+  border-color: color-mix(in srgb, var(--fire) 34%, transparent);
+}
+
+.tags-btn-blue {
+  color: var(--gold);
+  border-color: color-mix(in srgb, var(--gold) 30%, transparent);
+}
+
+.ds-shortcut-btn:disabled,
+.preset-btn:disabled,
+.settings-btn:disabled,
+.tags-btn:disabled,
+.wf-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* ===================== inputs ===================== (mock `.fld`) */
+
+/* `:not([class])` on the bare elements is load-bearing: an attribute selector
+   outranks a single class, so an unscoped `input[type="text"]` here would beat
+   `.field-mono` and silently un-monospace every numeric field. Controls that
+   own a class are styled by their own component sheet. */
+.video-select,
+.settings-injection-preview,
+.log-search input,
+input[type="text"]:not([class]),
+input[type="date"]:not([class]),
+input[type="number"]:not([class]),
+select:not([class]),
+textarea:not([class]) {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  color: var(--txt);
+  background: var(--solid);
+  border: var(--bw) solid var(--line);
+  border-radius: 10px;
+  padding: var(--sp-3) var(--sp-5);
+}
+
+.video-select:hover,
+select:not([class]):hover {
+  border-color: var(--line-hi);
+}
+
+.settings-injection-preview {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}
+
+/* ===================== list rows =====================
+   The mock has no bordered grey table. A row is a white card with a soft
+   corner (`.pl`, the player pill) and the selected one is tinted, not outlined
+   in a darker grey. */
+
+/* The mock's `.pl`: a PILL with the avatar riding at its left edge, lifted by
+   a soft shadow -- not a rectangle in a list. */
+.ps-row {
+  border-radius: var(--r-pill);
+  border: var(--bw) solid var(--line);
+  background: var(--solid);
+  box-shadow: var(--elev-sm);
+  padding: var(--sp-2) var(--sp-5) var(--sp-2) var(--sp-2);
+}
+
+.ps-dot {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #dbe6f4, #aec4e0);
+}
+
+.tags-found-row,
+.preset-list > * {
+  border-radius: 10px;
+  border: var(--bw) solid var(--line);
+  background: var(--solid);
+  padding: var(--sp-3) var(--sp-5);
+}
+
+.ps-row:hover,
+.tags-found-row:hover {
+  background: var(--solid);
+  border-color: color-mix(in srgb, var(--gold) 28%, transparent);
+}
+
+.ps-row-active {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--gold) 38%, transparent);
+}
+
+.ps-list,
+.tags-found-list,
+.preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+/* Grouped sub-panels inside a card (kill-filter extras, clutch options, the
+   demo table) sit on the quieter glass, never on an opaque grey slab. */
+.kf-extra,
+.kf-clutch-options,
+.kf-group,
+.tags-selection,
+.settings-db-status,
+.tags-op-status,
+.tags-range-status,
+.ds-error,
+.tags-error {
+  border-radius: var(--r-mid);
+  border: var(--bw) solid var(--hair-2);
+  background: var(--surface-2);
+  padding: var(--sp-4) var(--sp-5);
+}
+
+.ds-error,
+.tags-error {
+  border-color: color-mix(in srgb, var(--blood) 30%, transparent);
+  color: var(--blood-t);
+  background: color-mix(in srgb, var(--blood) 7%, transparent);
+}
+
+/* The "excl" tick beside a kill filter (mock `.excl` + `.box`). */
+.kf-suffix,
+.kf-mini-label {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  color: var(--dim);
+}
+
+input[type="checkbox"] {
+  accent-color: var(--gold);
+  width: 14px;
+  height: 14px;
+}
+
+/* ===================== the toggles that are really chips ===================== */
+
+.tags-chip,
+.cs2-toggle,
+.hlae-toggle {
+  border-radius: var(--r-pill);
+  border: var(--bw) solid var(--line);
+  background: var(--solid);
+  color: var(--dim);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-bold);
+  padding: var(--sp-3) var(--sp-5);
+}
+
+.tags-chip-active {
+  background: var(--lime);
+  border-color: var(--lime-glow);
+  color: var(--lime-ink);
+}
+
+/* ===================== the tab panels ===================== (mock `.bento`) */
+
+.capture-tab,
+.video-tab,
+.tags-tab,
+.settings-tab {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+  align-content: start;
+}
+
+.capture-tab > .wide,
+.video-tab > .wide,
+.tags-tab > .wide,
+.settings-tab > .wide {
+  grid-column: 1 / -1;
+}
+
+/* The scroller keeps the mock's slim rail rather than the platform's. */
+.shell-panel {
+  padding-right: var(--sp-1);
+}
+
+.shell-panel::-webkit-scrollbar {
+  width: 7px;
+}
+
+.shell-panel::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.25);
+  border-radius: 7px;
+}
+
+.shell-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ===================== console ===================== (mock `.console .ch`) */
+
+.log-search,
+.log-tools {
+  letter-spacing: var(--tr-wide);
+}
+
+.log-search {
+  font-size: var(--fs-xs);
+  color: color-mix(in srgb, var(--gold) 60%, var(--dim));
+  text-transform: uppercase;
+}

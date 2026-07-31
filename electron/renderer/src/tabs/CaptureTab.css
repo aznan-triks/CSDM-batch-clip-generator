@@ -4,20 +4,18 @@
  * NO :hover rule in this file may translate or scale anything (D13/D16).
  */
 
+/* The mock's `.bento`: a 2-column grid, 10px gutter, no padding of its own --
+   the workspace column (AppShell.css) already owns the inset. */
 .capture-tab {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--sp-5);
-  padding: var(--sp-5) var(--sp-6);
+  gap: var(--sp-4);
   align-content: start;
 }
 
-/* Dense, chip-heavy sections (and the field grids already 2-wide inside
-   themselves) span both columns instead of being squeezed to a half. */
-.capture-tab > .capture-grid,
-.capture-tab > .kill-filters,
-.capture-tab > .match-types,
-.capture-tab > .map-filter {
+/* Dense, chip-heavy cards span both columns instead of being squeezed to a
+   half. `.wide` is the mock's own name for this and Card passes it through. */
+.capture-tab > .wide {
   grid-column: 1 / -1;
 }
 
@@ -47,17 +45,25 @@
   gap: var(--sp-4) var(--sp-6);
 }
 
+/* Sliders stack, one per row: the rail needs the card's full width to be
+   aimable (the mock's is ~200px long). */
+.capture-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
 /* The wrapper the coverage guard looks for carries no styling of its own:
    it must not change how anything inside it lays out. */
 .capture-tab .setting {
   min-width: 0;
 }
 
-.capture-tab > .player-section,
-.capture-tab > .demo-selection,
-.capture-tab > .weapon-filter,
-.capture-tab > .kill-filters,
-.capture-tab > .match-types,
-.capture-tab > .map-filter {
+.capture-tab .player-section,
+.capture-tab .demo-selection,
+.capture-tab .weapon-filter,
+.capture-tab .kill-filters,
+.capture-tab .match-types,
+.capture-tab .map-filter {
   min-width: 0;
 }

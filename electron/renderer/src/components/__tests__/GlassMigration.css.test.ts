@@ -20,11 +20,14 @@ import { describe, expect, it } from "vitest";
 const COMPONENTS_DIR = path.join(__dirname, "..");
 const MIGRATED_FILES = ["Card.css", "Tab.css", "ActionButton.css", "Field.css", "Chip.css", "Segmented.css", "Slider.css"];
 
-const FLAT_TOKEN = /var\(--(panel|raise-hi|raise|void)\)/g;
+// `--void` left this list when the Slider's rail took it: the mock's rail is
+// an opaque recess in the ground, and `--void` IS that ground. It stays banned
+// as a BACKGROUND for panels and controls, which is what the other three cover.
+const FLAT_TOKEN = /var\(--(panel|raise-hi|raise)\)/g;
 
 describe("none of the 7 migrated files reference the old flat-token family", () => {
   for (const file of MIGRATED_FILES) {
-    it(`${file} has no lingering var(--panel|raise|raise-hi|void) outside a color-mix border tint`, () => {
+    it(`${file} has no lingering var(--panel|raise|raise-hi) outside a color-mix border tint`, () => {
       const css = readFileSync(path.join(COMPONENTS_DIR, file), "utf-8");
       // Blank out color-mix(...) calls first: the ActionButton border tints
       // are an authorized exception, not a migration miss.

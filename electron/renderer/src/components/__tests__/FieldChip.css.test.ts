@@ -10,17 +10,22 @@ function readBlock(file: string, selector: string): string {
   return match[1];
 }
 
-describe(".field is glass, rounded", () => {
-  it("base uses --surface-2 and --r-mid", () => {
+// The mock's controls sit ON the glass, they are not made OF it: `.fld` and
+// `.chip` both take the opaque `--solid` face. A translucent control on a
+// translucent card washed out to nothing, which is what this guard now pins.
+describe(".field wears the mock's opaque face", () => {
+  it("base uses --solid and the mock's 10px corner", () => {
     const rule = readBlock("Field.css", ".field");
-    expect(rule).toMatch(/background:\s*var\(--surface-2\);/);
+    expect(rule).toMatch(/background:\s*var\(--solid\);/);
     expect(rule).not.toMatch(/var\(--raise\);/);
-    expect(rule).toMatch(/border-radius:\s*var\(--r-mid\);/);
+    expect(rule).toMatch(/border-radius:\s*10px;/);
   });
 
-  it("hover/focus brighten to --surface", () => {
-    expect(readBlock("Field.css", ".field:hover")).toMatch(/background:\s*var\(--surface\);/);
-    expect(readBlock("Field.css", ".field:focus")).toMatch(/background:\s*var\(--surface\);/);
+  it("hover/focus move the BORDER, never the fill", () => {
+    expect(readBlock("Field.css", ".field:hover")).toMatch(/border-color:/);
+    expect(readBlock("Field.css", ".field:hover")).not.toMatch(/background:/);
+    expect(readBlock("Field.css", ".field:focus")).toMatch(/border-color:/);
+    expect(readBlock("Field.css", ".field:focus")).not.toMatch(/background:/);
   });
 });
 
@@ -31,17 +36,23 @@ describe(".chip is glass, pill-shaped", () => {
     expect(rule).not.toMatch(/clip-path/);
   });
 
-  it("uses --surface-2 and --r-pill", () => {
-    expect(rule).toMatch(/background:\s*var\(--surface-2\);/);
+  it("uses --solid and --r-pill", () => {
+    expect(rule).toMatch(/background:\s*var\(--solid\);/);
     expect(rule).toMatch(/border-radius:\s*var\(--r-pill\);/);
   });
 
-  it("hover brightens to --surface", () => {
-    expect(readBlock("Chip.css", ".chip:hover")).toMatch(/background:\s*var\(--surface\);/);
+  it("hover tints the border towards the accent, never the fill", () => {
+    const hover = readBlock("Chip.css", ".chip:hover");
+    expect(hover).toMatch(/border-color:\s*color-mix\(in srgb, var\(--gold\)/);
+    expect(hover).not.toMatch(/background:/);
   });
 
-  it("keeps the existing accent look for the selected state untouched", () => {
+  // The mock reserves the ACCENT for what the app is doing and the LIME for
+  // what the user has picked. A blue selected chip competed with the run bar.
+  it("selects in lime, not in the accent", () => {
     const selected = readBlock("Chip.css", ".chip-selected");
-    expect(selected).toMatch(/color-mix\(in srgb, var\(--gold\) 13%, transparent\)/);
+    expect(selected).toMatch(/background:\s*var\(--lime\);/);
+    expect(selected).toMatch(/color:\s*var\(--lime-ink\);/);
+    expect(selected).not.toMatch(/var\(--gold\)/);
   });
 });

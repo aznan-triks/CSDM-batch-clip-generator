@@ -10,7 +10,7 @@
  * reacts to the engine's own events, never to a click. Enabled/disabled state
  * is read straight from `useEngineState()`, never guessed from the click.
  */
-import { useCallback } from "react";
+import { type ReactNode, useCallback } from "react";
 
 import { runCommand } from "../bridge";
 import ActionButton from "../components/ActionButton";
@@ -26,11 +26,19 @@ export interface ActionBarProps {
    * shot -- see `AppShell`'s `actionButtons` registry.
    */
   registerButton?: (action: string) => (element: HTMLElement | null) => void;
+  /**
+   * The weapon band. In the mock it is not a band of its own: it rides inside
+   * the action bar as `.wband`, leading the row, with the buttons trailing.
+   */
+  weapon?: ReactNode;
 }
 
 const noRegistration = () => () => {};
 
-export default function ActionBar({ registerButton = noRegistration }: ActionBarProps) {
+export default function ActionBar({
+  registerButton = noRegistration,
+  weapon,
+}: ActionBarProps) {
   const engine = useEngineState();
   const settings = useAllSettings();
 
@@ -55,16 +63,7 @@ export default function ActionBar({ registerButton = noRegistration }: ActionBar
   return (
     <div className="action-bar">
       <div className="action-bar-row">
-        <span className="action-bar-btn" ref={registerButton("run")}>
-          <ActionButton
-            label="RUN"
-            icon={<ICONS.run />}
-            variant="run"
-            disabled={!engine.runEnabled}
-            onClick={onRun}
-          />
-        </span>
-        <span className="action-bar-sep" />
+        {weapon}
         <span className="action-bar-btn" ref={registerButton("preview")}>
           <ActionButton
             label="PREVIEW"
@@ -73,7 +72,6 @@ export default function ActionBar({ registerButton = noRegistration }: ActionBar
             onClick={onPreview}
           />
         </span>
-        <span className="action-bar-sep" />
         <span className="action-bar-btn" ref={registerButton("stop")}>
           <ActionButton
             label={engine.stopLabel.toLowerCase().includes("preview") ? "STOP PREVIEW" : "STOP"}
@@ -92,11 +90,16 @@ export default function ActionBar({ registerButton = noRegistration }: ActionBar
             onClick={onKill}
           />
         </span>
-
-        <div className="action-bar-progress">{engine.progress}</div>
+        <span className="action-bar-btn" ref={registerButton("run")}>
+          <ActionButton
+            label="RUN"
+            icon={<ICONS.run />}
+            variant="run"
+            disabled={!engine.runEnabled}
+            onClick={onRun}
+          />
+        </span>
       </div>
-
-      <div className="action-bar-summary">{engine.summary?.text}</div>
     </div>
   );
 }

@@ -13,6 +13,7 @@
 import { useState } from "react";
 
 import Card from "../components/Card";
+import { ICONS } from "../icons";
 import Chip from "../components/Chip";
 import Field from "../components/Field";
 import PathField from "../components/PathField";
@@ -128,7 +129,7 @@ export default function SettingsTab() {
 
   return (
     <div className="settings-tab">
-      <Card title="PATHS" className="wide">
+      <Card title="Paths" icon={<ICONS.paths />} className="wide">
         <SettingControl settingKey="csdm_exe">
           <PathField
             id="csdm-exe"
@@ -190,7 +191,7 @@ export default function SettingsTab() {
 
       <PresetSection />
 
-      <Card title="UI THEME">
+      <Card title="UI Theme" icon={<ICONS.uiTheme />}>
         <SettingControl settingKey="theme_accent">
           <div className="settings-accent">
             <span className="settings-label">Accent</span>
@@ -235,7 +236,7 @@ export default function SettingsTab() {
         </SettingControl>
       </Card>
 
-      <Card title="UI LAYOUT">
+      <Card title="UI Layout" icon={<ICONS.uiLayout />}>
         <div className="settings-row">
           <SettingControl settingKey="ui_window_w">
             <Field
@@ -289,7 +290,7 @@ export default function SettingsTab() {
         </div>
       </Card>
 
-      <Card title="POSTGRESQL CONNECTION" className="wide">
+      <Card title="PostgreSQL Connection" icon={<ICONS.postgresql />} className="wide">
         <div className="settings-row">
           <SettingControl settingKey="pg_host">
             <Field id="pg-host" label="Host" value={pgHost ?? ""} onChange={setPgHost} />
@@ -321,7 +322,7 @@ export default function SettingsTab() {
         </div>
       </Card>
 
-      <Card title="PERFORMANCE">
+      <Card title="Performance" icon={<ICONS.performance />}>
         <SettingControl settingKey="dp2_threads">
           <Slider
             id="dp2-threads"
@@ -340,7 +341,7 @@ export default function SettingsTab() {
         </p>
       </Card>
 
-      <Card title="INJECTION PREVIEW">
+      <Card title="Injection Preview" icon={<ICONS.injectionPreview />}>
         <p className="settings-hint">
           Live preview of the args injected into CS2 for the current configuration.
         </p>
