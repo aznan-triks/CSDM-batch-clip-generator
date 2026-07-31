@@ -24,18 +24,10 @@ import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
 import { useDatabase } from "../settings/useDatabase";
 import { useTables } from "../settings/useTables";
-import { WEAPONS } from "../weapon/weapons";
+import { silhouetteFor } from "../weapon/silhouettes";
 import "./WeaponFilterSection.css";
 
-/**
- * Database weapon name -> the WEAPONS entry that has art for it.
- *
- * The same table the bottom band fires, so a weapon can never be drawn one way
- * here and another way there. It holds art for a handful of weapons and a
- * database holds dozens: a name that is missing simply has no silhouette,
- * which is normal and not an error.
- */
-const ART_BY_NAME = new Map(Object.values(WEAPONS).map((weapon) => [weapon.name, weapon]));
+
 
 export default function WeaponFilterSection() {
   const { tables } = useTables();
@@ -55,9 +47,14 @@ export default function WeaponFilterSection() {
     .map(([category, names]) => [category, names.filter((n) => present.has(n))] as const)
     .filter(([, names]) => names.length > 0);
   const allWeapons = categories.flatMap(([, names]) => names);
+  // EVERY picked weapon gets a silhouette, not just the two the firing table
+  // draws specifically: `silhouetteFor` falls back to the weapon's class,
+  // taken from the engine's own `weapon_categories`. Before this, picking any
+  // of the other forty showed nothing -- indistinguishable from a click that
+  // did not register.
   const silhouettes = selected
-    .map((name) => ART_BY_NAME.get(name))
-    .filter((weapon): weapon is NonNullable<typeof weapon> => weapon != null);
+    .map((name) => ({ name, art: silhouetteFor(name, tables.weaponCategories) }))
+    .filter((entry): entry is { name: string; art: string } => entry.art != null);
 
   function toggle(name: string) {
     setWeapons(
@@ -105,9 +102,9 @@ export default function WeaponFilterSection() {
         <div className="casc" aria-hidden="true">
           {silhouettes.map((weapon, index) => (
             <div
-              key={weapon.id}
+              key={weapon.name}
               className="gun casc-g in"
-              data-weapon={weapon.id}
+              data-weapon={weapon.name}
               style={{ animationDelay: `${index * MOTION.weaponCascade.stagger}s` }}
               /* Safe HERE AND ONLY HERE: the markup is a repository asset
                  imported with `?raw` at build time, never a string from the

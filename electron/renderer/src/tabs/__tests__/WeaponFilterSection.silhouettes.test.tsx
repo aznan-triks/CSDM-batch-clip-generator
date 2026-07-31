@@ -1,10 +1,15 @@
 /**
  * The silhouettes of the selected weapons, in the filter card.
  *
- * The art is the WEAPONS table's -- the same source the bottom band fires --
- * so no new asset and no second copy. WEAPONS only carries art for a few
- * weapons; a database holds dozens. A weapon with no silhouette is normal, not
- * an error, and must not take the card down with it.
+ * EVERY weapon gets one now: `weapon/silhouettes.ts` prefers the firing
+ * table's specific art and falls back to the weapon's class, taken from the
+ * engine's own `weapon_categories`. This file used to assert the opposite --
+ * that a weapon with no art drew nothing, "normal, not an error" -- which was
+ * true of the code and false of what the window needed: forty of the database's
+ * forty-two weapons showed nothing when picked.
+ *
+ * A weapon the engine has never CLASSED still draws nothing, and that is the
+ * real gap the last case here guards.
  *
  * The mount below is the one WeaponFilterSection.test.tsx already uses, kept
  * in step with it on purpose: two different mounts for the same section would
@@ -19,7 +24,8 @@ import WeaponFilterSection from "../WeaponFilterSection";
 const FILTERS_FIXTURE = {
   filters: [],
   match_types: [],
-  // AK-47 and AWP have art in WEAPONS; SSG 08 and MP9 do not.
+  // AK-47 and AWP have specific art in WEAPONS; SSG 08 and MP9 fall back to
+  // their class. "Nunchucks" is in no class at all -- the unclassed case.
   weapon_categories: {
     SMGs: ["MP9"],
     Rifles: ["AK-47"],
@@ -32,7 +38,7 @@ const FILTERS_FIXTURE = {
 };
 
 const DB_FIXTURE = {
-  weapons: ["MP9", "AK-47", "AWP", "SSG 08"],
+  weapons: ["MP9", "AK-47", "AWP", "SSG 08", "Nunchucks"],
   maps: [["mirage", ["de_mirage"]]],
 };
 
@@ -79,16 +85,31 @@ describe("WeaponFilterSection silhouettes", () => {
     pick("AWP");
     const shown = [...container.querySelectorAll(".casc .gun")];
     expect(shown).toHaveLength(1);
-    expect(shown[0].getAttribute("data-weapon")).toBe("awp");
+    // The database's own name, not an internal id: a class silhouette has no
+    // weapon id to carry.
+    expect(shown[0].getAttribute("data-weapon")).toBe("AWP");
     expect(shown[0].innerHTML).toContain("<svg");
   });
 
-  it("skips a selected weapon that has no silhouette, without crashing", async () => {
-    // The filter lists every weapon the database holds; WEAPONS carries art
-    // for a few. A missing silhouette is normal.
+  it("draws a weapon with no specific art, using its class", async () => {
+    // This is the whole of the report: 40 of the database's 42 weapons used to
+    // show nothing at all when picked.
     const { container } = await renderSection();
     pick("AWP", "SSG 08");
-    expect(container.querySelectorAll(".casc .gun")).toHaveLength(1);
+    const shown = [...container.querySelectorAll(".casc .gun")];
+    expect(shown).toHaveLength(2);
+    expect(shown[1].getAttribute("data-weapon")).toBe("SSG 08");
+    expect(shown[1].innerHTML).toContain("<svg");
+  });
+
+  it("never offers a weapon the engine has not classed", async () => {
+    // "Nunchucks" is in the database fixture and in no category. The card is
+    // built by walking the CATEGORIES, so an unclassed weapon gets no chip at
+    // all -- which is why the missing-silhouette case cannot be reached from
+    // the screen. `weapon/__tests__/silhouettes.test.ts` covers the resolver's
+    // own null for it.
+    await renderSection();
+    expect(screen.queryByRole("button", { name: "Nunchucks" })).toBeNull();
   });
 
   it("keeps the silhouettes out of the accessibility tree", async () => {
