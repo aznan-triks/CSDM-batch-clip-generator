@@ -8,10 +8,11 @@ import { WEAPONS } from "./weapons";
  * cascade from that table, so picking any of the other forty showed nothing at
  * all -- indistinguishable from a click that had not registered.
  *
- * The art is now the game's own, extracted by `Juknum/counter-strike-icons`
- * and vendored under `assets/cs2/` (see `assets/cs2/SOURCE.md` for provenance,
- * the Valve ownership statement, and what was stripped on the way in). The
- * class silhouettes stay as the fallback for anything the pack does not cover.
+ * The art is the GAME'S OWN, extracted by `Juknum/counter-strike-icons` and
+ * vendored under `assets/cs2/` (see `assets/cs2/SOURCE.md` for provenance, the
+ * Valve ownership statement, and what was stripped on the way in). Every
+ * hand-drawn shape this project ever carried is gone: there is one source of
+ * weapon art now, and it is the game.
  *
  * URLS, NOT MARKUP. Each icon is ~11 kB and there are 41 of them: inlining
  * them with `?raw` would have added 461 kB of string literals to the bundle.
@@ -23,13 +24,6 @@ import { WEAPONS } from "./weapons";
 
 /** Every vendored CS2 icon, by its file name, as a URL Vite emits. */
 const CS2_ICONS = import.meta.glob("./assets/cs2/*.svg", {
-  eager: true,
-  query: "?url",
-  import: "default",
-}) as Record<string, string>;
-
-/** Every class silhouette, same treatment. */
-const CLASS_ICONS = import.meta.glob("./assets/class-*.svg", {
   eager: true,
   query: "?url",
   import: "default",
@@ -49,9 +43,10 @@ const iconUrl = (map: Record<string, string>, stem: string): string | null => {
  * with. `M4A4` is the game's plain `m4a1` and `M4A1` is `m4a1_silencer`: that
  * is the game's own naming, not a mistake here.
  *
- * `World` is absent on purpose: the pack ships an EMPTY frame for it, and it is
- * the database's pseudo-weapon for world damage rather than a weapon. It falls
- * through to its class.
+ * `World` is the database's pseudo-weapon for world damage. The pack's own
+ * `world.svg` and `worldent.svg` are both EMPTY frames, so it takes
+ * `prop_exploding_barrel` -- still the game's art, and the nearest thing it
+ * ships to "the environment killed you".
  */
 const GAME_FILE: Record<string, string> = {
   "AK-47": "ak47",
@@ -95,19 +90,7 @@ const GAME_FILE: Record<string, string> = {
   "USP-S": "usp_silencer",
   XM1014: "xm1014",
   "Zeus x27": "taser",
-};
-
-/** The class a weapon falls back to when the pack has nothing for it. */
-const CLASS_FILE: Record<string, string> = {
-  Pistols: "class-pistol",
-  SMGs: "class-smg",
-  Rifles: "class-smg",
-  Snipers: "class-smg",
-  Heavy: "class-heavy",
-  Knives: "class-knife",
-  "Grenades & Utility": "class-grenade",
-  "C4 / World": "class-c4",
-  Misc: "class-taser",
+  World: "prop_exploding_barrel",
 };
 
 /**
@@ -130,30 +113,19 @@ export function classOf(
 }
 
 /**
- * The icon URL to paint for a weapon, or null when nothing covers it.
+ * The icon URL to paint for a weapon, or null when the pack has nothing for it.
  *
- * Null rather than a placeholder: a weapon that is neither in the pack nor in
- * any class is a real gap, and a generic shape over it would hide that the
- * category table needs a line.
+ * Null rather than a placeholder: a weapon the pack does not cover is a real
+ * gap, and a generic shape over it would hide that this table needs a line.
+ * There is no longer any hand-drawn shape to fall back to, on purpose.
  */
-export function silhouetteFor(
-  weaponName: string,
-  categories: Record<string, string[]> | undefined,
-): string | null {
+export function silhouetteFor(weaponName: string): string | null {
   const stem = GAME_FILE[weaponName];
-  const game = stem ? iconUrl(CS2_ICONS, stem) : null;
-  if (game) return game;
-
-  const className = classOf(weaponName, categories);
-  const classStem = className ? CLASS_FILE[className] : null;
-  return classStem ? iconUrl(CLASS_ICONS, classStem) : null;
+  return stem ? iconUrl(CS2_ICONS, stem) : null;
 }
 
 /** Names the vendored pack covers, for the coverage test to walk. */
 export const PACK_NAMES = Object.keys(GAME_FILE);
-
-/** Classes the fallback can draw, for the same. */
-export const DRAWN_CLASSES = Object.keys(CLASS_FILE);
 
 /** The firing table's own art, still inline: the band animates its internals. */
 export const BAND_ART: Record<string, string> = Object.fromEntries(

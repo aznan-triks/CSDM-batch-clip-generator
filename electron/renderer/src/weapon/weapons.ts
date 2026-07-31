@@ -10,8 +10,11 @@
  * renderer. Shared motion numbers are NOT here: they live in `motion/tokens.ts`
  * so that two weapons can never drift apart on how a tracer eases.
  */
-import ak47Art from "./assets/ak47.svg?raw";
-import awpArt from "./assets/awp.svg?raw";
+// The GAME's own art, inline: the band animates the silhouette itself (recoil,
+// muzzle flash anchored to a point on it), so these two -- and only these two --
+// are worth the string literal. The other thirty-nine are URLs (weapon/silhouettes.ts).
+import ak47Art from "./assets/cs2/ak47.svg?raw";
+import awpArt from "./assets/cs2/awp.svg?raw";
 
 export interface WeaponSpec {
   /** Stable key, used by the picker and by the settings file. */

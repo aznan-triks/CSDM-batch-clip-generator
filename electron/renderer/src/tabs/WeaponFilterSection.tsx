@@ -53,7 +53,7 @@ export default function WeaponFilterSection() {
   // of the other forty showed nothing -- indistinguishable from a click that
   // did not register.
   const silhouettes = selected
-    .map((name) => ({ name, art: silhouetteFor(name, tables.weaponCategories) }))
+    .map((name) => ({ name, art: silhouetteFor(name) }))
     .filter((entry): entry is { name: string; art: string } => entry.art != null);
 
   function toggle(name: string) {

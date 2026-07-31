@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { DRAWN_CLASSES, PACK_NAMES, classOf, silhouetteFor } from "../silhouettes";
+import { PACK_NAMES, classOf, silhouetteFor } from "../silhouettes";
 
 /** `connect_db`'s `weapons` field, verbatim. */
 const FROM_DATABASE = [
@@ -48,50 +48,44 @@ const CATEGORIES: Record<string, string[]> = {
 
 describe("coverage: no weapon in the database draws a blank", () => {
   it.each(FROM_DATABASE)("%s has a silhouette", (name) => {
-    expect(silhouetteFor(name, CATEGORIES)).not.toBeNull();
+    expect(silhouetteFor(name)).not.toBeNull();
   });
 
   it("covers all 42, not a handful", () => {
-    const drawn = FROM_DATABASE.filter((name) => silhouetteFor(name, CATEGORIES) !== null);
+    const drawn = FROM_DATABASE.filter((name) => silhouetteFor(name) !== null);
     expect(drawn).toHaveLength(FROM_DATABASE.length);
   });
 
-  it("draws something for every class the engine defines", () => {
-    for (const className of Object.keys(CATEGORIES)) {
-      expect(DRAWN_CLASSES).toContain(className);
-    }
+  it("covers every one of the database's names from the pack alone", () => {
+    // No hand-drawn fallback exists any more, on purpose: the table above is
+    // the only thing standing between a weapon and a blank.
+    const missing = FROM_DATABASE.filter((name) => !PACK_NAMES.includes(name));
+    expect(missing).toEqual([]);
   });
 });
 
 describe("the game's own icon wins over a class silhouette", () => {
-  it("covers all but one of the database's weapons from the vendored pack", () => {
-    // "World" is the database's pseudo-weapon for world damage; the pack ships
-    // an empty frame for it, so it is deliberately absent and falls to a class.
-    const missing = FROM_DATABASE.filter((name) => !PACK_NAMES.includes(name));
-    expect(missing).toEqual(["World"]);
+  it("gives World the game's own environment art, not a hand-drawn shape", () => {
+    // The pack's `world.svg` and `worldent.svg` are empty frames, so World
+    // takes `prop_exploding_barrel` -- still the game's, never a drawing.
+    const world = silhouetteFor("World");
+    expect(world).not.toBeNull();
+    expect(world).not.toBe(silhouetteFor("C4"));
   });
 
   it("gives each weapon its OWN icon, not one shared per class", () => {
     // The whole point of the pack: a Deagle no longer looks like a Glock.
-    expect(silhouetteFor("Desert Eagle", CATEGORIES)).not.toBe(
-      silhouetteFor("Glock-18", CATEGORIES),
+    expect(silhouetteFor("Desert Eagle")).not.toBe(
+      silhouetteFor("Glock-18"),
     );
-    expect(silhouetteFor("AK-47", CATEGORIES)).not.toBe(silhouetteFor("M4A4", CATEGORIES));
-  });
-
-  it("falls back to a class for what the pack does not cover", () => {
-    // C4 IS in the pack; World is not, so the two must not resolve alike even
-    // though they share a class.
-    const world = silhouetteFor("World", CATEGORIES);
-    expect(world).not.toBeNull();
-    expect(world).not.toBe(silhouetteFor("C4", CATEGORIES));
+    expect(silhouetteFor("AK-47")).not.toBe(silhouetteFor("M4A4"));
   });
 
   it("hands back a URL, not markup -- 41 icons must stay out of the bundle", () => {
     // The build emits the big ones as files and inlines the tiny class shapes
     // as data URIs; either way it is a URL a CSS mask can consume, never
     // markup a component has to inject.
-    const url = silhouetteFor("AK-47", CATEGORIES)!;
+    const url = silhouetteFor("AK-47")!;
     expect(url).not.toContain("<svg");
     expect(url === encodeURI(url) || url.startsWith("data:")).toBe(true);
   });
@@ -111,14 +105,14 @@ describe("an unclassed weapon is a real gap, not something to paper over", () =>
   it("returns null rather than a placeholder", () => {
     // Hiding it behind a generic shape would hide that the category table
     // needs a line.
-    expect(silhouetteFor("Rocket Launcher", CATEGORIES)).toBeNull();
+    expect(silhouetteFor("Rocket Launcher")).toBeNull();
   });
 
-  it("still draws a packed weapon before the categories arrive", () => {
-    // The pack is keyed by the database's own name, so it needs no table.
-    expect(silhouetteFor("AK-47", undefined)).not.toBeNull();
-    expect(silhouetteFor("Desert Eagle", undefined)).not.toBeNull();
-    // Only the fallback needs the categories.
-    expect(silhouetteFor("World", undefined)).toBeNull();
+  it("needs no category table at all", () => {
+    // The pack is keyed by the database's own name, so a silhouette appears
+    // whether or not `describe_filters` has answered yet.
+    expect(silhouetteFor("AK-47")).not.toBeNull();
+    expect(silhouetteFor("Desert Eagle")).not.toBeNull();
+    expect(silhouetteFor("World")).not.toBeNull();
   });
 });
