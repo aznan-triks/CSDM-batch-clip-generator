@@ -19,7 +19,7 @@ interface TabProps {
  * keeps the two apart -- for a screen reader as much as for a test.
  */
 export function Tab({ label, icon, active, onSelect }: TabProps) {
-  const classes = active ? "tab tab-active" : "tab";
+  const classes = active ? "tab active" : "tab";
   return (
     <button
       type="button"
@@ -29,12 +29,12 @@ export function Tab({ label, icon, active, onSelect }: TabProps) {
       aria-selected={active ? "true" : "false"}
       aria-current={active ? "true" : undefined}
     >
-      {icon && <span className="tab-icon">{icon}</span>}
+      {icon}
       {/* The mock's `.tk`: a small diamond tick between glyph and label. It
           lights up on the open tab -- part of how the strip reads as a HUD
           rather than a row of words. */}
-      <span className="tab-tick" aria-hidden="true" />
-      <span className="tab-label">{label}</span>
+      <span className="tk" aria-hidden="true" />
+      {label}
     </button>
   );
 }
@@ -44,17 +44,18 @@ interface TabBarProps {
 }
 
 /**
- * These two constants are geometry local to this component, not global
- * design tokens -- same treatment as `--log-pad`/`--log-line` in
- * LogConsole.css (restyle 1).
+ * The two numbers the indicator's arithmetic needs, and both belong to the
+ * approved mock, not to this file: `.tab`'s clip-path shears 18px off each
+ * end, and `.ind` is a 100px bar the transform scales (mock-v12.css). They are
+ * read here rather than re-decided -- change them in the mock and this follows.
  */
-const TAB_SLANT = 18; // kept in step with --sp-7 in Tab.css's clip-path
-const IND_BASE_WIDTH = 100; // kept in step with .tab-ind's fixed CSS width
+const TAB_SLANT = 18; // mock: .tab{clip-path:polygon(18px 0,...)}
+const IND_BASE_WIDTH = 100; // mock: .ind{width:100px}
 
 /**
- * Row layout for a set of `Tab`s (mock `.tabs`), plus the sliding `.tab-ind`
- * underline (mock `moveInd`, mockup-v12-hologlass.html lines 465-476) that
- * always sits under whichever child carries `.tab-active`.
+ * Row layout for a set of `Tab`s (mock `.tabs`), plus the sliding `.ind`
+ * underline (mock `moveInd`, mockup-v12-hologlass.html) that always sits under
+ * whichever child carries `.active`.
  */
 export function TabBar({ children }: TabBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
@@ -65,7 +66,7 @@ export function TabBar({ children }: TabBarProps) {
       const bar = barRef.current;
       const ind = indRef.current;
       if (!bar || !ind) return;
-      const activeTab = bar.querySelector<HTMLElement>(".tab-active");
+      const activeTab = bar.querySelector<HTMLElement>(".tab.active");
       if (!activeTab) return;
       const scale = (activeTab.offsetWidth - TAB_SLANT) / IND_BASE_WIDTH;
       ind.style.transform = `translateX(${activeTab.offsetLeft}px) scaleX(${scale})`;
@@ -77,9 +78,9 @@ export function TabBar({ children }: TabBarProps) {
   });
 
   return (
-    <div className="tab-bar" role="tablist" ref={barRef}>
+    <div className="tabs" role="tablist" ref={barRef}>
       {children}
-      <span className="tab-ind" ref={indRef} />
+      <span className="ind" ref={indRef} />
     </div>
   );
 }

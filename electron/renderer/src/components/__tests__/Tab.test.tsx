@@ -23,7 +23,7 @@ describe("TabBar's sliding indicator", () => {
     // lays out real boxes, so this is how the formula itself gets exercised.
     window.dispatchEvent(new Event("resize"));
 
-    const ind = container.querySelector(".tab-ind") as HTMLElement;
+    const ind = container.querySelector(".ind") as HTMLElement;
     expect(ind.style.transform).toBe(`translateX(40px) scaleX(${(130 - 18) / 100})`);
   });
 
@@ -35,6 +35,6 @@ describe("TabBar's sliding indicator", () => {
         <Tab label="C" onSelect={() => {}} />
       </TabBar>,
     );
-    expect(container.querySelectorAll(".tab-ind").length).toBe(1);
+    expect(container.querySelectorAll(".ind").length).toBe(1);
   });
 });

@@ -26,4 +26,23 @@ describe("HudNav", () => {
     const { container } = render(<HudNav tabs={TABS} active="capture" onSelect={() => {}} />);
     expect(container.querySelector(".hud-nav")).not.toBeNull();
   });
+
+  it("wears the mock's nav vocabulary, so the mock's rules can reach it", () => {
+    // jsdom does no cascade and no pseudo-element style, so the rendered look
+    // cannot be asserted here. What CAN be asserted is the join: the mock's
+    // rules are keyed on these class names, and without them every nav rule --
+    // the topographic texture, the accent hairline, the pill -- addresses
+    // nothing. The rendered check is the on-screen probe.
+    const { container } = render(<HudNav tabs={TABS} active="capture" onSelect={() => {}} />);
+    for (const selector of [
+      ".hud-nav",
+      ".hud-inner",
+      ".brand",
+      ".mark",
+      ".navtools",
+      ".navtools .p",
+    ]) {
+      expect(container.querySelector(selector), `missing ${selector}`).not.toBeNull();
+    }
+  });
 });

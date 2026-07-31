@@ -1,123 +1,29 @@
 /*
- * The top nav band (mock `.hud-nav`, mockup-v12-hologlass.html lines 61-74).
- * Light frosted glass in both modes -- this bar never goes near-black
- * (the same rule restyle 1 fixed for the console).
+ * The top nav band.
  *
- * `.hud-nav`'s `position: relative` and `z-index: 1` come from the shared
- * rule in AppShell.css (same pattern as `.band`/WeaponBand).
+ * Its whole look -- the frosted ground, the topographic dot texture, the
+ * accent hairline along the bottom, the brand mark's bevel, the status pills
+ * -- lives in theme/mock-v12.css under `.hud-nav`, `.hud-inner`, `.brand`,
+ * `.mark` and `.navtools`. Two rules survive here, and both are things the
+ * mock cannot know.
+ *
+ * `.hud-nav`'s `position: relative` and `z-index: 1` come from the shared rule
+ * in AppShell.css (same pattern as `.band`/WeaponBand).
  *
  * NO :hover rule in this file may translate or scale anything (D13/D16).
  */
+
+/* Where the band sits in the shell's grid. The mock's page has no grid at all:
+   it stacks three blocks and never names a cell. */
 .hud-nav {
   grid-area: nav;
-  display: flex;
-  align-items: stretch;
-  height: 54px;
-  padding: 0 var(--sp-7);
-  gap: 16px;
-  background: var(--band);
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
-  border-bottom: var(--bw) solid var(--line);
-  /* The mock casts the band over the workspace; without it the bar and the
-     content behind it read as one flat sheet. */
-  box-shadow: 0 6px 18px -12px rgba(30, 50, 90, 0.2);
 }
 
-.hud-nav::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: var(--bw-accent);
-  width: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    color-mix(in srgb, var(--gold) 45%, transparent),
-    transparent
-  );
-}
-
-.hud-brand {
-  display: flex;
-  align-items: center;
-  align-self: center;
-  gap: var(--sp-4);
-  padding-right: var(--sp-6);
-  border-right: var(--bw) solid var(--line);
-}
-
-.hud-mark {
-  width: 30px;
-  height: 30px;
-  display: grid;
-  place-items: center;
-  flex: none;
-  font-size: 17px;
-  line-height: 1;
+/* MEASURED: the mock paints the brand mark's glyph a flat #ffffff, which is
+   right for its own blue and wrong the moment the user picks a pale accent
+   (D9). `--on-gold` is recomputed from the chosen accent by `readableOn()`
+   (theme/accent.ts) -- and for the mock's own blue it comes out white, so this
+   agrees with the mock everywhere the mock is right. */
+.mark {
   color: var(--on-gold);
-  background: linear-gradient(135deg, var(--gold-hi), var(--gold));
-  clip-path: polygon(7px 0, 100% 0, 100% calc(100% - 7px), calc(100% - 7px) 100%, 0 100%, 0 7px);
-}
-
-.hud-brand-text {
-  display: block;
-}
-
-.hud-brand-name {
-  display: block;
-  font-family: var(--font-display);
-  font-size: var(--fs-lg);
-  font-weight: var(--fw-bold);
-  letter-spacing: var(--tr-snug);
-  color: var(--txt);
-}
-
-/* The mock's `.brand span`: the quiet product line under the wordmark. */
-.hud-brand-sub {
-  display: block;
-  font-family: var(--font-display);
-  font-size: var(--fs-micro);
-  letter-spacing: var(--tr-wider);
-  color: var(--dim);
-}
-
-/* The mock's `.navtools`: quiet status pills closing the band on the right. */
-.hud-tools {
-  display: flex;
-  align-items: center;
-  align-self: center;
-  gap: var(--sp-3);
-  padding-left: var(--sp-6);
-}
-
-.hud-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-2) var(--sp-5);
-  border-radius: var(--r-pill);
-  border: var(--bw) solid var(--line);
-  background: var(--surface);
-  font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  color: var(--dim);
-  white-space: nowrap;
-}
-
-.hud-pill b {
-  font-weight: var(--fw-bold);
-  color: var(--txt);
-}
-
-/* Inside the hud-nav, the tab row shares the band's own glass instead of
-   carrying a second, stacked one -- .tab-bar's default (Tab.css) is used
-   everywhere else it might ever be mounted standalone. */
-.hud-nav .tab-bar {
-  flex: 1;
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-bottom: none;
 }

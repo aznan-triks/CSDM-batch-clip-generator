@@ -1,149 +1,36 @@
 /*
- * `.tab` / `.tab-bar` — overlapping parallelogram tabs, mock's `.tab`/
- * `.tabs` (mockup-v12-hologlass.html lines 76-92). `.tab`'s height is 100%
- * so its shape reaches the full 54px of the hud-nav band that hosts it
- * (shell/HudNav.css).
+ * `.tab` / `.tabs` -- the overlapping parallelogram tabs and their sliding
+ * indicator.
  *
- * `.tab-active`'s `translateY(-2px)` is a SELECTED-state pop, not a hover
- * effect -- D13/D16 forbid movement "au survol" (on hover) only. No :hover
- * rule below gains a transform; only the persistent active state does, the
- * same reading `.segment-selected`'s flat background swap already relies on.
+ * THE SHAPE, THE COLOURS, THE BEVEL, THE ACTIVE STATE AND THE INDICATOR ALL
+ * LIVE IN theme/mock-v12.css, under the mock's own `.tab` / `.tab.active` /
+ * `.tabs` / `.ind`. This file states only what the mock does not -- and what
+ * the mock does not know is that these tabs are <button>s in a real window.
+ *
+ * Every rule below must answer "the mock does not say this". Anything else
+ * belongs in the mock, or nowhere.
  *
  * NO :hover rule in this file may translate or scale anything (D13/D16).
  */
-.tab-bar {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  height: 100%;
-  background: var(--band);
-  backdrop-filter: var(--blur);
-  -webkit-backdrop-filter: var(--blur);
-  border-bottom: var(--bw) solid var(--line);
-  padding-left: var(--sp-4);
-}
 
+/* The mock's tab is a <div>. This one is a <button>, which does not inherit
+   the page's font family and arrives with the browser's own chrome. The mock
+   never wrote a `font-family` because it never needed one, so without this
+   line the whole strip renders in the browser's UI font. */
 .tab {
-  position: relative;
-  overflow: hidden;
-  cursor: pointer;
   appearance: none;
-  /* The mock outlines each tab except along the bottom, where it meets the
-     band it sits in. With no border at all the strip read as flat colour
-     blocks instead of overlapping cards. */
-  border: var(--bw) solid var(--line);
-  border-bottom: none;
-  height: 100%;
-  /* The mock leads with more room than it trails (26px / 22px): the left edge
-     is the sheared one, and equal padding pushed the label into the slant. */
-  padding: 0 var(--sp-8) 0 26px;
-  margin-left: calc(var(--sp-6) * -1);
-  display: flex;
-  align-items: center;
-  gap: var(--sp-4);
-  font-family: var(--font-display);
-  font-size: var(--fs-md);
-  font-weight: var(--fw-bold);
-  letter-spacing: var(--tr-wide);
-  text-transform: uppercase;
-  color: var(--dim);
-  background: var(--surface-2);
-  clip-path: polygon(var(--sp-7) 0, 100% 0, calc(100% - var(--sp-7)) 100%, 0 100%);
-  transition:
-    color var(--dur-base) ease-out,
-    background var(--dur-base) ease-out;
+  font-family: inherit;
 }
 
-.tab:first-child {
-  margin-left: 0;
-}
-
-.tab-icon,
-.tab-label {
-  position: relative;
-  z-index: 2;
-}
-
-.tab-icon {
-  display: inline-flex;
-  font-size: 15px;
-  line-height: 1;
-  opacity: 0.6;
-  transition: opacity var(--dur-base), color var(--dur-base);
-}
-
-.tab-active .tab-icon {
-  opacity: 1;
-  color: var(--gold);
-}
-
-/* The mock's `.tk` diamond. */
-.tab-tick {
-  position: relative;
-  z-index: 2;
-  width: 6px;
-  height: 6px;
-  flex: none;
-  background: currentColor;
-  opacity: 0.35;
-  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
-  transition: opacity var(--dur-base), background var(--dur-base);
-}
-
-.tab-active .tab-tick {
-  opacity: 1;
-  background: var(--gold);
-  box-shadow: 0 0 7px color-mix(in srgb, var(--gold) 75%, transparent);
-}
-
-.tab:hover {
-  color: var(--txt);
-  background: var(--surface);
-}
-
-.tab-active:hover {
-  background: var(--solid);
-}
-
-/* The open tab is OPAQUE white in the mock, not another sheet of glass: it has
-   to look like the front of the stack, and a translucent one let the backdrop
-   plates crawl through the tab the user is standing on. */
-.tab-active {
-  color: var(--txt-hi);
-  z-index: 6;
-  transform: translateY(-2px);
-  background: var(--solid);
-  box-shadow: none;
-}
-
-.tab-active:hover {
-  color: var(--txt-hi);
-}
-
-.tab-active::after {
-  content: "";
-  position: absolute;
-  left: var(--sp-7);
-  right: 0;
-  top: 0;
-  height: var(--bw-accent);
-  z-index: 2;
-  background: linear-gradient(90deg, var(--gold-hi), var(--gold));
-}
-
+/* Keyboard focus. The mock has no focus state anywhere: it is a picture, and
+   a picture is never tabbed through. */
 .tab:focus-visible {
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: -2px;
 }
 
-.tab-ind {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: var(--bw-accent);
-  width: 100px; /* kept in step with IND_BASE_WIDTH in Tab.tsx */
-  transform-origin: left;
-  background: linear-gradient(90deg, var(--gold-hi), var(--gold));
-  transition: transform calc(var(--dur-base) * 2) var(--ease);
+/* The indicator lies across the bottom 2px of the tab row. Harmless in a
+   picture; in a window it would swallow the clicks that land on it. */
+.ind {
   pointer-events: none;
 }

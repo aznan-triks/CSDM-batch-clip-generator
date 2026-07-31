@@ -37,33 +37,35 @@ export default function HudNav<T extends string>({
 }: HudNavProps<T>) {
   return (
     <div className="hud-nav">
-      <div className="hud-brand">
-        <span className="hud-mark" aria-hidden="true">
-          <ICONS.run />
-        </span>
-        <span className="hud-brand-text">
-          <b className="hud-brand-name">CSDM</b>
-          <span className="hud-brand-sub">BATCH CLIPS</span>
-        </span>
-      </div>
-      <TabBar>
-        {tabs.map((tab) => (
-          <Tab
-            key={tab.id}
-            label={tab.label}
-            icon={tab.icon}
-            active={tab.id === active}
-            onSelect={() => onSelect(tab.id)}
-          />
-        ))}
-      </TabBar>
-      <div className="hud-tools">
-        <span className="hud-pill">
-          DB <b>{database || "--"}</b>
-        </span>
-        <span className="hud-pill">
-          Preset <b>{preset || "--"}</b>
-        </span>
+      <div className="hud-inner">
+        <div className="brand">
+          <div className="mark" aria-hidden="true">
+            <ICONS.run />
+          </div>
+          <div>
+            <b>CSDM</b>
+            <span>BATCH CLIPS</span>
+          </div>
+        </div>
+        <TabBar>
+          {tabs.map((tab) => (
+            <Tab
+              key={tab.id}
+              label={tab.label}
+              icon={tab.icon}
+              active={tab.id === active}
+              onSelect={() => onSelect(tab.id)}
+            />
+          ))}
+        </TabBar>
+        <div className="navtools">
+          <div className="p">
+            DB <b>{database || "--"}</b>
+          </div>
+          <div className="p">
+            Preset <b>{preset || "--"}</b>
+          </div>
+        </div>
       </div>
     </div>
   );

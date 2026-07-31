@@ -14,10 +14,25 @@
  */
 import type { JSX } from "react";
 
-/** Shared frame, so every glyph agrees on box, fill and accessibility. */
+/**
+ * Shared frame, so every glyph agrees on box, fill and accessibility.
+ *
+ * `className="ic"` is the mock's own glyph class, on the element the mock puts
+ * it on -- its markup is `<svg class="ic">` everywhere, and its rules address
+ * that svg directly (`.tab .ic{font-size:15px;opacity:.6}`, `.btn .ic`). A
+ * wrapper span carrying the class instead would need a `display` rule the mock
+ * never wrote, which is how a stylesheet starts restating the design.
+ */
 function Glyph({ children }: { children: JSX.Element | JSX.Element[] }) {
   return (
-    <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" aria-hidden="true">
+    <svg
+      className="ic"
+      viewBox="0 0 24 24"
+      width="1em"
+      height="1em"
+      fill="currentColor"
+      aria-hidden="true"
+    >
       {children}
     </svg>
   );
