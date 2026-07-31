@@ -9,6 +9,58 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — the list, finished
+
+> No version bump yet: the decision has been deferred four times and belongs to the user. This
+> closes the last four reports of `docs/audits/AUDIT_retours_restyle5.md`. All fifteen are done.
+
+### Added
+
+**Humanised:** The log panel writes itself out now, a character at a time, like the approved design.
+**Technical:** `useTypewriter` reproduces the mock's `pump()` with three differences it never had to
+face: only the last twelve lines are typed (a batch emits hundreds, and a log still spelling out what
+happened a minute ago is unreadable), nothing types at all under motion intensity `none`, and one
+timer owns the queue rather than one per line. The cut runs ACROSS the coloured pieces, so a
+two-colour line is written straight through its colour change. All three numbers are in `MOTION`.
+
+**Humanised:** Each tab now stamps its own mark on the moving background — a crosshair on Capture,
+quiet dots on Tags, the card's bracket on Video, hatch on Settings.
+**Technical:** `drawMotif` is pure and derives everything from the plate's side, so a mark is legible
+at any cell size a tab picks. Geometric, not images: the mark is redrawn every frame for every plate
+inside the cursor's reach, and an image blit per plate is exactly the per-tile cost that moved this
+layer off the DOM in the first place. The caller scales it by the plate's intensity, like everything
+else in that pass.
+
+### Changed
+
+**Humanised:** The weapon icons are the game's own now, all forty-two of them, and every hand-drawn
+shape this project ever carried is gone.
+**Technical:** 42 SVGs from `Juknum/counter-strike-icons` (`cs2/panorama/images/icons/equipment/`),
+vendored under `weapon/assets/cs2/` with provenance and Valve's ownership statement in SOURCE.md.
+Checked before vendoring: no `<script>`, no external `href`, no embedded `<image>`, no event
+handler. Then reduced 585 kB → 461 kB (metadata dropped, `viewBox` left to drive the scale, `fill`
+left to CSS, coordinates rounded to two decimals). They are asset URLs painted through a CSS mask
+over `currentColor`, so they keep the accent, stay out of the JavaScript bundle, and the cascade no
+longer needs `dangerouslySetInnerHTML`. `GAME_FILE` earns its place as a translation table: `P2000`
+is `hkp2000`, `Dual Berettas` is `elite`, `Zeus x27` is `taser`, and `M4A4` is the game's plain
+`m4a1` while `M4A1` is `m4a1_silencer`. `World` takes `prop_exploding_barrel`, since the pack's own
+`world.svg` is an empty frame.
+
+### Fixed
+
+**Humanised:** The crosshair cursor locks onto buttons again. It always could — but it was also
+showing over every card, and something already on screen everywhere cannot be seen to arrive
+somewhere.
+**Technical:** The reticle chose where to appear from a DENYLIST of widgets naming `.panel-box` and
+`.segment`. Restyle 5 renamed those to `.sec` and `.seg`; both names have had zero usages ever
+since, so the reticle showed over cards and segmented controls. It is an allowlist of backgrounds
+now, matched on the target itself, exactly as the approved design does it (`BG_SEL`) — and one that
+fails the safe way round: a renamed container makes the reticle vanish from somewhere, which is
+visible, rather than appear everywhere. A new guard requires every class the reticle names to exist
+elsewhere in the source; it caught two mistakes in the change that introduced it.
+
+---
+
 ## [Unreleased] — the remaining eleven reports
 
 > No version bump yet: the decision has been deferred three times and belongs to the user. With the
