@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { onMessage, send } from "../bridge";
 import { PROMPT_COMMANDS, narrate, promptFor } from "./consoleNarrative";
+import { useTypewriter } from "./useTypewriter";
 import type { Run } from "./consoleNarrative";
 import "./LogConsole.css";
 
@@ -219,6 +220,10 @@ export default function LogConsole() {
       ? matching.slice(matching.length - LOG_CONSOLE.maxRendered)
       : matching;
 
+  // Each visible line writes itself out, as the approved mock does. Derived
+  // from the flattened text, so the runs below can be cut at the same point.
+  const revealed = useTypewriter(visibleLines.map((line) => line.text.length));
+
   return (
     <div className="console">
       {/* The mock's `.ch`: a titled bar, its own hairline, the tools closing it
@@ -325,7 +330,7 @@ export default function LogConsole() {
       {/* The mock's `.body`. It keeps `id="log"`: the auto-scroll aims at it,
           and so does every test that counts lines. */}
       <div className="body" id="log" ref={logRef}>
-        {visibleLines.map((line) => (
+        {visibleLines.map((line, lineIndex) => (
           <div key={line.key} className={line.cssClass}>
             {showTimestamps && <span className="log-ts">{formatTimestamp(line.ts)} </span>}
             {showBadges && line.level && (
@@ -334,12 +339,32 @@ export default function LogConsole() {
             {/* One <span> per run, each tinted by its own level. The engine
                 sends its lines as coloured pieces and they used to be joined
                 into one grey string here -- the capability existed at both
-                ends of the pipe and died at the last step. */}
-            {line.runs.map(([piece, level], index) => (
-              <span key={index} className={levelClass(level)}>
-                {piece}
-              </span>
-            ))}
+                ends of the pipe and died at the last step.
+                The typewriter cuts ACROSS the runs: `shown` is how many
+                characters of the whole line are out, so a two-colour line is
+                written through its colour change rather than per piece. */}
+            {(() => {
+              const budget = revealed(lineIndex);
+              let used = 0;
+              return line.runs.map(([piece, level], index) => {
+                const from = used;
+                used += piece.length;
+                if (budget === Infinity) {
+                  return (
+                    <span key={index} className={levelClass(level)}>
+                      {piece}
+                    </span>
+                  );
+                }
+                const take = Math.max(0, Math.min(piece.length, budget - from));
+                if (take === 0) return null;
+                return (
+                  <span key={index} className={levelClass(level)}>
+                    {piece.slice(0, take)}
+                  </span>
+                );
+              });
+            })()}
           </div>
         ))}
 

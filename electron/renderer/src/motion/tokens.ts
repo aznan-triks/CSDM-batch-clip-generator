@@ -30,6 +30,18 @@ export const MOTION = {
    */
   weaponCascade: { stagger: 0.06 },
 
+  /**
+   * The console's typewriter, measured in the approved mock's own `pump()`:
+   * a line is inserted empty and written a character at a time (26ms), and the
+   * next one waits 110ms after it finishes.
+   *
+   * `maxTyped` is this window's, not the mock's: the mock types seven scripted
+   * lines, this console can take a burst of a hundred from a real batch. Past
+   * that many waiting, the queue lands them at once -- a log that is still
+   * typing out what happened a minute ago is a log nobody can read.
+   */
+  consoleType: { charMs: 26, lineGapMs: 110, maxTyped: 12 },
+
   /** Muzzle flash at the barrel. */
   flash: { duration: 0.095, ease: "ease-out" },
 
