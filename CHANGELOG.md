@@ -9,10 +9,30 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [Unreleased] — the list, finished
+## [v216] — 2026-08-01
 
-> No version bump yet: the decision has been deferred four times and belongs to the user. This
-> closes the last four reports of `docs/audits/AUDIT_retours_restyle5.md`. All fifteen are done.
+### Fixed
+
+**Humanised:** Cards, the top nav bar and the console are frosted glass again in the real packaged
+app — they had gone fully see-through, with none of the soft blur the mockup shows.
+**Technical:** Vite's default CSS minifier read the standard `backdrop-filter` and its `-webkit-`
+twin on `.sec`/`.hud-nav` as the same declaration made twice and dropped the standard one, leaving
+only the `-webkit-` fallback this Electron's Chromium no longer reads. The dev server (unminified)
+looked correct throughout, which is why the restyle-5 audit — run against it — never caught this.
+`cssMinify: false` in `electron/vite.config.ts`. Verified visually in the packaged app, side by side
+with the mockup, not just via `getComputedStyle`.
+
+**Humanised:** A weapon's silhouette, in the Weapon Filter card, painted as a solid block of the
+accent colour instead of the weapon's actual shape.
+**Technical:** `.casc .gun` (`WeaponFilterSection.css`) masks the icon through `mask`/`-webkit-mask`
+without a `mask-mode`. The standard `mask` defaults to luminance-based compositing for an external
+image source — unlike the legacy `-webkit-mask` beside it, which is alpha-only. The vendored CS2
+icons are a single black fill on a transparent background: under luminance, the black silhouette and
+the transparent background both score near-zero, so almost nothing was cut out. Confirmed live in
+the packaged app (not jsdom, which never paints and let this ship): `getComputedStyle` showed a
+valid `--gun-art` `url()` and the resource fetched fine (200), yet the paint was a solid rectangle.
+`mask-mode: alpha` (+ the `-webkit-` twin) fixes it — verified live before being written to source.
+Root cause: `docs/audits/AUDIT_weapon_silhouettes.md` (local, not tracked — `docs/` is gitignored).
 
 ### Added
 
@@ -60,11 +80,6 @@ visible, rather than appear everywhere. A new guard requires every class the ret
 elsewhere in the source; it caught two mistakes in the change that introduced it.
 
 ---
-
-## [Unreleased] — the remaining eleven reports
-
-> No version bump yet: the decision has been deferred three times and belongs to the user. With the
-> three above, this closes 14 of the 15 reports in `docs/audits/AUDIT_retours_restyle5.md`.
 
 ### Added
 
@@ -148,12 +163,6 @@ the record of a run, and the export still writes every one. The mock drops its o
 
 ---
 
-## [Unreleased] — three confirmed root causes: the blocking dialog, the invisible selection, the square reticle
-
-> No version bump yet: the decision has been deferred twice and belongs to the user. These three
-> come out of `docs/audits/AUDIT_retours_restyle5.md`, the audit of fifteen reports made after the
-> window was opened for real at the close of restyle 5.
-
 ### Fixed
 
 **Humanised:** Clicking RUN without picking a player froze the app for good. An error message
@@ -199,11 +208,6 @@ contained `border-right: none` since the day it was written and passed on every 
 
 ---
 
-## [Unreleased] — restyle 5, pass 2: the last three tabs, the wheel, the dark ground
-
-> No version bump: internal sub-chantier, closing the restyle-5 series. Versioning is decided next,
-> outside this entry.
-
 ### Fixed
 
 **Humanised:** The mouse wheel did nothing — not in the tab, not in the log panel. And on the dark
@@ -240,11 +244,6 @@ whole FFmpeg command lines), Settings 1 → 0. Shipped CSS 53.10 kB → 47.45 kB
 if any tab stylesheet redefines one of the mock's classes.
 
 ---
-
-## [Unreleased] — restyle 5, pass 1: the mock becomes the stylesheet
-
-> No version bump: internal sub-chantier. Pass 1 covers the shell and the Capture tab; the Video,
-> Tags and Settings tabs are pass 2. Versioning is decided next, outside this entry.
 
 ### Changed
 
@@ -307,12 +306,6 @@ entry in `no-hover-motion.test.ts`'s allowlist, which is now empty: the guard ha
 left.
 
 ---
-
-## [Unreleased] — restyle 4/4: les effets
-
-> No version bump: internal sub-chantier, the fourth and last of the 4 restyle-UI plans (follows
-> restyle 1, 2 and 3). This closes the whole restyle series — versioning is decided next, outside
-> this entry.
 
 ### Added
 
@@ -403,11 +396,6 @@ config used), so `applyMode("terminal")` silently fell back to dark — the map'
 
 ---
 
-## [Unreleased] — restyle 3/4: la coquille
-
-> Pas de bump de version : sous-chantier interne, troisième des 4 plans du restyle UI (suite de
-> restyle 1 et 2). Le versioning sera décidé quand les 4 plans seront terminés.
-
 ### Changed
 
 **Humanised:** The 4 tabs now live inside a full-width bar across the top of the window, next to
@@ -451,11 +439,6 @@ against `.shell-tabs`'s `overflow: hidden` with no scrollbar to reveal it.
 all 4 tab CSS files for the grid + `.wide` shape). `components/__tests__/Tab.css.test.ts` extended
 for the new overlap geometry.
 
-## [Unreleased] — restyle 2/4: composants en verre
-
-> Pas de bump de version : sous-chantier interne, deuxième des 4 plans du restyle UI (suite de
-> restyle 1). Le versioning sera décidé quand les 4 plans seront terminés.
-
 ### Changed
 
 **Humanised:** Cards, tabs, buttons, text fields, chips, the segmented switch, and the slider now
@@ -491,11 +474,6 @@ by the final whole-branch review; no `:hover` rule in the 7 migrated files chang
 `background`/`color`/`border-color`.
 
 ---
-
-## [Unreleased] — restyle 1/4: fondation visuelle (jour/nuit + fond holographique)
-
-> Pas de bump de version : sous-chantier interne, premier des 4 plans du restyle UI. Le
-> versioning sera décidé quand les 4 plans seront terminés.
 
 ### Added
 
