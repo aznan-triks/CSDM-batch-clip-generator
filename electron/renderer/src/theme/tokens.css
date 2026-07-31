@@ -173,17 +173,22 @@
   --tile-bevel: rgba(255, 255, 255, 0.75); /* hairline top reflection */
   --tile-edge: rgba(20, 40, 75, 0.14);
   --tile-lift: rgba(20, 40, 75, 0.3);
-  --tile-border: rgba(34, 211, 238, 0.3);
+  --tile-border: color-mix(in srgb, var(--holo) 30%, transparent);
 
   /* -- holographic glow strength. Weaker in light mode: the ground already
         carries most of the brightness. -- */
-  --glow-in: rgba(34, 211, 238, 0.16);
-  --glow-out: rgba(34, 211, 238, 0.22);
+  /* Derived, never repeated: `rgba(34, 211, 238, …)` was #22d3ee written out
+     in decimal, a second copy of the hue that could not follow the first.
+     `theme/accent.ts` writes `--holo`, so these follow a chosen accent. */
+  --glow-in: color-mix(in srgb, var(--holo) 16%, transparent);
+  --glow-out: color-mix(in srgb, var(--holo) 22%, transparent);
 
-  /* -- ambient washes behind everything -- */
-  --amb-a: rgba(34, 211, 238, 0.16);
-  --amb-b: rgba(37, 99, 235, 0.1);
-  --amb-c: rgba(217, 249, 157, 0.16);
+  /* -- ambient washes behind everything. Derived like the plate glows: the
+        wash is part of the ground the user asked to follow the accent, and a
+        literal here would leave a cyan halo on a red-accented window. -- */
+  --amb-a: color-mix(in srgb, var(--holo) 16%, transparent);
+  --amb-b: color-mix(in srgb, var(--gold) 10%, transparent);
+  --amb-c: color-mix(in srgb, var(--lime) 16%, transparent);
 
   /* -- depth washes, named. They repeated as raw rgba() across four component
         stylesheets before landing here. -- */
@@ -253,16 +258,17 @@
   --tile-bevel: rgba(150, 200, 240, 0.3);
   --tile-edge: rgba(0, 0, 0, 0.42);
   --tile-lift: rgba(0, 0, 0, 0.5);
-  --tile-border: rgba(34, 211, 238, 0.42);
+  --tile-border: color-mix(in srgb, var(--holo) 42%, transparent);
 
   /* Stronger on a dark ground: the same glow that reads in light mode
-     disappears here. */
-  --glow-in: rgba(34, 211, 238, 0.3);
-  --glow-out: rgba(34, 211, 238, 0.46);
+     disappears here. Derived from `--holo` like their light-mode siblings, so
+     a chosen accent retints the ground in both modes. */
+  --glow-in: color-mix(in srgb, var(--holo) 30%, transparent);
+  --glow-out: color-mix(in srgb, var(--holo) 46%, transparent);
 
-  --amb-a: rgba(34, 211, 238, 0.15);
-  --amb-b: rgba(37, 99, 235, 0.16);
-  --amb-c: rgba(56, 189, 248, 0.1);
+  --amb-a: color-mix(in srgb, var(--holo) 15%, transparent);
+  --amb-b: color-mix(in srgb, var(--gold) 16%, transparent);
+  --amb-c: color-mix(in srgb, var(--holo) 10%, transparent);
 
   --sheen-soft: rgba(255, 255, 255, 0.028);
   --sheen: rgba(255, 255, 255, 0.045);

@@ -176,9 +176,14 @@ export default function Backdrop() {
       palette = readPalette();
       if (effectiveIntensity() === "none") draw(0, false);
     });
+    // `style` as well as `data-mode`: theme/accent.ts writes the accent -- and
+    // now `--holo`, the ground's own hue -- as inline custom properties on
+    // <html>, so an accent change surfaces as a style-attribute mutation and
+    // nothing else. Watching only `data-mode` meant a new accent repainted
+    // every surface in the window except this one.
     themeWatcher.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ["data-mode"],
+      attributeFilter: ["data-mode", "style"],
     });
 
     layout();

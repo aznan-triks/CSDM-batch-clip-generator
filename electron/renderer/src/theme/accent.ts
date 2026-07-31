@@ -167,4 +167,11 @@ export function applyAccent(hex: string, root: HTMLElement = document.documentEl
   root.style.setProperty("--gold-hi", scaleLightness(accent, ACCENT.litLightness));
   root.style.setProperty("--gold-d", scaleLightness(accent, ACCENT.shadedLightness));
   root.style.setProperty("--on-gold", readableOn(accent));
+  // The holographic ground is drawn from `--holo`, which used to be a fixed
+  // cyan literal with no path back to the accent -- the token names this file
+  // writes and the ones shell/Backdrop.tsx reads had an empty intersection, so
+  // a chosen colour could never reach the backdrop. The glows and the plate
+  // border in tokens.css derive from this one, so this single write retints
+  // the plates, their borders and their bloom together.
+  root.style.setProperty("--holo", accent);
 }
