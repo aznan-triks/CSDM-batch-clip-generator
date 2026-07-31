@@ -75,22 +75,22 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll, onSetSe
           {total === 0 ? "no demos loaded" : `${onCount}/${total} selected`}
         </span>
         <div className="dp-buttons">
-          <button type="button" className="dp-btn dp-btn-on" onClick={() => onSetAll(true)}>
+          <button type="button" className="chip" onClick={() => onSetAll(true)}>
             ✓ Check all
           </button>
-          <button type="button" className="dp-btn dp-btn-off" onClick={() => onSetAll(false)}>
+          <button type="button" className="chip" onClick={() => onSetAll(false)}>
             ✕ Uncheck all
           </button>
           <button
             type="button"
-            className="dp-btn dp-btn-on"
+            className="chip"
             onClick={() => onSetSelected(Array.from(selected), true)}
           >
             ✓ Check selected
           </button>
           <button
             type="button"
-            className="dp-btn dp-btn-off"
+            className="chip"
             onClick={() => onSetSelected(Array.from(selected), false)}
           >
             ✕ Uncheck selected

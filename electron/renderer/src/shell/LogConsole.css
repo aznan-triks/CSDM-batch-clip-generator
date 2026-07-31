@@ -67,23 +67,16 @@
   padding: var(--sp-2) var(--sp-4);
 }
 
-.log-toggle,
-.log-export > button {
-  font-family: var(--font-mono);
+/*
+ * The console's tools are the mock's `.chip`, on and off. What IS restated
+ * here is density, which the mock cannot know: it draws three icon-only tools
+ * in its console header, this window has five with text labels inside a 288px
+ * column, and a full-size chip row wraps onto two lines there.
+ */
+.console .ch .chip {
   font-size: var(--fs-xs);
   letter-spacing: var(--tr-snug);
-  text-transform: uppercase;
-  color: var(--dim);
-  background: var(--surface-2);
-  border: var(--bw) solid var(--hair-2);
-  border-radius: 6px;
   padding: var(--sp-1) var(--sp-3);
-  cursor: pointer;
-}
-
-.log-toggle-on {
-  color: var(--gold);
-  border-color: var(--gold-d);
 }
 
 .log-export {

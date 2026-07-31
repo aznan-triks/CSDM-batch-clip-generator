@@ -236,7 +236,7 @@ export default function LogConsole() {
             role="checkbox"
             aria-checked={autoScroll}
             aria-label="Auto-scroll"
-            className={autoScroll ? "log-toggle log-toggle-on" : "log-toggle"}
+            className={autoScroll ? "chip on" : "chip"}
             onClick={() => setAutoScroll((previous) => !previous)}
           >
             ↓
@@ -247,7 +247,7 @@ export default function LogConsole() {
             role="checkbox"
             aria-checked={showTimestamps}
             aria-label="Timestamps"
-            className={showTimestamps ? "log-toggle log-toggle-on" : "log-toggle"}
+            className={showTimestamps ? "chip on" : "chip"}
             onClick={() => setShowTimestamps((previous) => !previous)}
           >
             TS
@@ -258,7 +258,7 @@ export default function LogConsole() {
             role="checkbox"
             aria-checked={showBadges}
             aria-label="Level badges"
-            className={showBadges ? "log-toggle log-toggle-on" : "log-toggle"}
+            className={showBadges ? "chip on" : "chip"}
             onClick={() => setShowBadges((previous) => !previous)}
           >
             Badges
@@ -267,6 +267,7 @@ export default function LogConsole() {
           <div className="log-export">
             <button
               type="button"
+              className="chip"
               aria-haspopup="menu"
               aria-expanded={exportMenuOpen}
               onClick={() => setExportMenuOpen((previous) => !previous)}

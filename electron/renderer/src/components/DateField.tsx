@@ -66,7 +66,7 @@ export default function DateField({ id, label, value, onChange }: DateFieldProps
         />
         <button
           type="button"
-          className="date-field-btn"
+          className="chip"
           aria-label="Open calendar"
           onClick={openCalendar}
         >

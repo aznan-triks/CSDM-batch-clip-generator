@@ -28,31 +28,9 @@
   gap: var(--sp-2);
 }
 
-.dp-btn {
-  appearance: none;
-  cursor: pointer;
-  padding: var(--sp-1) var(--sp-4);
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
-  background: var(--raise);
-  transition: background var(--dur-fast), border-color var(--dur-fast);
-}
-
-.dp-btn-on {
-  color: var(--ok-t);
-}
-
-.dp-btn-off {
-  color: var(--blood-t);
-}
-
-.dp-btn:hover {
-  background: var(--raise-hi);
-  border-color: var(--line-hi);
-}
+/* The four bulk-selection buttons are the mock's `.chip`. They used to carry a
+   green/red ink of their own, which said "success/danger" about an action that
+   is neither -- checking every row is not a warning. */
 
 .dp-table {
   display: flex;

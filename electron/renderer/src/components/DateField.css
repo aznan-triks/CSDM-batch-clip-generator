@@ -20,27 +20,8 @@
   width: 11ch;
 }
 
-.date-field-btn {
-  appearance: none;
-  cursor: pointer;
-  padding: var(--sp-1) var(--sp-3);
-  font-size: var(--fs-sm);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
-  background: var(--raise);
-  color: var(--gold);
-  transition: background var(--dur-fast), border-color var(--dur-fast);
-}
-
-.date-field-btn:hover {
-  background: var(--raise-hi);
-  border-color: var(--line-hi);
-}
-
-.date-field-btn:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: 1px;
-}
+/* The calendar button is the mock's `.chip`; its face, its hover and its focus
+   ring all live there. Nothing about it is restated here. */
 
 /*
  * The real native picker: never painted, only driven by the button above via
