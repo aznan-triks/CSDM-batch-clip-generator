@@ -15,7 +15,7 @@ import { effectiveIntensity, onIntensityChange } from "../motion/engine";
 // "backdropField", not "backdrop": a file named "backdrop.ts" next to this
 // "Backdrop.tsx" differs only in casing, which TypeScript's own portability
 // check (forceConsistentCasingInFileNames) refuses regardless of host OS.
-import { borderAlpha, cellIntensity, fieldForTab, parseAlpha } from "./backdropField";
+import { borderAlpha, cellIntensity, drawMotif, fieldForTab, parseAlpha } from "./backdropField";
 import type { BackdropField } from "./backdropField";
 
 /** The tokens the canvas needs as concrete values, since it cannot use var(). */
@@ -135,6 +135,14 @@ export default function Backdrop() {
 
         ctx!.strokeStyle = `rgba(${r},${g},${b},${borderAlpha(palette.glowInAlpha, palette.glowOutAlpha, a)})`;
         ctx!.strokeRect(x + 0.5, y + 0.5, plateSize - 1, plateSize - 1);
+
+        // The tab's own mark, last so it sits on top of the sheen, and scaled
+        // by the plate's intensity like everything else in this pass -- a
+        // motif that stayed at full strength as the plate faded would be the
+        // one thing on the ground that does not answer the cursor.
+        ctx!.fillStyle = `rgba(${r},${g},${b},${a * tintAlpha})`;
+        ctx!.strokeStyle = `rgba(${r},${g},${b},${a * topBarAlpha})`;
+        drawMotif(ctx!, field.motif, x, y, plateSize);
       }
     }
 

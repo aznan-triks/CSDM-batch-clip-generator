@@ -40,7 +40,22 @@ export interface BackdropField {
   };
   visibleFloor: number;
   maxPixelRatio: number;
+  /**
+   * The mark stamped on an active plate, on top of its sheen.
+   *
+   * The ground used to carry nothing but plates and scanlines -- "pas d'icônes
+   * ni de motif dessus". Each tab picks its own, which is the other half of
+   * making the ground configurable per page.
+   */
+  motif: Motif;
 }
+
+/**
+ * The marks the ground can stamp. Geometric on purpose: they are redrawn every
+ * frame inside the cursor's reach, and an image blit per plate is exactly the
+ * per-tile cost that moved this whole layer off the DOM in the first place.
+ */
+export type Motif = "none" | "crosshair" | "hatch" | "dots" | "bracket";
 
 export const BACKDROP: BackdropField = {
   /** Plate pitch in px, and the empty gap between two plates. */
@@ -68,6 +83,7 @@ export const BACKDROP: BackdropField = {
   visibleFloor: 0.02,
   /** Device pixel ratio is capped: beyond this the extra pixels buy nothing. */
   maxPixelRatio: 2,
+  motif: "crosshair",
 };
 
 /**
@@ -90,10 +106,10 @@ export const BACKDROP: BackdropField = {
  * a hardware cap, the second is the shape of a plate, and neither is a mood.
  */
 export const BACKDROP_BY_TAB: Readonly<Record<string, Partial<BackdropField>>> = {
-  capture: {},
-  tags: { cell: 44, reach: 6, threshold: 0.68 },
-  video: { cell: 52, gap: 6, threshold: 0.7, falloffFloor: 0.35 },
-  settings: { cell: 32, reach: 10, threshold: 0.56 },
+  capture: { motif: "crosshair" },
+  tags: { cell: 44, reach: 6, threshold: 0.68, motif: "dots" },
+  video: { cell: 52, gap: 6, threshold: 0.7, falloffFloor: 0.35, motif: "bracket" },
+  settings: { cell: 32, reach: 10, threshold: 0.56, motif: "hatch" },
 };
 
 /**
@@ -184,4 +200,82 @@ export function parseAlpha(rgba: string): number {
  */
 export function borderAlpha(glowInAlpha: number, glowOutAlpha: number, intensity: number): number {
   return glowInAlpha + intensity * (glowOutAlpha - glowInAlpha);
+}
+
+/**
+ * Stamp a plate's motif. Pure drawing: the caller owns the colour and the
+ * alpha, this only decides the shape.
+ *
+ * `size` is the plate's side. Everything is derived from it so a motif is
+ * legible at any cell size a tab picks, and nothing here is a magic number
+ * measured against one of them.
+ */
+export function drawMotif(
+  ctx: CanvasRenderingContext2D,
+  motif: Motif,
+  x: number,
+  y: number,
+  size: number,
+): void {
+  const mid = size / 2;
+  const arm = size * 0.18;
+
+  switch (motif) {
+    case "crosshair": {
+      // Four ticks pointing at the plate's centre, never meeting it -- the
+      // same language as the cursor's reticle and the cards' corner brackets.
+      ctx.beginPath();
+      ctx.moveTo(x + mid, y + size * 0.16);
+      ctx.lineTo(x + mid, y + size * 0.16 + arm);
+      ctx.moveTo(x + mid, y + size * 0.84);
+      ctx.lineTo(x + mid, y + size * 0.84 - arm);
+      ctx.moveTo(x + size * 0.16, y + mid);
+      ctx.lineTo(x + size * 0.16 + arm, y + mid);
+      ctx.moveTo(x + size * 0.84, y + mid);
+      ctx.lineTo(x + size * 0.84 - arm, y + mid);
+      ctx.stroke();
+      return;
+    }
+    case "hatch": {
+      // Two diagonals, corner to corner, inset so they never touch the edge.
+      const inset = size * 0.24;
+      ctx.beginPath();
+      ctx.moveTo(x + inset, y + inset);
+      ctx.lineTo(x + size - inset, y + size - inset);
+      ctx.moveTo(x + size - inset, y + inset);
+      ctx.lineTo(x + inset, y + size - inset);
+      ctx.stroke();
+      return;
+    }
+    case "dots": {
+      // A quiet 2x2 -- the calmest mark, for a tab that is read rather than
+      // worked in.
+      const r = Math.max(1, size * 0.045);
+      for (const cx of [size * 0.35, size * 0.65]) {
+        for (const cy of [size * 0.35, size * 0.65]) {
+          ctx.beginPath();
+          ctx.arc(x + cx, y + cy, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      return;
+    }
+    case "bracket": {
+      // The card's own corner bracket, shrunk onto a plate.
+      const inset = size * 0.22;
+      const len = size * 0.2;
+      ctx.beginPath();
+      ctx.moveTo(x + inset, y + inset + len);
+      ctx.lineTo(x + inset, y + inset);
+      ctx.lineTo(x + inset + len, y + inset);
+      ctx.moveTo(x + size - inset, y + size - inset - len);
+      ctx.lineTo(x + size - inset, y + size - inset);
+      ctx.lineTo(x + size - inset - len, y + size - inset);
+      ctx.stroke();
+      return;
+    }
+    case "none":
+    default:
+      return;
+  }
 }
