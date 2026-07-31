@@ -141,7 +141,7 @@
   flex-direction: column;
   background: var(--panel);
   border: var(--bw) solid var(--line);
-  box-shadow: 0 4px 10px var(--shadow);
+  box-shadow: 0 4px 10px var(--shadow-tint);
 }
 
 .log-export-menu button {

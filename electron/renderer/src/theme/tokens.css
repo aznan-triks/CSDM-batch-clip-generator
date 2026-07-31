@@ -193,7 +193,11 @@
   --gloss: rgba(255, 255, 255, 0.2);
   --gloss-hi: rgba(255, 255, 255, 0.35);
   --sheen-strong: rgba(255, 255, 255, 0.8);
-  --shadow: rgba(30, 50, 90, 0.16);
+  /* A shadow COLOUR, not a shadow. Renamed from the old --shadow name, which
+     the approved mock uses for a complete box-shadow value instead: letting a
+     colour win under that shared name silently dropped the box-shadow on
+     every card. */
+  --shadow-tint: rgba(30, 50, 90, 0.16);
 
   /* -- the mock's own surface vocabulary (mockup-v12-hologlass.html :root).
         These are the values `.sec`, `.chip`, `.fld` and `.console` are drawn
@@ -203,9 +207,9 @@
   --hair-2: rgba(30, 45, 70, 0.06); /* the quietest divider */
   /* Derived from the accent so a user-chosen colour carries through (D9). */
   --accent-soft: color-mix(in srgb, var(--gold) 12%, transparent);
-  /* Soft floating shadows. `--shadow` above is a COLOUR; these are complete
-     box-shadow values, which is what makes a card look lifted off the ground
-     instead of outlined on it. */
+  /* Soft floating shadows. `--shadow-tint` above is a COLOUR; these are
+     complete box-shadow values, which is what makes a card look lifted off
+     the ground instead of outlined on it. */
   --elev:
     0 8px 22px -10px rgba(30, 50, 90, 0.16), 0 2px 6px -3px rgba(30, 50, 90, 0.1);
   --elev-sm: 0 4px 12px -6px rgba(30, 50, 90, 0.16);
@@ -266,7 +270,7 @@
   --gloss: rgba(255, 255, 255, 0.2);
   --gloss-hi: rgba(255, 255, 255, 0.22);
   --sheen-strong: rgba(255, 255, 255, 0.45);
-  --shadow: rgba(0, 0, 0, 0.45);
+  --shadow-tint: rgba(0, 0, 0, 0.45);
 
   --solid: #16213a;
   --edge-hi: rgba(150, 200, 240, 0.14);

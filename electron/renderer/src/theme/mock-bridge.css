@@ -1,0 +1,54 @@
+/*
+ * The bridge between the approved mock's token names and this window's.
+ *
+ * mock-v12.css is the design, verbatim and never edited. This file is the only
+ * place allowed to disagree with it, and every line below states the MEASURED
+ * reason. Anything not listed here means the mock wins.
+ *
+ * Loaded AFTER mock-v12.css and BEFORE the component stylesheets.
+ *
+ * This file is token mappings only. The mock's hover motion (D13/D16 forbids
+ * it) is handled separately, at build time, by
+ * electron/postcss-strip-mock-hover-motion.mjs -- see that file for why a
+ * CSS override belongs there and not here.
+ */
+
+:root {
+  /* -- the accent, and everything derived from it. `applyAccent()` writes
+        --gold on the root element (theme/accent.ts); routing the mock's name
+        through it means a user-chosen colour reaches the mock's rules without
+        this file or the mock ever being touched. -- */
+  --accent: var(--gold);
+  --blue: var(--gold);
+  --blue-2: var(--gold-hi);
+  --holo-color: var(--holo);
+
+  /* -- semantic hues: same colours, the app's names -- */
+  --emerald: var(--ok);
+  --amber: var(--fire);
+  --rose: var(--blood);
+
+  /* -- type: one stack, defined once (tokens.css) -- */
+  --font: var(--font-display);
+  --mono: var(--font-mono);
+
+  /* -- lines and grounds -- */
+  --hair: var(--line);
+  --border: var(--edge-hi);
+  --page-0: var(--base);
+  --page-1: var(--void);
+  --shadow-sm: var(--elev-sm);
+
+  /* == THE THREE DELIBERATE DISAGREEMENTS ==================================
+     Each one is a measurement or a decision already paid for once. */
+
+  /* MEASURED: the mock's #5b6b83 scores 4.25:1 on the light ground and fails
+     the 4.5:1 AA floor. --dim is #55647a (4.74:1) for that reason alone.
+     Proven by theme/__tests__/contrast.test.ts. */
+  --muted: var(--dim);
+
+  /* The mock's --spring overshoots. The one time an overshoot reached the
+     screen the C4 plant read as a toy and was reverted in v214 (CONTEXT_GUIDE
+     §10). One easing, and it decelerates. */
+  --spring: var(--ease);
+}

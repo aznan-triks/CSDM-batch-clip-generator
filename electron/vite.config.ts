@@ -2,6 +2,8 @@ import path from "node:path";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
+import stripMockHoverMotion from "./postcss-strip-mock-hover-motion.mjs";
+
 // The renderer directory is its own Vite root: `main.js` and `preload.js` run
 // in Node and are never bundled.
 const RENDERER_ROOT = path.join(__dirname, "renderer");
@@ -12,6 +14,14 @@ export default defineConfig({
   // absolute "/assets/..." would resolve against the filesystem root and 404.
   base: "./",
   plugins: [react()],
+  css: {
+    postcss: {
+      // Scoped to renderer/src/theme/mock-v12.css only -- see that plugin's
+      // own header for why this is not a blanket strip. Every other
+      // stylesheet stays fully covered by no-hover-motion.test.ts.
+      plugins: [stripMockHoverMotion()],
+    },
+  },
   build: {
     outDir: path.join(RENDERER_ROOT, "dist"),
     emptyOutDir: true,

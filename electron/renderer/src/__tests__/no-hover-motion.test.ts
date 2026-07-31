@@ -32,6 +32,18 @@
  * What this cannot see: motion applied from JavaScript on a pointer event.
  * The second half of the file covers that by scanning the source.
  * What is still missing: a real browser. See the plan's closing notes.
+ *
+ * ONE DELIBERATE EXCEPTION TO "every rule the app can ever apply": the
+ * approved mock's own extraction (theme/mock-v12.css) legitimately bounces
+ * four things on hover, and it cannot be hand-edited to remove that (it is
+ * generated and drift-locked, see theme/__tests__/mock-v12.test.ts). A
+ * build-time plugin (electron/postcss-strip-mock-hover-motion.mjs, wired
+ * into vite.config.ts) strips motion properties from that ONE file's
+ * `:hover` rules before this scan ever sees them -- so the sweep below never
+ * encounters the mock's hover motion, not because it was told to ignore it,
+ * but because the shipped bundle genuinely does not contain it. Every other
+ * stylesheet, including every component's own CSS, is untouched by that
+ * plugin and stays fully covered by this test.
  */
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
@@ -41,30 +53,10 @@ import type { Declaration, Rule } from "postcss";
 import { build } from "vite";
 import { describe, expect, it, beforeAll } from "vitest";
 
+import { isMotionProperty } from "../../../scripts/motion-properties.mjs";
+
 const ELECTRON_DIR = path.join(__dirname, "..", "..", "..");
 const SOURCE_DIR = path.join(ELECTRON_DIR, "renderer", "src");
-
-/**
- * Properties that move a thing, or resize it so that its content moves.
- * `padding` is here on purpose: growing the padding on hover shifts the label
- * just as visibly as translating it.
- */
-const MOTION_PROPERTIES = [
-  "transform",
-  "translate",
-  "rotate",
-  "scale",
-  "top",
-  "right",
-  "bottom",
-  "left",
-  "inset",
-  "width",
-  "height",
-  "margin",
-  "padding",
-  "gap",
-];
 
 /**
  * The single documented exception (D16): the action button's reflection is a
@@ -73,11 +65,6 @@ const MOTION_PROPERTIES = [
  * has to be a deliberate edit to this list, not a side effect.
  */
 const ALLOWED_HOVER_ANIMATIONS = ["sweep"];
-
-function isMotionProperty(property: string): boolean {
-  const name = property.toLowerCase().trim();
-  return MOTION_PROPERTIES.some((motion) => name === motion || name.startsWith(`${motion}-`));
-}
 
 /** Build the real bundle in memory, so the scan can never read a stale file. */
 async function buildStylesheets(): Promise<{ name: string; css: string }[]> {
