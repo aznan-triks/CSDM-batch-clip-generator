@@ -34,3 +34,24 @@
 .ind {
   pointer-events: none;
 }
+
+/*
+ * MEASURED DISAGREEMENT -- the open tab in the dark ground.
+ *
+ * The mock paints these two literally (`#fff` and `rgba(255,255,255,.7)`)
+ * where every other surface it draws goes through a token. On its own light
+ * ground that is invisible; on the dark one the open tab stayed white while
+ * its label followed the mode to a pale grey -- white ground, near-white text.
+ * The mock's dark mode was never walked through the tab strip.
+ *
+ * `--solid` IS `#ffffff` in light mode and `--surface` is
+ * `rgba(255,255,255,.72)` against the mock's `.7`, so this agrees with the
+ * mock everywhere the mock was right, and follows the ground where it was not.
+ */
+.tab.active {
+  background: var(--solid);
+}
+
+.tab:hover {
+  background: var(--surface);
+}

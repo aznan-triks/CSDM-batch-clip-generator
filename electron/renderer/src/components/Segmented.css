@@ -35,3 +35,22 @@
   cursor: not-allowed;
   opacity: 0.45;
 }
+
+/*
+ * MEASURED DISAGREEMENT -- the tray and the chosen segment in the dark ground.
+ *
+ * The mock paints them literally (`rgba(226,232,240,.7)` and `#fff`) where
+ * every other surface it draws goes through a token, so both stayed light on
+ * the dark ground while their text followed the mode: pale ink on a pale tray.
+ *
+ * `--recess` IS `rgba(226,232,240,0.7)` in light mode -- the app's token was
+ * read off this very literal -- and `--solid` is `#ffffff`. Nothing changes in
+ * light mode; the dark ground gets a tray it can hold.
+ */
+.seg {
+  background: var(--recess);
+}
+
+.seg span.on {
+  background: var(--solid);
+}

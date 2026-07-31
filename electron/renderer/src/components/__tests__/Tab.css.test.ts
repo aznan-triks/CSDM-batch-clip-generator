@@ -39,12 +39,29 @@ describe("Tab.css states only what the mock does not", () => {
     expect(block(".ind")).toMatch(/pointer-events:\s*none;/);
   });
 
-  it("re-states none of the mock's geometry, colour or type", () => {
+  it("re-points the two literal light surfaces at a token, and nothing else", () => {
+    // The mock writes `.tab.active`'s ground as `#fff` and the hover as
+    // `rgba(255,255,255,.7)` -- the only two surfaces in the strip it does not
+    // take from a token, which is why they stayed white on the dark ground.
+    // Re-POINTING a value at a token is a correction; re-TYPING the value
+    // would be a second copy of the design. Only the first is allowed, and
+    // theme/__tests__/dark-ground.test.ts holds the ledger of them.
+    const backgrounds = [...CSS.matchAll(/^[ \t]*background\s*:\s*([^;]+);/gm)].map((m) =>
+      m[1].trim(),
+    );
+    expect(backgrounds.length, "the dark-ground corrections are gone").toBe(2);
+    for (const value of backgrounds) {
+      expect(value, "a literal here is a copy of the design, not a correction").toMatch(
+        /^var\(--[a-z-]+\)$/,
+      );
+    }
+  });
+
+  it("re-states none of the mock's geometry or type", () => {
     // The mock owns these. A component sheet that names one of them again is
     // a second copy of the design, which is exactly what drifted before.
     for (const property of [
       "clip-path",
-      "background",
       "border",
       "letter-spacing",
       "text-transform",

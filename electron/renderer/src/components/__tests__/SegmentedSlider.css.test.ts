@@ -26,17 +26,26 @@ function declarations(css: string): [string, string][] {
 }
 
 describe("Segmented.css", () => {
-  it("re-states neither the tray nor the selected segment", () => {
-    // `background: none` is the shell reset: it paints nothing. The 8px radius
-    // is the focus ring's, matching the segment it outlines.
-    const owned = ["background", "font-size", "font-weight"];
+  it("re-states neither the segment's type nor its geometry", () => {
     for (const [property, value] of declarations(SEGMENTED)) {
-      if (!owned.includes(property)) continue;
-      expect(["none", "transparent"], `Segmented.css paints ${property}: ${value}`).toContain(
-        value,
+      if (!["font-size", "font-weight"].includes(property)) continue;
+      expect.fail(`Segmented.css sets ${property}: ${value}; the mock's .seg span owns it`);
+    }
+  });
+
+  it("re-points the two literal light surfaces at a token, and nothing else", () => {
+    // The mock writes the tray as `rgba(226,232,240,.7)` and the chosen
+    // segment as `#fff` -- the only two surfaces here it does not take from a
+    // token, which is why both stayed light on the dark ground. `background:
+    // none` is the shell reset and paints nothing. Anything else must be a
+    // token: re-pointing a value is a correction, re-typing it is a copy.
+    // theme/__tests__/dark-ground.test.ts holds the ledger.
+    for (const [property, value] of declarations(SEGMENTED)) {
+      if (property !== "background") continue;
+      expect(value, "a literal here is a copy of the design, not a correction").toMatch(
+        /^(none|var\(--[a-z-]+\))$/,
       );
     }
-    expect(SEGMENTED).not.toMatch(/--recess|--solid/);
   });
 
   it("reduces the radio button to a transparent shell around the mock's span", () => {
