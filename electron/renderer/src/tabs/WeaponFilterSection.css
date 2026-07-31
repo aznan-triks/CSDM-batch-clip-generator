@@ -39,4 +39,11 @@
   background: currentColor;
   -webkit-mask: var(--gun-art) center / contain no-repeat;
   mask: var(--gun-art) center / contain no-repeat;
+  /* Icons are a single black fill on a transparent background. The standard
+     `mask` defaults to luminance for an external image source (unlike legacy
+     `-webkit-mask`, alpha-only): black paint and transparent background both
+     score near-zero luminance, so the cutout nearly vanished into a solid
+     block instead of the intended silhouette. Force alpha explicitly. */
+  mask-mode: alpha;
+  -webkit-mask-mode: alpha;
 }
