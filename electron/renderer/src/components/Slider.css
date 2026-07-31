@@ -98,3 +98,35 @@
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 2px;
 }
+
+/*
+ * The typed half of the gauge. It borrows the mock's field face (`.fld`)
+ * rather than inventing one, and is capped narrow: it holds two or three
+ * digits, and a full-width box beside a rail is what made other rows read as
+ * banners.
+ */
+.slider-number {
+  width: 4.5ch;
+  flex: 0 0 auto;
+  padding: 4px 6px;
+  border: 1px solid var(--hair);
+  border-radius: var(--r-mid);
+  background: var(--solid);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  text-align: right;
+}
+
+.slider-number:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* Chrome and Edge paint their own steppers, which double the width and repaint
+   the platform blue D9 forbids. The keyboard arrows still step the value. */
+.slider-number::-webkit-inner-spin-button,
+.slider-number::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}

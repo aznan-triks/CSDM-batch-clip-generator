@@ -1,3 +1,4 @@
+import NumberField from "./NumberField";
 import "./Slider.css";
 
 interface SliderProps {
@@ -60,6 +61,18 @@ export default function Slider({
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
+      />
+      {/* Typed, not just dragged. The rail and the box are two views of one
+          number: React re-renders both from `value`, so typing moves the rail
+          and dragging moves the box, with no second source of truth. */}
+      <NumberField
+        id={id}
+        label={label}
+        value={value}
+        onChange={onChange}
+        min={min}
+        max={max}
+        step={step}
       />
       {readout && <span className="slider-readout">{readout}</span>}
     </div>
