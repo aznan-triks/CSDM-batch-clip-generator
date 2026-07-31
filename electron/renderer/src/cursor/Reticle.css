@@ -9,7 +9,7 @@ body.customcursor {
   cursor: none;
 }
 
-.reticle {
+.cursor-reticle {
   position: fixed;
   left: var(--cx, 50%);
   top: var(--cy, 50%);
@@ -25,12 +25,12 @@ body.customcursor {
     opacity var(--dur-fast);
 }
 
-body.customcursor .reticle {
+body.customcursor .cursor-reticle {
   opacity: 1;
 }
 
 @media (hover: none) {
-  .reticle {
+  .cursor-reticle {
     display: none;
   }
 
@@ -39,7 +39,7 @@ body.customcursor .reticle {
   }
 }
 
-.reticle span {
+.cursor-reticle span {
   position: absolute;
   width: 8px;
   height: 8px;
@@ -86,6 +86,6 @@ body.customcursor .reticle {
   transition: opacity var(--dur-fast);
 }
 
-.reticle.snap .rc-dot {
+.cursor-reticle.snap .rc-dot {
   opacity: 0;
 }

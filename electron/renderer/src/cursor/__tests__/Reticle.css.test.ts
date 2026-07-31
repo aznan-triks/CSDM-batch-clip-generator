@@ -26,7 +26,7 @@ describe("@media (hover: none) hides the reticle AND restores the native cursor"
   const block = mediaBlock("(hover: none)");
 
   it("still hides the reticle element", () => {
-    expect(block).toMatch(/\.reticle\s*\{[^}]*display:\s*none;/);
+    expect(block).toMatch(/\.cursor-reticle\s*\{[^}]*display:\s*none;/);
   });
 
   it("restores the native cursor instead of leaving cursor:none active", () => {

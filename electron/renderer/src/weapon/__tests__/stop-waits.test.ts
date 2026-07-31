@@ -12,7 +12,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { resetSequences, setIntensity } from "../../motion/engine";
+import { FX_CLASS_PREFIX, resetSequences, setIntensity } from "../../motion/engine";
 import { MOTION } from "../../motion/tokens";
 import { createActionController, type Geometry } from "../controller";
 import { forgetWeaponSequences } from "../sequences";
@@ -30,8 +30,8 @@ function makeGeometry(): Geometry {
   };
 }
 
-function countOf(host: HTMLElement, className: string): number {
-  return host.querySelectorAll(`.${className}`).length;
+function countOf(host: HTMLElement, particle: string): number {
+  return host.querySelectorAll(`.${FX_CLASS_PREFIX}${particle}`).length;
 }
 
 /** Record the class of everything the sequences add, as they add it. */
@@ -39,7 +39,10 @@ function recordSpawns(host: HTMLElement): string[] {
   const created: string[] = [];
   const append = host.appendChild.bind(host);
   host.appendChild = ((node: Node) => {
-    created.push((node as HTMLElement).className ?? "");
+    // Recorded under the particle's own name, without the namespace the
+    // effects layer adds -- the tests speak about "flash", not "fx-flash".
+    const className = (node as HTMLElement).className ?? "";
+    created.push(className.replace(FX_CLASS_PREFIX, ""));
     return append(node);
   }) as typeof host.appendChild;
   return created;

@@ -87,7 +87,7 @@ export default function Reticle() {
   }, []);
 
   return (
-    <div className="reticle" ref={ref} aria-hidden="true">
+    <div className="cursor-reticle" ref={ref} aria-hidden="true">
       <span className="rc-tl" />
       <span className="rc-tr" />
       <span className="rc-bl" />

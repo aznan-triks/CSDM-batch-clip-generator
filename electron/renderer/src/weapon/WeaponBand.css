@@ -120,7 +120,7 @@
   overflow: visible;
 }
 
-.fx .flash {
+.fx .fx-flash {
   position: absolute;
   width: 36px;
   height: 36px;
@@ -129,7 +129,7 @@
   background: radial-gradient(circle, #fff6dc 0%, var(--gold) 36%, rgba(200, 162, 74, 0) 70%);
 }
 
-.fx .flash::after {
+.fx .fx-flash::after {
   content: "";
   position: absolute;
   inset: -6px;
@@ -147,7 +147,7 @@
   );
 }
 
-.fx .tracer {
+.fx .fx-tracer {
   position: absolute;
   height: 2px;
   transform-origin: 0 50%;
@@ -155,12 +155,12 @@
   box-shadow: 0 0 8px rgba(200, 162, 74, 0.9);
 }
 
-.fx .shell {
+.fx .fx-shell {
   position: absolute;
   background: #c09a46;
 }
 
-.fx .spark {
+.fx .fx-spark {
   position: absolute;
   width: 8px;
   height: 8px;
@@ -170,7 +170,7 @@
   opacity: 0;
 }
 
-.fx .iflash {
+.fx .fx-iflash {
   position: absolute;
   inset: 0;
   background: #fff4da;
@@ -178,7 +178,7 @@
   opacity: 0;
 }
 
-.fx .istar {
+.fx .fx-istar {
   position: absolute;
   width: 120px;
   height: 120px;
@@ -192,7 +192,7 @@
   );
 }
 
-.fx .ring {
+.fx .fx-ring {
   position: absolute;
   border: var(--bw-accent) solid rgba(255, 233, 176, 0.9);
   border-radius: 50%;
@@ -203,7 +203,7 @@
 }
 
 /* PREVIEW's reticle. Lost once, restored in v5 -- do not lose it again. */
-.fx .reticle {
+.fx .fx-reticle {
   position: absolute;
   width: 44px;
   height: 44px;
@@ -213,14 +213,14 @@
   border-radius: 50%;
 }
 
-.fx .reticle::before,
-.fx .reticle::after {
+.fx .fx-reticle::before,
+.fx .fx-reticle::after {
   content: "";
   position: absolute;
   background: var(--steel);
 }
 
-.fx .reticle::before {
+.fx .fx-reticle::before {
   left: 50%;
   top: -7px;
   bottom: -7px;
@@ -228,7 +228,7 @@
   margin-left: -0.5px;
 }
 
-.fx .reticle::after {
+.fx .fx-reticle::after {
   top: 50%;
   left: -7px;
   right: -7px;
@@ -238,7 +238,7 @@
 
 /* -- the charge, and what it becomes -- */
 
-.fx .c4 {
+.fx .fx-c4 {
   position: absolute;
   width: 34px;
   height: 44px;
@@ -246,28 +246,28 @@
   z-index: 3;
 }
 
-.fx .c4 svg {
+.fx .fx-c4 svg {
   width: 100%;
   height: 100%;
 }
 
-.fx .c4 .cbody {
+.fx .fx-c4 .cbody {
   fill: #3c4a3a;
 }
 
-.fx .c4 .tape {
+.fx .fx-c4 .tape {
   fill: var(--gold-d);
 }
 
-.fx .c4 .cpanel {
+.fx .fx-c4 .cpanel {
   fill: #141a20;
 }
 
-.fx .c4 .led {
+.fx .fx-c4 .led {
   fill: var(--blood);
 }
 
-.fx .c4 .tag {
+.fx .fx-c4 .tag {
   position: absolute;
   left: 40px;
   top: var(--sp-5);
@@ -278,7 +278,7 @@
   color: var(--blood-t);
 }
 
-.fx .beep {
+.fx .fx-beep {
   position: absolute;
   width: 14px;
   height: 14px;
@@ -288,7 +288,7 @@
   opacity: 0;
 }
 
-.fx .core {
+.fx .fx-core {
   position: absolute;
   width: 80px;
   height: 80px;
@@ -298,7 +298,7 @@
   opacity: 0;
 }
 
-.fx .fire {
+.fx .fx-fire {
   position: absolute;
   width: 260px;
   height: 260px;
@@ -314,7 +314,7 @@
   opacity: 0;
 }
 
-.fx .shock {
+.fx .fx-shock {
   position: absolute;
   width: 24px;
   height: 24px;
@@ -324,7 +324,7 @@
   opacity: 0;
 }
 
-.fx .smoke {
+.fx .fx-smoke {
   position: absolute;
   width: 150px;
   height: 150px;
@@ -334,12 +334,12 @@
   opacity: 0;
 }
 
-.fx .debris {
+.fx .fx-debris {
   position: absolute;
   background: #2b2320;
 }
 
-.fx .blastflash {
+.fx .fx-blastflash {
   position: absolute;
   inset: 0;
   background: #ffb463;

@@ -10,7 +10,7 @@ describe("Reticle", () => {
 
   it("paints position via custom properties, never a layout style, over the background", () => {
     const { container } = render(<Reticle />);
-    const el = container.querySelector(".reticle") as HTMLElement;
+    const el = container.querySelector(".cursor-reticle") as HTMLElement;
 
     fireEvent.mouseMove(window, { clientX: 100, clientY: 80 });
 
@@ -30,7 +30,7 @@ describe("Reticle", () => {
     });
 
     const { container } = render(<Reticle />);
-    const el = container.querySelector(".reticle") as HTMLElement;
+    const el = container.querySelector(".cursor-reticle") as HTMLElement;
     fireEvent.mouseMove(button, { clientX: 50, clientY: 20 });
 
     expect(el.classList.contains("snap")).toBe(true);

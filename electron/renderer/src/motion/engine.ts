@@ -21,6 +21,20 @@ export type Intensity = "none" | "sober" | "full";
 
 export const INTENSITIES: readonly Intensity[] = ["none", "sober", "full"] as const;
 
+/**
+ * Namespace for every spawned particle's class.
+ *
+ * The particles are named after what they are -- "shell", "spark", "reticle",
+ * "fire" -- and theme/mock-v12.css owns those very words as global class names
+ * now that the approved mock is the base stylesheet. Unprefixed, an ejected
+ * cartridge case matched `.shell { display: grid; padding: 12px 14px }`: the
+ * window's own two-column layout, applied to a 3x6px piece of brass.
+ *
+ * Exported so the effects stylesheet, the sequences and their tests all read
+ * the prefix from one place instead of each spelling it out.
+ */
+export const FX_CLASS_PREFIX = "fx-";
+
 /** What a sequence is handed. It never reads a number of its own. */
 export interface SequenceContext {
   /** The effects layer. Everything spawned lands here and nowhere else. */
@@ -164,7 +178,7 @@ export function play(
     decorative: active === "full",
     spawn(className, x, y) {
       const element = document.createElement("div");
-      element.className = className;
+      element.className = `${FX_CLASS_PREFIX}${className}`;
       if (x !== undefined && y !== undefined) {
         element.style.left = `${x}px`;
         element.style.top = `${y}px`;
