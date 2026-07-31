@@ -165,10 +165,6 @@ export const MOTION = {
     shake: 3.6,
   },
 
-  /** Smoothed scrolling. Short on purpose: this is a work tool and aiming at a
-      checkbox in a column of 25 sections has to stay precise. */
-  scroll: { duration: 0.35, wheelMultiplier: 1 },
-
   /**
    * ClickSpark: a HUD ring + a burst of particles on every mousedown, tinted
    * by context. `count`/durations/ring sizes measured in the approved mock

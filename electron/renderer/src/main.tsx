@@ -18,7 +18,6 @@ import { createRoot } from "react-dom/client";
 
 import App from "./App";
 import ErrorBoundary from "./ErrorBoundary";
-import { installSmoothScroll } from "./motion/scroll";
 import { applyAccent, DEFAULT_ACCENT } from "./theme/accent";
 import { applyMode, DEFAULT_GROUND } from "./theme/mode";
 
@@ -33,9 +32,11 @@ applyAccent(DEFAULT_ACCENT);
 // re-applies the real one once it has read.
 applyMode(DEFAULT_GROUND);
 
-// Smoothed scrolling, short inertia, and it switches itself off under
-// intensity `none` or `prefers-reduced-motion`.
-installSmoothScroll();
+// No page-level smooth scrolling here. The shell is a fixed 100vh frame and
+// the scrolling happens INSIDE it -- `.scrollwrap` for the tab, the console's
+// own body for the log. A library that owns the window's wheel has nothing to
+// move in that layout and swallows the notch on its way to the panes, which is
+// exactly what it did (src/__tests__/wheel-reaches-the-pane.test.ts).
 
 const container = document.getElementById("root");
 if (!container) {
