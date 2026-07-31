@@ -2607,7 +2607,7 @@ class EngineMixin:
     def _assemble_clips(self, cfg, produced_dirs):
         container = cfg.get("video_container", "mp4")
 
-        # Map conteneur → nom de format FFmpeg (-f) — mkv s'appelle "matroska" pour FFmpeg
+        # Container -> FFmpeg format name (-f). FFmpeg calls mkv "matroska".
         _FMT_MAP = {
             "mkv": "matroska",
             "mp4": "mp4",

@@ -37,10 +37,10 @@ from csdm.version import APP_VERSION
 # ═══════════════════════════════════════════════════════
 
 # ── Palettes + theme VIVANT partage (Phase 1.1 / 1.2) ───────────────────────
-#  Les couleurs courantes vivent dans csdm/theme.py (_THEME mute en place +
-#  accesseur _t). On les importe ici. Les ~640 lectures du fichier utilisent
-#  encore les globales BG/BG2/... ci-dessous : on les garde synchronisees a
-#  partir du dict partage. Les futurs modules de widgets, eux, utilisent _t().
+#  The colours in force live in csdm/theme.py (_THEME, mutated in place, plus
+#  the _t accessor) and are imported here. This file's ~640 reads still go
+#  through the BG/BG2/... globals below, which are kept in step from that
+#  shared dict. New widget modules use _t() instead.
 from csdm.theme import _build_theme, _ACCENT_PRESETS, _THEME, _t, apply_theme as _apply_theme_dict
 
 # Apply the initial theme to module-level globals for backward compat
@@ -70,8 +70,8 @@ def _apply_theme_globals(bg_name: str, accent: str):
     After this, any new widget creation will use the updated globals.
     Existing widgets are updated by App._apply_theme_to_widgets().
     """
-    # Mute le theme PARTAGE en place (csdm/theme._THEME) — pas de reassignation,
-    # sinon les autres modules garderaient l'ancien dictionnaire.
+    # Mutate the SHARED theme in place (csdm/theme._THEME). Never reassign it:
+    # the other modules would keep holding the old dictionary.
     _apply_theme_dict(bg_name, accent)
     g = globals()
     for name in _THEME_GLOBAL_NAMES:
@@ -86,8 +86,8 @@ def _apply_theme_globals(bg_name: str, accent: str):
     _BTN_KW.update(activebackground=_THEME["BORDER"], activeforeground=_THEME["ORANGE"])
 
 # ── Boite a outils UI : polices, espacements, styles (Phase 1.2) ────────────
-#  Extraits dans csdm/ui_kit.py. _CHK_KW/_BTN_KW sont les MEMES objets dict
-#  que ceux mis a jour en place par _apply_theme_globals ci-dessus.
+#  Extracted into csdm/ui_kit.py. _CHK_KW/_BTN_KW are the SAME dict objects
+#  _apply_theme_globals updates in place above.
 from csdm.ui_kit import (
     FONT_MONO, FONT_MONO_B, FONT_SM, FONT_SM_B, FONT_DESC, FONT_TITLE_B,
     init_fonts, apply_ttk_style,
@@ -106,8 +106,8 @@ VIDEO_CONTAINERS = ["mp4", "avi", "mkv", "mov", "webm"]
 
 
 # ── Donnees de reference statiques (registre de filtres, armes, codecs, …) ──
-#  Extraites dans csdm/static_data.py (Phase 1.1). Importees ici pour que tout
-#  le reste du fichier continue d'y acceder par les memes noms qu'avant.
+#  Extracted into csdm/static_data.py (Phase 1.1), imported here so the rest of
+#  this file still reaches them under the names it always used.
 from csdm.static_data import (
     FilterDef, KILL_FILTER_REGISTRY,
     KILL_FILTER_KEYS_ALL, KILL_FILTER_KEYS, KILL_FILTER_LABELS, KILL_FILTER_SQL_COLS,
@@ -123,7 +123,7 @@ from csdm.static_data import (
 )
 
 
-# ── Delayed-effect / suicide weapons — deplaces dans csdm/static_data.py ─────
+# ── Delayed-effect / suicide weapons -- moved to csdm/static_data.py ────────
 from csdm.static_data import DELAYED_EFFECT_WEAPONS, SUICIDE_WEAPONS
 from csdm.static_data import (
     CSDM_RUNTIME_CFG_NAME, CSDM_RUNTIME_BLOCK_START, CSDM_RUNTIME_BLOCK_END,
@@ -132,7 +132,7 @@ from csdm.engine.core import EngineMixin, PG_PARAM_KEYS
 from csdm.engine.state import EngineStateMixin
 
 # ── Configuration : defauts, presets, persistance (Phase 1.1) ──────────────
-#  Extraits dans csdm/config.py. Importes ici pour conserver les memes noms.
+#  Extracted into csdm/config.py, imported here to keep the same names.
 from csdm.config import (
     CONFIG_FILE, PRESETS_FILE, PLAYERS_FILE, ASM_NAMES_FILE,
     DEFAULT_CONFIG, PRESET_CATEGORIES, PRESET_KEYS, _PRESET_TAB_GROUPS, _PRESET_ALL_CATS,
@@ -143,28 +143,28 @@ from csdm.config import (
     _migrate_config, load_config, save_config,
 )
 
-# ── Helpers purs (Phase 1.1) — deplaces dans csdm/core_utils.py ─────────────
+# ── Pure helpers (Phase 1.1) -- moved to csdm/core_utils.py ─────────────────
 from csdm.core_utils import (
     iso_to_display, display_to_iso, ensure_csdm_dirs, check_ffmpeg_available,
     fmt_duration, safe_folder_name, build_camera_ticks,
     _generate_id_for_type, _count_kills, progress_bar,
 )
 
-# ── Calendrier, dialogues et champ de date (Phase 1.2) ──────────────────────
+# ── Calendar, dialogs and the date field (Phase 1.2) ────────────────────────
 from csdm.widgets import CalendarPopup, ColorPickerDialog, TagImportMissingDialog, DateField
 from csdm.widgets import PlayerSearchWidget
 
 # ── Composants Tkinter reutilisables (Phase 1.2) ────────────────────────────
-#  ScrollableFrame, WrapRow et leurs registres d'instances vivent dans
-#  csdm/widgets.py. Importes ici sous les memes noms qu'avant. Les registres
-#  sont les MEMES objets que ceux remplis par les widgets — les handlers de App
+#  ScrollableFrame, WrapRow and their instance registries live in
+#  csdm/widgets.py, imported here under the names they always had. The
+#  registries are the SAME objects the widgets fill -- App's handlers
 #  iterent dessus normalement.
 from csdm.widgets import ScrollableFrame, WrapRow, BentoGrid, _SCROLL_FRAMES, _WRAP_ROWS
-# ── Carte de section pliable + champ de chemin (Phase 1.2) ──────────────────
+# ── Collapsible section card + path field (Phase 1.2) ───────────────────────
 from csdm.widgets import Sec, PathField
 
 # ── Assistants d'affichage + info-bulle (Phase 1.2) ─────────────────────────
-#  Deplaces dans csdm/widgets.py. Importes ici sous les memes noms qu'avant.
+#  Moved to csdm/widgets.py, imported here under the names they always had.
 from csdm.widgets import (
     sentry, scombo, mlabel, flabel, slabel,
     hchk, hradio, _bind_wraplength, _WRAP_LABELS,
@@ -194,8 +194,8 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         _h = max(600, min(2160, _h))
         self.geometry(f"{_w}x{_h}")
         self.minsize(1000, 600)
-        # Options TCombobox Listbox : centralisees dans apply_ttk_style (appele
-        # au debut de _build_ui, avant l'ouverture de toute liste deroulante).
+        # The TCombobox Listbox options are set once in apply_ttk_style, which
+        # runs at the top of _build_ui, before any drop-down can open.
 
         self.presets = load_presets()
         self._db_match_types: list = []   # distinct game_mode_str values found in DB
@@ -1006,7 +1006,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
                   relief="flat", bd=0, cursor="hand2", highlightthickness=0,
                   activeforeground=ORANGE,
                   command=self._quick_preset_save).pack(side="left", padx=(4, 0))
-        # Statut DB deja bracktee (ex: [DB:OK]) -> pas de prefixe "DB " redondant.
+        # The DB status is already bracketed (e.g. [DB:OK]) -- no "DB " prefix.
         self.db_status_lbl = tk.Label(db_area, textvariable=self.db_status,
                                       font=FONT_SM_B, bg=BG2, fg=YELLOW)
         self.db_status_lbl.pack(side="left")
@@ -1061,7 +1061,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         right_frame.columnconfigure(0, weight=1)
 
         # ── Run bar ───────────────────────────────────────────────────────────
-        # Cadre 1px comme les cartes Sec (cellule de grille).
+        # A 1px frame, like the Sec cards: a cell of the grid.
         run_bar = tk.Frame(right_frame, bg=BG2,
                            highlightthickness=1, highlightbackground=BORDER,
                            highlightcolor=BORDER)
@@ -1223,7 +1223,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         _export_btn.config(command=_show_export_menu)
         _btn("🗑 Clear",          self._clear_log, fg=RED).pack(side="right", padx=(0, 8), pady=3, ipady=2)
 
-        # Cadre 1px autour de la console (coherence avec les cellules Sec).
+        # A 1px frame around the console, to match the Sec cells.
         log_frame = tk.Frame(parent, bg=BG,
                              highlightthickness=1, highlightbackground=BORDER,
                              highlightcolor=BORDER)
@@ -1514,7 +1514,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         # Treeview: columns = checkbox-state (not real col) + date + name
         tree_frame = tk.Frame(sec, bg=BG2)
         tree_frame.pack(fill="x", pady=(4, 0))
-        # Style "DemoPicker.Treeview" defini dans apply_ttk_style (source unique).
+        # The "DemoPicker.Treeview" style is defined once in apply_ttk_style.
         self._demo_tree = ttk.Treeview(
             tree_frame, style="DemoPicker.Treeview",
             columns=("sel", "date", "map", "name"), show="headings", height=7,
@@ -4208,7 +4208,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
                 return
 
             found = [(str(r[0]), 0, 0) for r in rows]
-            # Peupler le cache checksums
+            # Fill the checksum cache
             for r in rows:
                 dp, chk = str(r[0]), r[1]
                 if chk and dp not in self._demo_checksums:
@@ -4848,9 +4848,10 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
     # ── Theme application ──────────────────────────────────────────────────
 
     def _apply_dark_titlebar(self):
-        """Barre de titre sombre sous Windows (best-effort). Suit le theme
-        clair/sombre. Silencieux si l'API DWM est absente (autres OS / vieux
-        Windows). Les attributs 20/19 sont des constantes de protocole DWM.
+        """Dark title bar on Windows, best-effort. Follows the light/dark theme.
+
+        Silent when the DWM API is absent (another OS, or an older Windows).
+        Attributes 20 and 19 are fixed DWM protocol constants.
         """
         try:
             import ctypes
@@ -4899,7 +4900,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         # Retrigger hchk/hradio closures so they pick up the new _t() colours
         self._retrigger_toggle_vars()
 
-        self._apply_dark_titlebar()   # suit le nouveau fond clair/sombre
+        self._apply_dark_titlebar()   # follows the new light/dark ground
         self._auto_save()
 
     def _reapply_ttk_styles(self):
@@ -5016,8 +5017,8 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
 
     def _tab_outils(self, parent):
         p = self._make_tab_scroll(parent)
-        # Bento : sections independantes -> grille 2 colonnes quand la place le
-        # permet (onglet le moins risque, aucun etat croise). Opt-in ici.
+        # Bento: the sections are independent, so they take a 2-column grid
+        # when there is room. The least risky tab, no shared state. Opt-in.
         bento = BentoGrid(p)
         bento.pack(fill="both", expand=True)
 

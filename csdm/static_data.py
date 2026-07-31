@@ -1,10 +1,10 @@
-"""Donnees de reference statiques — extrait du fichier principal (Phase 1.1).
+"""Static reference data -- extracted from the entry point (Phase 1.1).
 
-Tout ici est de la DONNEE PURE (registre de filtres, categories d'armes,
-codecs, resolutions, seuils, types de match). Aucune dependance vivante :
-pas de couleurs de theme, pas d'etat runtime. Les filtres referencent les
-methodes de App uniquement par leur NOM (chaine de caracteres), jamais par
-appel direct — donc ce module n'importe pas App et peut etre lu seul.
+Everything here is PURE DATA: the filter registry, weapon categories, codecs,
+resolutions, thresholds, match types. Nothing live -- no theme colours, no
+runtime state. The filters reference App's methods by NAME only, as strings,
+never by calling them, so this module does not import App and can be read on
+its own.
 """
 
 from typing import NamedTuple, Optional, List as _List

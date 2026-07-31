@@ -1,10 +1,9 @@
-"""Systeme de theme : palettes et fabrication d'un theme (Phase 1.1).
+"""The theme system: palettes, and building a theme from them (Phase 1.1).
 
-DONNEES PURES + la fonction _build_theme. Les variables VIVANTES (_THEME,
-BG, BG2, ...) et leur mise a jour restent dans le fichier principal : ~640
-endroits les lisent comme globales du module. Les en sortir demanderait un
-gros refactor a part (remplacer chaque lecture par un accesseur). Ici on ne
-met que ce qui n'a AUCUNE dependance vivante.
+PURE DATA plus `_build_theme`. The LIVE variables (_THEME, BG, BG2, ...) and
+their update still live in the entry point: some 640 places read them as module
+globals, and moving them would mean replacing every one of those reads with an
+accessor -- a refactor of its own. Only what has NO live dependency lives here.
 """
 
 # Background presets — each defines the full bg family
@@ -21,8 +20,9 @@ _BG_PRESETS = {
     "white":   {"BG": "#f0f0f0", "BG2": "#f8f8f8", "BG3": "#e4e4e4",
                 "BORDER": "#cccccc", "TEXT": "#1a1a1a", "MUTED": "#555555",
                 "DESC_COLOR": "#666666", "LOG_BG": "#fafafa", "_is_light": True},
-    # Look terminal industriel : noir bleute tres sombre, BORDER contraste pour
-    # que la grille 1px se voie, MUTED verdatre. Accent conseille : green/cyan.
+    # Industrial terminal look: a very dark blue-black, a BORDER contrasted
+    # enough for the 1px grid to show, a greenish MUTED. Pairs with a green or
+    # cyan accent.
     "terminal":{"BG": "#0a0c10", "BG2": "#0d1015", "BG3": "#12161c",
                 "BORDER": "#2a3038", "TEXT": "#c8d3cc", "MUTED": "#6f8a78",
                 "DESC_COLOR": "#5c7566", "LOG_BG": "#070a0d"},
@@ -131,25 +131,25 @@ def _build_theme(bg_name: str, accent_name_or_hex: str) -> dict:
     return _ensure_unique_hex(assembled)
 
 
-# ── Theme VIVANT, partage entre modules ─────────────────────────────────────
-#  _THEME est l'unique dictionnaire de couleurs courantes. Il est mute EN PLACE
-#  (clear + update) par apply_theme(), jamais reassigne : ainsi tous les modules
-#  qui importent _THEME / _t voient le meme objet et les memes valeurs apres un
-#  changement de theme. C'est ce qui permet d'extraire des widgets dans d'autres
-#  fichiers sans casser la mise a jour des couleurs.
+# ── The LIVE theme, shared between modules ──────────────────────────────────
+#  _THEME is the one dictionary of colours in force. apply_theme() mutates it
+#  IN PLACE (clear + update) and never reassigns it, so every module that
+#  imported _THEME or _t holds the same object and sees the same values after a
+#  theme change. That is what makes it possible to extract widgets into other
+#  files without breaking the colour update.
 _THEME: dict = _build_theme("dark", "green")
 
 
 def _t(key: str) -> str:
-    """Couleur courante du theme pour une cle donnee (ex. _t('BG'))."""
+    """The theme colour in force for one key, e.g. _t('BG')."""
     return _THEME[key]
 
 
 def apply_theme(bg_name: str, accent: str) -> dict:
-    """Recalcule le theme et met _THEME a jour EN PLACE. Retourne _THEME.
+    """Rebuild the theme and update _THEME IN PLACE. Returns _THEME.
 
-    Mutation sur place volontaire : ne PAS reassigner _THEME, sinon les autres
-    modules garderaient l'ancien dictionnaire.
+    Mutating in place is deliberate: do NOT reassign _THEME, or every other
+    module would keep holding the old dictionary.
     """
     new = _build_theme(bg_name, accent)
     _THEME.clear()

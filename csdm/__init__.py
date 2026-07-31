@@ -1,7 +1,7 @@
-"""CSDM Batch Clips Generator — package interne.
+"""CSDM Batch Clips Generator -- the internal package.
 
-Le programme reste lancé via `csdm_batch_clips_generator.py` (point d'entrée).
-Ce package contient les modules extraits du fichier principal, un par
-responsabilité (données statiques, config, thème, …), conformément au plan
-d'amélioration (Phase 1 — découpage du monolithe).
+The program is still started through `csdm_batch_clips_generator.py`, the entry
+point. This package holds the modules extracted out of it, one per
+responsibility (static data, config, theme, ...), per the improvement plan
+(Phase 1 -- breaking up the monolith).
 """

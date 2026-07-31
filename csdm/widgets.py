@@ -1,13 +1,12 @@
-"""Composants Tkinter reutilisables (Phase 1.2 — extraction des widgets).
+"""Reusable Tkinter components (Phase 1.2 -- the widget extraction).
 
-ScrollableFrame et WrapRow, deplaces depuis le fichier principal. Ils lisent
-les couleurs via l'accesseur partage _t() de csdm/theme.py (jamais des
-globales), ce qui permet de vivre dans un module separe sans casser la mise
-a jour du theme.
+ScrollableFrame and WrapRow, moved out of the entry point. They read their
+colours through csdm/theme.py's shared _t() accessor and never through
+globals, which is what lets them live in a module of their own without
+breaking the theme update.
 
-Les deux registres ci-dessous listent les instances VIVANTES ; les handlers
-globaux de App (molette, redimensionnement) iterent dessus. Ce sont les memes
-objets que ceux importes par le fichier principal.
+The two registries below hold the LIVE instances; App's global handlers (the
+wheel, resizing) walk them. They are the same objects the entry point imports.
 """
 import re
 import calendar as cal_mod
@@ -179,12 +178,12 @@ _BENTO_GRIDS: list = []   # all live BentoGrid instances
 
 
 class BentoGrid(tk.Frame):
-    """Conteneur responsive : dispose ses cartes en grille 1 ou 2 colonnes.
+    """A responsive container: it lays its cards out in one or two columns.
 
-    1 colonne sous UI_BENTO_BREAKPOINT px, 2 colonnes au-dessus (colonnes
-    egales via uniform="bento" -> traits de grille alignes). Re-layout debounce
-    sur <Configure> (meme mecanique que WrapRow/ScrollableFrame). Opt-in par
-    onglet : les cartes Sec gardent leur API (.grid() deja proxifie).
+    One column below UI_BENTO_BREAKPOINT px, two above, with equal columns
+    (uniform="bento") so the grid lines align. The re-layout is debounced on
+    <Configure>, the same mechanism WrapRow and ScrollableFrame use. Opt-in per
+    tab: a Sec card keeps its API, since .grid() is already proxied.
 
     Usage:
         bento = BentoGrid(parent)
@@ -196,8 +195,8 @@ class BentoGrid(tk.Frame):
         kw.setdefault("bg", _t("BG"))
         super().__init__(parent, **kw)
         self._cards: list = []
-        self._cols = 0          # nb de colonnes courant (0 = pas encore dispose)
-        self._laid = -1         # nb de cartes lors du dernier layout
+        self._cols = 0          # columns in force (0 = never laid out yet)
+        self._laid = -1         # how many cards the last layout covered
         self._bp = breakpoint_px
         self._gap = gap
         self._job = None
@@ -206,7 +205,7 @@ class BentoGrid(tk.Frame):
         _BENTO_GRIDS.append(self)
 
     def add(self, card):
-        """Enregistre une carte (Sec ou Frame). Retourne la carte pour chainage."""
+        """Register a card, Sec or Frame. Returns it, so calls can be chained."""
         self._cards.append(card)
         self._schedule()
         return card
@@ -223,7 +222,7 @@ class BentoGrid(tk.Frame):
             return
         cols = 2 if avail >= self._bp else 1
         if cols == self._cols and self._laid == len(self._cards):
-            return  # ni la largeur ni le nombre de cartes n'ont change
+            return  # neither the width nor the card count moved
         self._cols = cols
         self._laid = len(self._cards)
         self.columnconfigure(0, weight=1, uniform="bento")
@@ -249,7 +248,7 @@ class BentoGrid(tk.Frame):
 
 # ════════════════════════════════════════════════════════════════════════════
 #  Assistants d'affichage (helpers UI) + info-bulle
-#  Deplaces depuis le fichier principal (Phase 1.2). Couleurs via _t().
+#  Moved out of the entry point (Phase 1.2). Colours come from _t().
 # ════════════════════════════════════════════════════════════════════════════
 def sentry(parent, var, **kw):
     """Styled Entry widget bound to var."""
@@ -264,8 +263,8 @@ def scombo(parent, var, values, width=15):
 def mlabel(parent, text, **kw):
     """Muted-colour small label for field names and secondary text.
 
-    Libelles de champ passes en MAJUSCULES (UI_LABEL_UPPER) pour le look HUD.
-    Les chiffres/symboles sont inchanges par .upper() -> compteurs et unites OK.
+    Field labels go to CAPS (UI_LABEL_UPPER) for the HUD look. Digits and
+    symbols are unchanged by .upper(), so counters and units survive it.
     """
     if UI_LABEL_UPPER and isinstance(text, str):
         text = text.upper()
@@ -431,7 +430,7 @@ def dp2_badge(parent):
 
 
 # ════════════════════════════════════════════════════════════════════════════
-#  Carte de section pliable + champ de chemin (Phase 1.2)
+#  Collapsible section card + path field (Phase 1.2)
 # ════════════════════════════════════════════════════════════════════════════
 class Sec(tk.Frame):
     """Collapsible section card — drop-in replacement for the old LabelFrame Sec.
@@ -447,8 +446,8 @@ class Sec(tk.Frame):
 
     def __init__(self, parent, title, collapsed=False, **kw):
         # _wrapper holds the header + this body frame. Bordure complete 1px
-        # (highlightthickness, sans bd -> aucun decalage de layout) : la carte
-        # se lit comme une cellule de grille.
+        # (highlightthickness, no bd -> the layout does not shift): the card
+        # reads as a cell of the grid.
         self._wrapper = tk.Frame(parent, bg=_t("BG"), bd=0,
                                  highlightthickness=1,
                                  highlightbackground=_t("BORDER"),
@@ -574,7 +573,7 @@ class PathField(tk.Frame):
 
 
 # ════════════════════════════════════════════════════════════════════════════
-#  Calendrier, dialogues (couleur / tags manquants) et champ de date (Phase 1.2)
+#  Calendar, dialogs (colour / missing tags) and the date field (Phase 1.2)
 # ════════════════════════════════════════════════════════════════════════════
 class CalendarPopup(tk.Toplevel):
     def __init__(self, parent, callback, initial_date=None):

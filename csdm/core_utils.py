@@ -1,7 +1,7 @@
-"""Helpers purs, sans dependance Tkinter/DB (Phase 1.1).
+"""Pure helpers, with no Tkinter or database dependency (Phase 1.1).
 
-Dates, formats, chemins, ticks camera, generation d'identifiants.
-Le fichier principal re-importe chaque nom pour la compatibilite.
+Dates, formats, paths, camera ticks, identifier generation. The entry point
+re-imports every name, so its existing call sites are untouched.
 """
 
 import random
@@ -74,10 +74,11 @@ def fmt_duration(seconds):
 
 
 def progress_bar(done, total, width=12, full="▰", empty="▱"):
-    """Barre de progression texte facon terminal : "▰▰▰▱▱ 12/17".
+    """A terminal-style text progress bar: "▰▰▰▱▱ 12/17".
 
-    Pure : aucune dependance. width = nombre de blocs. Robuste aux bornes
-    (done clampe dans [0, total]) et a total <= 0 (retourne juste "done/total").
+    Pure, no dependencies. `width` is the number of blocks. Safe at the edges:
+    `done` is clamped into [0, total], and a total <= 0 returns just
+    "done/total" rather than dividing by it.
     """
     if total <= 0:
         return f"{done}/{total}"

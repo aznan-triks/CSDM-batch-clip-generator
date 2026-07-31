@@ -1,10 +1,10 @@
-"""Configuration : valeurs par defaut, presets et persistance (Phase 1.1).
+"""Configuration: defaults, presets and persistence (Phase 1.1).
 
-Extrait du fichier principal. Contient DEFAULT_CONFIG, les groupes de presets
-et les fonctions de lecture/ecriture des fichiers JSON locaux.
+Extracted from the entry point. Holds DEFAULT_CONFIG, the preset groups, and
+the functions that read and write the local JSON files.
 
-Les chemins pointent vers la RACINE du projet (a cote du script principal),
-pas vers le dossier du package csdm/.
+The paths point at the project ROOT -- beside the entry point -- not at the
+csdm/ package directory.
 """
 import os
 import json
@@ -14,8 +14,8 @@ from csdm.static_data import (
     _FILTER_CONFIG_DEFAULTS, _FILTER_PRESET_PLAYER_KEYS, MATCH_TYPE_DEFS,
 )
 
-# Racine du projet = dossier parent du package csdm/, la ou vivent les
-# fichiers de donnees locaux (csdm_config.json, ...), a cote du script.
+# The project root is the parent of the csdm/ package -- where the local data
+# files live (csdm_config.json, ...), beside the entry point.
 _ROOT = Path(__file__).resolve().parent.parent
 CONFIG_FILE    = str(_ROOT / "csdm_config.json")
 PRESETS_FILE   = str(_ROOT / "csdm_presets.json")
@@ -37,7 +37,7 @@ DEFAULT_CONFIG = {
     "ui_remember_layout": True,
     "theme_bg": "dark",      # background preset: dark | amoled | deepblue | white
     "theme_accent": "green", # accent preset or custom hex: green | blue | orange | purple | red | cyan | pink | yellow | #rrggbb
-    "ui_font_family": "auto", # "auto" = premiere police dispo de UI_FONT_STACK ; ou nom force (ex: "JetBrains Mono")
+    "ui_font_family": "auto", # "auto" = first available of UI_FONT_STACK; or a forced name (e.g. "JetBrains Mono")
     "steam_id": "", "player_name": "", "player_name_override": "",
     "events": ["Kills"], "weapons": [],
     "date_from": "", "date_to": "",

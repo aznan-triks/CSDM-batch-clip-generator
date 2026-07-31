@@ -1,40 +1,39 @@
-"""Boite a outils UI : polices, espacements et styles partages (Phase 1.2).
+"""The UI toolbox: fonts, spacing and shared styles (Phase 1.2).
 
-Donnees de presentation communes au fichier principal et aux modules de
-widgets. Les polices et constantes d'espacement sont des INVARIANTS purs.
+Presentation data common to the entry point and to the widget modules. The
+fonts and the spacing constants are pure INVARIANTS.
 
-_CHK_KW / _BTN_KW sont des dictionnaires de kwargs Tkinter derives du theme.
-Ils sont construits ici avec le theme courant, puis mis a jour EN PLACE
-(.update(...)) par _apply_theme_globals du fichier principal a chaque
-changement de theme. Comme tous les modules importent le MEME objet dict,
-les widgets crees avec **_CHK_KW / **_BTN_KW recoivent toujours les couleurs
-courantes.
+_CHK_KW / _BTN_KW are dictionaries of Tkinter kwargs derived from the theme.
+They are built here from the theme in force, then updated IN PLACE
+(.update(...)) by the entry point's _apply_theme_globals on every theme change.
+Because every module imports the SAME dict object, a widget built with
+**_CHK_KW / **_BTN_KW always gets the colours in force.
 """
 import tkinter.font as tkfont
 from tkinter import ttk
 
 from csdm.theme import _t
 
-# ── Polices ─────────────────────────────────────────────────────────────────
-#  Pile de polices monospace, de la plus moderne a la plus universelle. La
-#  premiere reellement installee est retenue (resolve_mono_family). C'est la
-#  SEULE liste hardcodee ; le choix utilisateur passe par la config
-#  ("ui_font_family": "auto" | "<nom force>"). HC.1 respecte.
+# ── Fonts ───────────────────────────────────────────────────────────────────
+#  Monospace stack, most modern first, most universal last. The first family
+#  actually installed wins (resolve_mono_family). This is the ONLY hardcoded
+#  list; the user's own choice goes through the config
+#  ("ui_font_family": "auto" | "<forced name>"). HC.1 honoured.
 UI_FONT_STACK = ("JetBrains Mono", "Fira Code", "Cascadia Mono", "Consolas")
-_UI_FONT_FALLBACK = "Consolas"   # invariant : toujours present sous Windows
+_UI_FONT_FALLBACK = "Consolas"   # a real invariant: always present on Windows
 
-#  FONT_* sont les NOMS de polices Tk nommees (pas des tuples). Les vraies
-#  polices sont creees/reconfigurees par init_fonts() une fois le root Tk pret.
-#  Comme tous les widgets referencent le meme nom, changer la famille = un seul
-#  reconfigure(), tous les widgets suivent (changement a chaud gratuit).
+#  FONT_* are Tk NAMED-FONT names, not tuples. The fonts themselves are created
+#  and reconfigured by init_fonts() once the Tk root exists. Because every
+#  widget references the same name, changing the family is a single
+#  reconfigure() and every widget follows -- live restyling for free.
 FONT_MONO    = "csdm_mono"       # 10
-FONT_MONO_B  = "csdm_mono_b"     # 10 gras
+FONT_MONO_B  = "csdm_mono_b"     # 10 bold
 FONT_SM      = "csdm_sm"         # 9
-FONT_SM_B    = "csdm_sm_b"       # 9 gras
+FONT_SM_B    = "csdm_sm_b"       # 9 bold
 FONT_DESC    = "csdm_desc"       # 8
-FONT_TITLE_B = "csdm_title_b"    # 13 gras (en-tete appli)
+FONT_TITLE_B = "csdm_title_b"    # 13 bold (app header)
 
-#  (nom, taille, gras) — source unique pour la creation des polices nommees.
+#  (name, size, weight) -- the single source the named fonts are built from.
 _FONT_SPECS = (
     (FONT_MONO,    10, "normal"),
     (FONT_MONO_B,  10, "bold"),
@@ -44,18 +43,19 @@ _FONT_SPECS = (
     (FONT_TITLE_B, 13, "bold"),
 )
 
-_MONO_FAMILY = _UI_FONT_FALLBACK   # famille resolue courante (maj par init_fonts)
-#  Refs fortes vers les objets Font nommes. INDISPENSABLE : un tkinter.font.Font
-#  non reference est ramasse par le GC et supprime sa police nommee cote Tk.
+_MONO_FAMILY = _UI_FONT_FALLBACK   # the family in force (set by init_fonts)
+#  Strong references to the named Font objects. REQUIRED: an unreferenced
+#  tkinter.font.Font is collected, and collecting it deletes the named font on
+#  the Tk side.
 _FONTS: dict = {}
 
 
 def resolve_mono_family(preferred: str = "auto") -> str:
-    """Retourne la premiere famille monospace disponible.
+    """The first monospace family actually available.
 
-    preferred != "auto" -> force cette famille si elle est installee, sinon
-    on retombe sur la pile UI_FONT_STACK, puis sur Consolas. Necessite un root
-    Tk existant (tkfont.families() interroge le serveur X/Tk).
+    `preferred` other than "auto" forces that family if it is installed;
+    otherwise the UI_FONT_STACK is walked, and Consolas is the last resort.
+    Needs an existing Tk root: tkfont.families() asks the Tk server.
     """
     try:
         available = set(tkfont.families())
@@ -70,9 +70,10 @@ def resolve_mono_family(preferred: str = "auto") -> str:
 
 
 def init_fonts(root, family: str = "auto") -> str:
-    """Cree (ou reconfigure) les polices nommees FONT_*. A appeler une fois le
-    root Tk cree, AVANT toute construction de widget. Rappelable a chaud pour
-    changer de famille. Retourne la famille effectivement retenue.
+    """Create, or reconfigure, the FONT_* named fonts.
+
+    Call it once the Tk root exists and BEFORE any widget is built. Safe to
+    call again at run time to change family. Returns the family actually used.
     """
     global _MONO_FAMILY
     _MONO_FAMILY = resolve_mono_family(family)
@@ -80,17 +81,19 @@ def init_fonts(root, family: str = "auto") -> str:
         f = _FONTS.get(name)
         if f is None:
             f = tkfont.Font(root=root, name=name, family=_MONO_FAMILY, size=size, weight=weight)
-            _FONTS[name] = f   # ref forte -> empeche le GC de supprimer la police
+            _FONTS[name] = f   # strong ref -> the GC cannot delete the font
         else:
             f.configure(family=_MONO_FAMILY, size=size, weight=weight)
     return _MONO_FAMILY
 
 
 def apply_ttk_style(root) -> None:
-    """Applique un style ttk plat facon terminal (theme 'clam', seul entierement
-    stylisable). Source unique pour TOUS les widgets ttk : Notebook, Combobox,
-    PanedWindow (sash), Scrollbar, Treeview. Lit les couleurs via _t() -> a
-    rappeler tel quel a chaque changement de theme (aucun widget « oublie »).
+    """Apply the flat, terminal-like ttk style.
+
+    Built on 'clam', the only ttk theme that is fully styleable. This is the
+    single source for EVERY ttk widget: Notebook, Combobox, PanedWindow (its
+    sash), Scrollbar, Treeview. It reads its colours through _t(), so calling
+    it again on a theme change is enough -- no widget can be forgotten.
     """
     BG, BG2, BG3 = _t("BG"), _t("BG2"), _t("BG3")
     BORDER, TEXT, MUTED, ACCENT = _t("BORDER"), _t("TEXT"), _t("MUTED"), _t("ORANGE")
@@ -100,9 +103,9 @@ def apply_ttk_style(root) -> None:
     try:
         s.theme_use("clam")
     except Exception:
-        pass  # clam absent (tres rare) -> on garde le theme courant
+        pass  # no clam (very rare) -> keep whatever theme is in force
 
-    # Onglets : rectangles plats, bordure 1px, actif = texte accent sur BG2.
+    # Tabs: flat rectangles, 1px border, active = accent text on BG2.
     s.configure("TNotebook", background=BG, borderwidth=0, tabmargins=0)
     s.configure("TNotebook.Tab", background=BG3, foreground=MUTED,
                 font=FONT_SM_B, padding=[UI_TTK_TAB_PADX, UI_TTK_TAB_PADY],
@@ -112,7 +115,7 @@ def apply_ttk_style(root) -> None:
           foreground=[("selected", ACCENT)],
           bordercolor=[("selected", BORDER)])
 
-    # Combobox : plat, bordure 1px, fleche accent, champ BG3.
+    # Combobox: flat, 1px border, accent arrow, BG3 field.
     s.configure("TCombobox", fieldbackground=BG3, background=BG3, foreground=TEXT,
                 arrowcolor=ACCENT, bordercolor=BORDER, lightcolor=BORDER,
                 darkcolor=BORDER, insertcolor=TEXT,
@@ -123,7 +126,7 @@ def apply_ttk_style(root) -> None:
           background=[("readonly", BG3)],
           bordercolor=[("focus", ACCENT)],
           arrowcolor=[("readonly", ACCENT)])
-    # Liste deroulante sombre (Listbox interne du combobox).
+    # The combobox's own dark drop-down (its internal Listbox).
     root.option_add("*TCombobox*Listbox.background", BG3)
     root.option_add("*TCombobox*Listbox.foreground", TEXT)
     root.option_add("*TCombobox*Listbox.selectBackground", ACCENT)
@@ -135,7 +138,7 @@ def apply_ttk_style(root) -> None:
     s.configure("Sash", sashthickness=UI_TTK_SASH_W, gripcount=0, background=BORDER,
                 bordercolor=BORDER, lightcolor=BORDER, darkcolor=BORDER)
 
-    # Scrollbars : plates, fines, sans fleches.
+    # Scrollbars: flat, thin, no arrows.
     for orient in ("Vertical.TScrollbar", "Horizontal.TScrollbar"):
         s.configure(orient, gripcount=0, background=BG3, troughcolor=BG,
                     bordercolor=BORDER, lightcolor=BG3, darkcolor=BG3,
@@ -153,38 +156,38 @@ def apply_ttk_style(root) -> None:
           foreground=[("selected", ACCENT)])
 
 # ── Constantes d'espacement UI — source unique de verite ────────────────────
-#  Tous les padx / pady / ipadx / ipady utilises a plusieurs endroits en
-#  derivent. Changer ici -> change partout.
-UI_TAB_PAD    = 10   # marge exterieure du cadre interne d'onglet scrollable
-UI_SEC_PADX   = 10   # marge horizontale du corps de chaque carte Sec (densifie 14->10)
-UI_SEC_PADY   = 8    # marge verticale du corps de chaque carte Sec
-UI_SEC_HDR_PADY = 3  # padding vertical du header Sec (densifie 5->3)
-UI_SEC_GAP    = 4    # ecart vertical entre cartes Sec (les bordures 1px font la grille)
-UI_SEC_STRIPE_W = 1  # largeur de la bande accent a gauche du header Sec (1px = trait de grille)
+#  Every padx / pady / ipadx / ipady used in more than one place comes from
+#  here. Change it here, it changes everywhere.
+UI_TAB_PAD    = 10   # outer margin of a scrollable tab's inner frame
+UI_SEC_PADX   = 10   # horizontal padding inside a Sec card (densified 14->10)
+UI_SEC_PADY   = 8    # vertical padding inside a Sec card
+UI_SEC_HDR_PADY = 3  # vertical padding of a Sec header (densified 5->3)
+UI_SEC_GAP    = 4    # gap between Sec cards (their 1px borders draw the grid)
+UI_SEC_STRIPE_W = 1  # accent stripe left of a Sec header (1px = a grid line)
 UI_SEC_GLYPH_OPEN   = "[-]"  # glyphe header Sec deplie (facon terminal)
 UI_SEC_GLYPH_CLOSED = "[+]"  # glyphe header Sec replie
-UI_LABEL_UPPER = True        # libelles de champ (mlabel) en MAJUSCULES (look HUD)
-UI_DESC_PREFIX = "// "       # prefixe des descriptions longues (facon commentaire de code)
-UI_BENTO_BREAKPOINT = 720    # largeur (px) au-dela de laquelle BentoGrid passe a 2 colonnes
-UI_BENTO_GAP = 4             # ecart (px) entre cellules d'une BentoGrid
-UI_ROW_PAD    = 3    # ecart vertical standard entre lignes d'une section (densifie 4->3)
-UI_BTN_IPADX  = 8    # marge interne horizontale standard des boutons d'action
-UI_BTN_IPADY  = 4    # marge interne verticale standard des boutons d'action
-UI_ENTRY_IPAD = 6    # marge interne des champs de saisie
-# Largeurs minimales (px) des deux panneaux du PanedWindow. Le sash est borne
-# a ces limites au relachement pour qu'aucun panneau ne soit ecrase.
+UI_LABEL_UPPER = True        # field labels (mlabel) in CAPS, for the HUD look
+UI_DESC_PREFIX = "// "       # marks a long description, like a code comment
+UI_BENTO_BREAKPOINT = 720    # width in px above which a BentoGrid takes 2 columns
+UI_BENTO_GAP = 4             # gap in px between BentoGrid cells
+UI_ROW_PAD    = 3    # standard gap between rows of a section (densified 4->3)
+UI_BTN_IPADX  = 8    # standard inner horizontal padding of an action button
+UI_BTN_IPADY  = 4    # standard inner vertical padding of an action button
+UI_ENTRY_IPAD = 6    # inner padding of an entry field
+# Minimum width in px of the PanedWindow's two panes. The sash is clamped to
+# these on release so neither pane can be crushed.
 UI_PANE_LEFT_MIN  = 380   # panneau categories / notebook
 UI_PANE_RIGHT_MIN = 200   # panneau console / log
 
-# ── Metriques du style ttk « clam » (look terminal plat) ────────────────────
-UI_TTK_TAB_PADX  = 12   # padding horizontal d'un onglet Notebook
-UI_TTK_TAB_PADY  = 7    # padding vertical d'un onglet Notebook
-UI_TTK_SCROLL_W  = 8    # largeur des scrollbars plates
-UI_TTK_SASH_W    = 4    # largeur de la poignee de separation (sash)
-UI_TTK_TREE_ROWH = 16   # hauteur de ligne du Treeview (picker de demos, densifie 18->16)
+# ── Metrics of the flat "clam" ttk style (the terminal look) ────────────────
+UI_TTK_TAB_PADX  = 12   # horizontal padding of a Notebook tab
+UI_TTK_TAB_PADY  = 7    # vertical padding of a Notebook tab
+UI_TTK_SCROLL_W  = 8    # width of the flat scrollbars
+UI_TTK_SASH_W    = 4    # width of the pane divider (the sash)
+UI_TTK_TREE_ROWH = 16   # Treeview row height (demo picker, densified 18->16)
 
-# ── Styles partages (mutes en place par le theme) ───────────────────────────
-# kwargs pour cases a cocher / radios plates
+# ── Shared style dicts, mutated in place by the theme ───────────────────────
+# kwargs for flat checkbuttons and radiobuttons
 _CHK_KW = dict(font=FONT_SM, bg=_t("BG2"), fg=_t("MUTED"), activebackground=_t("BG2"),
                activeforeground=_t("ORANGE"), selectcolor=_t("BG3"),
                relief="flat", bd=0, cursor="hand2", highlightthickness=0)
