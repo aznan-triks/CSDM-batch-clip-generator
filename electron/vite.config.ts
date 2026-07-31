@@ -25,6 +25,15 @@ export default defineConfig({
   build: {
     outDir: path.join(RENDERER_ROOT, "dist"),
     emptyOutDir: true,
+    // The default CSS minifier treats a rule that writes BOTH a standard
+    // property and its vendor-prefixed twin (mock-v12.css does this for
+    // `backdrop-filter`, deliberately, on `.sec` and `.hud-nav`) as the same
+    // property declared twice, and drops the standard one -- keeping only the
+    // `-webkit-` fallback, which this Electron's Chromium no longer reads at
+    // all. Measured: every card shipped with zero blur in the packaged build
+    // while the dev server (unminified) showed it correctly, which is why the
+    // restyle-5 audit -- run against the dev server -- never caught it.
+    cssMinify: false,
   },
   server: {
     // Fixed port: `scripts/dev.mjs` hands this URL to Electron, so a silent
