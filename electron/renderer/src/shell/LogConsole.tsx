@@ -15,9 +15,17 @@ interface Line {
   ts: number;
 }
 
-/** The question currently on screen, or null when nothing is pending. */
+/**
+ * The question currently on screen, or null when nothing is pending.
+ *
+ * `kind` is carried because the two shapes are answered differently, exactly
+ * as the Tkinter host answers them (`csdm_batch_clips_generator.py::ask`):
+ * an `error` has no options and always answers "ok"; anything else is titled
+ * by `options[0]`, offers `options[1..]`, and can be cancelled with null.
+ */
 interface PendingAsk {
   id: string;
+  kind: string;
   title: string;
   choices: string[];
 }
@@ -167,12 +175,17 @@ export default function LogConsole() {
 
       if (message.type === "ask") {
         // `options[0]` is the dialog title, the rest are the answers.
+        // An error ask carries NO options: its message is the whole dialog,
+        // and `options.slice(1)` on an empty array is what left it with no
+        // button to press while the engine thread waited on it forever.
+        const isError = message.kind === "error";
         setAsks((previous) => [
           ...previous,
           {
             id: message.id,
-            title: message.options[0] ?? message.message,
-            choices: message.options.slice(1),
+            kind: message.kind,
+            title: isError ? message.message : (message.options[0] ?? message.message),
+            choices: isError ? [] : message.options.slice(1),
           },
         ]);
       }
@@ -279,13 +292,26 @@ export default function LogConsole() {
       </div>
 
       {ask && (
-        <div id="ask-panel">
+        <div id="ask-panel" role="alertdialog" aria-label={ask.title}>
           <span>{ask.title} </span>
           {ask.choices.map((choice) => (
             <button type="button" key={choice} onClick={() => answer(choice)}>
               {choice}
             </button>
           ))}
+          {/* Always reachable. An `error` answers "ok" the way the Tkinter
+              host's `messagebox.showerror` does; anything else answers null,
+              which the engine handles as its own branch. Without this the
+              engine thread blocks on `done.wait()` with no timeout. */}
+          {ask.kind === "error" ? (
+            <button type="button" onClick={() => answer("ok")}>
+              OK
+            </button>
+          ) : (
+            <button type="button" onClick={() => answer(null)}>
+              Cancel
+            </button>
+          )}
         </div>
       )}
 
