@@ -18,7 +18,10 @@ interface ChipProps {
 
 /** A toggle chip, extracted from the mock's `.chip` (ui-v5.html lines 86-92). */
 export default function Chip({ label, selected, onToggle, disabled }: ChipProps) {
-  const classes = selected ? "chip chip-selected" : "chip";
+  // `on`, not `chip-selected`: the mock's stylesheet is the base sheet and it
+  // styles `.chip.on`. `chip-selected` had no rule in any stylesheet, so the
+  // selected face never reached the screen -- across all 27 call sites.
+  const classes = selected ? "chip on" : "chip";
   return (
     <button
       type="button"
