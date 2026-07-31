@@ -4,6 +4,16 @@ import { onMessage, send } from "../bridge";
 import type { BridgeMessage } from "../bridge";
 import "./LogConsole.css";
 
+/**
+ * How much of the log reaches the DOM at once.
+ *
+ * HC.1: a bound, not a number buried in a render. The approved mock trims its
+ * own console past 40 lines; this one keeps far more, because 40 is a demo's
+ * worth and a real batch's log is the only record of what happened. What it
+ * does NOT do is grow forever, which is what it did before.
+ */
+export const LOG_CONSOLE = { maxRendered: 1500 } as const;
+
 /** One rendered console line. `key` is a counter: two identical lines are distinct events. */
 interface Line {
   key: number;
@@ -209,9 +219,21 @@ export default function LogConsole() {
   }
 
   const trimmedSearch = search.trim().toLowerCase();
-  const visibleLines = trimmedSearch
+  const matching = trimmedSearch
     ? lines.filter((line) => line.text.toLowerCase().includes(trimmedSearch))
     : lines;
+  // The TAIL, bounded. A batch of several hundred clips writes thousands of
+  // lines into a scrolling area that sits inside a `backdrop-filter` surface,
+  // so every one of them costs a re-blur on every repaint -- the player list's
+  // problem, except it grows while the user watches.
+  //
+  // The lines themselves are KEPT: a work tool's log is the record of a run,
+  // and `exportLinesAsHtml` still writes every one. Only the rendering is cut,
+  // which is strictly more than the mock does (it drops its own past 40).
+  const visibleLines =
+    matching.length > LOG_CONSOLE.maxRendered
+      ? matching.slice(matching.length - LOG_CONSOLE.maxRendered)
+      : matching;
 
   return (
     <div className="console">

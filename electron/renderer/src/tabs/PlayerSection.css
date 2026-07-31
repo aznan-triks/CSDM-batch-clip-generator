@@ -77,3 +77,23 @@
 .ps-row-active .ps-label {
   color: var(--txt-hi);
 }
+
+/*
+ * The ordering and paging row. It sits between the search box and the list,
+ * and its two arrows are the mock's `.chip` like every other small button --
+ * only the alignment is stated here, which a picture cannot know.
+ */
+.ps-controls {
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.ps-count {
+  margin-left: auto;
+}
+
+.ps-page {
+  min-width: 5ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
