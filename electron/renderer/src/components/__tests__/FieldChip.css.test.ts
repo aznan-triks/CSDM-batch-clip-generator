@@ -35,12 +35,28 @@ describe("Field.css", () => {
 
 describe("Chip.css", () => {
   it("re-states neither the pill, the face, nor the lime selection", () => {
-    for (const property of ["background", "border", "border-radius", "padding", "color"]) {
+    for (const property of ["border-radius", "padding"]) {
       expect(CHIP, `Chip.css sets ${property}`).not.toMatch(
         new RegExp(`^[ \\t]*${property}\\s*:`, "m"),
       );
     }
     expect(CHIP).not.toMatch(/--lime/);
+  });
+
+  it("paints only the destructive variant, and only from tokens", () => {
+    // The mock has no destructive chip: its chips pick filters, and the one
+    // red face it draws is on a full action button. Deleting a preset is not a
+    // filter and must not look like one. Everything else the chip wears is the
+    // mock's -- so any colour here belongs to `.danger` and comes from a token.
+    const painted = [...CHIP.matchAll(/([^{}]+)\{([^}]*)\}/g)].filter(([, , body]) =>
+      /^[ \t]*(background|color|border-color)\s*:/m.test(body),
+    );
+    for (const [, selector, body] of painted) {
+      expect(selector.trim(), "a painted rule that is not the danger variant").toBe(".chip.danger");
+      expect(body, "a literal colour is a copy of the design, not a variant").not.toMatch(
+        /#[0-9a-f]{3,8}|rgba?\(/i,
+      );
+    }
   });
 
   it("draws no dot of its own -- the mock's `.d` is a real element now", () => {

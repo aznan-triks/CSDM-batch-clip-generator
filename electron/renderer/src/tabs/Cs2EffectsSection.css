@@ -10,14 +10,6 @@
   gap: var(--sp-3);
 }
 
-.cs2-heading {
-  font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  letter-spacing: var(--tr-snug);
-  text-transform: uppercase;
-  color: var(--txt-lo);
-}
-
 .cs2-hint {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
@@ -25,47 +17,10 @@
   margin: 0;
 }
 
-.cs2-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--sp-5) var(--sp-6);
-}
-
 .cs2-col {
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
-}
-
-.cs2-field {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
-}
-
-.cs2-quick-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-1);
-}
-
-.cs2-quick-btn {
-  appearance: none;
-  cursor: pointer;
-  padding: var(--sp-1) var(--sp-3);
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
-  background: var(--raise);
-  color: var(--txt);
-  transition: background var(--dur-fast), border-color var(--dur-fast);
-}
-
-.cs2-quick-btn:hover {
-  background: var(--raise-hi);
-  border-color: var(--line-hi);
 }
 
 .cs2-toggle {

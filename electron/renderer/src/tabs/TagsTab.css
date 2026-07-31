@@ -1,125 +1,7 @@
-/*
- * The Tags tab's layout. Colours come from theme/tokens.css only, except a
- * selected tag chip's own colour -- that fill/border IS the tag's stored
- * colour (`tags.color`, `connect_db`'s `tags` field), not a fresh literal.
- *
- * NO :hover rule in this file may translate or scale anything (D13/D16).
- */
-
-.tags-tab {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--sp-5);
-  padding: var(--sp-5) var(--sp-6);
-  align-content: start;
-}
-
-.wide {
-  grid-column: 1 / -1;
-}
-
 .tags-error {
   font-family: var(--font-display);
   font-size: var(--fs-sm);
   color: var(--blood-t);
-}
-
-.tags-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-3);
-  margin-bottom: var(--sp-4);
-}
-
-.tags-chip {
-  background: var(--raise);
-  color: var(--txt);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--sp-2) var(--sp-4);
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  cursor: pointer;
-}
-
-.tags-chip-active {
-  border-width: var(--bw-accent);
-  color: var(--txt-hi);
-}
-
-.tags-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--sp-3);
-  margin-top: var(--sp-3);
-}
-
-.tags-label {
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
-  text-transform: uppercase;
-  color: var(--dim);
-}
-
-.tags-btn {
-  background: var(--raise);
-  color: var(--txt);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
-  padding: var(--sp-3) var(--sp-5);
-  font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  cursor: pointer;
-  transition: background var(--dur-fast), border-color var(--dur-fast);
-}
-
-.tags-btn:hover {
-  background: var(--raise-hi);
-  border-color: var(--line-hi);
-}
-
-.tags-btn:disabled {
-  cursor: default;
-  color: var(--dim);
-}
-
-.tags-btn-right {
-  margin-left: auto;
-}
-
-.tags-btn-primary {
-  background: var(--gold);
-  color: var(--on-gold);
-  border-color: var(--gold-d);
-}
-
-.tags-btn-primary:hover {
-  background: var(--gold-hi);
-}
-
-.tags-btn-blue {
-  color: var(--steel-t);
-}
-
-.tags-btn-green {
-  color: var(--ok-t);
-}
-
-.tags-btn-orange {
-  color: var(--fire-t);
-}
-
-.tags-btn-red {
-  color: var(--blood-t);
-}
-
-.tags-create-row {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--sp-3);
-  margin-top: var(--sp-3);
 }
 
 .tags-selection {
@@ -127,17 +9,6 @@
   font-size: var(--fs-sm);
   color: var(--dim);
   margin-top: var(--sp-4);
-}
-
-.tags-auto-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  color: var(--txt);
-  margin-top: var(--sp-3);
-  cursor: pointer;
 }
 
 .tags-hint {

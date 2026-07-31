@@ -1,23 +1,19 @@
 /**
  * Every tab panel is a two-column bento grid with a full-width escape hatch.
  *
- * The Capture tab no longer says so itself: it wears the approved mock's own
+ * None of the four says so itself any more: they all wear the approved mock's
  * `.bento` and `.wide` (theme/mock-v12.css), which is the whole point of the
- * restyle -- one copy of the rule, in the design. The other three tabs still
- * carry their own copy and are checked as before until they are ported too.
+ * restyle -- one copy of the rule, in the design. A tab that grows a grid of
+ * its own again is drifting, and that is what this catches.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const TABS_DIR = path.join(__dirname, "..");
+const MOCK = readFileSync(path.join(TABS_DIR, "..", "theme", "mock-v12.css"), "utf-8");
 
-/** Tabs still holding their own grid rule. Each one that gets ported leaves. */
-const NOT_YET_ON_THE_MOCKS_BENTO = [
-  { css: "TagsTab.css", root: ".tags-tab" },
-  { css: "VideoTab.css", root: ".video-tab" },
-  { css: "SettingsTab.css", root: ".settings-tab" },
-];
+const TABS = ["CaptureTab", "VideoTab", "TagsTab", "SettingsTab"];
 
 function block(css: string, selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -26,42 +22,53 @@ function block(css: string, selector: string): string {
   return match[1];
 }
 
-describe("the Capture tab takes its grid from the mock", () => {
-  const MOCK = readFileSync(path.join(TABS_DIR, "..", "theme", "mock-v12.css"), "utf-8");
-  const MARKUP = readFileSync(path.join(TABS_DIR, "CaptureTab.tsx"), "utf-8");
-
-  it("wears `.bento` rather than declaring a grid of its own", () => {
-    expect(MARKUP).toMatch(/className="bento[^"]*"/);
+describe("the mock owns the bento grid", () => {
+  it("declares the two columns and the full-width escape hatch", () => {
     expect(block(MOCK, ".bento")).toMatch(/grid-template-columns:\s*1fr 1fr/);
-  });
-
-  it("has the mock's full-width escape hatch available to it", () => {
     expect(block(MOCK, ".wide")).toMatch(/grid-column:\s*1 \/ -1/);
-    expect(MARKUP).toMatch(/className="wide"/);
-  });
-
-  it("declares no competing grid in its own stylesheet", () => {
-    const own = readFileSync(path.join(TABS_DIR, "CaptureTab.css"), "utf-8").replace(
-      /\/\*[\s\S]*?\*\//g,
-      "",
-    );
-    expect(own).not.toMatch(/grid-template-columns/);
   });
 });
 
-describe("the tabs not yet ported keep their own bento grid", () => {
-  for (const panel of NOT_YET_ON_THE_MOCKS_BENTO) {
-    const css = readFileSync(path.join(TABS_DIR, panel.css), "utf-8");
+describe("every tab wears it", () => {
+  for (const tab of TABS) {
+    const markup = readFileSync(path.join(TABS_DIR, `${tab}.tsx`), "utf-8");
 
-    it(`${panel.css}'s ${panel.root} is a 2-column grid, not a flex column`, () => {
-      const rule = block(css, panel.root);
-      expect(rule).toMatch(/display:\s*grid;/);
-      expect(rule).toMatch(/grid-template-columns:\s*1fr 1fr;/);
-      expect(rule).not.toMatch(/display:\s*flex;/);
+    it(`${tab} mounts on .bento`, () => {
+      expect(markup).toMatch(/className="bento[^"]*"/);
     });
 
-    it(`${panel.css} declares a .wide escape hatch that spans both columns`, () => {
-      expect(css).toMatch(/\.wide\s*\{[^}]*grid-column:\s*1\s*\/\s*-1;[^}]*\}/);
+    it(`${tab}.css declares no grid of its own`, () => {
+      const own = readFileSync(path.join(TABS_DIR, `${tab}.css`), "utf-8").replace(
+        /\/\*[\s\S]*?\*\//g,
+        "",
+      );
+      expect(own).not.toMatch(/grid-template-columns/);
+      expect(own, "a second .wide would shadow the mock's").not.toMatch(/^\.wide\s*\{/m);
+    });
+  }
+});
+
+describe("no tab stylesheet re-states the mock's row, label or chip", () => {
+  /** Every stylesheet under tabs/, which is where the drift used to collect. */
+  const SHEETS = readdirSync(TABS_DIR).filter((name) => name.endsWith(".css"));
+
+  it("found the stylesheets", () => {
+    expect(SHEETS.length).toBeGreaterThan(5);
+  });
+
+  for (const sheet of SHEETS) {
+    it(`${sheet} defines no .row / .lab / .chip / .chips of its own`, () => {
+      const css = readFileSync(path.join(TABS_DIR, sheet), "utf-8").replace(
+        /\/\*[\s\S]*?\*\//g,
+        "",
+      );
+      // A scoped refinement (`.player-section #player-search`) is fine; a bare
+      // redefinition of the mock's own class is a second copy of the design.
+      for (const owned of ["row", "lab", "chip", "chips", "fld", "seg", "sec", "sb"]) {
+        expect(css, `${sheet} redefines .${owned}`).not.toMatch(
+          new RegExp(`(^|[,}])\\s*\\.${owned}\\s*[,{]`, "m"),
+        );
+      }
     });
   }
 });

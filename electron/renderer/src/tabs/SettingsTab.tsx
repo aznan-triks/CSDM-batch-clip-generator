@@ -128,7 +128,7 @@ export default function SettingsTab() {
   }
 
   return (
-    <div className="settings-tab">
+    <div className="bento settings-tab">
       <Card title="Paths" icon={<ICONS.paths />} className="wide">
         <SettingControl settingKey="csdm_exe">
           <PathField
@@ -194,8 +194,8 @@ export default function SettingsTab() {
       <Card title="UI Theme" icon={<ICONS.uiTheme />}>
         <SettingControl settingKey="theme_accent">
           <div className="settings-accent">
-            <span className="settings-label">Accent</span>
-            <div className="settings-accent-row" role="radiogroup" aria-label="Accent">
+            <span className="lab">Accent</span>
+            <div className="row" role="radiogroup" aria-label="Accent">
               {ACCENT_PRESETS.map((preset) => {
                 const selected = preset.hex.toLowerCase() === currentAccent.toLowerCase();
                 return (
@@ -224,8 +224,8 @@ export default function SettingsTab() {
           </div>
         </SettingControl>
         <SettingControl settingKey="theme_bg">
-          <div className="settings-row">
-            <span className="settings-label">Mode</span>
+          <div className="row">
+            <span className="lab">Mode</span>
             <Segmented
               options={GROUND_OPTIONS}
               value={themeBg ?? DEFAULT_GROUND}
@@ -237,7 +237,7 @@ export default function SettingsTab() {
       </Card>
 
       <Card title="UI Layout" icon={<ICONS.uiLayout />}>
-        <div className="settings-row">
+        <div className="row">
           <SettingControl settingKey="ui_window_w">
             <Field
               id="ui-window-w"
@@ -266,16 +266,16 @@ export default function SettingsTab() {
             />
           </SettingControl>
         </div>
-        <div className="settings-row">
-          <button type="button" className="settings-btn" onClick={applyLayout}>
+        <div className="row">
+          <button type="button" className="chip" onClick={applyLayout}>
             Apply
           </button>
-          <button type="button" className="settings-btn settings-btn-blue" onClick={autoLayout}>
+          <button type="button" className="chip" onClick={autoLayout}>
             Auto
           </button>
           <button
             type="button"
-            className="settings-btn settings-btn-yellow"
+            className="chip"
             onClick={resetLayoutDefaults}
           >
             Reset default
@@ -291,7 +291,7 @@ export default function SettingsTab() {
       </Card>
 
       <Card title="PostgreSQL Connection" icon={<ICONS.postgresql />} className="wide">
-        <div className="settings-row">
+        <div className="row">
           <SettingControl settingKey="pg_host">
             <Field id="pg-host" label="Host" value={pgHost ?? ""} onChange={setPgHost} />
           </SettingControl>
@@ -314,8 +314,8 @@ export default function SettingsTab() {
             />
           </SettingControl>
         </div>
-        <div className="settings-row">
-          <button type="button" className="settings-btn settings-btn-orange" onClick={testAndReload}>
+        <div className="row">
+          <button type="button" className="chip" onClick={testAndReload}>
             Test & Reload
           </button>
           {dbStatus && <span className="settings-db-status">{dbStatus}</span>}
@@ -350,7 +350,7 @@ export default function SettingsTab() {
             placeholder replaces it rather than reimplementing that engine
             logic here. See task-3-report.md for the documented gap. */}
         <pre className="settings-injection-preview">not available yet</pre>
-        <button type="button" className="settings-btn settings-btn-blue" disabled>
+        <button type="button" className="chip" disabled>
           ⟳ Refresh
         </button>
       </Card>

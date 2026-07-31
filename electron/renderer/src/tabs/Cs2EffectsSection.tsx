@@ -51,14 +51,14 @@ function NumericField({
   const stringValue = value === undefined || value === null ? fallback : String(value);
   return (
     <SettingControl settingKey={settingKey}>
-      <div className="cs2-field">
+      <div className="fld">
         <Field id={`cs2-${settingKey}`} label={label} mono value={stringValue} onChange={setValue} />
-        <div className="cs2-quick-row">
+        <div className="row">
           {QUICK_VALUES[settingKey].map((quick) => (
             <button
               key={quick}
               type="button"
-              className="cs2-quick-btn"
+              className="chip"
               onClick={() => setValue(quick)}
             >
               {quick}
@@ -85,12 +85,12 @@ function ToggleField({ settingKey, label }: { settingKey: string; label: string 
 export default function Cs2EffectsSection() {
   return (
     <div className="cs2-effects">
-      <span className="cs2-heading">CS2 effects -- both HLAE and CS modes</span>
+      <span className="lab">CS2 effects -- both HLAE and CS modes</span>
       <p className="cs2-hint">
         Vanilla CS2 commands shared by both recording modes. Non-default values are injected as
         CS2 console commands on startup.
       </p>
-      <div className="cs2-grid">
+      <div className="row">
         <div className="cs2-col">
           {NUMERIC_FIELDS.map((field) => (
             <NumericField

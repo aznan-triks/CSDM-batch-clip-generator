@@ -132,9 +132,17 @@ export default function PresetSection() {
 
   return (
     <Card title="Presets" icon={<ICONS.presets />}>
-      <Field id="preset-name" label="Name" value={name} onChange={setName} placeholder="Preset name" />
+      <div className="row">
+        <Field
+          id="preset-name"
+          label="Name"
+          value={name}
+          onChange={setName}
+          placeholder="Preset name"
+        />
+      </div>
 
-      <div className="preset-categories" role="group" aria-label="Categories">
+      <div className="row" role="group" aria-label="Categories">
         {categories.map((key) => (
           <Chip
             key={key}
@@ -145,8 +153,8 @@ export default function PresetSection() {
         ))}
       </div>
 
-      <div className="preset-actions">
-        <button type="button" className="preset-btn preset-btn-primary" onClick={save}>
+      <div className="row">
+        <button type="button" className="chip" onClick={save}>
           SAVE
         </button>
         {error && <span className="preset-message preset-message-error">{error}</span>}
@@ -159,12 +167,12 @@ export default function PresetSection() {
           <li key={presetName} className="preset-row">
             <span className="preset-row-name">{presetName}</span>
             <span className="preset-row-cats">{(preset.cats ?? []).join(", ")}</span>
-            <button type="button" className="preset-btn" onClick={() => load(presetName)}>
+            <button type="button" className="chip" onClick={() => load(presetName)}>
               Load
             </button>
             <button
               type="button"
-              className="preset-btn preset-btn-delete"
+              className="chip danger"
               onClick={() => remove(presetName)}
             >
               Delete

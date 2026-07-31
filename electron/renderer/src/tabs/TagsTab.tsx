@@ -258,18 +258,18 @@ export default function TagsTab() {
   }
 
   return (
-    <div className="tags-tab">
+    <div className="bento tags-tab">
       <Card title="Tags" icon={<ICONS.tags />} className="wide">
         {dbError && <p className="tags-error">{dbError}</p>}
 
-        <div className="tags-grid">
+        <div className="chips">
           {tags.map(([tagId, tagName, color]) => {
             const active = activeTagIds.has(tagId);
             return (
               <button
                 key={String(tagId)}
                 type="button"
-                className={active ? "tags-chip tags-chip-active" : "tags-chip"}
+                className={active ? "chip on" : "chip"}
                 style={active ? { borderColor: color, color } : undefined}
                 aria-pressed={active}
                 aria-label={`tag-${tagName}`}
@@ -281,22 +281,22 @@ export default function TagsTab() {
           })}
         </div>
 
-        <div className="tags-toolbar">
-          <button type="button" className="tags-btn tags-btn-primary" onClick={() => setCreating((v) => !v)}>
+        <div className="row">
+          <button type="button" className="chip" onClick={() => setCreating((v) => !v)}>
             + New tag
           </button>
-          <button type="button" className="tags-btn" onClick={reload}>
+          <button type="button" className="chip" onClick={reload}>
             Reload
           </button>
-          <button type="button" className="tags-btn tags-btn-right" onClick={deselectAll}>
+          <button type="button" className="chip push-right" onClick={deselectAll}>
             Deselect all
           </button>
         </div>
 
         {creating && (
-          <div className="tags-create-row">
+          <div className="row">
             <Field id="new-tag-name" value={newTagName} onChange={setNewTagName} placeholder="Tag name" />
-            <button type="button" className="tags-btn tags-btn-primary" onClick={createTag}>
+            <button type="button" className="chip" onClick={createTag}>
               Create
             </button>
           </div>
@@ -307,7 +307,7 @@ export default function TagsTab() {
         </p>
 
         <SettingControl settingKey="tag_enabled">
-          <label className="tags-auto-row">
+          <label className="row">
             <input
               type="checkbox"
               checked={!!tagEnabled}
@@ -323,69 +323,69 @@ export default function TagsTab() {
           Calculates the first and last demo with the selected tags, and suggests applying these
           dates as a filter in Capture.
         </p>
-        <div className="tags-toolbar">
-          <button type="button" className="tags-btn tags-btn-blue" onClick={calcRange}>
+        <div className="row">
+          <button type="button" className="chip" onClick={calcRange}>
             Calculate range
           </button>
         </div>
         {rangeStatus && <p className="tags-range-status">{rangeStatus}</p>}
-        <div className="tags-toolbar">
-          <button type="button" className="tags-btn" disabled={!range?.date_start} onClick={applyStart}>
+        <div className="row">
+          <button type="button" className="chip" disabled={!range?.date_start} onClick={applyStart}>
             Apply start
           </button>
-          <button type="button" className="tags-btn" disabled={!range?.date_end} onClick={applyEnd}>
+          <button type="button" className="chip" disabled={!range?.date_end} onClick={applyEnd}>
             Apply end
           </button>
           <button
             type="button"
-            className="tags-btn"
+            className="chip"
             disabled={!range?.date_start || !range?.date_end}
             onClick={applyFullRange}
           >
             Apply full range
           </button>
-          <button type="button" className="tags-btn" disabled={!range?.date_after} onClick={applyAfterRange}>
+          <button type="button" className="chip" disabled={!range?.date_after} onClick={applyAfterRange}>
             After range
           </button>
         </div>
       </Card>
 
       <Card title="Operations" icon={<ICONS.operations />} className="wide">
-        <div className="tags-toolbar">
-          <span className="tags-label">Search:</span>
-          <button type="button" className="tags-btn tags-btn-primary" onClick={searchByTag}>
+        <div className="row">
+          <span className="lab">Search:</span>
+          <button type="button" className="chip" onClick={searchByTag}>
             By tag
           </button>
-          <button type="button" className="tags-btn tags-btn-blue" onClick={searchByConfig}>
+          <button type="button" className="chip" onClick={searchByConfig}>
             By config
           </button>
         </div>
-        <div className="tags-toolbar">
-          <span className="tags-label">Actions:</span>
+        <div className="row">
+          <span className="lab">Actions:</span>
           <button
             type="button"
-            className="tags-btn tags-btn-green"
+            className="chip"
             onClick={() => tagDemos([...selectedPaths])}
           >
             Tag sel.
           </button>
           <button
             type="button"
-            className="tags-btn tags-btn-orange"
+            className="chip"
             onClick={() => tagDemos(foundDemos.map((d) => d.path))}
           >
             Tag ALL
           </button>
-          <button type="button" className="tags-btn tags-btn-red" onClick={removeSelected}>
+          <button type="button" className="chip danger" onClick={removeSelected}>
             Remove sel.
           </button>
         </div>
-        <div className="tags-toolbar">
-          <span className="tags-label">Transfer:</span>
-          <button type="button" className="tags-btn" onClick={exportTags}>
+        <div className="row">
+          <span className="lab">Transfer:</span>
+          <button type="button" className="chip" onClick={exportTags}>
             Export
           </button>
-          <button type="button" className="tags-btn" onClick={importTags}>
+          <button type="button" className="chip" onClick={importTags}>
             Import
           </button>
         </div>

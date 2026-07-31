@@ -28,14 +28,14 @@ export default function HlaeOptionsSection() {
 
   return (
     <div className="hlae-options">
-      <span className="hlae-heading">HLAE options -- HLAE mode only</span>
+      <span className="lab">HLAE options -- HLAE mode only</span>
       <p className="hlae-hint">
         Passed to HLAE via CSDM. Not available in CS recording mode. Audio captured directly by
         HLAE (bypasses Windows mixer).
       </p>
 
       <SettingControl settingKey="hlae_fov">
-        <div className="hlae-row">
+        <div className="row">
           <Field
             id="hlae-fov"
             label="FOV"
@@ -48,7 +48,7 @@ export default function HlaeOptionsSection() {
       </SettingControl>
 
       <SettingControl settingKey="hlae_slow_motion">
-        <div className="hlae-row">
+        <div className="row">
           <Field
             id="hlae-game-speed"
             label="Game Speed (%)"
@@ -56,12 +56,12 @@ export default function HlaeOptionsSection() {
             value={gameSpeed === undefined || gameSpeed === null ? "100" : String(gameSpeed)}
             onChange={setGameSpeed}
           />
-          <div className="hlae-quick-row">
+          <div className="row">
             {GAME_SPEED_QUICK_VALUES.map((quick) => (
               <button
                 key={quick}
                 type="button"
-                className="hlae-quick-btn"
+                className="chip"
                 onClick={() => setGameSpeed(quick)}
               >
                 {quick}
@@ -71,7 +71,7 @@ export default function HlaeOptionsSection() {
         </div>
       </SettingControl>
 
-      <div className="hlae-toggle-row">
+      <div className="row">
         {TOGGLE_FIELDS.map(({ key, label }) => (
           <ToggleField key={key} settingKey={key} label={label} />
         ))}

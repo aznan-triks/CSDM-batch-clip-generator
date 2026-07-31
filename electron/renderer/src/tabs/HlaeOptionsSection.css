@@ -10,14 +10,6 @@
   gap: var(--sp-3);
 }
 
-.hlae-heading {
-  font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  letter-spacing: var(--tr-snug);
-  text-transform: uppercase;
-  color: var(--txt-lo);
-}
-
 .hlae-hint {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
@@ -25,48 +17,10 @@
   margin: 0;
 }
 
-.hlae-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--sp-3);
-}
-
 .hlae-desc {
   font-family: var(--font-body);
   font-size: var(--fs-xs);
   color: var(--dim);
-}
-
-.hlae-quick-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-1);
-}
-
-.hlae-quick-btn {
-  appearance: none;
-  cursor: pointer;
-  padding: var(--sp-1) var(--sp-3);
-  font-family: var(--font-display);
-  font-size: var(--fs-xs);
-  letter-spacing: var(--tr-tight);
-  border: var(--bw) solid var(--line);
-  border-radius: var(--radius);
-  background: var(--raise);
-  color: var(--txt);
-  transition: background var(--dur-fast), border-color var(--dur-fast);
-}
-
-.hlae-quick-btn:hover {
-  background: var(--raise-hi);
-  border-color: var(--line-hi);
-}
-
-.hlae-toggle-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-4);
 }
 
 .hlae-toggle {

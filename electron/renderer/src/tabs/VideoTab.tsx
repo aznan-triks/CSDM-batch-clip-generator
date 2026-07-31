@@ -60,12 +60,16 @@ export default function VideoTab() {
   const { tables } = useTables();
   const setMany = useSettingsBatch();
 
-  const [assembleAfter, setAssembleAfter] = useSetting<boolean>("assemble_after");
-  const [assembleOutput, setAssembleOutput] = useSetting<string>("assemble_output");
-  const [concatenateSequences, setConcatenateSequences] =
-    useSetting<boolean>("concatenate_sequences");
-  const [deleteAfterAssemble, setDeleteAfterAssemble] =
-    useSetting<boolean>("delete_after_assemble");
+  const [assembleAfter, setAssembleAfter] =
+    useSetting<boolean>("assemble_after");
+  const [assembleOutput, setAssembleOutput] =
+    useSetting<string>("assemble_output");
+  const [concatenateSequences, setConcatenateSequences] = useSetting<boolean>(
+    "concatenate_sequences",
+  );
+  const [deleteAfterAssemble, setDeleteAfterAssemble] = useSetting<boolean>(
+    "delete_after_assemble",
+  );
 
   const [width, setWidth] = useSetting<number>("width");
   const [height, setHeight] = useSetting<number>("height");
@@ -74,21 +78,29 @@ export default function VideoTab() {
   const [sendToBack, setSendToBack] = useSetting<boolean>("cs2_send_to_back");
 
   const [videoCodec, setVideoCodec] = useSetting<string>("video_codec");
-  const [videoContainer, setVideoContainer] = useSetting<string>("video_container");
+  const [videoContainer, setVideoContainer] =
+    useSetting<string>("video_container");
   const [videoPreset, setVideoPreset] = useSetting<string>("video_preset");
   const [crf, setCrf] = useSetting<number>("crf");
   const [audioCodec, setAudioCodec] = useSetting<string>("audio_codec");
   const [audioBitrate, setAudioBitrate] = useSetting<number>("audio_bitrate");
-  const [ffmpegInput, setFfmpegInput] = useSetting<string>("ffmpeg_input_params");
-  const [ffmpegOutput, setFfmpegOutput] = useSetting<string>("ffmpeg_output_params");
+  const [ffmpegInput, setFfmpegInput] = useSetting<string>(
+    "ffmpeg_input_params",
+  );
+  const [ffmpegOutput, setFfmpegOutput] = useSetting<string>(
+    "ffmpeg_output_params",
+  );
 
   const [trueView, setTrueView] = useSetting<boolean>("true_view");
-  const [showOnlyDeathNotices, setShowOnlyDeathNotices] =
-    useSetting<boolean>("show_only_death_notices");
+  const [showOnlyDeathNotices, setShowOnlyDeathNotices] = useSetting<boolean>(
+    "show_only_death_notices",
+  );
   const [showXray, setShowXray] = useSetting<boolean>("show_xray");
-  const [deathNoticesDuration, setDeathNoticesDuration] =
-    useSetting<string | number>("death_notices_duration");
-  const [closeGameAfter, setCloseGameAfter] = useSetting<boolean>("close_game_after");
+  const [deathNoticesDuration, setDeathNoticesDuration] = useSetting<
+    string | number
+  >("death_notices_duration");
+  const [closeGameAfter, setCloseGameAfter] =
+    useSetting<boolean>("close_game_after");
   const [recsys, setRecsys] = useSetting<string>("recsys");
 
   const isHlae = recsys === RECSYS_OPTIONS[0];
@@ -96,8 +108,9 @@ export default function VideoTab() {
   const currentWidth = asNumber(width, 1920);
   const currentHeight = asNumber(height, 1080);
   const currentResolutionLabel =
-    tables?.resolutions.find((r) => r.width === currentWidth && r.height === currentHeight)
-      ?.label ?? "";
+    tables?.resolutions.find(
+      (r) => r.width === currentWidth && r.height === currentHeight,
+    )?.label ?? "";
 
   // Two keys, one change: writing them separately would save twice and, for a
   // moment, pair the new width with the old height.
@@ -108,7 +121,7 @@ export default function VideoTab() {
   }
 
   return (
-    <div className="video-tab">
+    <div className="bento video-tab">
       <Card title="Final Assembly" icon={<ICONS.finalAssembly />}>
         <SettingControl settingKey="assemble_after">
           <Chip
@@ -131,23 +144,29 @@ export default function VideoTab() {
             onToggle={() => setConcatenateSequences(!concatenateSequences)}
           />
         </SettingControl>
-        <SettingControl settingKey="assemble_output">
-          <Field
-            id="assemble-output"
-            label="Output filename"
-            value={assembleOutput ?? ""}
-            onChange={setAssembleOutput}
-            placeholder="assembled.mp4"
-          />
-        </SettingControl>
+        <div className="row">
+          <SettingControl settingKey="assemble_output">
+            <Field
+              id="assemble-output"
+              label="Output filename"
+              value={assembleOutput ?? ""}
+              onChange={setAssembleOutput}
+              placeholder="assembled.mp4"
+            />
+          </SettingControl>
+        </div>
       </Card>
 
-      <Card title="Resolution, Framerate &amp; Window" icon={<ICONS.resolution />} className="wide">
+      <Card
+        title="Resolution, Framerate &amp; Window"
+        icon={<ICONS.resolution />}
+        className="wide"
+      >
         {!tables ? (
           <p className="video-hint">Loading tables…</p>
         ) : (
-          <div className="video-row">
-            <span className="video-label">Resolution</span>
+          <div className="row">
+            <span className="lab">Resolution</span>
             <Segmented
               options={tables.resolutions.map((r) => r.label)}
               value={currentResolutionLabel}
@@ -156,7 +175,7 @@ export default function VideoTab() {
             />
           </div>
         )}
-        <div className="video-grid">
+        <div className="row">
           <SettingControl settingKey="width">
             <Field
               id="video-width"
@@ -181,8 +200,8 @@ export default function VideoTab() {
             control that only appears once the pipe answers is a control the
             coverage guard's synchronous tab switch would never see. */}
         <SettingControl settingKey="framerate">
-          <div className="video-row">
-            <span className="video-label">FPS</span>
+          <div className="row">
+            <span className="lab">FPS</span>
             <Segmented
               options={tables ? tables.framerates.map(String) : []}
               value={String(asNumber(framerate, 60))}
@@ -193,8 +212,8 @@ export default function VideoTab() {
         </SettingControl>
 
         <SettingControl settingKey="cs2_window_mode">
-          <div className="video-row">
-            <span className="video-label">Window mode</span>
+          <div className="row">
+            <span className="lab">Window mode</span>
             <Segmented
               options={WINDOW_MODES}
               value={windowMode ?? WINDOW_MODES[0]}
@@ -215,14 +234,18 @@ export default function VideoTab() {
       <Card title="Encoding" icon={<ICONS.encoding />} className="wide">
         {/* Always mounted, options empty until `useTables()` resolves -- same
             reason as the FPS control above. */}
-        <SettingControl settingKey="video_codec">
-          <div className="video-row">
-            <label className="video-label" htmlFor="video-codec">
+        {/* Paired, the way the mock pairs its own controls: `.fld { flex: 1 }`
+            hands a LONE field the whole card, which is how a dropdown holding
+            "libx264" ended up 825px wide. Two related controls share the row
+            and each takes half. */}
+        <div className="row">
+          <SettingControl settingKey="video_codec">
+            <label className="lab" htmlFor="video-codec">
               Codec
             </label>
             <select
               id="video-codec"
-              className="video-select"
+              className="fld"
               value={videoCodec ?? ""}
               onChange={(event) => setVideoCodec(event.target.value)}
             >
@@ -232,51 +255,49 @@ export default function VideoTab() {
                 </option>
               ))}
             </select>
-          </div>
-        </SettingControl>
+          </SettingControl>
 
-        <SettingControl settingKey="crf">
-          <Field
-            id="video-crf"
-            label="CRF"
-            mono
-            value={String(asNumber(crf, 18))}
-            onChange={(v) => setCrf(asNumber(v, 18))}
-          />
-        </SettingControl>
+          <SettingControl settingKey="crf">
+            <Field
+              id="video-crf"
+              label="CRF"
+              mono
+              value={String(asNumber(crf, 18))}
+              onChange={(v) => setCrf(asNumber(v, 18))}
+            />
+          </SettingControl>
+        </div>
 
-        <SettingControl settingKey="video_preset">
-          <div className="video-row">
-            <span className="video-label">Preset</span>
+        <div className="row">
+          <SettingControl settingKey="video_preset">
+            <span className="lab">Preset</span>
             <Segmented
               options={VIDEO_PRESETS}
               value={videoPreset ?? VIDEO_PRESETS[5]}
               onChange={setVideoPreset}
               label="Preset"
             />
-          </div>
-        </SettingControl>
+          </SettingControl>
 
-        <SettingControl settingKey="video_container">
-          <div className="video-row">
-            <span className="video-label">Container</span>
+          <SettingControl settingKey="video_container">
+            <span className="lab">Container</span>
             <Segmented
               options={VIDEO_CONTAINERS}
               value={videoContainer ?? VIDEO_CONTAINERS[0]}
               onChange={setVideoContainer}
               label="Container"
             />
-          </div>
-        </SettingControl>
+          </SettingControl>
+        </div>
 
-        <SettingControl settingKey="audio_codec">
-          <div className="video-row">
-            <label className="video-label" htmlFor="audio-codec">
+        <div className="row">
+          <SettingControl settingKey="audio_codec">
+            <label className="lab" htmlFor="audio-codec">
               Audio codec
             </label>
             <select
               id="audio-codec"
-              className="video-select"
+              className="fld"
               value={audioCodec ?? ""}
               onChange={(event) => setAudioCodec(event.target.value)}
             >
@@ -286,35 +307,42 @@ export default function VideoTab() {
                 </option>
               ))}
             </select>
-          </div>
-        </SettingControl>
+          </SettingControl>
 
-        <SettingControl settingKey="audio_bitrate">
-          <Field
-            id="audio-bitrate"
-            label="Audio bitrate (kbps)"
-            mono
-            value={String(asNumber(audioBitrate, 256))}
-            onChange={(v) => setAudioBitrate(asNumber(v, 256))}
-          />
-        </SettingControl>
+          <SettingControl settingKey="audio_bitrate">
+            <Field
+              id="audio-bitrate"
+              label="Audio bitrate (kbps)"
+              mono
+              value={String(asNumber(audioBitrate, 256))}
+              onChange={(v) => setAudioBitrate(asNumber(v, 256))}
+            />
+          </SettingControl>
+        </div>
 
-        <SettingControl settingKey="ffmpeg_input_params">
-          <Field
-            id="ffmpeg-input-params"
-            label="FFmpeg input params"
-            value={ffmpegInput ?? ""}
-            onChange={setFfmpegInput}
-          />
-        </SettingControl>
-        <SettingControl settingKey="ffmpeg_output_params">
-          <Field
-            id="ffmpeg-output-params"
-            label="FFmpeg output params"
-            value={ffmpegOutput ?? ""}
-            onChange={setFfmpegOutput}
-          />
-        </SettingControl>
+        {/* These two hold whole command lines, so they keep the full width --
+            the one place in this card where a wide field is the right answer.
+            They still wear a row, so the label sits beside the box. */}
+        <div className="row">
+          <SettingControl settingKey="ffmpeg_input_params">
+            <Field
+              id="ffmpeg-input-params"
+              label="FFmpeg input params"
+              value={ffmpegInput ?? ""}
+              onChange={setFfmpegInput}
+            />
+          </SettingControl>
+        </div>
+        <div className="row">
+          <SettingControl settingKey="ffmpeg_output_params">
+            <Field
+              id="ffmpeg-output-params"
+              label="FFmpeg output params"
+              value={ffmpegOutput ?? ""}
+              onChange={setFfmpegOutput}
+            />
+          </SettingControl>
+        </div>
       </Card>
 
       <Card title="In-Game Options" icon={<ICONS.inGameOptions />}>
@@ -333,21 +361,28 @@ export default function VideoTab() {
           />
         </SettingControl>
         <SettingControl settingKey="show_xray">
-          <Chip label="X-Ray" selected={!!showXray} onToggle={() => setShowXray(!showXray)} />
-        </SettingControl>
-        <SettingControl settingKey="death_notices_duration">
-          <Field
-            id="death-notices-duration"
-            label="Death notices (s)"
-            mono
-            value={
-              deathNoticesDuration === undefined || deathNoticesDuration === null
-                ? "5"
-                : String(deathNoticesDuration)
-            }
-            onChange={setDeathNoticesDuration}
+          <Chip
+            label="X-Ray"
+            selected={!!showXray}
+            onToggle={() => setShowXray(!showXray)}
           />
         </SettingControl>
+        <div className="row">
+          <SettingControl settingKey="death_notices_duration">
+            <Field
+              id="death-notices-duration"
+              label="Death notices (s)"
+              mono
+              value={
+                deathNoticesDuration === undefined ||
+                deathNoticesDuration === null
+                  ? "5"
+                  : String(deathNoticesDuration)
+              }
+              onChange={setDeathNoticesDuration}
+            />
+          </SettingControl>
+        </div>
         <SettingControl settingKey="close_game_after">
           <Chip
             label="Close CS2 after each demo"
@@ -359,8 +394,8 @@ export default function VideoTab() {
 
       <Card title="Recording System" icon={<ICONS.recordingSystem />}>
         <SettingControl settingKey="recsys">
-          <div className="video-row">
-            <span className="video-label">System</span>
+          <div className="row">
+            <span className="lab">System</span>
             <Segmented
               options={RECSYS_OPTIONS}
               value={recsys ?? RECSYS_OPTIONS[0]}
@@ -370,10 +405,11 @@ export default function VideoTab() {
           </div>
         </SettingControl>
         <p className="video-hint">
-          HLAE = injects via HLAE into CS2 (recommended -- full options). CS = native CSDM
-          recording via CS2&apos;s startmovie command. HLAE-exclusive features (custom FOV, AFX
-          streams, No spectator UI, Fix scope FOV) are not available in CS mode; CS2 effects
-          (physics, gravity, blood) are injected in both modes.
+          HLAE = injects via HLAE into CS2 (recommended -- full options). CS =
+          native CSDM recording via CS2&apos;s startmovie command.
+          HLAE-exclusive features (custom FOV, AFX streams, No spectator UI, Fix
+          scope FOV) are not available in CS mode; CS2 effects (physics,
+          gravity, blood) are injected in both modes.
         </p>
       </Card>
 
