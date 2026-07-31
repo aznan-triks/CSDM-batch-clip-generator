@@ -9,6 +9,93 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased] — the remaining eleven reports
+
+> No version bump yet: the decision has been deferred three times and belongs to the user. With the
+> three above, this closes 14 of the 15 reports in `docs/audits/AUDIT_retours_restyle5.md`.
+
+### Added
+
+**Humanised:** Gauges can be typed into now, not only dragged, and the rail follows what you type.
+**Technical:** Every `Slider` carries a `NumberField`. The rail and the box are two views of one
+number, both re-rendered from `value`, so neither can drift. Clamping lives in the field: a free
+box can hold 99 or -3 and the rail beside it cannot. An empty box reports nothing, since
+`Number("")` is 0 and would jump the value to the floor mid-edit.
+
+**Humanised:** The dark themes are three different themes now. Amoled is true black, deepblue is
+navy, terminal is the industrial blue-black — where all four used to be the same screen.
+**Technical:** `applyMode` stamps `data-ground` beside `data-mode`; `theme/grounds.css` keys on it.
+The values are `_BG_PRESETS` from `csdm/theme.py`, not invented: each preset gives four steps where
+the ladder needs five and demands strictly increasing luminance (D9), and each quiet ink is lifted
+a little to clear AA on its own ground. `--page-0`/`--page-1` are set per ground because the mock
+writes them as literals at a higher specificity than the bridge's mapping — without that, four
+nights kept one identical page. `theme/__tests__/grounds.test.ts` holds all three to the ladder and
+to 4.5:1.
+
+**Humanised:** Each tab can give the moving background its own character.
+**Technical:** `BACKDROP_BY_TAB` states per tab only what that tab changes; `fieldForTab` merges it
+over the reference field and hands an unknown tab the reference rather than nothing. `cellIntensity`
+takes the field as a parameter, so the maths still knows nothing about tabs, and a test forbids any
+`BACKDROP.` left in the drawing code — one would silently ignore the tab. The shell stamps
+`data-tab` on `<html>`; the backdrop's existing observer watches for it.
+
+**Humanised:** Every weapon shows a silhouette when you pick it, not just two of the forty-two.
+**Technical:** `weapon/silhouettes.ts` prefers the firing table's own art, then falls back to the
+weapon's class — taken from `WEAPON_CATEGORIES`, which the engine already ships through
+`describe_filters`, so there is no second list to drift. Seven class shapes join the two real ones.
+A per-weapon set would mean vendoring game-extracted assets whose licence the user has to settle
+first; when that happens, adding a weapon to `WEAPONS` is enough, since the specific table is
+consulted first. An unclassed weapon still draws nothing, on purpose.
+
+### Changed
+
+**Humanised:** The log panel says what the engine is doing instead of reciting the plumbing. Lines
+are timestamped, multicolour lines keep their colours, and the prompt shows the action under way.
+**Technical:** `shell/consoleNarrative.ts` turns each protocol message into the line a person would
+read, or into `null` for the events that steer the interface without being worth saying. `[log:ok]`
+repeated in text what the CSS class already said. `log_parts` arrives as a list of coloured runs —
+the engine really sends `[["  ⏱ Timeout: ","dim"],["2m30s","info"],…]` — and was joined into one
+grey string; the capability existed at both ends of the pipe and died at the last step. A successful
+`[result]` is a counter and a fact already visible; a failed one keeps its explanation. The thirteen
+state events, the moments the approved design narrates, were dumped as raw JSON. An unheard-of event
+is still printed: a silent unknown is how a new engine event goes unnoticed for a release.
+
+**Humanised:** The player list is paged and sortable, so 7892 players stop freezing the tab.
+**Technical:** Measured on the real database — not the 3000 reported — the list rendered whole was
+31 568 DOM nodes and 139 ms of layout, against 395 nodes for the whole rest of the page, and it was
+rebuilt on every keystroke. It now takes 60 at a time, ordered by name or by most recently seen.
+Filtering runs over the whole database before the page is cut, so a name stays findable without
+walking to it. The page index is clamped rather than reset by an effect, so a narrowing search
+cannot render an empty page first.
+
+**Humanised:** The last four odd button styles now match the rest of the window.
+**Technical:** `date-field-btn`, `dp-btn` with its green/red inks, `log-toggle`, and the console's
+unclassed Export button all become the mock's `.chip`. Measured on the rendered page: 14 variants →
+10, and `chip on` appears for the first time. The console restates density only — the mock draws
+three icon-only tools where this window has five with text labels in a 288px column.
+
+### Fixed
+
+**Humanised:** Tags show their colours. They only ever showed one when the tag was already picked —
+which is never the case when the tab opens.
+**Technical:** The colour rides on the mock's own `.d` dot, in both states. An inline style outranks
+`.chip.on .d { background: var(--lime-ink) }`, so picking a tag no longer costs it its identity —
+before, a blue tag rendered green either way.
+
+**Humanised:** The accent colour finally reaches the moving background.
+**Technical:** Three links were missing and each alone broke the chain: `theme/accent.ts` and
+`shell/Backdrop.tsx` had an empty intersection of token names; the glows repeated `--holo` instead
+of referencing it (`rgba(34, 211, 238, …)` IS #22d3ee in decimal); and the backdrop's observer
+watched `data-mode` only, where `applyAccent` writes inline custom properties. Verified in a real
+browser: `applyAccent('#ff0000')` moves `--holo`, `--glow-in`, `--tile-border` and `--amb-a`
+together.
+
+**Humanised:** The log panel no longer grows without limit while a batch runs.
+**Technical:** It renders the last 1500 lines. The lines themselves are kept — a work tool's log is
+the record of a run, and the export still writes every one. The mock drops its own past 40.
+
+---
+
 ## [Unreleased] — three confirmed root causes: the blocking dialog, the invisible selection, the square reticle
 
 > No version bump yet: the decision has been deferred twice and belongs to the user. These three
