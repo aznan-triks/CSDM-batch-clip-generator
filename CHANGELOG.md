@@ -6,12 +6,35 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 > **Version numbering note:** sub-releases previously written as `133.xx` or `143.x` have been
 > renumbered as sequential integers. `133.33` → `134`, `133.34` → `135`, …, `133.42` → `143`,
 > `143.0` → `144`, `143.1` → `145`, …, `143.8` → `152`. Each dot was always one real increment.
+>
+> **v216 → v299:** the jump is a deliberate user choice at delivery time, not a renumbering and not
+> skipped work — nothing shipped between v215 and v299 except what this entry documents.
 
 ---
 
-## [v216] — 2026-08-01
+## [v299] — 2026-08-01
 
 ### Fixed
+
+**Humanised:** Nine kill filters (MATE POV, SPRAY TRANSFER, HIGH VELOCITY / Ferrari Peek, FLICK,
+SAVIOR, WALL BANG, AIRBORNE, ATTACKER BLIND, COLLATERAL) crashed Preview outright the moment they
+were used in the Electron app — the Tkinter window never had this problem.
+**Technical:** Found by actually running the packaged app end-to-end (the manual recette this
+chantier had deferred for six sessions), not by reading code: `PREVIEW` with Mate POV on threw
+`'BridgeHost' object has no attribute '_mate_pov_filter'`. Root cause: chantier 1's engine
+extraction moved the camera builders (`_build_cams_*`) and three dp2 filters
+(`_trois_shot_filter`/`_one_tap_filter`/`_no_trois_shot_filter`) into `csdm/engine/core.py`, but
+left these nine — plus their shared helpers (`_parse_mate_positions`, `_find_sid_in_tick`,
+`_fuzzy_sid_in_set`, `_find_best_mate_sid`, `_death_flag_filter`, `_death_flags_for_kill`,
+`_penetrated_kills`, `_weapon_suffix_key`) and the `_mate_pov_camera_sid` hook — as `App`-only
+methods. They ran fine under Tkinter (`App` has them directly) and threw under `BridgeHost`, which
+only inherits the extracted mixins. Moved all of it verbatim into `EngineMixin` (829 lines); `App`
+still gets them through inheritance, so Tkinter behaviour is unchanged. Two isolation bugs the move
+itself introduced, caught by this repo's own guard tests before either shipped: eight `self.log(...)`
+calls had been written as `self._async_log(...)` (a Tkinter-only method name, not the engine's
+`log`/`log_parts`/`state`/`ask` port contract — `tests/test_engine_isolation.py`), and `math` wasn't
+imported in `core.py` (`tests/test_engine_globals.py`, the same class of bug chantier 1 hit in v208).
+Re-verified live: the exact Preview that crashed now completes cleanly.
 
 **Humanised:** Cards, the top nav bar and the console are frosted glass again in the real packaged
 app — they had gone fully see-through, with none of the soft blur the mockup shows.
