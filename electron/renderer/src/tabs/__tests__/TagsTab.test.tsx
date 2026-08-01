@@ -28,8 +28,11 @@ vi.mock("../../settings/store", () => ({
   },
 }));
 
+const calls: Array<{ command: string; payload: unknown }> = [];
+
 vi.mock("../../bridge", () => ({
-  runCommand: (command: string) => {
+  runCommand: (command: string, payload?: unknown) => {
+    calls.push({ command, payload });
     if (command === "connect_db") {
       return Promise.resolve({ type: "result", id: "1", ok: true, data: DISCOVERY_FIXTURE });
     }
@@ -69,6 +72,15 @@ describe("TagsTab", () => {
                          "Remove sel.", "Export", "Import"]) {
       expect(screen.getByRole("button", { name: new RegExp(label, "i") })).toBeTruthy();
     }
+  });
+
+  it("deletes a tag via tag_delete (P4: this button used to not exist)", async () => {
+    await renderTab();
+    calls.length = 0;
+    const button = screen.getByRole("button", { name: /delete-tag-clip-worthy/i });
+    await act(async () => button.click());
+    const call = calls.find((c) => c.command === "tag_delete");
+    expect(call?.payload).toEqual({ tag_id: 1 });
   });
 
   it("supports selecting several tags at once", async () => {

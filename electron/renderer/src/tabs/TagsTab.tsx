@@ -87,6 +87,22 @@ export default function TagsTab() {
     }
   }
 
+  async function deleteTag(tagId: number | string, tagName: string) {
+    try {
+      await runCommand("tag_delete", { tag_id: tagId });
+      setActiveTagIds((previous) => {
+        if (!previous.has(tagId)) return previous;
+        const next = new Set(previous);
+        next.delete(tagId);
+        return next;
+      });
+      setOpStatus(`Deleted "${tagName}".`);
+      await runCommand("connect_db");
+    } catch (cause) {
+      setOpStatus((cause as Error).message);
+    }
+  }
+
   async function createTag() {
     const trimmed = newTagName.trim();
     if (!trimmed) return;
@@ -285,6 +301,21 @@ export default function TagsTab() {
               </button>
             );
           })}
+        </div>
+
+        <div className="row">
+          <span className="lab">Delete:</span>
+          {tags.map(([tagId, tagName]) => (
+            <button
+              key={`del-${String(tagId)}`}
+              type="button"
+              className="chip danger"
+              aria-label={`delete-tag-${tagName}`}
+              onClick={() => deleteTag(tagId, tagName)}
+            >
+              {tagName} ×
+            </button>
+          ))}
         </div>
 
         <div className="row">
