@@ -231,44 +231,47 @@ export default function CaptureTab() {
               />
             </SettingControl>
 
-          <div className="row">
-            <SettingControl settingKey="retry_count">
-              <Field
-                id="retry-count"
-                label="Retries"
-                mono
-                value={String(retryCount ?? "")}
-                onChange={setRetryCount}
-              />
-            </SettingControl>
-            <SettingControl settingKey="retry_delay">
-              <Field
-                id="retry-delay"
-                label="Delay (s)"
-                mono
-                value={String(retryDelay ?? "")}
-                onChange={setRetryDelay}
-              />
-            </SettingControl>
-            <SettingControl settingKey="delay_between_demos">
-              <Field
-                id="demo-pause"
-                label="Demo pause (s)"
-                mono
-                value={String(demoPause ?? "")}
-                onChange={setDemoPause}
-              />
-            </SettingControl>
-            <SettingControl settingKey="recording_timeout">
-              <Field
-                id="recording-timeout"
-                label="Timeout (min)"
-                mono
-                value={String(timeout ?? "")}
-                onChange={setTimeout}
-              />
-            </SettingControl>
-          </div>
+          </Card>
+
+          <Card title="Timing &amp; Retries" icon={<ICONS.captureTiming />}>
+            <div className="row">
+              <SettingControl settingKey="retry_count">
+                <Field
+                  id="retry-count"
+                  label="Retries"
+                  mono
+                  value={String(retryCount ?? "")}
+                  onChange={setRetryCount}
+                />
+              </SettingControl>
+              <SettingControl settingKey="retry_delay">
+                <Field
+                  id="retry-delay"
+                  label="Delay (s)"
+                  mono
+                  value={String(retryDelay ?? "")}
+                  onChange={setRetryDelay}
+                />
+              </SettingControl>
+              <SettingControl settingKey="delay_between_demos">
+                <Field
+                  id="demo-pause"
+                  label="Demo pause (s)"
+                  mono
+                  value={String(demoPause ?? "")}
+                  onChange={setDemoPause}
+                />
+              </SettingControl>
+              <SettingControl settingKey="recording_timeout">
+                <Field
+                  id="recording-timeout"
+                  label="Timeout (min)"
+                  mono
+                  value={String(timeout ?? "")}
+                  onChange={setTimeout}
+                />
+              </SettingControl>
+            </div>
 
             <SettingControl settingKey="clip_order">
               <div className="row">
