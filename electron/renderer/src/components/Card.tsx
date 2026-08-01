@@ -1,4 +1,4 @@
-import { type MouseEvent, type ReactNode, useState } from "react";
+import { type DragEvent, type MouseEvent, type ReactNode, useState } from "react";
 
 import "./Card.css";
 
@@ -13,6 +13,14 @@ interface CardProps {
    * nothing to count.
    */
   count?: ReactNode;
+  /** Controlled fold state. Omit both to keep the card's own internal state. */
+  open?: boolean;
+  onToggle?: () => void;
+  /** A drag handle rendered in the header, before the icon. Only SectionList passes one. */
+  dragHandle?: ReactNode;
+  /** Passed straight to the card's own <section> -- SectionList's drop target. */
+  onDragOver?: (event: DragEvent<HTMLElement>) => void;
+  onDrop?: (event: DragEvent<HTMLElement>) => void;
 }
 
 /**
@@ -39,15 +47,33 @@ function paintSpotlight(event: MouseEvent<HTMLElement>) {
  * still walk the tab by its card titles while the button becomes the row the
  * mock's rules address.
  */
-export default function Card({ title, icon, children, className, count }: CardProps) {
+export default function Card({
+  title,
+  icon,
+  children,
+  className,
+  count,
+  open: openProp,
+  onToggle,
+  dragHandle,
+  onDragOver,
+  onDrop,
+}: CardProps) {
   // The mock's `.sec.closed`: the header is the toggle and the body folds
   // away. The window's own `Sec` has always worked this way -- a card that
   // cannot be folded turns a dense tab into a scroll marathon.
-  const [open, setOpen] = useState(true);
+  //
+  // `open`/`onToggle` (menus-C): SectionList persists the fold state across
+  // reloads by controlling it from outside. Every other caller passes
+  // neither, so `openProp` is undefined and this falls back to the internal
+  // state exactly as before -- backward compatible by construction.
+  const [internalOpen, setInternalOpen] = useState(true);
+  const open = openProp ?? internalOpen;
+  const toggle = onToggle ?? (() => setInternalOpen((previous) => !previous));
   const classes = ["sec", className, open ? null : "closed"].filter(Boolean).join(" ");
 
   return (
-    <section className={classes} onMouseMove={paintSpotlight}>
+    <section className={classes} onMouseMove={paintSpotlight} onDragOver={onDragOver} onDrop={onDrop}>
       {/* The mock's four decorative layers. `.glx` and `.cbr` were drawn here
           as pseudo-elements on the card itself, which could carry the corners
           but not the flicker the mock gives them. */}
@@ -56,7 +82,8 @@ export default function Card({ title, icon, children, className, count }: CardPr
       <span className="cbr br" aria-hidden="true" />
       <span className="spot" aria-hidden="true" />
       <h5 className="panel-heading">
-        <button type="button" className="sh" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <button type="button" className="sh" aria-expanded={open} onClick={toggle}>
+          {dragHandle}
           {icon && <span className="gl">{icon}</span>}
           <span className="t">{title}</span>
           {count != null && <span className="cnt">{count}</span>}

@@ -55,3 +55,16 @@
   gap: var(--sp-4);
   min-width: 0;
 }
+
+/* SectionList's drag handle (menus-C). No :hover transform/scale -- D13/D16. */
+.sh .drag-handle {
+  cursor: grab;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.sh .drag-handle:active {
+  cursor: grabbing;
+}

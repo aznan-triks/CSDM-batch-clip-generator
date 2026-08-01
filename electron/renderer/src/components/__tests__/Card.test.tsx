@@ -1,7 +1,38 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import Card from "../Card";
+
+describe("Card's controlled fold state (menus-C)", () => {
+  it("defaults to open and manages its own state when uncontrolled", () => {
+    render(<Card title="Demo">body</Card>);
+    expect(screen.getByText("body")).toBeTruthy();
+    const header = screen.getByRole("button", { name: /demo/i });
+    fireEvent.click(header);
+    expect(screen.queryByText("body")).toBeNull();
+  });
+
+  it("is controlled when open/onToggle are passed", () => {
+    const onToggle = vi.fn();
+    render(
+      <Card title="Demo" open={false} onToggle={onToggle}>
+        body
+      </Card>,
+    );
+    expect(screen.queryByText("body")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /demo/i }));
+    expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders a drag handle inside the header when given one", () => {
+    render(
+      <Card title="Demo" dragHandle={<span aria-label="drag-demo">⠿</span>}>
+        body
+      </Card>,
+    );
+    expect(screen.getByLabelText("drag-demo")).toBeTruthy();
+  });
+});
 
 function stubRect(el: HTMLElement, left: number, top: number) {
   Object.defineProperty(el, "getBoundingClientRect", {
