@@ -35,6 +35,7 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   process_exit_poll_interval: "engine-only: how often the task list is polled",
   process_exit_timeout: "engine-only: how long the engine waits for cs2.exe to go",
   cs2_process_name: "engine-only: the image name the exit watcher looks for",
+  ui_sections: "driven by drag-and-drop and the card header toggle, not a form field",
 };
 
 /** Has a control in Tkinter, not ported yet. MUST shrink at every chantier. */

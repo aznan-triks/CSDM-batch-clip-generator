@@ -35,6 +35,7 @@ DEFAULT_CONFIG = {
     "ui_window_h": 900,
     "ui_split_pct": 60,
     "ui_remember_layout": True,
+    "ui_sections": {},  # per-tab {order: [...], collapsed: [...]}; empty = declared order, nothing folded
     "theme_bg": "dark",      # background preset: dark | amoled | deepblue | white
     "theme_accent": "green", # accent preset or custom hex: green | blue | orange | purple | red | cyan | pink | yellow | #rrggbb
     "ui_font_family": "auto", # "auto" = first available of UI_FONT_STACK; or a forced name (e.g. "JetBrains Mono")
