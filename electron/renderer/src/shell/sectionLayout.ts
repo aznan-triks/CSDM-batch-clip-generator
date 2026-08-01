@@ -13,6 +13,13 @@ import { useSetting } from "../settings/store";
 interface TabLayout {
   order: string[];
   collapsed: string[];
+  /**
+   * A card's width, only once the user has actually touched its corner
+   * bracket -- absent means "whatever the tab declared" (`SectionSpec`'s own
+   * `wide` className), never a stored default. Keyed the same as `order`/
+   * `collapsed`; reconciled the same way (a stale id is dropped, never read).
+   */
+  wide?: Record<string, boolean>;
 }
 
 type UiSections = Record<string, TabLayout>;
@@ -22,6 +29,9 @@ export interface SectionLayout {
   isCollapsed(id: string): boolean;
   toggleCollapsed(id: string): void;
   reorder(draggedId: string, targetId: string): void;
+  /** `undefined` when the user has never toggled this card -- the caller's own default applies. */
+  wideOverride(id: string): boolean | undefined;
+  toggleWide(id: string, currentlyWide: boolean): void;
 }
 
 export function useSectionLayout(tabId: string, defaultOrder: readonly string[]): SectionLayout {
@@ -33,9 +43,15 @@ export function useSectionLayout(tabId: string, defaultOrder: readonly string[])
   const missing = defaultOrder.filter((id) => !storedOrder.includes(id));
   const order = [...storedOrder, ...missing];
   const collapsed = new Set((layout?.collapsed ?? []).filter((id) => known.has(id)));
+  const wide = Object.fromEntries(
+    Object.entries(layout?.wide ?? {}).filter(([id]) => known.has(id)),
+  );
 
-  function persist(nextOrder: string[], nextCollapsed: Set<string>): void {
-    setStored({ ...(stored ?? {}), [tabId]: { order: nextOrder, collapsed: [...nextCollapsed] } });
+  function persist(nextOrder: string[], nextCollapsed: Set<string>, nextWide: Record<string, boolean>): void {
+    setStored({
+      ...(stored ?? {}),
+      [tabId]: { order: nextOrder, collapsed: [...nextCollapsed], wide: nextWide },
+    });
   }
 
   return {
@@ -47,7 +63,7 @@ export function useSectionLayout(tabId: string, defaultOrder: readonly string[])
       const next = new Set(collapsed);
       if (next.has(id)) next.delete(id);
       else next.add(id);
-      persist(order, next);
+      persist(order, next, wide);
     },
     reorder(draggedId, targetId) {
       if (draggedId === targetId) return;
@@ -55,7 +71,13 @@ export function useSectionLayout(tabId: string, defaultOrder: readonly string[])
       const targetIndex = without.indexOf(targetId);
       if (targetIndex === -1) return;
       const next = [...without.slice(0, targetIndex), draggedId, ...without.slice(targetIndex)];
-      persist(next, collapsed);
+      persist(next, collapsed, wide);
+    },
+    wideOverride(id) {
+      return wide[id];
+    },
+    toggleWide(id, currentlyWide) {
+      persist(order, collapsed, { ...wide, [id]: !currentlyWide });
     },
   };
 }

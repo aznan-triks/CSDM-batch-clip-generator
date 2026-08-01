@@ -68,3 +68,75 @@
 .sh .drag-handle:active {
   cursor: grabbing;
 }
+
+/*
+ * User feedback 2026-08-01: the mock's own hover flicker on `.glx`/`.cbr`
+ * (mock-v12.css) reads as barely-there. Two causes, neither the mock's
+ * background/pattern (which Card.css.test.ts forbids repainting -- that stays
+ * the mock's): `mix-blend-mode:multiply` darkens a translucent glass surface
+ * only slightly instead of lighting it up, and `.glx`'s glitch stops after two
+ * cycles. Fixed by touching only what the mock does not own: the blend mode,
+ * the loop count, and (for `.cbr`) the border colour -- none of `background`/
+ * `border`/`border-radius`/`box-shadow`/`backdrop-filter`, none of D13/D16's
+ * motion properties either.
+ */
+.sec:hover .glx {
+  mix-blend-mode: normal;
+  animation-name: block-flick;
+  animation-duration: 0.6s;
+  animation-timing-function: steps(2);
+  animation-iteration-count: infinite;
+}
+
+.sec:hover .cbr {
+  border-color: var(--accent);
+}
+
+/*
+ * The resize corner (user feedback 2026-08-01). The mock's own `.cbr.br` is
+ * `pointer-events:none` decoration and stays that way -- this is a bigger,
+ * invisible hit target riding the same corner. `z-index: 5` because `.sb`
+ * itself is a positioned box at z-index 4 (mock-v12.css) covering the card's
+ * padding right up to that corner: anything sitting under it there is
+ * unreachable, hover or not. `background`/`border` are in this file's own
+ * PAINTS_NOTHING allowance (`transparent`, `0`), so nothing here repaints
+ * what Card.css.test.ts reserves for the mock.
+ */
+.resize-br {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  bottom: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: nwse-resize;
+  appearance: none;
+}
+
+.resize-br:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+/*
+ * The header/body separator (user feedback 2026-08-01: cards had none). A
+ * new element with no mock equivalent, so nothing here restates the mock's
+ * own `.sec`/`.sh`/`.sb` -- `background-image` rather than the shorthand
+ * `background` Card.css.test.ts reserves for the mock, same escape hatch as
+ * `border-color` above it.
+ */
+.sep {
+  display: block;
+  height: 1px;
+  margin: 0 15px var(--sp-3);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 55%, transparent) 15%,
+    color-mix(in srgb, var(--accent) 55%, transparent) 85%,
+    transparent
+  );
+}

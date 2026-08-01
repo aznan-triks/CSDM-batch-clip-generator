@@ -27,7 +27,17 @@ const NOTHING_YET = "--";
 /** The mock's own one-letter tone classes: `.st .v.a` accent, `.st .v.g` green. */
 const TONE_CLASS = { accent: "a", ok: "g" } as const;
 
-export default function StatStrip() {
+export interface StatStripProps {
+  /**
+   * The bottom band (`weapon/WeaponBand.tsx`) is one slim row shared with the
+   * status line and the weapon art -- the mock's own `.k`/`.v` two-line cell
+   * is too tall for it. Compact renders the same four numbers as one inline
+   * "LABEL value" row instead, no layout of its own borrowed from the mock.
+   */
+  compact?: boolean;
+}
+
+export default function StatStrip({ compact = false }: StatStripProps) {
   const { summary } = useEngineState();
 
   const cells: { key: string; value: string; tone?: "accent" | "ok" }[] = [
@@ -50,6 +60,19 @@ export default function StatStrip() {
       value: summary?.avgSeconds != null ? hms(summary.avgSeconds) : NOTHING_YET,
     },
   ];
+
+  if (compact) {
+    return (
+      <div className="stats-compact">
+        {cells.map((cell) => (
+          <span className="stc" key={cell.key}>
+            <span className="k">{cell.key}</span>
+            <span className={cell.tone ? `v ${TONE_CLASS[cell.tone]}` : "v"}>{cell.value}</span>
+          </span>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="stats">

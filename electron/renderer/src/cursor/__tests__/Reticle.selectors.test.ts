@@ -46,7 +46,7 @@ function namedClasses(constant: string): string[] {
 }
 
 describe("the reticle names only classes the window really renders", () => {
-  const classes = namedClasses("BACKGROUND_SELECTOR");
+  const classes = [...namedClasses("BACKGROUND_SELECTOR"), ...namedClasses("SNAP_SELECTOR")];
 
   it("names some", () => {
     expect(classes.length).toBeGreaterThan(3);
@@ -71,9 +71,19 @@ describe("the background list is an allowlist, matched on the target itself", ()
     expect(RETICLE).toMatch(/matches\(BACKGROUND_SELECTOR\)/);
   });
 
-  it("still uses closest for the button, which has layers inside it", () => {
-    // `.btn` renders `.bx` / `.fl` / `.brs` children, so the target under the
-    // pointer is often one of those and never the button itself.
-    expect(RETICLE).toMatch(/closest\("\.btn"\)/);
+  it("still uses closest for snap targets, which have layers inside them", () => {
+    // `.btn` renders `.bx` / `.fl` / `.brs` children, a `.chip`'s label is a
+    // text node beside its `.d` dot, and a segmented option's target is the
+    // `<span>` the mock styles, not always the button itself.
+    expect(RETICLE).toMatch(/closest\(SNAP_SELECTOR\)/);
+  });
+
+  it("snaps on more than the run/preview/stop/kill buttons", () => {
+    // User feedback 2026-08-01: the crosshair is meant to lock onto anything
+    // that reads as a button, not literally only ActionButton.
+    const selector = namedClasses("SNAP_SELECTOR");
+    for (const target of ["btn", "chip", "tab"]) {
+      expect(selector, `SNAP_SELECTOR no longer names .${target}`).toContain(target);
+    }
   });
 });

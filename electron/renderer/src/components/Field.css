@@ -18,6 +18,10 @@
 
 .fld:focus {
   border-color: color-mix(in srgb, var(--gold) 38%, transparent);
+  /* A quiet HUD "armed" glow, echoing `.btn:hover .bx` elsewhere in the same
+     window -- a field earns some of the same feedback a button gets, static
+     rather than animated so it never becomes a second focus ring. */
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 16%, transparent);
 }
 
 .fld:focus-visible {

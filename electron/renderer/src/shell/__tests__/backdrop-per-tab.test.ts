@@ -29,10 +29,18 @@ describe("every tab can name its own ground", () => {
 
   it("fills the gaps from the reference field, so an entry states only what it changes", () => {
     const tags = fieldForTab("tags");
-    expect(tags.cell).toBe(BACKDROP_BY_TAB.tags.cell);
+    expect(tags.reach).toBe(BACKDROP_BY_TAB.tags.reach);
     // Never overridden by that tab -- it has to come from the reference.
     expect(tags.plateRadius).toBe(BACKDROP.plateRadius);
     expect(tags.sheen).toBe(BACKDROP.sheen);
+  });
+
+  it("measures the same plate everywhere -- size is not a mood", () => {
+    for (const tab of TABS) {
+      const field = fieldForTab(tab.id);
+      expect(field.cell).toBe(BACKDROP.cell);
+      expect(field.gap).toBe(BACKDROP.gap);
+    }
   });
 
   it("gives an unknown or absent tab the reference field rather than nothing", () => {

@@ -28,6 +28,19 @@ const BACKGROUND_SELECTOR =
   "body, .app, .shell, .scrollwrap, .bento, .amb, .shell-backdrop";
 
 /**
+ * Every activatable control the reticle locks onto, mock v12's own language
+ * for "a target, not a background": the run/preview/stop/kill buttons
+ * (`.btn`), a tag or filter pill (`.chip`), a nav tab (`.tab`), and one option
+ * of a segmented control (`.seg button` -- the mock's own segment is a bare
+ * `<span>`, `Segmented.tsx` wraps a real `<button>` around it as the
+ * activatable element). User feedback 2026-08-01: the mock's crosshair
+ * brackets are meant to "lock onto buttons on hover", and everything in this
+ * list reads as a button to a user even though only `.btn` is literally
+ * `ActionButton`.
+ */
+const SNAP_SELECTOR = ".btn, .chip, .tab, .seg button";
+
+/**
  * The CS2 crosshair cursor (mockup-v12-hologlass.html `.tcursor`). Position
  * and size are painted as custom properties (`--cx`/`--cy`/`--cw`/`--ch`),
  * never as `style.left`/`.top`/`.width`/`.height`: this listens to
@@ -60,7 +73,7 @@ export default function Reticle() {
       // background case, not a reason to bail out silently.
       const target = event.target instanceof Element ? event.target : null;
 
-      const button = target?.closest(".btn");
+      const button = target?.closest(SNAP_SELECTOR);
       if (button) {
         const rect = button.getBoundingClientRect();
         el!.style.setProperty("--cx", `${event.clientX}px`);

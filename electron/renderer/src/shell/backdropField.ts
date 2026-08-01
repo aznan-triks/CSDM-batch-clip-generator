@@ -96,20 +96,20 @@ export const BACKDROP: BackdropField = {
  * about tabs.
  *
  * The four values below are a starting point with a reason each, not a taste:
- * Capture is the working screen and stays the reference; Tags is a reading
- * screen, so its field is calmer and reaches less far; Video carries dense
- * forms, so its plates are larger and quieter behind them; Settings is the
- * furthest from the work, so it is the liveliest. Change them here, never in
- * a drawing function.
+ * Tags is a reading screen, so its field is calmer and reaches less far;
+ * Video carries dense forms, so its plates are quieter behind them; Settings
+ * is the furthest from the work, so it is the liveliest. Change them here,
+ * never in a drawing function.
  *
- * `maxPixelRatio` and `plateRadius` are deliberately NOT varied: the first is
- * a hardware cap, the second is the shape of a plate, and neither is a mood.
+ * `cell`/`gap`/`maxPixelRatio`/`plateRadius` are deliberately NOT varied: a
+ * plate that changes size from one tab to the next reads as a layout bug, not
+ * a mood -- the grid must measure the same everywhere the user looks at it.
  */
 export const BACKDROP_BY_TAB: Readonly<Record<string, Partial<BackdropField>>> = {
   capture: { motif: "crosshair" },
-  tags: { cell: 44, reach: 6, threshold: 0.68, motif: "dots" },
-  video: { cell: 52, gap: 6, threshold: 0.7, falloffFloor: 0.35, motif: "bracket" },
-  settings: { cell: 32, reach: 10, threshold: 0.56, motif: "hatch" },
+  tags: { reach: 6, threshold: 0.68, motif: "dots" },
+  video: { threshold: 0.7, falloffFloor: 0.35, motif: "bracket" },
+  settings: { reach: 10, threshold: 0.56, motif: "hatch" },
 };
 
 /**

@@ -56,6 +56,20 @@
   outline-offset: 2px;
 }
 
+/*
+ * User feedback 2026-08-01: the button faces read as "generic AI-site flat".
+ * `.btn.primary` already answers with a glow (mock-v12.css); ghost/danger had
+ * a flat fill and nothing else, which is exactly that tell. One inset top
+ * sheen -- the same `--sheen-edge` token the armed pulse already uses -- reads
+ * as a bevelled panel edge instead of a paint swatch. `.btn.primary`'s own
+ * box-shadow (specificity 0,2,0) still wins over this bare `.btn` rule
+ * (0,1,0), so the primary glow is untouched; only ghost and danger, which the
+ * mock never gave a shadow of their own, pick this up.
+ */
+.btn {
+  box-shadow: inset 0 1px 0 var(--sheen-edge);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .btn .bx,
   .btn .sb,

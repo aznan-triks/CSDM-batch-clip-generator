@@ -7,19 +7,41 @@
  * grid expects one. Drag handlers pass straight through to Card's own
  * <section> instead (onDragOver/onDrop props Card already accepts).
  */
-import { cloneElement, useRef, type DragEvent, type MouseEvent, type ReactElement, type ReactNode } from "react";
+import {
+  cloneElement,
+  useLayoutEffect,
+  useRef,
+  type DragEvent,
+  type MouseEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 
 import { useSectionLayout } from "./sectionLayout";
 
 export interface SectionSpec {
   id: string;
   element: ReactElement<{
+    ref?: (element: HTMLElement | null) => void;
+    className?: string;
     open?: boolean;
     onToggle?: () => void;
     dragHandle?: ReactNode;
     onDragOver?: (event: DragEvent<HTMLElement>) => void;
     onDrop?: (event: DragEvent<HTMLElement>) => void;
+    onResizeToggle?: () => void;
   }>;
+}
+
+/** Whether a card's OWN declared className already spans both bento columns. */
+function declaredWide(className: string | undefined): boolean {
+  return (className ?? "").split(/\s+/).includes("wide");
+}
+
+/** `className`, with "wide" added or removed to match `wide`, everything else kept as-is. */
+function withWideClass(className: string | undefined, wide: boolean): string {
+  const rest = (className ?? "").split(/\s+/).filter((token) => token && token !== "wide");
+  return wide ? [...rest, "wide"].join(" ") : rest.join(" ");
 }
 
 interface SectionListProps {
@@ -28,22 +50,62 @@ interface SectionListProps {
 }
 
 export default function SectionList({ tabId, sections }: SectionListProps) {
-  const { order, isCollapsed, toggleCollapsed, reorder } = useSectionLayout(
+  const { order, isCollapsed, toggleCollapsed, reorder, wideOverride, toggleWide } = useSectionLayout(
     tabId,
     sections.map((section) => section.id),
   );
   const draggedId = useRef<string | null>(null);
   const byId = new Map(sections.map((section) => [section.id, section]));
 
+  // FLIP reorder (user feedback 2026-08-01: "not fluid, not live"). Every
+  // render, compare each card's freshly measured position against the one
+  // recorded last render; if a reorder or a fold moved it, jump it back to
+  // where it was with no transition, force one layout, then release the
+  // transition -- `.sec` already carries `transition: transform .2s
+  // ease-out` (mock-v12.css) for its own hover lift, and that same rule is
+  // what animates the release. Nothing here is a `:hover` rule, and this file
+  // has no mousemove/pointermove listener, so neither no-hover-motion.test.ts
+  // guard applies -- this is a state-driven reflow, not pointer-driven
+  // painting.
+  const nodeRefs = useRef(new Map<string, HTMLElement>());
+  const prevRects = useRef(new Map<string, DOMRect>());
+
+  useLayoutEffect(() => {
+    for (const [id, el] of nodeRefs.current) {
+      const prev = prevRects.current.get(id);
+      if (!prev) continue;
+      const next = el.getBoundingClientRect();
+      const dx = prev.left - next.left;
+      const dy = prev.top - next.top;
+      if (!dx && !dy) continue;
+      el.style.transition = "none";
+      el.style.transform = `translate(${dx}px, ${dy}px)`;
+      el.getBoundingClientRect(); // forces the browser to commit the jump before releasing it
+      el.style.transition = "";
+      el.style.transform = "";
+    }
+    const rects = new Map<string, DOMRect>();
+    for (const [id, el] of nodeRefs.current) rects.set(id, el.getBoundingClientRect());
+    prevRects.current = rects;
+  });
+
   return (
     <>
       {order.map((id) => {
         const spec = byId.get(id);
         if (!spec) return null;
+        const defaultWide = declaredWide(spec.element.props.className);
+        const wide = wideOverride(id) ?? defaultWide;
         return cloneElement(spec.element, {
           key: id,
+          ref: (el: HTMLElement | null) => {
+            if (el) nodeRefs.current.set(id, el);
+            else nodeRefs.current.delete(id);
+          },
+          className: withWideClass(spec.element.props.className, wide),
           open: !isCollapsed(id),
           onToggle: () => toggleCollapsed(id),
+          onResizeToggle: () => toggleWide(id, wide),
           onDragOver: (event: DragEvent<HTMLElement>) => event.preventDefault(),
           onDrop: () => {
             if (draggedId.current) reorder(draggedId.current, id);

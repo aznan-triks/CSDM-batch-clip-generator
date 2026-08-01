@@ -9,6 +9,7 @@
 import { useEffect, useRef } from "react";
 
 import { onMessage } from "../bridge";
+import StatStrip from "../components/StatStrip";
 import { createActionController, type Geometry } from "./controller";
 import { DEFAULT_WEAPON_ID, weaponById } from "./weapons";
 import "./WeaponBand.css";
@@ -94,6 +95,12 @@ export default function WeaponBand({
           <i style={{ width: `${Math.round(Math.max(0, Math.min(1, progress ?? 0)) * 100)}%` }} />
         </div>
         <div className="band-counter">{counter}</div>
+        {/* User feedback 2026-08-01: Demos/Clips/Total/Avg-per-clip used to sit
+            in their own card at the bottom of the Capture tab only -- gone the
+            moment another tab was open. The band is mounted for the app's
+            whole life (AppShell.tsx), so this is the one place they are
+            always on screen. */}
+        <StatStrip compact />
       </div>
 
       <div className="band-weapon">

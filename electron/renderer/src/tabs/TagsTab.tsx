@@ -29,6 +29,21 @@ interface FoundDemo {
   n_seq: number;
 }
 
+/**
+ * `TAG_PRESET_COLORS` (`csdm/static_data.py`), mirrored the same way
+ * `theme/accent.ts` mirrors `_ACCENT_PRESETS`: a fixed design table, not a
+ * setting, so it is a constant here rather than a round trip through the
+ * bridge. Python's own tag-creation dialog (`ColorPickerDialog`,
+ * `csdm/widgets.py`) offers these 20 swatches plus free hex entry -- the
+ * Electron port used to hardcode the first one and call it done.
+ */
+const TAG_COLOR_PRESETS = [
+  "#f97316", "#ef4444", "#eab308", "#22c55e", "#3b82f6",
+  "#8b5cf6", "#ec4899", "#14b8a6", "#f43f5e", "#6366f1",
+  "#0ea5e9", "#84cc16", "#d946ef", "#f59e0b", "#10b981",
+  "#6b7280", "#a855f7", "#e11d48", "#0891b2", "#65a30d",
+] as const;
+
 interface RangeResult {
   date_start: string | null;
   date_end: string | null;
@@ -47,6 +62,7 @@ export default function TagsTab() {
   const [activeTagIds, setActiveTagIds] = useState<Set<number | string>>(new Set());
   const [creating, setCreating] = useState(false);
   const [newTagName, setNewTagName] = useState("");
+  const [newTagColor, setNewTagColor] = useState<string>(TAG_COLOR_PRESETS[0]);
 
   const [range, setRange] = useState<RangeResult | null>(null);
   const [rangeStatus, setRangeStatus] = useState("");
@@ -107,8 +123,9 @@ export default function TagsTab() {
     const trimmed = newTagName.trim();
     if (!trimmed) return;
     try {
-      await runCommand("tag_create", { tag_name: trimmed, color: "#f97316" });
+      await runCommand("tag_create", { tag_name: trimmed, color: newTagColor });
       setNewTagName("");
+      setNewTagColor(TAG_COLOR_PRESETS[0]);
       setCreating(false);
       await runCommand("connect_db");
     } catch (cause) {
@@ -282,40 +299,39 @@ export default function TagsTab() {
           {tags.map(([tagId, tagName, color]) => {
             const active = activeTagIds.has(tagId);
             return (
-              <button
-                key={String(tagId)}
-                type="button"
-                className={active ? "chip on" : "chip"}
-                aria-pressed={active}
-                aria-label={`tag-${tagName}`}
-                onClick={() => toggleTag(tagId)}
-              >
-                {/* The mock's own `.d` dot, which exists for exactly this and
-                    was never used here. The tag's colour rides on the dot in
-                    BOTH states: painting the border and the text instead meant
-                    a tag showed nothing at rest -- the state it is in when the
-                    tab opens -- and once picked, `.chip.on` kept its lime fill
-                    on top, so a blue tag read as green either way. */}
-                <span className="d" style={{ background: color }} aria-hidden="true" />
-                {tagName}
-              </button>
+              <span key={String(tagId)} className="tag-pair">
+                <button
+                  type="button"
+                  className={active ? "chip on" : "chip"}
+                  aria-pressed={active}
+                  aria-label={`tag-${tagName}`}
+                  onClick={() => toggleTag(tagId)}
+                >
+                  {/* The mock's own `.d` dot, which exists for exactly this and
+                      was never used here. The tag's colour rides on the dot in
+                      BOTH states: painting the border and the text instead meant
+                      a tag showed nothing at rest -- the state it is in when the
+                      tab opens -- and once picked, `.chip.on` kept its lime fill
+                      on top, so a blue tag read as green either way. */}
+                  <span className="d" style={{ background: color }} aria-hidden="true" />
+                  {tagName}
+                </button>
+                {/* Deletion used to be a whole second row repeating every tag
+                    name ("Delete: RAGE ×  ACE ×  ..."). Same information as
+                    the selection chip right above it, so it read as a
+                    duplicate list rather than a control. One icon-only button
+                    riding the same pair now. */}
+                <button
+                  type="button"
+                  className="chip danger tag-del"
+                  aria-label={`delete-tag-${tagName}`}
+                  onClick={() => deleteTag(tagId, tagName)}
+                >
+                  ×
+                </button>
+              </span>
             );
           })}
-        </div>
-
-        <div className="row">
-          <span className="lab">Delete:</span>
-          {tags.map(([tagId, tagName]) => (
-            <button
-              key={`del-${String(tagId)}`}
-              type="button"
-              className="chip danger"
-              aria-label={`delete-tag-${tagName}`}
-              onClick={() => deleteTag(tagId, tagName)}
-            >
-              {tagName} ×
-            </button>
-          ))}
         </div>
 
         <div className="row">
@@ -331,8 +347,26 @@ export default function TagsTab() {
         </div>
 
         {creating && (
-          <div className="row">
+          <div className="row tag-create">
             <Field id="new-tag-name" value={newTagName} onChange={setNewTagName} placeholder="Tag name" />
+            <div className="tag-swatches" role="radiogroup" aria-label="Tag colour">
+              {TAG_COLOR_PRESETS.map((hex) => (
+                <button
+                  key={hex}
+                  type="button"
+                  role="radio"
+                  aria-checked={newTagColor === hex}
+                  aria-label={`colour-${hex}`}
+                  className={newTagColor === hex ? "tag-swatch tag-swatch-selected" : "tag-swatch"}
+                  style={{ backgroundColor: hex }}
+                  onClick={() => setNewTagColor(hex)}
+                />
+              ))}
+              <label className="tag-swatch-custom">
+                <span>Custom…</span>
+                <input type="color" value={newTagColor} onChange={(event) => setNewTagColor(event.target.value)} />
+              </label>
+            </div>
             <button type="button" className="chip" onClick={createTag}>
               Create
             </button>

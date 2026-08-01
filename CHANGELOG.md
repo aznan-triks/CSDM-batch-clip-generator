@@ -12,6 +12,64 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [Unreleased]
+
+Restyle 6 (2026-08-01, same day as v299): a punch list of HUD polish and one Tkinter-parity gap,
+reported directly by the user against the running app. Not version-bumped yet (explicit standing
+rule: no bump without the user's go-ahead). No manual recette on real data this session either —
+verified by `npm test`/`npm run typecheck` (583/583, clean) and a live DOM/console check on a
+throwaway Vite instance (port 5283, no Electron/bridge), not a screenshot: the Browser pane could
+not compose frames in this session (headless, user AFK), so no pixel-level "before/after" proof
+exists for these changes yet — flag before the next visual close-out (context_guide.md §1 P8).
+
+### Added
+**Humanised:** Creating a tag now offers 20 colour swatches plus a custom colour picker, instead of
+every new tag being silently orange. Cards can be resized between one and two columns by clicking
+their bottom-right corner bracket (the same one that already flickered on hover), and the choice
+is remembered.
+**Technical:** `TagsTab.tsx`'s `tag_create` call used to hardcode `color: "#f97316"`; the picker
+mirrors `theme/accent.ts`'s pattern with a new `TAG_COLOR_PRESETS` (`csdm/static_data.py`'s
+`TAG_PRESET_COLORS`, mirrored the same way `ACCENT_PRESETS` mirrors `_ACCENT_PRESETS`) plus a
+native `<input type="color">`. `Card.tsx` now forwards a ref and renders an invisible
+`.resize-br` hit target (the mock's own `.cbr.br` stays `pointer-events:none` decoration);
+`sectionLayout.ts`'s `ui_sections` gained a per-card `wide` override, read/written by
+`SectionList.tsx`'s `toggleWide`.
+
+### Changed
+**Humanised:** Cards reorder and resize live now (no more snap-into-place), the holographic grid
+behind every tab is the same size everywhere, the flicker on card hover is easier to see, cards
+pack more tightly instead of leaving empty space next to shorter ones, every card has a visible
+line between its title and its content, the crosshair now locks onto tags/tabs/segmented options
+too (not just the big action buttons), the four run counters (Demos/Clips/Total/Avg per clip) live
+in the bottom bar now so they are visible from every tab instead of only at the bottom of Capture,
+the Tags page no longer repeats every tag name twice (once to select, once to delete), and buttons
+and text fields pick up a couple of small CS2-style touches (a bevel sheen on flat buttons, a glow
+on a focused field).
+**Technical:** `SectionList.tsx` gained a FLIP reorder animation (`useLayoutEffect`, no new pointer
+listener, so neither no-hover-motion.test.ts guard applies). `shell/backdropField.ts`'s
+`BACKDROP_BY_TAB` no longer overrides `cell`/`gap` per tab. `Card.css`'s `.sec:hover .glx`/`.cbr`
+now run `mix-blend-mode: normal` and loop `infinite` while hovered instead of stopping after two
+cycles (`background`/`border` stay untouched — Card.css.test.ts reserves those for the mock).
+`.capture-tab`/`.tags-tab`/`.video-tab`/`.settings-tab` all gained `grid-auto-flow: dense`. New
+`.sep` element between `.sh` and `.sb`. `cursor/Reticle.tsx`'s snap target widened from `.btn` to
+`SNAP_SELECTOR = ".btn, .chip, .tab, .seg button"`. `StatStrip` gained a `compact` prop, mounted in
+`weapon/WeaponBand.tsx`'s `.band-meta` instead of a standalone `.wide` cell in `CaptureTab.tsx`.
+`TagsTab.tsx`'s per-tag delete button merged into the same `.chips` row as the selection chip.
+`ActionButton.css`/`Field.css` gained a `box-shadow` (inset sheen / focus glow respectively).
+
+### Known gaps (not fixed this session, flagged rather than silently skipped)
+User also asked to restore "possibilities" the Electron port has fewer of than the Python script.
+Audited (`docs/audits/` not written — this was a direct code comparison, not a full audit plan);
+findings beyond the tag-colour fix above:
+- **Player favorites** (`PlayerSearchWidget`'s "★ REGISTERED ACCOUNTS" persistent list in Tkinter)
+  never ported — `tabs/PlayerSection.tsx` already documents this gap in its own header comment.
+- **Range-mode demo picker** stays empty outside Manual mode — `DemoSelectionSection.tsx` already
+  documents that chantier 4c never piped a Preview result into a state event this component reads.
+- **Injection preview panel** (`SettingsTab.tsx`) is a disclosed `"not available yet"` stub.
+- Every dropdown/slider/multi-select option list checked (codecs, resolutions, presets, weapon/
+  match-type/map filters, kill-count options, HLAE/CS2-effects quick values) matched Python's
+  exactly — no other restriction found.
+
 ## [v299] — 2026-08-01
 
 ### Fixed

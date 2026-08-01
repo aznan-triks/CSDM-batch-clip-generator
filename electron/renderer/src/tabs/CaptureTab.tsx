@@ -16,7 +16,6 @@ import Chip from "../components/Chip";
 import Field from "../components/Field";
 import { ICONS } from "../icons";
 import Segmented from "../components/Segmented";
-import StatStrip from "../components/StatStrip";
 import Slider from "../components/Slider";
 import SectionList, { type SectionSpec } from "../shell/SectionList";
 import SettingControl from "../settings/SettingControl";
@@ -325,12 +324,6 @@ export default function CaptureTab() {
       <DatabaseProvider>
         <div className="bento capture-tab">
           <SectionList tabId="capture" sections={SECTIONS} />
-
-          {/* The mock closes the Capture view with its counter strip -- not a
-              foldable/draggable section, always last. */}
-          <div className="wide">
-            <StatStrip />
-          </div>
         </div>
       </DatabaseProvider>
     </TablesProvider>

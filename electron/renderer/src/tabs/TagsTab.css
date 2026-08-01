@@ -1,3 +1,9 @@
+/* Same reasoning as `.capture-tab` (CaptureTab.css): backfill short rows
+   instead of leaving a gap beside them. */
+.tags-tab {
+  grid-auto-flow: dense;
+}
+
 .tags-error {
   font-family: var(--font-display);
   font-size: var(--fs-sm);
@@ -57,4 +63,56 @@
  */
 .tags-tab .chip .d {
   opacity: 1;
+}
+
+/* A tag's select-chip and its delete-icon, riding together as one unit in
+   the `.chips` flex row instead of a whole second "Delete:" row. */
+.tag-pair {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* Icon-only: the mock's `.chip.danger` padding (7px 13px) is sized for a
+   word, not a glyph -- a lone "×" in it reads as an oversized pill. */
+.tag-del {
+  padding: 7px 10px;
+}
+
+.tag-create {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tag-swatches {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+/* Mirrors `.settings-swatch` (SettingsTab's accent picker) -- same idea, a
+   fixed colour on a round target, kept as its own class since a tag swatch
+   and an accent swatch answer to different data. */
+.tag-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: var(--bw-accent) solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tag-swatch-selected {
+  border-color: var(--txt-hi);
+}
+
+.tag-swatch-custom {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  color: var(--dim);
+  cursor: pointer;
 }

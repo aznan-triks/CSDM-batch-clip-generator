@@ -14,3 +14,48 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/*
+ * The bottom-band variant (WeaponBand.css's `.band-meta` row): four
+ * label:value pairs on one line, mono like the rest of the band, using the
+ * mock's own tone classes (`.v.a`/`.v.g`) so a chosen accent still reaches
+ * them. Not the mock's own shape -- the mock never puts this strip in its
+ * bottom band -- but it is the one row in the shell that is on screen no
+ * matter which tab is open, which is the point of moving it here.
+ */
+.stats-compact {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-4);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stc {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-1);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+
+.stc .k {
+  font-size: var(--fs-micro);
+  text-transform: uppercase;
+  letter-spacing: var(--tr-wide);
+  color: var(--faint);
+}
+
+.stc .v {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--txt);
+}
+
+.stc .v.a {
+  color: var(--accent);
+}
+
+.stc .v.g {
+  color: var(--emerald);
+}

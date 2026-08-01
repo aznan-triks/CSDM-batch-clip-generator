@@ -1,4 +1,4 @@
-import { type DragEvent, type MouseEvent, type ReactNode, useState } from "react";
+import { forwardRef, type DragEvent, type MouseEvent, type ReactNode, useState } from "react";
 
 import "./Card.css";
 
@@ -21,6 +21,14 @@ interface CardProps {
   /** Passed straight to the card's own <section> -- SectionList's drop target. */
   onDragOver?: (event: DragEvent<HTMLElement>) => void;
   onDrop?: (event: DragEvent<HTMLElement>) => void;
+  /**
+   * User feedback 2026-08-01: "can't even resize them by their own corner
+   * brackets" -- the mock's `.cbr.br` is `pointer-events:none` decoration
+   * (mock-v12.css). Only SectionList passes this, and only it decides what a
+   * card's two sizes are (one column vs `.wide`'s two); Card itself just
+   * exposes the corner as a real hit target when a caller wants that.
+   */
+  onResizeToggle?: () => void;
 }
 
 /**
@@ -46,19 +54,26 @@ function paintSpotlight(event: MouseEvent<HTMLElement>) {
  * heading stays, with `display: contents` (Card.css), so a screen reader can
  * still walk the tab by its card titles while the button becomes the row the
  * mock's rules address.
+ *
+ * Forwards a ref to the `<section>` itself -- SectionList's own doing
+ * (menus-C's FLIP reorder animation), never read by anything decorative.
  */
-export default function Card({
-  title,
-  icon,
-  children,
-  className,
-  count,
-  open: openProp,
-  onToggle,
-  dragHandle,
-  onDragOver,
-  onDrop,
-}: CardProps) {
+const Card = forwardRef<HTMLElement, CardProps>(function Card(
+  {
+    title,
+    icon,
+    children,
+    className,
+    count,
+    open: openProp,
+    onToggle,
+    dragHandle,
+    onDragOver,
+    onDrop,
+    onResizeToggle,
+  },
+  ref,
+) {
   // The mock's `.sec.closed`: the header is the toggle and the body folds
   // away. The window's own `Sec` has always worked this way -- a card that
   // cannot be folded turns a dense tab into a scroll marathon.
@@ -73,13 +88,30 @@ export default function Card({
   const classes = ["sec", className, open ? null : "closed"].filter(Boolean).join(" ");
 
   return (
-    <section className={classes} onMouseMove={paintSpotlight} onDragOver={onDragOver} onDrop={onDrop}>
+    <section
+      ref={ref}
+      className={classes}
+      onMouseMove={paintSpotlight}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       {/* The mock's four decorative layers. `.glx` and `.cbr` were drawn here
           as pseudo-elements on the card itself, which could carry the corners
           but not the flicker the mock gives them. */}
       <span className="glx" aria-hidden="true" />
       <span className="cbr tl" aria-hidden="true" />
       <span className="cbr br" aria-hidden="true" />
+      {/* The visual bracket stays the mock's inert 8x8 decoration; this is a
+          bigger, invisible hit target riding the same corner, only rendered
+          when a caller (SectionList) actually wants it clickable. */}
+      {onResizeToggle && (
+        <button
+          type="button"
+          className="resize-br"
+          aria-label={`resize-${title}`}
+          onClick={onResizeToggle}
+        />
+      )}
       <span className="spot" aria-hidden="true" />
       <h5 className="panel-heading">
         <button type="button" className="sh" aria-expanded={open} onClick={toggle}>
@@ -92,7 +124,13 @@ export default function Card({
           </span>
         </button>
       </h5>
+      {/* User feedback 2026-08-01: no line ever separated the header from the
+          body, or the mock never needed one on its own showcase cards. A
+          dense settings card reads better with the boundary marked. */}
+      {open && <span className="sep" aria-hidden="true" />}
       {open && <div className="sb">{children}</div>}
     </section>
   );
-}
+});
+
+export default Card;
