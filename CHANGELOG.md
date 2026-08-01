@@ -57,6 +57,18 @@ valid `--gun-art` `url()` and the resource fetched fine (200), yet the paint was
 `mask-mode: alpha` (+ the `-webkit-` twin) fixes it — verified live before being written to source.
 Root cause: `docs/audits/AUDIT_weapon_silhouettes.md` (local, not tracked — `docs/` is gitignored).
 
+**Humanised:** Some small labels (stat keys, the card chevron, console timestamps) were too pale to
+read comfortably in light mode.
+**Technical:** `mock-v12.css` defines `--faint: #93a1b5` and six selectors use it; `mock-bridge.css`
+already remapped the mock's other under-AA colour (`--muted`) to `--dim` but never did the same for
+`--faint`. Now `--faint: var(--dim)` too. Guarded by `theme/__tests__/contrast.test.ts`.
+
+**Humanised:** Pressing KILL now shows the weapon actually firing — a muzzle flash and tracer round —
+before it racks and gets put away, instead of jumping straight to the retraction.
+**Technical:** `playKill` (`weapon/sequences.ts`) never called `shot()`/`recoil()`, which already
+existed and were used by RUN and PREVIEW. Now called first, ahead of the existing bolt-cycle, shake
+and retraction. `weapon/__tests__/stop-waits.test.ts` asserts the flash and tracer are spawned.
+
 ### Added
 
 **Humanised:** The log panel writes itself out now, a character at a time, like the approved design.
@@ -73,6 +85,11 @@ at any cell size a tab picks. Geometric, not images: the mark is redrawn every f
 inside the cursor's reach, and an image blit per plate is exactly the per-tile cost that moved this
 layer off the DOM in the first place. The caller scales it by the plate's intensity, like everything
 else in that pass.
+
+**Humanised:** The Tags tab can now delete a tag outright, not just remove it from selected demos.
+**Technical:** `csdm/bridge/host.py::_cmd_tag_delete` existed with no UI entry point anywhere — flagged
+by `AUDIT_retours_restyle5.md` R12 and left open. `TagsTab.tsx` now has a delete button per tag,
+wired to `tag_delete`, reloading the tag list on success.
 
 ### Changed
 
