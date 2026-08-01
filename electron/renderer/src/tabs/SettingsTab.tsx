@@ -129,6 +129,38 @@ export default function SettingsTab() {
 
   return (
     <div className="bento settings-tab">
+      <Card title="PostgreSQL Connection" icon={<ICONS.postgresql />} className="wide">
+        <div className="row">
+          <SettingControl settingKey="pg_host">
+            <Field id="pg-host" label="Host" value={pgHost ?? ""} onChange={setPgHost} />
+          </SettingControl>
+          <SettingControl settingKey="pg_port">
+            <Field id="pg-port" label="Port" value={pgPort ?? ""} onChange={setPgPort} />
+          </SettingControl>
+          <SettingControl settingKey="pg_db">
+            <Field id="pg-db" label="Base" value={pgDb ?? ""} onChange={setPgDb} />
+          </SettingControl>
+          <SettingControl settingKey="pg_user">
+            <Field id="pg-user" label="User" value={pgUser ?? ""} onChange={setPgUser} />
+          </SettingControl>
+          <SettingControl settingKey="pg_pass">
+            <Field
+              id="pg-pass"
+              label="Pass"
+              type="password"
+              value={pgPass ?? ""}
+              onChange={setPgPass}
+            />
+          </SettingControl>
+        </div>
+        <div className="row">
+          <button type="button" className="chip" onClick={testAndReload}>
+            Test & Reload
+          </button>
+          {dbStatus && <span className="settings-db-status">{dbStatus}</span>}
+        </div>
+      </Card>
+
       <Card title="Paths" icon={<ICONS.paths />} className="wide">
         <SettingControl settingKey="csdm_exe">
           <PathField
@@ -287,38 +319,6 @@ export default function SettingsTab() {
               onToggle={() => setRememberLayout(!rememberLayout)}
             />
           </SettingControl>
-        </div>
-      </Card>
-
-      <Card title="PostgreSQL Connection" icon={<ICONS.postgresql />} className="wide">
-        <div className="row">
-          <SettingControl settingKey="pg_host">
-            <Field id="pg-host" label="Host" value={pgHost ?? ""} onChange={setPgHost} />
-          </SettingControl>
-          <SettingControl settingKey="pg_port">
-            <Field id="pg-port" label="Port" value={pgPort ?? ""} onChange={setPgPort} />
-          </SettingControl>
-          <SettingControl settingKey="pg_db">
-            <Field id="pg-db" label="Base" value={pgDb ?? ""} onChange={setPgDb} />
-          </SettingControl>
-          <SettingControl settingKey="pg_user">
-            <Field id="pg-user" label="User" value={pgUser ?? ""} onChange={setPgUser} />
-          </SettingControl>
-          <SettingControl settingKey="pg_pass">
-            <Field
-              id="pg-pass"
-              label="Pass"
-              type="password"
-              value={pgPass ?? ""}
-              onChange={setPgPass}
-            />
-          </SettingControl>
-        </div>
-        <div className="row">
-          <button type="button" className="chip" onClick={testAndReload}>
-            Test & Reload
-          </button>
-          {dbStatus && <span className="settings-db-status">{dbStatus}</span>}
         </div>
       </Card>
 
