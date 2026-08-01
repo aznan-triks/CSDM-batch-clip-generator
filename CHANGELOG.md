@@ -71,6 +71,17 @@ and retraction. `weapon/__tests__/stop-waits.test.ts` asserts the flash and trac
 
 ### Added
 
+**Humanised:** Capture, Video and Settings cards can now be folded shut and dragged into a different
+order, and both survive a restart, per tab.
+**Technical:** `Card.tsx` gained a controlled fold state (`open`/`onToggle`, optional -- every prior
+caller keeps its own internal state). A new hook `useSectionLayout` and component `SectionList`
+render each tab's cards from a `SECTIONS` array instead of a fixed JSX sequence, backed by one new
+settings key (`ui_sections`, per-tab `{order, collapsed}`, reconciled against each tab's declared
+sections on every read so a stale or missing id can never drop a card). Deliberately not a preset key
+-- presets are run configuration, this is display state. Drag-and-drop is native HTML5, no new
+dependency; no DOM wrapper around `Card` (`.bento`'s grid and `.wide`'s `grid-column:1/-1` sit on
+`.sec` itself, so drag handlers pass straight through to it).
+
 **Humanised:** The log panel writes itself out now, a character at a time, like the approved design.
 **Technical:** `useTypewriter` reproduces the mock's `pump()` with three differences it never had to
 face: only the last twelve lines are typed (a batch emits hundreds, and a log still spelling out what
@@ -92,6 +103,13 @@ by `AUDIT_retours_restyle5.md` R12 and left open. `TagsTab.tsx` now has a delete
 wired to `tag_delete`, reloading the tag list on success.
 
 ### Changed
+
+**Humanised:** In the Video tab, Recording System (and HLAE Options) now come before Encoding, ahead
+of how the result gets encoded rather than after. In Capture, the retry/timeout/output-order controls
+that used to live inside "Capture & Timing" now have their own "Timing & Retries" card. In Settings,
+PostgreSQL Connection is now the first card, not the fourth.
+**Technical:** Pure JSX reorder plus one card split, no settings key touched, no behaviour change --
+`electron/renderer/src/tabs/{VideoTab,CaptureTab,SettingsTab}.tsx`.
 
 **Humanised:** The weapon icons are the game's own now, all forty-two of them, and every hand-drawn
 shape this project ever carried is gone.
