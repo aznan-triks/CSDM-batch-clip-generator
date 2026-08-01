@@ -16,6 +16,15 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+**Humanised:** The console panel can be resized by dragging its edge again, and two buttons the old
+window had — Copy all, Copy sel. — are back.
+**Technical:** `AUDIT_console_resize_boutons.md`. `.shell` was a fixed `1fr 288px` grid with no drag
+handle; `ui_split_pct` already existed as a typed Settings field but drove nothing. A new
+`.split-handle` drags it live via `--split-left`/`--split-right` (percent, not `fr` — `calc()`
+producing an `fr` value silently fell back to a single implicit column in this Chromium build,
+caught live rather than by the test suite). `Copy all`/`Copy sel.` call
+`navigator.clipboard.writeText`, mirroring Tkinter's `_log_copy_all`/`_log_copy_sel`.
+
 **Humanised:** Nine kill filters (MATE POV, SPRAY TRANSFER, HIGH VELOCITY / Ferrari Peek, FLICK,
 SAVIOR, WALL BANG, AIRBORNE, ATTACKER BLIND, COLLATERAL) crashed Preview outright the moment they
 were used in the Electron app — the Tkinter window never had this problem.
