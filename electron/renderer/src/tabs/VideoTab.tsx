@@ -231,6 +231,84 @@ export default function VideoTab() {
         </SettingControl>
       </Card>
 
+      <Card title="Recording System" icon={<ICONS.recordingSystem />}>
+        <SettingControl settingKey="recsys">
+          <div className="row">
+            <span className="lab">System</span>
+            <Segmented
+              options={RECSYS_OPTIONS}
+              value={recsys ?? RECSYS_OPTIONS[0]}
+              onChange={setRecsys}
+              label="System"
+            />
+          </div>
+        </SettingControl>
+        <p className="video-hint">
+          HLAE = injects via HLAE into CS2 (recommended -- full options). CS =
+          native CSDM recording via CS2&apos;s startmovie command.
+          HLAE-exclusive features (custom FOV, AFX streams, No spectator UI, Fix
+          scope FOV) are not available in CS mode; CS2 effects (physics,
+          gravity, blood) are injected in both modes.
+        </p>
+      </Card>
+
+      {isHlae && (
+        <Card title="HLAE Options" icon={<ICONS.hlaeOptions />}>
+          <HlaeOptionsSection />
+        </Card>
+      )}
+
+      <Card title="In-Game Options" icon={<ICONS.inGameOptions />}>
+        <SettingControl settingKey="true_view">
+          <Chip
+            label="TrueView"
+            selected={!!trueView}
+            onToggle={() => setTrueView(!trueView)}
+          />
+        </SettingControl>
+        <SettingControl settingKey="show_only_death_notices">
+          <Chip
+            label="Death notices only"
+            selected={!!showOnlyDeathNotices}
+            onToggle={() => setShowOnlyDeathNotices(!showOnlyDeathNotices)}
+          />
+        </SettingControl>
+        <SettingControl settingKey="show_xray">
+          <Chip
+            label="X-Ray"
+            selected={!!showXray}
+            onToggle={() => setShowXray(!showXray)}
+          />
+        </SettingControl>
+        <div className="row">
+          <SettingControl settingKey="death_notices_duration">
+            <Field
+              id="death-notices-duration"
+              label="Death notices (s)"
+              mono
+              value={
+                deathNoticesDuration === undefined ||
+                deathNoticesDuration === null
+                  ? "5"
+                  : String(deathNoticesDuration)
+              }
+              onChange={setDeathNoticesDuration}
+            />
+          </SettingControl>
+        </div>
+        <SettingControl settingKey="close_game_after">
+          <Chip
+            label="Close CS2 after each demo"
+            selected={!!closeGameAfter}
+            onToggle={() => setCloseGameAfter(!closeGameAfter)}
+          />
+        </SettingControl>
+      </Card>
+
+      <Card title="CS2 Effects" icon={<ICONS.cs2Effects />} className="wide">
+        <Cs2EffectsSection />
+      </Card>
+
       <Card title="Encoding" icon={<ICONS.encoding />} className="wide">
         {/* Always mounted, options empty until `useTables()` resolves -- same
             reason as the FPS control above. */}
@@ -343,84 +421,6 @@ export default function VideoTab() {
             />
           </SettingControl>
         </div>
-      </Card>
-
-      <Card title="In-Game Options" icon={<ICONS.inGameOptions />}>
-        <SettingControl settingKey="true_view">
-          <Chip
-            label="TrueView"
-            selected={!!trueView}
-            onToggle={() => setTrueView(!trueView)}
-          />
-        </SettingControl>
-        <SettingControl settingKey="show_only_death_notices">
-          <Chip
-            label="Death notices only"
-            selected={!!showOnlyDeathNotices}
-            onToggle={() => setShowOnlyDeathNotices(!showOnlyDeathNotices)}
-          />
-        </SettingControl>
-        <SettingControl settingKey="show_xray">
-          <Chip
-            label="X-Ray"
-            selected={!!showXray}
-            onToggle={() => setShowXray(!showXray)}
-          />
-        </SettingControl>
-        <div className="row">
-          <SettingControl settingKey="death_notices_duration">
-            <Field
-              id="death-notices-duration"
-              label="Death notices (s)"
-              mono
-              value={
-                deathNoticesDuration === undefined ||
-                deathNoticesDuration === null
-                  ? "5"
-                  : String(deathNoticesDuration)
-              }
-              onChange={setDeathNoticesDuration}
-            />
-          </SettingControl>
-        </div>
-        <SettingControl settingKey="close_game_after">
-          <Chip
-            label="Close CS2 after each demo"
-            selected={!!closeGameAfter}
-            onToggle={() => setCloseGameAfter(!closeGameAfter)}
-          />
-        </SettingControl>
-      </Card>
-
-      <Card title="Recording System" icon={<ICONS.recordingSystem />}>
-        <SettingControl settingKey="recsys">
-          <div className="row">
-            <span className="lab">System</span>
-            <Segmented
-              options={RECSYS_OPTIONS}
-              value={recsys ?? RECSYS_OPTIONS[0]}
-              onChange={setRecsys}
-              label="System"
-            />
-          </div>
-        </SettingControl>
-        <p className="video-hint">
-          HLAE = injects via HLAE into CS2 (recommended -- full options). CS =
-          native CSDM recording via CS2&apos;s startmovie command.
-          HLAE-exclusive features (custom FOV, AFX streams, No spectator UI, Fix
-          scope FOV) are not available in CS mode; CS2 effects (physics,
-          gravity, blood) are injected in both modes.
-        </p>
-      </Card>
-
-      {isHlae && (
-        <Card title="HLAE Options" icon={<ICONS.hlaeOptions />}>
-          <HlaeOptionsSection />
-        </Card>
-      )}
-
-      <Card title="CS2 Effects" icon={<ICONS.cs2Effects />} className="wide">
-        <Cs2EffectsSection />
       </Card>
     </div>
   );
