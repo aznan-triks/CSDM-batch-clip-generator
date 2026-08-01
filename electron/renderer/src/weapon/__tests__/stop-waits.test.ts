@@ -135,6 +135,14 @@ describe("the other three actions", () => {
     expect(geometry.host.childElementCount).toBe(0);
   });
 
+  it("KILL fires the shot before retracting the weapon (P6)", () => {
+    const created = recordSpawns(geometry.host);
+    const controller = createActionController(geometry, () => weaponId);
+    controller.onState("kill_requested");
+    expect(created).toContain("flash");
+    expect(created).toContain("tracer");
+  });
+
   it("PREVIEW opens its reticle -- the one that was lost once", () => {
     const controller = createActionController(geometry, () => weaponId);
     controller.onState("preview_started");

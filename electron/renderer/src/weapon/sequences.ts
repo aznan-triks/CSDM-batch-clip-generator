@@ -470,11 +470,19 @@ function playDetonate(context: SequenceContext): void {
   shake(context, MOTION.shake.detonationAmplitude, MOTION.shake.detonationDuration);
 }
 
-/** KILL: bolt slammed, frame shaken, weapon out of frame. No waiting, ever. */
+/**
+ * KILL: the shot that did it, then bolt slammed, frame shaken, weapon out of
+ * frame. No waiting, ever. AUDIT_huit_pistes_post_v299.md P6 -- the fire
+ * itself (flash, tracer, recoil) already existed for RUN/PREVIEW and was
+ * never played here; the retraction it now leads into is unchanged.
+ */
 function playKill(context: SequenceContext): void {
   const payload = payloadOf(context);
+  const weapon = weaponById(payload.weaponId);
   const { killRetract } = MOTION;
 
+  shot(context, weapon, payload.muzzle, payload.target, false);
+  recoil(context, weapon, false);
   boltCycle(context);
   shake(context, killRetract.shake, MOTION.shake.duration);
   context.after(context.scale(killRetract.delay), () => {
