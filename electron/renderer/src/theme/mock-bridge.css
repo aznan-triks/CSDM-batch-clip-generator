@@ -47,6 +47,10 @@
      Proven by theme/__tests__/contrast.test.ts. */
   --muted: var(--dim);
 
+  /* --faint (#93a1b5) is the mock's other under-AA label colour, same defect
+     as --muted, never mapped. AUDIT_huit_pistes_post_v299.md P1. */
+  --faint: var(--dim);
+
   /* The mock's --spring overshoots. The one time an overshoot reached the
      screen the C4 plant read as a toy and was reverted in v214 (CONTEXT_GUIDE
      §10). One easing, and it decelerates. */

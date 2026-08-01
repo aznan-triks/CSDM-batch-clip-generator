@@ -112,6 +112,19 @@ describe("--faint was removed and must not come back", () => {
   });
 });
 
+describe("--faint is remapped in mock-bridge.css, same defect as --muted", () => {
+  // The mock defines --faint: #93a1b5 in mock-v12.css and never had it
+  // corrected -- unlike --muted, which mock-bridge.css already remaps to
+  // --dim. AUDIT_huit_pistes_post_v299.md P1: 6 selectors (.st .k among them)
+  // rendered under 3:1 on the light ground because of this gap.
+  const BRIDGE_PATH = path.join(__dirname, "..", "mock-bridge.css");
+  const BRIDGE_CSS = readFileSync(BRIDGE_PATH, "utf-8");
+
+  it("--faint: var(--dim) is present in mock-bridge.css", () => {
+    expect(BRIDGE_CSS).toMatch(/--faint:\s*var\(--dim\)/);
+  });
+});
+
 describe("--blood is documented as NOT text-legible", () => {
   // This is intentional and asserted on purpose: --blood is for fills,
   // borders and the C4 light, where the 4.5:1 text rule does not apply.
