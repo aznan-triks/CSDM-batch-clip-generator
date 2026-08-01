@@ -218,8 +218,17 @@ describe("no hover rule in the SHIPPED stylesheet moves anything", () => {
  * `style.left`, the label moves and we are back to the bug D13 existed to
  * prevent -- so being on this list buys the right to paint, never the right to
  * move something.
+ *
+ * `shell/AppShell.tsx` (menus-C follow-up, AUDIT_console_resize_boutons.md):
+ * a genuine drag-to-resize handle for the console column, one deliberate
+ * `mousemove` listener installed only between its own `mousedown` and
+ * `mouseup`. It still writes only `--split-left`/`--split-right` (React
+ * `style` prop, custom properties) -- the actual grid width change lives in
+ * AppShell.css, reading those properties. Same rule as the paint-only
+ * entries, applied to a real (not decorative) interaction.
  */
 const CURSOR_DRIVEN_ALLOWLIST: readonly string[] = [
+  "shell/AppShell.tsx",
   "shell/Backdrop.tsx",
   "components/Card.tsx",
   "cursor/Reticle.tsx",

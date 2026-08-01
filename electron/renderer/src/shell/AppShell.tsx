@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { sendCommand } from "../bridge";
 import Reticle from "../cursor/Reticle";
@@ -17,6 +17,7 @@ import ActionBar from "./ActionBar";
 import Backdrop from "./Backdrop";
 import HudNav from "./HudNav";
 import LogConsole from "./LogConsole";
+import { clampSplitPct, SPLIT_PCT_DEFAULT } from "./splitPane";
 import { TABS } from "./tabs";
 import type { TabSpec } from "./tabs";
 import "./AppShell.css";
@@ -45,6 +46,40 @@ export default function AppShell() {
   // HudNav is presentational and is rendered bare by its own tests.
   const [database] = useSetting<string>("pg_db");
   const [preset] = useSetting<string>("video_preset");
+
+  // The console/content split (regression fix, AUDIT_console_resize_boutons.md):
+  // `ui_split_pct` already existed as a typed field in Settings but drove
+  // nothing -- this is the first thing that actually reads it to lay out the
+  // shell. Percentage of the shell's own width the scrollwrap (content) gets;
+  // the console gets the rest. Hard pixel floors live in AppShell.css
+  // (`minmax(380px, …) … minmax(200px, …)`), matching the old Tkinter
+  // window's `UI_PANE_LEFT_MIN`/`UI_PANE_RIGHT_MIN`.
+  const [splitPct, setSplitPct] = useSetting<number>("ui_split_pct");
+  const currentSplit = clampSplitPct(
+    typeof splitPct === "number" && Number.isFinite(splitPct) ? splitPct : SPLIT_PCT_DEFAULT,
+  );
+  const shellRef = useRef<HTMLDivElement>(null);
+
+  const startSplitDrag = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      const shell = shellRef.current;
+      if (!shell) return;
+
+      function onMove(moveEvent: MouseEvent) {
+        const rect = shell!.getBoundingClientRect();
+        const pct = ((moveEvent.clientX - rect.left) / rect.width) * 100;
+        setSplitPct(clampSplitPct(pct));
+      }
+      function onUp() {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      }
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    },
+    [setSplitPct],
+  );
 
   useEffect(() => {
     // themeAccent may be a legacy Tkinter preset name ("green"), not always
@@ -114,13 +149,29 @@ export default function AppShell() {
           database={database}
           preset={preset}
         />
-        <div className="shell">
+        <div
+          className="shell shell-resizable"
+          ref={shellRef}
+          style={
+            {
+              "--split-left": currentSplit,
+              "--split-right": 100 - currentSplit,
+            } as CSSProperties
+          }
+        >
           <div className="scrollwrap" role="tabpanel" aria-label={active}>
             {active === "capture" && <CaptureTab />}
             {active === "tags" && <TagsTab />}
             {active === "video" && <VideoTab />}
             {active === "settings" && <SettingsTab />}
           </div>
+          <div
+            className="split-handle"
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize console"
+            onMouseDown={startSplitDrag}
+          />
           <LogConsole />
         </div>
         <ActionBar

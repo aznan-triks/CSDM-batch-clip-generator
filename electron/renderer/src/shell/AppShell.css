@@ -24,6 +24,40 @@ body {
   font-size: var(--fs-base);
 }
 
+/*
+ * The console/content split, live (AUDIT_console_resize_boutons.md). The mock
+ * fixes `.shell` at `1fr 288px` and has no way to know about a draggable
+ * ratio -- `AppShell.css.test.ts` forbids this file from re-declaring
+ * `.shell {}` itself, on purpose, so this is its own class instead of an
+ * override. `AppShell.tsx` always adds it alongside `.shell`; same element,
+ * two classes, and this one wins the property it sets (equal specificity,
+ * later in source). Driven by `--split-left`/`--split-right` (from
+ * `ui_split_pct`) while keeping hard pixel floors -- the old Tkinter window's
+ * own `UI_PANE_LEFT_MIN`/`UI_PANE_RIGHT_MIN` (context_guide.md §3).
+ */
+.shell-resizable {
+  /* Percent, not `fr`: `calc()` multiplying a custom property into an `fr`
+     result is invalid at compute time in this build's Chromium, which fell
+     back to the property's initial value (`none`) -- one implicit column at
+     full width. Percent resolves against the grid container instead and
+     calc()s cleanly. Measured live before landing this. */
+  grid-template-columns:
+    minmax(380px, calc(var(--split-left, 60) * 1%))
+    6px
+    minmax(200px, calc(var(--split-right, 40) * 1%));
+}
+
+.split-handle {
+  cursor: col-resize;
+  background: var(--hair);
+  border-radius: 3px;
+}
+
+.split-handle:hover,
+.split-handle:active {
+  background: var(--accent);
+}
+
 /* The plate canvas, on the mock's own footing: fixed to the viewport, under
    `.app`, and never taking a click -- decoration must not shadow a control.
    (The mock calls its canvas `.grid`; this one keeps its own name because the
@@ -48,7 +82,8 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .console {
+  .console,
+  .split-handle {
     display: none;
   }
 }

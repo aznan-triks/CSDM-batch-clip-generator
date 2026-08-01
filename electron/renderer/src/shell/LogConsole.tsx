@@ -97,6 +97,24 @@ function escapeHtml(text: string): string {
  * out of scope here. The browser download the `<a download>` triggers is the
  * simplest thing that actually ships a file without adding that surface.
  */
+/**
+ * Copy plain text to the clipboard, tolerating the environments that don't
+ * have one (jsdom under test, a browser tab with no secure context).
+ *
+ * Mirrors the old Tkinter window's `_log_copy_all`/`_log_copy_sel`
+ * (`clipboard_clear` + `clipboard_append`) -- AUDIT_console_resize_boutons.md.
+ */
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (!text) return false;
+  if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) return false;
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function exportLinesAsHtml(lines: Line[]): void {
   if (typeof URL === "undefined" || typeof URL.createObjectURL !== "function") {
     console.warn("log export unavailable: no Blob/URL support in this environment");
@@ -141,6 +159,7 @@ export default function LogConsole() {
   const [prompt, setPrompt] = useState(PROMPT_COMMANDS.idle);
   const [showBadges, setShowBadges] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [copyStatus, setCopyStatus] = useState("");
   const ask = asks[0] ?? null;
   const logRef = useRef<HTMLDivElement>(null);
   const nextKey = useRef(0);
@@ -217,6 +236,17 @@ export default function LogConsole() {
     setAsks((previous) => previous.slice(1));
   }
 
+  async function copyAll() {
+    const ok = await copyToClipboard(lines.map((line) => line.text).join("\n"));
+    setCopyStatus(ok ? "✓ All copied" : "");
+  }
+
+  async function copySelection() {
+    const selected = typeof window !== "undefined" ? window.getSelection()?.toString() ?? "" : "";
+    const ok = await copyToClipboard(selected);
+    setCopyStatus(ok ? "✓ Selection copied" : selected ? "" : "Nothing selected");
+  }
+
   const trimmedSearch = search.trim().toLowerCase();
   const matching = trimmedSearch
     ? lines.filter((line) => line.text.toLowerCase().includes(trimmedSearch))
@@ -288,6 +318,16 @@ export default function LogConsole() {
           >
             Badges
           </button>
+
+          <button type="button" className="chip" onClick={copyAll}>
+            Copy all
+          </button>
+
+          <button type="button" className="chip" onClick={copySelection}>
+            Copy sel.
+          </button>
+
+          {copyStatus && <span className="log-copy-status">{copyStatus}</span>}
 
           <div className="log-export">
             <button

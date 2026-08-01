@@ -26,14 +26,14 @@ import { useSetting, useSettingsBatch } from "../settings/store";
 import { ACCENT_PRESETS, applyAccent, resolveAccent } from "../theme/accent";
 import { applyMode, DEFAULT_GROUND, GROUND_MODES } from "../theme/mode";
 import PresetSection from "./PresetSection";
+import { clampSplitPct } from "../shell/splitPane";
 import "./SettingsTab.css";
 
 /** Mirrors `_clamp_layout_values` in csdm_batch_clips_generator.py. */
 function clampLayout(w: number, h: number, split: number): [number, number, number] {
   const width = Math.max(1000, Math.min(3840, Math.round(w) || 1600));
   const height = Math.max(600, Math.min(2160, Math.round(h) || 900));
-  const pct = Math.max(38, Math.min(80, Math.round(split) || 60));
-  return [width, height, pct];
+  return [width, height, clampSplitPct(split)];
 }
 
 function asNumber(value: unknown, fallback: number): number {

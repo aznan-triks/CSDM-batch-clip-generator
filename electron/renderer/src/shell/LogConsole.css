@@ -79,6 +79,12 @@
   padding: var(--sp-1) var(--sp-3);
 }
 
+.log-copy-status {
+  font-size: var(--fs-sm);
+  color: var(--dim);
+  white-space: nowrap;
+}
+
 .log-export {
   position: relative;
 }
