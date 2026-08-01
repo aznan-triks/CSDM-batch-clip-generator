@@ -18,7 +18,7 @@
  * `keys` would let a "date" preset silently replace the entire configuration
  * -- exactly the bug `preset_payload` (`csdm/config.py`) exists to prevent.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useState, type DragEvent, type ReactNode } from "react";
 
 import Card from "../components/Card";
 import { ICONS } from "../icons";
@@ -46,7 +46,22 @@ function categoryLabel(key: string): string {
     .join(" ");
 }
 
-export default function PresetSection() {
+interface PresetSectionProps {
+  /** Forwarded to the section's own Card -- lets SectionList (menus-C) fold/drag it like any other section. */
+  open?: boolean;
+  onToggle?: () => void;
+  dragHandle?: ReactNode;
+  onDragOver?: (event: DragEvent<HTMLElement>) => void;
+  onDrop?: (event: DragEvent<HTMLElement>) => void;
+}
+
+export default function PresetSection({
+  open,
+  onToggle,
+  dragHandle,
+  onDragOver,
+  onDrop,
+}: PresetSectionProps = {}) {
   const { tables } = useTables();
   const categories = tables?.presetCategories ?? [];
   const settings = useAllSettings();
@@ -131,7 +146,15 @@ export default function PresetSection() {
   }
 
   return (
-    <Card title="Presets" icon={<ICONS.presets />}>
+    <Card
+      title="Presets"
+      icon={<ICONS.presets />}
+      open={open}
+      onToggle={onToggle}
+      dragHandle={dragHandle}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+    >
       <div className="row">
         <Field
           id="preset-name"

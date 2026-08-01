@@ -18,6 +18,7 @@ import { ICONS } from "../icons";
 import Segmented from "../components/Segmented";
 import StatStrip from "../components/StatStrip";
 import Slider from "../components/Slider";
+import SectionList, { type SectionSpec } from "../shell/SectionList";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
 import { DatabaseProvider } from "../settings/useDatabase";
@@ -100,41 +101,41 @@ export default function CaptureTab() {
     if (!next) setMatePovReq(false);
   }
 
-  return (
-    // One `describe_filters` and one `connect_db` for the whole tab: every
-    // section below reads the SAME fetch through `useTables`/`useDatabase`
-    // instead of each triggering its own bridge command and Python thread.
-    <TablesProvider>
-      <DatabaseProvider>
-        <div className="bento capture-tab">
-          <Card
-            title="Player"
-            icon={<ICONS.player />}
-            className="wide"
-            count={`${steamIds.length} selected`}
-          >
-            <PlayerSection />
-          </Card>
-
-          <Card title="Demo Selection" icon={<ICONS.demoSelection />}>
-            <DemoSelectionSection />
-          </Card>
-
-          <Card
-            title="Weapon Filter"
-            icon={<ICONS.weaponFilter />}
-            className="wide"
-            count={weapons.length ? `${weapons.length} active` : "all"}
-          >
-            <WeaponFilterSection />
-          </Card>
-
-          <Card
-            title="Capture &amp; Timing"
-            icon={<ICONS.captureTiming />}
-            count={perspective ?? PERSPECTIVES[0]}
-          >
-            <SettingControl settingKey="events">
+  const SECTIONS: SectionSpec[] = [
+    {
+      id: "player",
+      element: (
+        <Card title="Player" icon={<ICONS.player />} className="wide" count={`${steamIds.length} selected`}>
+          <PlayerSection />
+        </Card>
+      ),
+    },
+    {
+      id: "demo-selection",
+      element: (
+        <Card title="Demo Selection" icon={<ICONS.demoSelection />}>
+          <DemoSelectionSection />
+        </Card>
+      ),
+    },
+    {
+      id: "weapon-filter",
+      element: (
+        <Card
+          title="Weapon Filter"
+          icon={<ICONS.weaponFilter />}
+          className="wide"
+          count={weapons.length ? `${weapons.length} active` : "all"}
+        >
+          <WeaponFilterSection />
+        </Card>
+      ),
+    },
+    {
+      id: "capture-timing",
+      element: (
+        <Card title="Capture &amp; Timing" icon={<ICONS.captureTiming />} count={perspective ?? PERSPECTIVES[0]}>
+          <SettingControl settingKey="events">
             <div className="row">
               <span className="lab">Capture</span>
               {EVENT_KINDS.map((kind) => (
@@ -208,97 +209,125 @@ export default function CaptureTab() {
               readout). They are not columns in a grid: in a half-width card
               that left each rail 92px long against the mock's 202px, and a
               rail that short cannot be aimed. */}
-            <SettingControl settingKey="before">
-              <Slider
-                id="seconds-before"
-                label="Seconds before"
-                min={BEFORE_RANGE.min}
-                max={BEFORE_RANGE.max}
-                value={beforeSeconds}
-                onChange={setBefore}
-                readout={`${beforeSeconds}s`}
+          <SettingControl settingKey="before">
+            <Slider
+              id="seconds-before"
+              label="Seconds before"
+              min={BEFORE_RANGE.min}
+              max={BEFORE_RANGE.max}
+              value={beforeSeconds}
+              onChange={setBefore}
+              readout={`${beforeSeconds}s`}
+            />
+          </SettingControl>
+          <SettingControl settingKey="after">
+            <Slider
+              id="seconds-after"
+              label="Seconds after"
+              min={AFTER_RANGE.min}
+              max={AFTER_RANGE.max}
+              value={asNumber(after, AFTER_RANGE.min)}
+              onChange={setAfter}
+              readout={`${asNumber(after, AFTER_RANGE.min)}s`}
+            />
+          </SettingControl>
+        </Card>
+      ),
+    },
+    {
+      id: "timing-retries",
+      element: (
+        <Card title="Timing &amp; Retries" icon={<ICONS.captureTiming />}>
+          <div className="row">
+            <SettingControl settingKey="retry_count">
+              <Field
+                id="retry-count"
+                label="Retries"
+                mono
+                value={String(retryCount ?? "")}
+                onChange={setRetryCount}
               />
             </SettingControl>
-            <SettingControl settingKey="after">
-              <Slider
-                id="seconds-after"
-                label="Seconds after"
-                min={AFTER_RANGE.min}
-                max={AFTER_RANGE.max}
-                value={asNumber(after, AFTER_RANGE.min)}
-                onChange={setAfter}
-                readout={`${asNumber(after, AFTER_RANGE.min)}s`}
+            <SettingControl settingKey="retry_delay">
+              <Field
+                id="retry-delay"
+                label="Delay (s)"
+                mono
+                value={String(retryDelay ?? "")}
+                onChange={setRetryDelay}
               />
             </SettingControl>
+            <SettingControl settingKey="delay_between_demos">
+              <Field
+                id="demo-pause"
+                label="Demo pause (s)"
+                mono
+                value={String(demoPause ?? "")}
+                onChange={setDemoPause}
+              />
+            </SettingControl>
+            <SettingControl settingKey="recording_timeout">
+              <Field
+                id="recording-timeout"
+                label="Timeout (min)"
+                mono
+                value={String(timeout ?? "")}
+                onChange={setTimeout}
+              />
+            </SettingControl>
+          </div>
 
-          </Card>
-
-          <Card title="Timing &amp; Retries" icon={<ICONS.captureTiming />}>
+          <SettingControl settingKey="clip_order">
             <div className="row">
-              <SettingControl settingKey="retry_count">
-                <Field
-                  id="retry-count"
-                  label="Retries"
-                  mono
-                  value={String(retryCount ?? "")}
-                  onChange={setRetryCount}
-                />
-              </SettingControl>
-              <SettingControl settingKey="retry_delay">
-                <Field
-                  id="retry-delay"
-                  label="Delay (s)"
-                  mono
-                  value={String(retryDelay ?? "")}
-                  onChange={setRetryDelay}
-                />
-              </SettingControl>
-              <SettingControl settingKey="delay_between_demos">
-                <Field
-                  id="demo-pause"
-                  label="Demo pause (s)"
-                  mono
-                  value={String(demoPause ?? "")}
-                  onChange={setDemoPause}
-                />
-              </SettingControl>
-              <SettingControl settingKey="recording_timeout">
-                <Field
-                  id="recording-timeout"
-                  label="Timeout (min)"
-                  mono
-                  value={String(timeout ?? "")}
-                  onChange={setTimeout}
-                />
-              </SettingControl>
+              <span className="lab">Order</span>
+              <Segmented
+                options={CLIP_ORDERS}
+                value={clipOrder ?? CLIP_ORDERS[0]}
+                onChange={setClipOrder}
+                label="Order"
+              />
             </div>
+          </SettingControl>
+        </Card>
+      ),
+    },
+    {
+      id: "kill-filters",
+      element: (
+        <Card title="Kill Filters" icon={<ICONS.killFilters />}>
+          <KillFiltersSection />
+        </Card>
+      ),
+    },
+    {
+      id: "match-types",
+      element: (
+        <Card title="Match Types" icon={<ICONS.matchTypes />}>
+          <MatchTypesSection />
+        </Card>
+      ),
+    },
+    {
+      id: "map-filter",
+      element: (
+        <Card title="Map Filter" icon={<ICONS.mapFilter />}>
+          <MapFilterSection />
+        </Card>
+      ),
+    },
+  ];
 
-            <SettingControl settingKey="clip_order">
-              <div className="row">
-                <span className="lab">Order</span>
-                <Segmented
-                  options={CLIP_ORDERS}
-                  value={clipOrder ?? CLIP_ORDERS[0]}
-                  onChange={setClipOrder}
-                  label="Order"
-                />
-              </div>
-            </SettingControl>
-          </Card>
+  return (
+    // One `describe_filters` and one `connect_db` for the whole tab: every
+    // section below reads the SAME fetch through `useTables`/`useDatabase`
+    // instead of each triggering its own bridge command and Python thread.
+    <TablesProvider>
+      <DatabaseProvider>
+        <div className="bento capture-tab">
+          <SectionList tabId="capture" sections={SECTIONS} />
 
-          <Card title="Kill Filters" icon={<ICONS.killFilters />}>
-            <KillFiltersSection />
-          </Card>
-
-          <Card title="Match Types" icon={<ICONS.matchTypes />}>
-            <MatchTypesSection />
-          </Card>
-
-          <Card title="Map Filter" icon={<ICONS.mapFilter />}>
-            <MapFilterSection />
-          </Card>
-
-          {/* The mock closes the Capture view with its counter strip. */}
+          {/* The mock closes the Capture view with its counter strip -- not a
+              foldable/draggable section, always last. */}
           <div className="wide">
             <StatStrip />
           </div>
