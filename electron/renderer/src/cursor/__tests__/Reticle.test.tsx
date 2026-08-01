@@ -39,6 +39,24 @@ describe("Reticle", () => {
     button.remove();
   });
 
+  it("locks onto the button's own center, not the pointer position (2026-08-02)", () => {
+    const button = document.createElement("button");
+    button.className = "btn btn-run";
+    document.body.appendChild(button);
+    Object.defineProperty(button, "getBoundingClientRect", {
+      value: () => ({ left: 200, top: 100, width: 100, height: 40, right: 300, bottom: 140, x: 200, y: 100, toJSON() {} }),
+    });
+
+    const { container } = render(<Reticle />);
+    const el = container.querySelector(".cursor-reticle") as HTMLElement;
+    // Pointer sits near the button's top-left corner, far from its center.
+    fireEvent.mouseMove(button, { clientX: 205, clientY: 105 });
+
+    expect(el.style.getPropertyValue("--cx")).toBe("250px");
+    expect(el.style.getPropertyValue("--cy")).toBe("120px");
+    button.remove();
+  });
+
   it("hides the custom cursor over a real widget (an input)", () => {
     const input = document.createElement("input");
     document.body.appendChild(input);

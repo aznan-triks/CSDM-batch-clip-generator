@@ -76,8 +76,13 @@ export default function Reticle() {
       const button = target?.closest(SNAP_SELECTOR);
       if (button) {
         const rect = button.getBoundingClientRect();
-        el!.style.setProperty("--cx", `${event.clientX}px`);
-        el!.style.setProperty("--cy", `${event.clientY}px`);
+        // Centered on the button's own box, not the pointer: user feedback
+        // 2026-08-02 wants the four corner brackets to read as "locked" onto
+        // the button regardless of where inside it the mouse sits. The mock's
+        // own JS never does this either (it also follows clientX/clientY) --
+        // this is a deliberate addition beyond the mock, not a ported bug.
+        el!.style.setProperty("--cx", `${rect.left + rect.width / 2}px`);
+        el!.style.setProperty("--cy", `${rect.top + rect.height / 2}px`);
         el!.style.setProperty("--cw", `${Math.min(rect.width + SNAP_PADDING, SNAP_MAX_WIDTH)}px`);
         el!.style.setProperty("--ch", `${Math.min(rect.height + SNAP_PADDING, SNAP_MAX_HEIGHT)}px`);
         reveal(true);

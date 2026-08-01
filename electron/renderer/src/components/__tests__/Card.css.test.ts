@@ -60,3 +60,19 @@ describe("Card.css keeps what the mock cannot know", () => {
     expect(BARE).toMatch(/\.sb\s*\{[^}]*flex-direction:\s*column;/);
   });
 });
+
+describe("hover scintillation is a finite burst, not constant (2026-08-02)", () => {
+  it("gives .glx a finite animation-iteration-count", () => {
+    expect(BARE).toMatch(/\.sec:hover \.glx\s*\{[^}]*animation-iteration-count:\s*\d+;/);
+  });
+
+  it("overrides .cbr's animation-iteration-count away from the mock's infinite", () => {
+    expect(BARE).toMatch(/\.sec:hover \.cbr\s*\{[^}]*animation-iteration-count:\s*\d+;/);
+  });
+
+  it("never leaves an infinite loop on either layer's hover state", () => {
+    for (const block of BARE.matchAll(/\.sec:hover \.(?:glx|cbr)\s*\{([^}]*)\}/g)) {
+      expect(block[1]).not.toMatch(/animation-iteration-count:\s*infinite/);
+    }
+  });
+});

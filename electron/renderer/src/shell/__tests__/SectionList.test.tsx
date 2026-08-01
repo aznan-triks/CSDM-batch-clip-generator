@@ -57,4 +57,60 @@ describe("SectionList", () => {
     delete state.ui_sections;
     render(<SectionList tabId="capture" sections={[]} />);
   });
+
+  it("FLIPs a card's own width when resized, not just position (2026-08-02)", () => {
+    // jsdom has no layout engine, so getBoundingClientRect must be stubbed to
+    // report a real width change -- otherwise dx/dy/dw are always 0 and the
+    // whole FLIP branch never runs in this environment (AUDIT_restyle6...#1).
+    const rectSpy = vi
+      .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+      .mockImplementation(function (this: HTMLElement) {
+        const width = this.className.includes("sec") && this.classList.contains("wide") ? 620 : 300;
+        return { left: 0, top: 0, width, height: 0, right: width, bottom: 0, x: 0, y: 0, toJSON() {} } as DOMRect;
+      });
+
+    delete state.ui_sections;
+    render(<SectionList tabId="capture" sections={sections()} />);
+    const cardA = screen.getByText("A").closest("section") as HTMLElement;
+
+    // Own-property shadow on this instance's `style` records every value the
+    // effect assigns to `width`, including the ones it sets and clears again
+    // within the same synchronous block -- a plain "read style.width after
+    // the click" check would only ever see the final, already-cleared value.
+    const widthSets: string[] = [];
+    Object.defineProperty(cardA.style, "width", {
+      configurable: true,
+      get() {
+        return this.getPropertyValue("width");
+      },
+      set(value: string) {
+        widthSets.push(value);
+        this.setProperty("width", value);
+      },
+    });
+
+    fireEvent.click(screen.getByLabelText("resize-A"));
+
+    expect(cardA.classList.contains("wide")).toBe(true);
+    expect(widthSets).toEqual(["300px", ""]);
+
+    rectSpy.mockRestore();
+  });
+
+  it("reorders live on dragEnter, before the drop (2026-08-02)", () => {
+    delete state.ui_sections;
+    const { container } = render(<SectionList tabId="capture" sections={sections()} />);
+
+    fireEvent.dragStart(screen.getByLabelText("drag-b"));
+    fireEvent.dragEnter(screen.getByText("A").closest("section") as HTMLElement);
+
+    const titlesAfterDragEnter = [...container.querySelectorAll(".t")].map((el) => el.textContent);
+    expect(titlesAfterDragEnter).toEqual(["B", "A"]);
+
+    // Dropping only ends the drag -- the order already moved above, and
+    // dropping on the same target must not move it again.
+    fireEvent.drop(screen.getByText("A").closest("section") as HTMLElement);
+    const titlesAfterDrop = [...container.querySelectorAll(".t")].map((el) => el.textContent);
+    expect(titlesAfterDrop).toEqual(["B", "A"]);
+  });
 });

@@ -57,6 +57,27 @@ cycles (`background`/`border` stay untouched — Card.css.test.ts reserves those
 `TagsTab.tsx`'s per-tag delete button merged into the same `.chips` row as the selection chip.
 `ActionButton.css`/`Field.css` gained a `box-shadow` (inset sheen / focus glow respectively).
 
+### Fixed
+**Humanised:** Five follow-up polish issues reported against the restyle above, audited first
+(`docs/audits/AUDIT_restyle6_polish_regressions.md`) then fixed: resizing a card no longer makes
+everything jump around unreadably, a collapsed card now actually shrinks even when its neighbour
+stays open, the crosshair now locks onto the exact center of the button you're hovering instead of
+trailing the mouse inside it, the flicker on card hover stops after a few blinks instead of running
+the whole time you hover, and dragging a card to reorder it now updates live as you drag instead of
+only once you let go.
+**Technical:** `SectionList.tsx`'s FLIP effect now also inverts `width` (not just `translate`) when
+`.wide` toggles, and calls `reorder()` on `onDragEnter` instead of only `onDrop` (`onDragOver` keeps
+just `preventDefault()`); `Card.tsx`/`CardProps` gained `onDragEnter`. `mock-bridge.css` gained two
+measured full-rule disagreements (previously token-remaps only): `.bento{align-items:start}` (CSS
+Grid's default `stretch` was keeping a closed card's box at its open neighbour's height) and `.sec`'s
+`transition` list gained `width` (mock-v12.css:109 only had `transform`/`box-shadow` — its static demo
+never resizes a card). `Card.css`'s `.sec:hover .glx`/`.cbr` `animation-iteration-count` went from
+`infinite` (the 2026-08-01 fix over-corrected "stops after two cycles" into "never stops") to a finite
+`3`. `cursor/Reticle.tsx`'s button-snap case now centers `--cx`/`--cy` on the hovered button's own
+rect instead of `event.clientX`/`clientY` — verified against the mock's actual JS
+(`mockup-v12-hologlass.html`), which never did this either; this is a deliberate addition beyond the
+mock, not a restored behaviour.
+
 ### Known gaps (not fixed this session, flagged rather than silently skipped)
 User also asked to restore "possibilities" the Electron port has fewer of than the Python script.
 Audited (`docs/audits/` not written — this was a direct code comparison, not a full audit plan);

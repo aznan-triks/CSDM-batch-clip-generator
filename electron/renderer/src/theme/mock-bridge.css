@@ -3,7 +3,10 @@
  *
  * mock-v12.css is the design, verbatim and never edited. This file is the only
  * place allowed to disagree with it, and every line below states the MEASURED
- * reason. Anything not listed here means the mock wins.
+ * reason. Anything not listed here means the mock wins. Most disagreements
+ * are token remaps; a few (2026-08-02) are full rules the mock's own static
+ * demo could never have exercised (it never resizes or half-collapses a
+ * card) -- same discipline applies: one measured entry, one comment.
  *
  * Loaded AFTER mock-v12.css and BEFORE the component stylesheets.
  *
@@ -39,7 +42,7 @@
   --page-1: var(--void);
   --shadow-sm: var(--elev-sm);
 
-  /* == THE THREE DELIBERATE DISAGREEMENTS ==================================
+  /* == DELIBERATE DISAGREEMENTS =============================================
      Each one is a measurement or a decision already paid for once. */
 
   /* MEASURED: the mock's #5b6b83 scores 4.25:1 on the light ground and fails
@@ -55,4 +58,33 @@
      screen the C4 plant read as a toy and was reverted in v214 (CONTEXT_GUIDE
      §10). One easing, and it decelerates. */
   --spring: var(--ease);
+}
+
+/* MEASURED (2026-08-02, AUDIT_restyle6_polish_regressions.md #2): mock-v12.css's
+   `.bento` sets no `align-items`, so CSS Grid's default `stretch` applies --
+   two cards sharing a row are stretched to the taller one's height. A closed
+   card next to an open one then keeps a full-height empty box: its content
+   is gone (`.sec.closed .sb{display:none}`) but the box never shrinks. The
+   mock's own static demo never closes a card next to an open one, so it
+   could never have shown this. */
+.bento {
+  align-items: start;
+}
+
+/* MEASURED (2026-08-02, AUDIT_restyle6_polish_regressions.md #1): mock-v12.css's
+   `.sec` transitions `transform`/`box-shadow` only (mock-v12.css:109) -- its
+   static demo never resizes a card, so `width` never needed to be there.
+   SectionList.tsx's FLIP now also inverts a card's width when `.wide` is
+   toggled; without this the card's own box would still snap to its new width
+   instantly while the FLIP glides everything else into position, which read
+   as the whole grid "breaking" rather than one continuous reflow.
+   `transition` is a shorthand: restating it here must repeat the mock's own
+   `transform`/`box-shadow` values verbatim (mock-v12.css:109) or they would
+   be silently dropped, not just extended -- `width` uses the same duration
+   and easing as `transform`, not a new number. */
+.sec {
+  transition:
+    transform 0.2s ease-out,
+    box-shadow 0.25s,
+    width 0.2s ease-out;
 }

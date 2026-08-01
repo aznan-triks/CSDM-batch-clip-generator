@@ -79,17 +79,26 @@
  * the loop count, and (for `.cbr`) the border colour -- none of `background`/
  * `border`/`border-radius`/`box-shadow`/`backdrop-filter`, none of D13/D16's
  * motion properties either.
+ *
+ * User feedback 2026-08-02: "more visible AND not constant" was the actual
+ * ask from the start -- the 2026-08-01 fix solved visibility but answered
+ * "not constant" with `infinite`, which is the definition of constant. Both
+ * layers now run a finite burst on hover-in instead of animating for the
+ * whole hover duration. `.cbr`'s `infinite` is the mock's own
+ * (mock-v12.css:115, AUDIT_restyle6_polish_regressions.md #4) -- overridden
+ * here since Card.css already owns this selector's border-colour hover state.
  */
 .sec:hover .glx {
   mix-blend-mode: normal;
   animation-name: block-flick;
   animation-duration: 0.6s;
   animation-timing-function: steps(2);
-  animation-iteration-count: infinite;
+  animation-iteration-count: 3;
 }
 
 .sec:hover .cbr {
   border-color: var(--accent);
+  animation-iteration-count: 3;
 }
 
 /*

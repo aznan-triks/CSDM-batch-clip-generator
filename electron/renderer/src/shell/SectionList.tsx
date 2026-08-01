@@ -29,6 +29,7 @@ export interface SectionSpec {
     dragHandle?: ReactNode;
     onDragOver?: (event: DragEvent<HTMLElement>) => void;
     onDrop?: (event: DragEvent<HTMLElement>) => void;
+    onDragEnter?: (event: DragEvent<HTMLElement>) => void;
     onResizeToggle?: () => void;
   }>;
 }
@@ -77,12 +78,19 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
       const next = el.getBoundingClientRect();
       const dx = prev.left - next.left;
       const dy = prev.top - next.top;
-      if (!dx && !dy) continue;
+      const dw = prev.width - next.width;
+      if (!dx && !dy && !dw) continue;
       el.style.transition = "none";
       el.style.transform = `translate(${dx}px, ${dy}px)`;
+      // A card's own width changes when `.wide` is toggled (menus-C resize),
+      // not just its position from a reorder -- FLIP it too (mock-bridge.css
+      // gives `.sec` a `width` transition for this), or the card would snap
+      // to its new width instantly while every other card glides into place.
+      if (dw) el.style.width = `${prev.width}px`;
       el.getBoundingClientRect(); // forces the browser to commit the jump before releasing it
       el.style.transition = "";
       el.style.transform = "";
+      if (dw) el.style.width = "";
     }
     const rects = new Map<string, DOMRect>();
     for (const [id, el] of nodeRefs.current) rects.set(id, el.getBoundingClientRect());
@@ -106,9 +114,16 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
           open: !isCollapsed(id),
           onToggle: () => toggleCollapsed(id),
           onResizeToggle: () => toggleWide(id, wide),
+          // `preventDefault` alone -- required by the native drag API for
+          // this element to accept a drop at all. The reorder itself happens
+          // on `onDragEnter` below (user feedback 2026-08-02: reordering was
+          // invisible until release); by the time `onDrop` fires the order
+          // has already moved, this just ends the drag.
           onDragOver: (event: DragEvent<HTMLElement>) => event.preventDefault(),
+          onDragEnter: () => {
+            if (draggedId.current && draggedId.current !== id) reorder(draggedId.current, id);
+          },
           onDrop: () => {
-            if (draggedId.current) reorder(draggedId.current, id);
             draggedId.current = null;
           },
           dragHandle: (
