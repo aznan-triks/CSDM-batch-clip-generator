@@ -290,6 +290,14 @@ ipcMain.handle("bridge:pick-save-path", async (_event, options) => {
   return result.filePath;
 });
 
+// Restart the engine after it died. The renderer has no way to start a
+// process, so this stays in the main process. It kills whatever is left
+// of the previous engine (belt and suspenders) before spawning a new one.
+ipcMain.handle("bridge:restart-engine", async () => {
+  killEngine();
+  startEngine();
+});
+
 app.whenReady().then(() => {
   startEngine();
   createWindow();

@@ -16,6 +16,7 @@ import { applyMode } from "../theme/mode";
 import WeaponBand from "../weapon/WeaponBand";
 import ActionBar from "./ActionBar";
 import Backdrop from "./Backdrop";
+import { EngineLostBanner } from "./EngineLostBanner";
 import HudNav from "./HudNav";
 import LogConsole from "./LogConsole";
 import { clampSplitPct, SPLIT_PCT_DEFAULT } from "./splitPane";
@@ -179,6 +180,7 @@ export default function AppShell() {
           />
           <LogConsole />
         </div>
+        <EngineLostBanner onRegain={() => window.location.reload()} />
         <ActionBar
           registerButton={registerButton}
           weapon={

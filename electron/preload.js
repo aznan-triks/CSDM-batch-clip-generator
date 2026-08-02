@@ -28,4 +28,7 @@ contextBridge.exposeInMainWorld("bridge", {
   pickSavePath(options) {
     return ipcRenderer.invoke("bridge:pick-save-path", options);
   },
+  restartEngine() {
+    return ipcRenderer.invoke("bridge:restart-engine");
+  },
 });

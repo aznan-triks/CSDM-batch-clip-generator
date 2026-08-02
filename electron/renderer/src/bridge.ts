@@ -69,6 +69,7 @@ interface BridgeApi {
   onMessage(cb: (message: BridgeMessage) => void): () => void;
   pickPath(options?: { file?: boolean }): Promise<string | null>;
   pickSavePath(options?: { defaultName?: string }): Promise<string | null>;
+  restartEngine(): Promise<void>;
 }
 
 declare global {
