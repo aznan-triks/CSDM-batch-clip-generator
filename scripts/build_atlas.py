@@ -33,6 +33,7 @@ ATLAS_SOURCES = {
     "python_tests": ["tests"],
     "typescript": ["electron/renderer/src"],
     "mock_css": "electron/renderer/src/theme/mock-v12.css",
+    "engine": ["csdm/engine"],
     "registries": {
         "KILL_FILTER_REGISTRY": "csdm.static_data",
         "COMMANDS": "csdm.bridge.host",
@@ -302,6 +303,87 @@ def read_registries(sources: dict) -> dict:
     return out
 
 
+def read_bridge_commands() -> list[dict]:
+    """Import COMMANDS -- the bridge <-> engine boundary, otherwise invisible."""
+    import importlib
+
+    mod = importlib.import_module(ATLAS_SOURCES["registries"]["COMMANDS"])
+    commands = getattr(mod, "COMMANDS")
+    return [{"name": name, "handler": fn.__name__} for name, fn in commands.items()]
+
+
+def read_state_events(paths: list[str]) -> list[str]:
+    """Every literal first argument of `self.state(...)` under `paths`, by AST.
+
+    A React side listening for an event nobody emits waits forever, in silence.
+    """
+    events: set[str] = set()
+    for py in iter_py_files(paths):
+        try:
+            tree = ast.parse(py.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            if not (isinstance(func, ast.Attribute) and func.attr == "state"):
+                continue
+            if not (isinstance(func.value, ast.Name) and func.value.id == "self"):
+                continue
+            if node.args and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+                events.add(node.args[0].value)
+    return sorted(events)
+
+
+_TS_COMMENT_LINE_RE = re.compile(r"^\s*(//|/\*|\*)")
+
+
+def _first_ts_comment(text: str) -> str:
+    for line in text.splitlines()[:10]:
+        s = line.strip()
+        if _TS_COMMENT_LINE_RE.match(s):
+            cleaned = s.lstrip("/*").strip()
+            if cleaned.endswith("*/"):
+                cleaned = cleaned[:-2].strip()
+            if cleaned:
+                return cleaned[:160]
+        elif s and not s.startswith("import"):
+            break
+    return ""
+
+
+def read_guards(paths: dict) -> list[dict]:
+    """For each guard test file: `file` + `forbids`, the first line of its header.
+
+    Guards live under tests/ (Python) and **/__tests__/** (TypeScript). Each
+    is expected to open with a header stating what it forbids -- that's
+    already how this project's guard tests are written, this just collects it.
+    """
+    out: list[dict] = []
+
+    for py in sorted((ROOT / "tests").glob("*.py")):
+        try:
+            tree = ast.parse(py.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError):
+            out.append({"file": rel(py), "forbids": ""})
+            continue
+        out.append({"file": rel(py), "forbids": _short_doc(tree)})
+
+    for entry in paths["typescript"]:
+        root = ROOT / entry
+        if not root.exists():
+            continue
+        for f in sorted(root.rglob("*")):
+            if not f.is_file() or f.suffix not in (".ts", ".tsx"):
+                continue
+            if "__tests__" not in f.relative_to(ROOT).parts:
+                continue
+            out.append({"file": rel(f), "forbids": _first_ts_comment(f.read_text(encoding="utf-8", errors="ignore"))})
+
+    return out
+
+
 def build_atlas() -> dict:
     functions, classes = walk_python(ATLAS_SOURCES["python"])
     ts = walk_typescript(ATLAS_SOURCES["typescript"])
@@ -314,6 +396,9 @@ def build_atlas() -> dict:
         "react_exports": ts["exports"],
         "mock_css_classes": read_mock_classes(ROOT / ATLAS_SOURCES["mock_css"]),
         "registries": read_registries(ATLAS_SOURCES["registries"]),
+        "bridge_commands": read_bridge_commands(),
+        "state_events": read_state_events(ATLAS_SOURCES["engine"]),
+        "guards": read_guards(ATLAS_SOURCES),
     }
 
 
@@ -411,6 +496,31 @@ def render_markdown(atlas: dict) -> str:
             L.append("")
             L.append(f"> {len(keys) - n} more in PROJECT_ATLAS.json")
         L.append("")
+
+    L.append(f"## Bridge commands ({len(atlas['bridge_commands'])})")
+    L.append("")
+    L.append("| Command | Handler |")
+    L.append("|---|---|")
+    for c in atlas["bridge_commands"]:
+        L.append(f"| `{c['name']}` | `{c['handler']}` |")
+    L.append("")
+
+    L.append(f"## Engine state events ({len(atlas['state_events'])})")
+    L.append("")
+    L.append(", ".join(f"`{e}`" for e in atlas["state_events"]) or "-")
+    L.append("")
+
+    L.append(f"## Guards -- what each test forbids ({len(atlas['guards'])})")
+    L.append("")
+    L.append("| File | Forbids |")
+    L.append("|---|---|")
+    for g in atlas["guards"][:n * 3]:
+        forbids = g["forbids"].replace("|", "\\|")
+        L.append(f"| `{g['file']}` | {forbids} |")
+    if len(atlas["guards"]) > n * 3:
+        L.append("")
+        L.append(f"> {len(atlas['guards']) - n * 3} more in PROJECT_ATLAS.json")
+    L.append("")
 
     return "\n".join(L)
 

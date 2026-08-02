@@ -1,3 +1,6 @@
+/**
+ * Dragging or resizing a card must not break the section list's live reorder/collapse state.
+ */
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";

@@ -1,3 +1,6 @@
+/**
+ * The default accent must not drift from the V12 mock's electric blue (#2563EB).
+ */
 import { describe, expect, it } from "vitest";
 
 import { ACCENT_PRESETS, DEFAULT_ACCENT } from "../accent";

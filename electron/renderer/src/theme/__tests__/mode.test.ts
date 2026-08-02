@@ -1,3 +1,6 @@
+/**
+ * A night ground preset must never land the window in light mode.
+ */
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { applyMode, DEFAULT_GROUND, GROUND_MODES } from "../mode";

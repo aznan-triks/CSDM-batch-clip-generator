@@ -1,3 +1,7 @@
+/**
+ * The motion engine must not play sequences at the wrong intensity, ignore
+ * prefers-reduced-motion, or clean up on `onfinish` instead of the clock.
+ */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {

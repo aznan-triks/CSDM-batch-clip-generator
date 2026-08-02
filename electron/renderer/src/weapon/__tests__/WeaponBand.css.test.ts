@@ -1,3 +1,6 @@
+/**
+ * The weapon band must not restate the action bar's background, blur, or layout -- it rides inside it.
+ */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";

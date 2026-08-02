@@ -75,3 +75,20 @@ def test_the_mock_owns_a_global_class_namespace(atlas):
     # two bugs. This list is how the next one gets caught before it is written.
     owned = set(atlas["mock_css_classes"])
     assert {"shell", "sec", "chip", "btn"} <= owned
+
+
+def test_bridge_commands_come_from_the_dict_itself(atlas):
+    from csdm.bridge.host import COMMANDS
+
+    assert {c["name"] for c in atlas["bridge_commands"]} == set(COMMANDS)
+
+
+def test_state_events_are_collected_from_the_engine(atlas):
+    # Every self.state("...") the engine raises. A React side listening for an
+    # event nobody emits waits forever, in silence.
+    assert {"run_started", "process_exited", "buttons_idle"} <= set(atlas["state_events"])
+
+
+def test_every_guard_says_what_it_forbids(atlas):
+    assert atlas["guards"], "no guard test found -- the walker matched nothing"
+    assert all(g["forbids"] for g in atlas["guards"])

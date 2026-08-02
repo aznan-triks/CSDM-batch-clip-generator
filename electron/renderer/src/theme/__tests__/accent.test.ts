@@ -1,3 +1,6 @@
+/**
+ * A legacy Tkinter accent preset name must resolve to its Electron hex, case-insensitively.
+ */
 import { describe, expect, it } from "vitest";
 
 import { ACCENT_PRESETS, resolveAccent } from "../accent";

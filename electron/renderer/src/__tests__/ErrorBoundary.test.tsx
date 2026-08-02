@@ -1,3 +1,6 @@
+/**
+ * A render crash must not unmount the whole app to a blank page.
+ */
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 

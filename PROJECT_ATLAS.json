@@ -6790,5 +6790,524 @@
       "tags_set_active",
       "tkinter_check"
     ]
-  }
+  },
+  "bridge_commands": [
+    {
+      "name": "ping",
+      "handler": "_cmd_ping"
+    },
+    {
+      "name": "hello",
+      "handler": "_cmd_hello"
+    },
+    {
+      "name": "describe_filters",
+      "handler": "_cmd_describe_filters"
+    },
+    {
+      "name": "start_run",
+      "handler": "_cmd_start_run"
+    },
+    {
+      "name": "start_preview",
+      "handler": "_cmd_start_preview"
+    },
+    {
+      "name": "load_config",
+      "handler": "_cmd_load_config"
+    },
+    {
+      "name": "save_config",
+      "handler": "_cmd_save_config"
+    },
+    {
+      "name": "list_presets",
+      "handler": "_cmd_list_presets"
+    },
+    {
+      "name": "save_preset",
+      "handler": "_cmd_save_preset"
+    },
+    {
+      "name": "load_preset",
+      "handler": "_cmd_load_preset"
+    },
+    {
+      "name": "delete_preset",
+      "handler": "_cmd_delete_preset"
+    },
+    {
+      "name": "request_stop",
+      "handler": "_cmd_request_stop"
+    },
+    {
+      "name": "request_kill",
+      "handler": "_cmd_request_kill"
+    },
+    {
+      "name": "cancel_preview",
+      "handler": "_cmd_cancel_preview"
+    },
+    {
+      "name": "demo_logs",
+      "handler": "_cmd_demo_logs"
+    },
+    {
+      "name": "demo_ask",
+      "handler": "_cmd_demo_ask"
+    },
+    {
+      "name": "tkinter_check",
+      "handler": "_cmd_tkinter_check"
+    },
+    {
+      "name": "connect_db",
+      "handler": "_cmd_connect_db"
+    },
+    {
+      "name": "list_demos",
+      "handler": "_cmd_list_demos"
+    },
+    {
+      "name": "tags_search",
+      "handler": "_cmd_tags_search"
+    },
+    {
+      "name": "tags_calc_range",
+      "handler": "_cmd_tags_calc_range"
+    },
+    {
+      "name": "tags_set_active",
+      "handler": "_cmd_tags_set_active"
+    },
+    {
+      "name": "tags_apply",
+      "handler": "_cmd_tags_apply"
+    },
+    {
+      "name": "tags_remove",
+      "handler": "_cmd_tags_remove"
+    },
+    {
+      "name": "tag_create",
+      "handler": "_cmd_tag_create"
+    },
+    {
+      "name": "tag_delete",
+      "handler": "_cmd_tag_delete"
+    },
+    {
+      "name": "tags_export",
+      "handler": "_cmd_tags_export"
+    },
+    {
+      "name": "tags_import_scan",
+      "handler": "_cmd_tags_import_scan"
+    },
+    {
+      "name": "tags_import_apply",
+      "handler": "_cmd_tags_import_apply"
+    }
+  ],
+  "state_events": [
+    "buttons",
+    "buttons_busy",
+    "buttons_idle",
+    "demo_entry",
+    "demos_unchecked",
+    "kill_requested",
+    "preview_ready",
+    "preview_started",
+    "process_exited",
+    "progress",
+    "run_started",
+    "stop_requested",
+    "summary"
+  ],
+  "guards": [
+    {
+      "file": "tests/test_atlas.py",
+      "forbids": "The atlas is generated, never transcribed -- so what it claims must be true."
+    },
+    {
+      "file": "tests/test_bridge_e2e.py",
+      "forbids": "Drive the bridge as a real subprocess -- the only honest way to test a pipe."
+    },
+    {
+      "file": "tests/test_bridge_isolation.py",
+      "forbids": "Guard rails: nothing but the protocol may ever touch standard output."
+    },
+    {
+      "file": "tests/test_bridge_list_demos.py",
+      "forbids": "`list_demos`: the manual-mode \"load ALL demos from DB\" bridge command."
+    },
+    {
+      "file": "tests/test_bridge_ports.py",
+      "forbids": "The four sockets, wired to the pipe instead of to widgets."
+    },
+    {
+      "file": "tests/test_bridge_protocol.py",
+      "forbids": "One JSON object per line, and never two writers interleaving one."
+    },
+    {
+      "file": "tests/test_bridge_tables.py",
+      "forbids": "The static tables must cross the pipe, never be retyped in TypeScript."
+    },
+    {
+      "file": "tests/test_bridge_tags_apply.py",
+      "forbids": "`tags_apply` / `tags_remove` / `tag_create` / `tag_delete`: the tag"
+    },
+    {
+      "file": "tests/test_bridge_tags_export_import.py",
+      "forbids": "`tags_export` / `tags_import_scan` / `tags_import_apply`: the tag"
+    },
+    {
+      "file": "tests/test_bridge_tags_search.py",
+      "forbids": "`tags_search` / `tags_calc_range` / `tags_set_active`: the tag-search,"
+    },
+    {
+      "file": "tests/test_config_presets.py",
+      "forbids": "Preset category logic, extracted from the window so a pipe can call it."
+    },
+    {
+      "file": "tests/test_cs_injection.py",
+      "forbids": "CS2 config injection, runtime cfg writing, and App's small pure helpers stay correct."
+    },
+    {
+      "file": "tests/test_db_discovery.py",
+      "forbids": "Database discovery must run with no window and no real server."
+    },
+    {
+      "file": "tests/test_engine_globals.py",
+      "forbids": "Every free name used by an engine module must resolve inside that module."
+    },
+    {
+      "file": "tests/test_engine_headless.py",
+      "forbids": "The engine must run with no window and no Tkinter anywhere in the process."
+    },
+    {
+      "file": "tests/test_engine_isolation.py",
+      "forbids": "Test de garde : le moteur ne touche pas a l'interface (chantier 1)."
+    },
+    {
+      "file": "tests/test_engine_pg_params.py",
+      "forbids": "Guard for the PostgreSQL connection seam (chantier 4a1, task 5 review fix)."
+    },
+    {
+      "file": "tests/test_engine_port_shadowing.py",
+      "forbids": "No instance attribute may shadow an engine port."
+    },
+    {
+      "file": "tests/test_engine_ports.py",
+      "forbids": "Tests des trois prises du moteur (chantier 1, tache 1)."
+    },
+    {
+      "file": "tests/test_engine_state.py",
+      "forbids": "Every attribute the engine reads must be declared in one place."
+    },
+    {
+      "file": "tests/test_pg_params_live.py",
+      "forbids": "The PostgreSQL identifiers must be live, not copied at three chosen moments."
+    },
+    {
+      "file": "tests/test_process_exit.py",
+      "forbids": "A process is announced dead only when the task list says it is gone."
+    },
+    {
+      "file": "tests/test_pure_logic.py",
+      "forbids": "Tests de la logique pure et des donnees statiques (Phase 2.3 — filet de securite)."
+    },
+    {
+      "file": "tests/test_run_inputs.py",
+      "forbids": "Run and preview must be validatable with no window."
+    },
+    {
+      "file": "electron/renderer/src/__tests__/bridge-commands.test.ts",
+      "forbids": "The pipe must carry arguments and hand answers back."
+    },
+    {
+      "file": "electron/renderer/src/__tests__/ErrorBoundary.test.tsx",
+      "forbids": "A render crash must not unmount the whole app to a blank page."
+    },
+    {
+      "file": "electron/renderer/src/__tests__/no-hover-motion.test.ts",
+      "forbids": "The hover lock (D13, D16, R7). The most important test in this stage."
+    },
+    {
+      "file": "electron/renderer/src/__tests__/one-button-vocabulary.test.ts",
+      "forbids": "One vocabulary for small buttons."
+    },
+    {
+      "file": "electron/renderer/src/__tests__/strip-mock-hover-motion.test.ts",
+      "forbids": "Proves the scoping property that makes postcss-strip-mock-hover-motion.mjs"
+    },
+    {
+      "file": "electron/renderer/src/__tests__/stylesheet-order.test.ts",
+      "forbids": "The shipped cascade order, guarded."
+    },
+    {
+      "file": "electron/renderer/src/__tests__/wheel-reaches-the-pane.test.ts",
+      "forbids": "The wheel belongs to the pane that actually scrolls."
+    },
+    {
+      "file": "electron/renderer/src/components/__tests__/ActionButton.css.test.ts",
+      "forbids": "What is LEFT in ActionButton.css."
+    },
+    {
+      "file": "electron/renderer/src/components/__tests__/ActionButton.fx.test.tsx",
+      "forbids": "The button's impact feedback."
+    },
+    {
+      "file": "electron/renderer/src/components/__tests__/Card.css.test.ts",
+      "forbids": "What is LEFT in Card.css."
+    },
+    {
+      "file": "electron/renderer/src/components/__tests__/Card.test.tsx",
+      "forbids": "The card's fold state must not drift from its open/onToggle contract (menus-C)."
+    },
+    {
+      "file": "electron/renderer/src/components/__tests__/Chip.test.tsx",
+      "forbids": "The chip's selected face."
+    },
+    {
+      "file": "electron/renderer/src/components/__tests__/FieldChip.css.test.ts",
+      "forbids": "What is LEFT in Field.css and Chip.css."
+    },
+    {
+      "file": "electron/renderer/src/components/__tests__/GlassMigration.css.test.ts",
+      "forbids": "Restyle 2's completion gate (the plan's Task 6) grepped for leftover flat"
+    },
+    {
+      "file": "electron/renderer/src/components/__tests__/SegmentedSlider.css.test.ts",
+      "forbids": "What is LEFT in Segmented.css and Slider.css."
+    },
+    {
+      "file": "electron/renderer/src/components/__tests__/Slider.number.test.tsx",
+      "forbids": "A gauge must be typeable, and the rail must follow what was typed."
+    },
+    {
+      "file": "electron/renderer/src/components/__tests__/Tab.css.test.ts",
+      "forbids": "What is LEFT in Tab.css, and why nothing else may join it."
+    },
+    {
+      "file": "electron/renderer/src/components/__tests__/Tab.test.tsx",
+      "forbids": "The sliding indicator must not lose sync with the active tab's measured position and width."
+    },
+    {
+      "file": "electron/renderer/src/cursor/__tests__/Reticle.css.test.ts",
+      "forbids": "`(hover: none)` must hide the reticle AND restore the native cursor -- never one without the other."
+    },
+    {
+      "file": "electron/renderer/src/cursor/__tests__/Reticle.selectors.test.ts",
+      "forbids": "Every class the reticle names must still exist."
+    },
+    {
+      "file": "electron/renderer/src/cursor/__tests__/Reticle.shape.test.ts",
+      "forbids": "The reticle's SHAPE, resolved through a real cascade -- not read out of the"
+    },
+    {
+      "file": "electron/renderer/src/cursor/__tests__/Reticle.test.tsx",
+      "forbids": "The reticle must move via custom properties, never a layout style (paint, don't move)."
+    },
+    {
+      "file": "electron/renderer/src/effects/__tests__/ClickSpark.test.tsx",
+      "forbids": "The click spark's particle count and colour must not drift from the approved effect."
+    },
+    {
+      "file": "electron/renderer/src/icons/__tests__/icons.test.tsx",
+      "forbids": "D14: every menu and every button carries its own glyph."
+    },
+    {
+      "file": "electron/renderer/src/motion/__tests__/intensity.test.ts",
+      "forbids": "The motion engine must not play sequences at the wrong intensity, ignore"
+    },
+    {
+      "file": "electron/renderer/src/settings/__tests__/coverage.test.tsx",
+      "forbids": "The parity guard of D20 / R1: no setting may vanish in the port."
+    },
+    {
+      "file": "electron/renderer/src/settings/__tests__/FilterRow.test.tsx",
+      "forbids": "One filter row carries three boxes, and dropping one of them is a silent"
+    },
+    {
+      "file": "electron/renderer/src/settings/__tests__/store.test.tsx",
+      "forbids": "The settings store: one flat dictionary, keyed exactly like DEFAULT_CONFIG."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/ActionBar.css.test.ts",
+      "forbids": "What is LEFT in ActionBar.css."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/ActionBar.test.tsx",
+      "forbids": "ActionBar: the four action buttons (RUN, PREVIEW, STOP, KILL) and the"
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/AppShell.css.test.ts",
+      "forbids": "The page's base face, guarded across the two files that decide it."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/AppShell.test.tsx",
+      "forbids": "The shell must mount, show its four tabs, and switch between them."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/backdrop-per-tab.test.ts",
+      "forbids": "The ground is configurable per tab."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/backdrop.test.ts",
+      "forbids": "NOTE: the pure module lives in \"backdropField.ts\", not \"backdrop.ts\" as the"
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/console-rules.test.ts",
+      "forbids": "The console's ruled lines and its text share ONE period."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/consoleNarrative.test.ts",
+      "forbids": "What the console says, against what the pipe carries."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/HudNav.test.tsx",
+      "forbids": "The tab nav must not lose its aria-current wiring or the mock's `.hud-nav` vocabulary."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/LogConsole.ask.test.tsx",
+      "forbids": "The ask panel must answer BOTH shapes the engine sends."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/LogConsole.cap.test.tsx",
+      "forbids": "The console must not grow without bound."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/LogConsole.prompt.test.tsx",
+      "forbids": "The console's titled header and its prompt line."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/LogConsole.test.tsx",
+      "forbids": "LogConsole's tools: auto-scroll, search, and the always-mounted requirement"
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/LogConsole.typing.test.tsx",
+      "forbids": "The console writes itself out, as the approved mock does."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/sectionLayout.test.ts",
+      "forbids": "A card's order and collapsed state must persist across renders, keyed by tab."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/SectionList.test.tsx",
+      "forbids": "Dragging or resizing a card must not break the section list's live reorder/collapse state."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/tabs.test.ts",
+      "forbids": "The four tabs are data, so nothing can quietly grow a fifth."
+    },
+    {
+      "file": "electron/renderer/src/shell/__tests__/useCardDrag.test.ts",
+      "forbids": "The reorder drag hook must not fire on the wrong pointer target, or miss the drop."
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/bento-layout.test.ts",
+      "forbids": "Every tab panel is a two-column bento grid with a full-width escape hatch."
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/CaptureTab.test.tsx",
+      "forbids": "The Capture tab's conditional rows, which are the window's own rules."
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/DemoSelectionSection.test.tsx",
+      "forbids": "The DEMO SELECTION section."
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/HlaeOptionsSection.test.tsx",
+      "forbids": "IN-GAME OPTIONS, RECORDING SYSTEM, HLAE OPTIONS and CS2 EFFECTS."
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/KillFiltersSection.test.tsx",
+      "forbids": "The KILL FILTERS section and the CLUTCH block."
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/MatchTypesSection.test.tsx",
+      "forbids": "The MATCH TYPES section."
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/PlayerSection.paging.test.tsx",
+      "forbids": "The player list must survive a real database."
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/PresetSection.test.tsx",
+      "forbids": "PresetSection: the name field, one checkbox per category the Python side"
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/SettingsTab.test.tsx",
+      "forbids": "The Settings tab: PATHS, UI THEME, UI LAYOUT, POSTGRESQL CONNECTION,"
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/TagsTab.colour.test.tsx",
+      "forbids": "A tag carries its own colour, whether or not it is picked."
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/TagsTab.test.tsx",
+      "forbids": "TagsTab: the tag grid, the TAG RANGE block and the OPERATIONS block."
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/VideoTab.test.tsx",
+      "forbids": "The Video tab -- first slice: FINAL ASSEMBLY, RESOLUTION/FRAMERATE/WINDOW,"
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/WeaponFilterSection.silhouettes.test.tsx",
+      "forbids": "The silhouettes of the selected weapons, in the filter card."
+    },
+    {
+      "file": "electron/renderer/src/tabs/__tests__/WeaponFilterSection.test.tsx",
+      "forbids": "The WEAPON FILTER section."
+    },
+    {
+      "file": "electron/renderer/src/theme/__tests__/accent-default.test.ts",
+      "forbids": "The default accent must not drift from the V12 mock's electric blue (#2563EB)."
+    },
+    {
+      "file": "electron/renderer/src/theme/__tests__/accent-reaches-the-ground.test.ts",
+      "forbids": "A chosen accent must reach the holographic ground."
+    },
+    {
+      "file": "electron/renderer/src/theme/__tests__/accent.test.ts",
+      "forbids": "A legacy Tkinter accent preset name must resolve to its Electron hex, case-insensitively."
+    },
+    {
+      "file": "electron/renderer/src/theme/__tests__/contrast.test.ts",
+      "forbids": "Token contrast ratios (light and dark) must not drop below tokens.css's own values."
+    },
+    {
+      "file": "electron/renderer/src/theme/__tests__/dark-ground.test.ts",
+      "forbids": "Every light colour the approved mock writes as a LITERAL, accounted for."
+    },
+    {
+      "file": "electron/renderer/src/theme/__tests__/grounds.test.ts",
+      "forbids": "The night grounds must be DISTINCT, and each must be legible."
+    },
+    {
+      "file": "electron/renderer/src/theme/__tests__/mock-bridge.test.ts",
+      "forbids": "The measured disagreements in mock-bridge.css that are full rules, not"
+    },
+    {
+      "file": "electron/renderer/src/theme/__tests__/mock-v12.test.ts",
+      "forbids": "mock-v12.css must not drift from a fresh extraction of the approved mock -- it is GENERATED."
+    },
+    {
+      "file": "electron/renderer/src/theme/__tests__/mode.test.ts",
+      "forbids": "A night ground preset must never land the window in light mode."
+    },
+    {
+      "file": "electron/renderer/src/weapon/__tests__/silhouettes.test.ts",
+      "forbids": "Every weapon the database can return must have something to draw."
+    },
+    {
+      "file": "electron/renderer/src/weapon/__tests__/stop-waits.test.ts",
+      "forbids": "STOP has no timer. This is D18 written as a test."
+    },
+    {
+      "file": "electron/renderer/src/weapon/__tests__/WeaponBand.css.test.ts",
+      "forbids": "The weapon band must not restate the action bar's background, blur, or layout -- it rides inside it."
+    }
+  ]
 }

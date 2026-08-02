@@ -1,3 +1,6 @@
+/**
+ * A card's order and collapsed state must persist across renders, keyed by tab.
+ */
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 

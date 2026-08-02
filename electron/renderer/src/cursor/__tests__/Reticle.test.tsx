@@ -1,3 +1,6 @@
+/**
+ * The reticle must move via custom properties, never a layout style (paint, don't move).
+ */
 import { fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 

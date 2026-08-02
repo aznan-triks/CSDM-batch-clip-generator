@@ -1,3 +1,4 @@
+"""CS2 config injection, runtime cfg writing, and App's small pure helpers stay correct."""
 import tempfile
 import unittest
 from pathlib import Path

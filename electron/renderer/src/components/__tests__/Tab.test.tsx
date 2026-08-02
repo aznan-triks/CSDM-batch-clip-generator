@@ -1,3 +1,6 @@
+/**
+ * The sliding indicator must not lose sync with the active tab's measured position and width.
+ */
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 

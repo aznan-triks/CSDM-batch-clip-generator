@@ -1,3 +1,6 @@
+/**
+ * The reorder drag hook must not fire on the wrong pointer target, or miss the drop.
+ */
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

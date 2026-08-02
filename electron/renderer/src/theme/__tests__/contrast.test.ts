@@ -1,3 +1,6 @@
+/**
+ * Token contrast ratios (light and dark) must not drop below tokens.css's own values.
+ */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";

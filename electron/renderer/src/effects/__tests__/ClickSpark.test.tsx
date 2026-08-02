@@ -1,3 +1,6 @@
+/**
+ * The click spark's particle count and colour must not drift from the approved effect.
+ */
 import { fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 

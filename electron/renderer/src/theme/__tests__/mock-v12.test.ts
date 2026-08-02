@@ -1,3 +1,6 @@
+/**
+ * mock-v12.css must not drift from a fresh extraction of the approved mock -- it is GENERATED.
+ */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
