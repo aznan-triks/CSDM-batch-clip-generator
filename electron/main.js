@@ -230,8 +230,23 @@ function createWindow() {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
     },
   });
+
+  // A webContents is free to navigate to any URL by default. This window
+  // has exactly one page it is allowed to open: the one this file loads below.
+  // Any other URL is the process trying to surf away, which a utility shell
+  // must never do. (Electron 38 warns when this handler is missing.)
+  mainWindow.webContents.on("will-navigate", (_event, url) => {
+    console.warn(`blocked navigation to ${url}`);
+    _event.preventDefault();
+  });
+
+  // The shell opens no popups and has no links. If something in the renderer
+  // tries a `window.open`, catch it here instead of letting Electron do
+  // whatever it would do with an unregistered URL.
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
 
   // Closing mid-run throws away work: the batch stops, the assembly never
   // happens, and the tags applied so far are reverted. Ask first. Native
