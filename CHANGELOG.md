@@ -151,6 +151,63 @@ Principles 7 (root cause) and 8 (visual proof) are explicitly left undetected �
 working, not text a parser can grade. This is a first mechanical measurement, not a cleanup; acting on
 these numbers is a separate future plan.
 
+Lifecycle A (2026-08-02): fige les animations quand la fenêtre n'a pas le focus, tue l'arbre de
+processus complet à la fermeture du shell (avec confirmation si un run tourne), affiche un bouton
+Restart quand le moteur meurt au lieu de rester figé, et verrouille la fenêtre sur sa propre page.
+S'appuie sur AUDIT_electron_cycle_de_vie.md (3 corrections par rapport à une analyse antérieure).
+Exécuté en continu sur la branche `chantier4a1-headless-db`, 5 phases. Les phases 1-4 livrées (4
+commits), la phase 5 (retrait de deux clés de config mortes) arrêtée parce que la migration du
+worktree `mystifying-elion-9ea880` n'est pas mergée.
+
+### Added
+**Humanised:** L'appli ralentit ses animations quand on travaille dans une autre fenêtre (CS2 par
+exemple), et les arrête complètement quand elle est minimisée. Si le moteur Python plante, une
+bannière rouge apparaît avec un bouton Restart — plus besoin de tout fermer et rouvrir.
+**Technical:** `renderer/src/motion/engine.ts` : `isWindowActive` / `setWindowActive` + porte dans
+`effectiveIntensity` (lit `prefersReducedMotion` ET l'activité fenêtre, la préférence système gagne).
+`renderer/src/motion/useWindowActivity.ts` : hook `useEffect` écoutant `visibilitychange` + `blur` +
+`focus`. `renderer/src/shell/EngineLostBanner.tsx` + `.css` : composant monté dans `AppShell.tsx`,
+abonné via `bridge.ts` aux événements `child_exit`/`child_error`/`fatal`, expose un bouton qui
+appelle le nouvel IPC `bridge:restart-engine`. `electron/main.js` : handler IPC `restart-engine`
+(appelle `killEngine()` puis `startEngine()`), handler `will-navigate` (bloque toute navigation
+externe), `setWindowOpenHandler(() => ({ action: "deny" }))`. `electron/lifecycle.js` : module pur
+sans `require("electron")` — `buildTreeKillArgs(pid)`, `noteEngineState()`, `engineIsBusy()`,
+`resetEngineState()`.
+
+### Changed
+**Humanised:** Fermer l'appli tue tout ce qui tourne d'un coup (plus de processus orphelins qui
+survivent à la fenêtre). Si une capture est en cours, l'appli demande confirmation avant de fermer,
+plutôt que de tuer silencieusement. La fenêtre est plus sûre : elle refuse d'ouvrir des popups et
+de quitter sa propre page.
+**Technical:** `electron/main.js` : `killEngine()` utilise `taskkill /F /T /PID` (arbre entier) au
+lieu de `process.kill()` (signal seul). `shutdownEngine()` : vérifie `engineIsBusy()` → si oui,
+`dialog.showMessageBox` synchrone (confirmation) → puis `killEngine()`. Handler `will-navigate` +
+`setWindowOpenHandler` dans `createWindow()`. `webPreferences` : `sandbox: true` explicite.
+`electron/package.json` : ajout de `lifecycle.js` au tableau `files` (sinon le build portable
+plante). `electron/vitest.config.ts` : pattern `__tests__/**/*.test.js` ajouté.
+
+### Fixed
+**Humanised:** Rien de cassé par l'utilisateur — tous les problèmes d'audit étaient des ports
+incomplets de comportements que le script Python avait depuis le début.
+**Technical:** Les trois corrections livrées par rapport à l'analyse antérieure viennent de
+l'audit `docs/audits/AUDIT_electron_cycle_de_vie.md` (versé dans le dépôt le 2026-08-02). 17
+nouveaux tests (6 windowActivity + 5 lifecycle + 6 EngineLostBanner), garde-fous inchangés.
+
+### Known gaps
+- **Phase 5 (clés mortes) non livrée** : `kill_mod_no_trois_shot` est encore lue dans
+  `csdm/engine/core.py` (lignes 2830-3041). La clé pilote le filtre d'exclusion TROIS SHOT. La
+  migration du worktree `mystifying-elion-9ea880` (qui mappe `kill_mod_no_trois_shot` →
+  `kill_mod_trois_shot_exclude`) n'est pas mergée sur cette branche. Seule
+  `kill_mod_no_trois_shot_req` est orpheline (jamais lue hors `DEFAULT_CONFIG`). Le plan de la
+  phase 5 exige l'arrêt si l'une ou l'autre clé est encore lue — prochaine étape : merger la
+  branche de migration.
+
+### Verified
+- Electron: 623/623 tests verts (77 suites), typecheck propre
+- Python: 274/295 verts (21 échecs préexistants, psycopg2 + atlas, rien touché)
+- 4 commits locaux sur `chantier4a1-headless-db`, pas de bump APP_VERSION, pas de git push
+- Journal: `VAULT/Journal/2026-08-02-cycle-de-vie-electron-A.md`
+
 ## [v299] — 2026-08-01
 
 ### Fixed

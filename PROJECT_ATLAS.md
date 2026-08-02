@@ -12,11 +12,11 @@
 | `state` | `csdm/engine/ports.py:46` | `state(self, name, payload=None)` | yes |
 | `state` | `csdm_batch_clips_generator.py:4662` | `state(self, name, payload=None)` | yes |
 | `send` | `csdm/bridge/protocol.py:47` | `send(self, obj)` | yes |
+| `add` | `csdm/widgets.py:139` | `add(self, widget)` | yes |
+| `add` | `csdm/widgets.py:207` | `add(self, card)` | yes |
 | `log` | `csdm/bridge/ports.py:23` | `log(self, message, level='')` | yes |
 | `log` | `csdm/engine/ports.py:40` | `log(self, message, level='')` | yes |
 | `log` | `csdm_batch_clips_generator.py:4654` | `log(self, message, level='')` | yes |
-| `add` | `csdm/widgets.py:139` | `add(self, widget)` | yes |
-| `add` | `csdm/widgets.py:207` | `add(self, card)` | yes |
 | `grid` | `csdm/widgets.py:504` | `grid(self, **kw)` | - |
 | `describe_filters` | `csdm/bridge/tables.py:15` | `describe_filters()` | yes |
 | `place` | `csdm/widgets.py:510` | `place(self, **kw)` | yes |
@@ -123,12 +123,12 @@
 
 > 137 more in PROJECT_ATLAS.json
 
-## React components (40)
+## React components (41)
 
 | Name | File:line | Props |
 |---|---|---|
 | `App` | `electron/renderer/src/App.tsx:4` | - |
-| `ActionButton` | `electron/renderer/src/components/ActionButton.tsx:46` | label, icon, variant, armed, disabled, onClick |
+| `ActionButton` | `electron/renderer/src/components/ActionButton.tsx:45` | - |
 | `Card` | `electron/renderer/src/components/Card.tsx:58` | title, icon, children, className, count, open, onToggle, dragHandle, onResizeToggle |
 | `Chip` | `electron/renderer/src/components/Chip.tsx:20` | label, selected, onToggle, disabled |
 | `DateField` | `electron/renderer/src/components/DateField.tsx:38` | id, label, value, onChange |
@@ -149,8 +149,9 @@
 | `DatabaseProvider` | `electron/renderer/src/settings/useDatabase.tsx:106` | - |
 | `TablesProvider` | `electron/renderer/src/settings/useTables.tsx:105` | - |
 | `ActionBar` | `electron/renderer/src/shell/ActionBar.tsx:38` | registerButton, weapon |
-| `AppShell` | `electron/renderer/src/shell/AppShell.tsx:34` | - |
+| `AppShell` | `electron/renderer/src/shell/AppShell.tsx:36` | - |
 | `Backdrop` | `electron/renderer/src/shell/Backdrop.tsx:46` | - |
+| `EngineLostBanner` | `electron/renderer/src/shell/EngineLostBanner.tsx:21` | - |
 | `LogConsole` | `electron/renderer/src/shell/LogConsole.tsx:147` | - |
 | `SectionList` | `electron/renderer/src/shell/SectionList.tsx:48` | tabId, sections |
 | `CaptureTab` | `electron/renderer/src/tabs/CaptureTab.tsx:62` | - |
@@ -166,13 +167,15 @@
 | `TagsTab` | `electron/renderer/src/tabs/TagsTab.tsx:54` | - |
 | `VideoTab` | `electron/renderer/src/tabs/VideoTab.tsx:60` | - |
 | `WeaponFilterSection` | `electron/renderer/src/tabs/WeaponFilterSection.tsx:32` | - |
-| `WeaponBand` | `electron/renderer/src/weapon/WeaponBand.tsx:46` | weaponId, status, progress, counter, frameRef, buttonRef |
 
-## React hooks (9)
+> 1 more in PROJECT_ATLAS.json
+
+## React hooks (10)
 
 | Name | File:line |
 |---|---|
 | `useEngineState` | `electron/renderer/src/motion/useEngineState.ts:124` |
+| `useWindowActivity` | `electron/renderer/src/motion/useWindowActivity.ts:17` |
 | `useSectionLayout` | `electron/renderer/src/shell/sectionLayout.ts:37` |
 | `useCardDrag` | `electron/renderer/src/shell/useCardDrag.ts:18` |
 | `useTypewriter` | `electron/renderer/src/shell/useTypewriter.ts:30` |
@@ -236,7 +239,7 @@ Owned by `theme/mock-v12.css` -- naming an internal class that collides silently
 
 `buttons`, `buttons_busy`, `buttons_idle`, `demo_entry`, `demos_unchecked`, `kill_requested`, `preview_ready`, `preview_started`, `process_exited`, `progress`, `run_started`, `stop_requested`, `summary`
 
-## Guards -- what each test forbids (96)
+## Guards -- what each test forbids (100)
 
 | File | Forbids |
 |---|---|
@@ -265,6 +268,7 @@ Owned by `theme/mock-v12.css` -- naming an internal class that collides silently
 | `tests/test_pure_logic.py` | Tests de la logique pure et des donnees statiques (Phase 2.3 — filet de securite). |
 | `tests/test_run_inputs.py` | Run and preview must be validatable with no window. |
 | `electron/renderer/src/__tests__/bridge-commands.test.ts` | The pipe must carry arguments and hand answers back. |
+| `electron/renderer/src/__tests__/EngineLostBanner.test.tsx` |  |
 | `electron/renderer/src/__tests__/ErrorBoundary.test.tsx` | A render crash must not unmount the whole app to a blank page. |
 | `electron/renderer/src/__tests__/no-hover-motion.test.ts` | The hover lock (D13, D16, R7). The most important test in this stage. |
 | `electron/renderer/src/__tests__/one-button-vocabulary.test.ts` | One vocabulary for small buttons. |
@@ -289,6 +293,9 @@ Owned by `theme/mock-v12.css` -- naming an internal class that collides silently
 | `electron/renderer/src/effects/__tests__/ClickSpark.test.tsx` | The click spark's particle count and colour must not drift from the approved effect. |
 | `electron/renderer/src/icons/__tests__/icons.test.tsx` | D14: every menu and every button carries its own glyph. |
 | `electron/renderer/src/motion/__tests__/intensity.test.ts` | The motion engine must not play sequences at the wrong intensity, ignore |
+| `electron/renderer/src/motion/__tests__/windowActivity.test.ts` |  |
+| `electron/renderer/src/parity/__tests__/coverage.test.tsx` |  |
+| `electron/renderer/src/parity/__tests__/inventory.test.ts` |  |
 | `electron/renderer/src/settings/__tests__/coverage.test.tsx` | The parity guard of D20 / R1: no setting may vanish in the port. |
 | `electron/renderer/src/settings/__tests__/FilterRow.test.tsx` | One filter row carries three boxes, and dropping one of them is a silent |
 | `electron/renderer/src/settings/__tests__/store.test.tsx` | The settings store: one flat dictionary, keyed exactly like DEFAULT_CONFIG. |

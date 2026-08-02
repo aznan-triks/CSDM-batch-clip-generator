@@ -303,7 +303,7 @@
       "line": 23,
       "signature": "log(self, message, level='')",
       "doc": "",
-      "usages": 25,
+      "usages": 26,
       "tested": true
     },
     {
@@ -321,7 +321,7 @@
       "line": 30,
       "signature": "state(self, name, payload=None)",
       "doc": "",
-      "usages": 46,
+      "usages": 48,
       "tested": true
     },
     {
@@ -330,7 +330,7 @@
       "line": 34,
       "signature": "ask(self, kind, message, options)",
       "doc": "Send a question and BLOCK this thread until the answer comes back.",
-      "usages": 9,
+      "usages": 10,
       "tested": true
     },
     {
@@ -375,7 +375,7 @@
       "line": 47,
       "signature": "send(self, obj)",
       "doc": "",
-      "usages": 29,
+      "usages": 31,
       "tested": true
     },
     {
@@ -384,7 +384,7 @@
       "line": 15,
       "signature": "describe_filters()",
       "doc": "Every table the Capture and Video tabs need, in one round trip.",
-      "usages": 18,
+      "usages": 19,
       "tested": true
     },
     {
@@ -2130,7 +2130,7 @@
       "line": 40,
       "signature": "log(self, message, level='')",
       "doc": "",
-      "usages": 25,
+      "usages": 26,
       "tested": true
     },
     {
@@ -2148,7 +2148,7 @@
       "line": 46,
       "signature": "state(self, name, payload=None)",
       "doc": "",
-      "usages": 46,
+      "usages": 48,
       "tested": true
     },
     {
@@ -2157,7 +2157,7 @@
       "line": 49,
       "signature": "ask(self, kind, message, options)",
       "doc": "",
-      "usages": 9,
+      "usages": 10,
       "tested": true
     },
     {
@@ -2481,7 +2481,7 @@
       "line": 139,
       "signature": "add(self, widget)",
       "doc": "Register widget for wrapping layout. Returns widget for chaining.",
-      "usages": 24,
+      "usages": 26,
       "tested": true
     },
     {
@@ -2526,7 +2526,7 @@
       "line": 207,
       "signature": "add(self, card)",
       "doc": "Register a card, Sec or Frame. Returns it, so calls can be chained.",
-      "usages": 24,
+      "usages": 26,
       "tested": true
     },
     {
@@ -3633,7 +3633,7 @@
       "line": 2319,
       "signature": "_demo_picker_set_selected(self, value)",
       "doc": "Set the check state of all currently highlighted (native-selected) rows.",
-      "usages": 1,
+      "usages": 2,
       "tested": false
     },
     {
@@ -4263,7 +4263,7 @@
       "line": 4654,
       "signature": "log(self, message, level='')",
       "doc": "Engine port: write one line to the console. Thread-safe, no pump.",
-      "usages": 25,
+      "usages": 26,
       "tested": true
     },
     {
@@ -4281,7 +4281,7 @@
       "line": 4662,
       "signature": "state(self, name, payload=None)",
       "doc": "Engine port: report a typed state change. Rendered on the main thread.",
-      "usages": 46,
+      "usages": 48,
       "tested": true
     },
     {
@@ -4299,7 +4299,7 @@
       "line": 4715,
       "signature": "ask(self, kind, message, options)",
       "doc": "Engine port: ask the user and BLOCK until the answer comes back.",
-      "usages": 9,
+      "usages": 10,
       "tested": true
     },
     {
@@ -5147,7 +5147,7 @@
       "line": 799,
       "signature": "class DateField",
       "doc": "",
-      "usages": 4,
+      "usages": 5,
       "tested": false
     },
     {
@@ -5165,7 +5165,7 @@
       "line": 177,
       "signature": "class App",
       "doc": "",
-      "usages": 9,
+      "usages": 10,
       "tested": true
     }
   ],
@@ -5891,15 +5891,8 @@
     {
       "name": "ActionButton",
       "file": "electron/renderer/src/components/ActionButton.tsx",
-      "line": 46,
-      "props": [
-        "label",
-        "icon",
-        "variant",
-        "armed",
-        "disabled",
-        "onClick"
-      ]
+      "line": 45,
+      "props": []
     },
     {
       "name": "Card",
@@ -6100,13 +6093,19 @@
     {
       "name": "AppShell",
       "file": "electron/renderer/src/shell/AppShell.tsx",
-      "line": 34,
+      "line": 36,
       "props": []
     },
     {
       "name": "Backdrop",
       "file": "electron/renderer/src/shell/Backdrop.tsx",
       "line": 46,
+      "props": []
+    },
+    {
+      "name": "EngineLostBanner",
+      "file": "electron/renderer/src/shell/EngineLostBanner.tsx",
+      "line": 21,
       "props": []
     },
     {
@@ -6227,6 +6226,11 @@
       "line": 124
     },
     {
+      "name": "useWindowActivity",
+      "file": "electron/renderer/src/motion/useWindowActivity.ts",
+      "line": 17
+    },
+    {
       "name": "useSectionLayout",
       "file": "electron/renderer/src/shell/sectionLayout.ts",
       "line": 37
@@ -6271,32 +6275,32 @@
     {
       "name": "send",
       "file": "electron/renderer/src/bridge.ts",
-      "line": 101
+      "line": 102
     },
     {
       "name": "sendCommand",
       "file": "electron/renderer/src/bridge.ts",
-      "line": 159
+      "line": 160
     },
     {
       "name": "runCommand",
       "file": "electron/renderer/src/bridge.ts",
-      "line": 168
+      "line": 169
     },
     {
       "name": "onMessage",
       "file": "electron/renderer/src/bridge.ts",
-      "line": 187
+      "line": 188
     },
     {
       "name": "pickPath",
       "file": "electron/renderer/src/bridge.ts",
-      "line": 192
+      "line": 193
     },
     {
       "name": "pickSavePath",
       "file": "electron/renderer/src/bridge.ts",
-      "line": 197
+      "line": 198
     },
     {
       "name": "registerSequence",
@@ -6316,42 +6320,52 @@
     {
       "name": "setIntensity",
       "file": "electron/renderer/src/motion/engine.ts",
-      "line": 99
+      "line": 116
+    },
+    {
+      "name": "setWindowActive",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 122
+    },
+    {
+      "name": "isWindowActive",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 128
     },
     {
       "name": "getIntensity",
       "file": "electron/renderer/src/motion/engine.ts",
-      "line": 104
+      "line": 132
     },
     {
       "name": "onIntensityChange",
       "file": "electron/renderer/src/motion/engine.ts",
-      "line": 108
+      "line": 136
     },
     {
       "name": "prefersReducedMotion",
       "file": "electron/renderer/src/motion/engine.ts",
-      "line": 114
+      "line": 142
     },
     {
       "name": "effectiveIntensity",
       "file": "electron/renderer/src/motion/engine.ts",
-      "line": 124
+      "line": 152
     },
     {
       "name": "isOverriddenBySystem",
       "file": "electron/renderer/src/motion/engine.ts",
-      "line": 129
+      "line": 159
     },
     {
       "name": "play",
       "file": "electron/renderer/src/motion/engine.ts",
-      "line": 146
+      "line": 176
     },
     {
       "name": "playsDecorative",
       "file": "electron/renderer/src/motion/engine.ts",
-      "line": 218
+      "line": 248
     },
     {
       "name": "INTENSITIES",
@@ -6382,6 +6396,21 @@
       "name": "INITIAL_ENGINE_STATE",
       "file": "electron/renderer/src/motion/useEngineState.ts",
       "line": 59
+    },
+    {
+      "name": "NO_PORT_BY_DESIGN",
+      "file": "electron/renderer/src/parity/action-ledger.ts",
+      "line": 16
+    },
+    {
+      "name": "NOT_YET_PORTED",
+      "file": "electron/renderer/src/parity/action-ledger.ts",
+      "line": 43
+    },
+    {
+      "name": "readActionInventory",
+      "file": "electron/renderer/src/parity/inventory.ts",
+      "line": 31
     },
     {
       "name": "NO_CONTROL_BY_DESIGN",
@@ -7026,6 +7055,10 @@
       "forbids": "The pipe must carry arguments and hand answers back."
     },
     {
+      "file": "electron/renderer/src/__tests__/EngineLostBanner.test.tsx",
+      "forbids": ""
+    },
+    {
       "file": "electron/renderer/src/__tests__/ErrorBoundary.test.tsx",
       "forbids": "A render crash must not unmount the whole app to a blank page."
     },
@@ -7120,6 +7153,18 @@
     {
       "file": "electron/renderer/src/motion/__tests__/intensity.test.ts",
       "forbids": "The motion engine must not play sequences at the wrong intensity, ignore"
+    },
+    {
+      "file": "electron/renderer/src/motion/__tests__/windowActivity.test.ts",
+      "forbids": ""
+    },
+    {
+      "file": "electron/renderer/src/parity/__tests__/coverage.test.tsx",
+      "forbids": ""
+    },
+    {
+      "file": "electron/renderer/src/parity/__tests__/inventory.test.ts",
+      "forbids": ""
     },
     {
       "file": "electron/renderer/src/settings/__tests__/coverage.test.tsx",
