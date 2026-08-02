@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "start": "npm run build && electron .",
     "package": "npm run build && electron-builder",
-    "test": "vitest run"
+    "test": "vitest run",
+    "e2e": "playwright test --config playwright.config.mjs",
+    "e2e:update": "playwright test --config playwright.config.mjs --update-snapshots"
   },
   "build": {
     "appId": "com.csdm.batch-clips-generator",
@@ -33,6 +35,7 @@
     }
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/react": "^16.3.2",
     "@types/react": "^19.2.17",
@@ -41,6 +44,8 @@
     "electron": "^43.2.0",
     "electron-builder": "^26.15.3",
     "jsdom": "^29.1.1",
+    "pixelmatch": "^7.2.0",
+    "pngjs": "^7.0.0",
     "postcss": "^8.5.23",
     "typescript": "^7.0.2",
     "vite": "^8.1.5",
