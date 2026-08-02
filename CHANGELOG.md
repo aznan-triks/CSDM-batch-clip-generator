@@ -35,6 +35,17 @@ native `<input type="color">`. `Card.tsx` now forwards a ref and renders an invi
 `sectionLayout.ts`'s `ui_sections` gained a per-card `wide` override, read/written by
 `SectionList.tsx`'s `toggleWide`.
 
+**Humanised:** A new automated camera watches the real app window — any future CSS change that
+shifts pixels by more than 1% is caught on the spot, not a week later. A side-by-side sheet of the
+app next to its design mock is generated automatically, so the mandatory visual check (§1 P8) takes
+one glance instead of a manual dance.
+**Technical:** New `electron/e2e/` suite: Playwright drives the real Electron window (not jsdom),
+`harness.mjs` starts Vite + Electron, `shell.spec.mjs` photographs the three-zone shell and matches
+against a stored pixel baseline (`pixelmatch`, threshold 1%), `mock.spec.mjs` photographs the V12
+mock at the same 1600×900 geometry, and `contact-sheet.mjs` generates the side-by-side HTML. The
+Electron e2e suite lives outside vitest (`vitest.config.ts` excludes `e2e/**`) so `npm test`
+remains fast and unchanged. `CONTEXT_GUIDE.md` §11 updated to point at the new tool.
+
 ### Changed
 **Humanised:** Cards reorder and resize live now (no more snap-into-place), the holographic grid
 behind every tab is the same size everywhere, the flicker on card hover is easier to see, cards
