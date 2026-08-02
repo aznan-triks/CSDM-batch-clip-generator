@@ -226,10 +226,19 @@ describe("no hover rule in the SHIPPED stylesheet moves anything", () => {
  * `style` prop, custom properties) -- the actual grid width change lives in
  * AppShell.css, reading those properties. Same rule as the paint-only
  * entries, applied to a real (not decorative) interaction.
+ *
+ * `shell/useCardDrag.ts` (2026-08-02, AUDIT_restyle6_polish_regressions.md
+ * #8): the same `mousedown`-then-`window` `mousemove`/`mouseup` pattern as
+ * AppShell's own drag, replacing HTML5 native drag-and-drop for card
+ * reordering. It never touches `.style.*` at all -- it only calls the
+ * `reorder` state setter passed in from SectionList.tsx, so it buys the
+ * right to listen, same as every other entry here, never the right to move
+ * something itself.
  */
 const CURSOR_DRIVEN_ALLOWLIST: readonly string[] = [
   "shell/AppShell.tsx",
   "shell/Backdrop.tsx",
+  "shell/useCardDrag.ts",
   "components/Card.tsx",
   "cursor/Reticle.tsx",
 ];

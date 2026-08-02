@@ -1,4 +1,4 @@
-import { forwardRef, type DragEvent, type MouseEvent, type ReactNode, useState } from "react";
+import { forwardRef, type MouseEvent, type ReactNode, useState } from "react";
 
 import "./Card.css";
 
@@ -18,16 +18,6 @@ interface CardProps {
   onToggle?: () => void;
   /** A drag handle rendered in the header, before the icon. Only SectionList passes one. */
   dragHandle?: ReactNode;
-  /** Passed straight to the card's own <section> -- SectionList's drop target. */
-  onDragOver?: (event: DragEvent<HTMLElement>) => void;
-  onDrop?: (event: DragEvent<HTMLElement>) => void;
-  /**
-   * Fires once per card entered while dragging another one over it (user
-   * feedback 2026-08-02: reordering was invisible until release). SectionList
-   * reorders live here; `onDrop` only clears the drag state, the order having
-   * already changed by the time it fires.
-   */
-  onDragEnter?: (event: DragEvent<HTMLElement>) => void;
   /**
    * User feedback 2026-08-01: "can't even resize them by their own corner
    * brackets" -- the mock's `.cbr.br` is `pointer-events:none` decoration
@@ -75,9 +65,6 @@ const Card = forwardRef<HTMLElement, CardProps>(function Card(
     open: openProp,
     onToggle,
     dragHandle,
-    onDragOver,
-    onDrop,
-    onDragEnter,
     onResizeToggle,
   },
   ref,
@@ -100,9 +87,6 @@ const Card = forwardRef<HTMLElement, CardProps>(function Card(
       ref={ref}
       className={classes}
       onMouseMove={paintSpotlight}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
-      onDragEnter={onDragEnter}
     >
       {/* The mock's four decorative layers. `.glx` and `.cbr` were drawn here
           as pseudo-elements on the card itself, which could carry the corners

@@ -97,20 +97,30 @@ describe("SectionList", () => {
     rectSpy.mockRestore();
   });
 
-  it("reorders live on dragEnter, before the drop (2026-08-02)", () => {
+  it("reorders live on mousemove, before mouseup (2026-08-02)", () => {
+    // Native HTML5 drag-and-drop is gone (AUDIT_restyle6_polish_regressions.md
+    // #8: it loses target tracking once the DOM reorders mid-drag). This is a
+    // plain mouse gesture now -- jsdom has no elementFromPoint, so it is
+    // stubbed to report whatever DOM node the test wants "under the cursor".
     delete state.ui_sections;
     const { container } = render(<SectionList tabId="capture" sections={sections()} />);
+    const sectionA = screen.getByText("A").closest("section") as HTMLElement;
 
-    fireEvent.dragStart(screen.getByLabelText("drag-b"));
-    fireEvent.dragEnter(screen.getByText("A").closest("section") as HTMLElement);
+    const originalElementFromPoint = document.elementFromPoint;
+    document.elementFromPoint = () => sectionA;
 
-    const titlesAfterDragEnter = [...container.querySelectorAll(".t")].map((el) => el.textContent);
-    expect(titlesAfterDragEnter).toEqual(["B", "A"]);
+    fireEvent.mouseDown(screen.getByLabelText("drag-b"));
+    fireEvent.mouseMove(window);
 
-    // Dropping only ends the drag -- the order already moved above, and
-    // dropping on the same target must not move it again.
-    fireEvent.drop(screen.getByText("A").closest("section") as HTMLElement);
-    const titlesAfterDrop = [...container.querySelectorAll(".t")].map((el) => el.textContent);
-    expect(titlesAfterDrop).toEqual(["B", "A"]);
+    const titlesAfterMove = [...container.querySelectorAll(".t")].map((el) => el.textContent);
+    expect(titlesAfterMove).toEqual(["B", "A"]);
+
+    // A second mousemove over the same target must not reorder again.
+    fireEvent.mouseMove(window);
+    const titlesAfterSecondMove = [...container.querySelectorAll(".t")].map((el) => el.textContent);
+    expect(titlesAfterSecondMove).toEqual(["B", "A"]);
+
+    fireEvent.mouseUp(window);
+    document.elementFromPoint = originalElementFromPoint;
   });
 });

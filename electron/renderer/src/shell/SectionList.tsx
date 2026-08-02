@@ -4,20 +4,18 @@
  * No wrapper element around a Card: `.bento` is `display:grid` and `.wide`
  * spans it via `grid-column:1/-1` on the .sec element itself (mock-v12.css)
  * -- wrapping it for drag handlers would put a non-.sec element where the
- * grid expects one. Drag handlers pass straight through to Card's own
- * <section> instead (onDragOver/onDrop props Card already accepts).
+ * grid expects one.
+ *
+ * Reordering is pointer-driven (`useCardDrag`), not HTML5 native
+ * drag-and-drop (2026-08-02, AUDIT_restyle6_polish_regressions.md #8):
+ * reordering the DOM mid-drag is a known way to lose native dragenter/drop
+ * delivery once the element under the cursor moves out from under it, and
+ * that is exactly what a live reorder needs to do on every card it passes.
  */
-import {
-  cloneElement,
-  useLayoutEffect,
-  useRef,
-  type DragEvent,
-  type MouseEvent,
-  type ReactElement,
-  type ReactNode,
-} from "react";
+import { cloneElement, useLayoutEffect, useRef, type MouseEvent, type ReactElement, type ReactNode } from "react";
 
 import { useSectionLayout } from "./sectionLayout";
+import { useCardDrag } from "./useCardDrag";
 
 export interface SectionSpec {
   id: string;
@@ -27,9 +25,6 @@ export interface SectionSpec {
     open?: boolean;
     onToggle?: () => void;
     dragHandle?: ReactNode;
-    onDragOver?: (event: DragEvent<HTMLElement>) => void;
-    onDrop?: (event: DragEvent<HTMLElement>) => void;
-    onDragEnter?: (event: DragEvent<HTMLElement>) => void;
     onResizeToggle?: () => void;
   }>;
 }
@@ -55,7 +50,6 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
     tabId,
     sections.map((section) => section.id),
   );
-  const draggedId = useRef<string | null>(null);
   const byId = new Map(sections.map((section) => [section.id, section]));
 
   // FLIP reorder (user feedback 2026-08-01: "not fluid, not live"). When a
@@ -117,6 +111,16 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
     prevRects.current = rects;
   });
 
+  const { startDrag } = useCardDrag(reorder);
+
+  /** No `.style.*` write here -- a plain lookup in the FLIP effect's own ref map. */
+  function resolveTargetId(element: Element): string | null {
+    const sectionEl = element.closest(".sec");
+    if (!sectionEl) return null;
+    for (const [cardId, el] of nodeRefs.current) if (el === sectionEl) return cardId;
+    return null;
+  }
+
   return (
     <>
       {order.map((id) => {
@@ -134,27 +138,12 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
           open: !isCollapsed(id),
           onToggle: () => toggleCollapsed(id),
           onResizeToggle: () => toggleWide(id, wide),
-          // `preventDefault` alone -- required by the native drag API for
-          // this element to accept a drop at all. The reorder itself happens
-          // on `onDragEnter` below (user feedback 2026-08-02: reordering was
-          // invisible until release); by the time `onDrop` fires the order
-          // has already moved, this just ends the drag.
-          onDragOver: (event: DragEvent<HTMLElement>) => event.preventDefault(),
-          onDragEnter: () => {
-            if (draggedId.current && draggedId.current !== id) reorder(draggedId.current, id);
-          },
-          onDrop: () => {
-            draggedId.current = null;
-          },
           dragHandle: (
             <span
               className="drag-handle"
-              draggable
               aria-label={`drag-${id}`}
               onClick={(event: MouseEvent) => event.stopPropagation()}
-              onDragStart={() => {
-                draggedId.current = id;
-              }}
+              onMouseDown={startDrag(id, resolveTargetId)}
             >
               ⠿
             </span>

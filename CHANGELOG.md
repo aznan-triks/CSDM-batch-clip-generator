@@ -90,6 +90,14 @@ render; an unrelated reflow still moves cards, just without the slide. `Card.css
 mock-v12.css:58) for `.sec:hover .glx`/`.cbr` — `.cbr`'s old `opacity:.85` (mock-v12.css:115) was
 always beaten by the lower-peaking animation running on top of it.
 
+**Humanised (same-day, second follow-up):** Dragging a card to reorder it no longer relies on the
+browser's native drag-and-drop, which was the reason it never updated live.
+**Technical:** New `shell/useCardDrag.ts` — `mousedown` on the handle, `window` `mousemove`/`mouseup`
+for the gesture's duration, same pattern as `AppShell.tsx`'s console-resize handle, added to
+`no-hover-motion.test.ts`'s `CURSOR_DRIVEN_ALLOWLIST`. `Card.tsx`/`CardProps` and `SectionList.tsx`'s
+`SectionSpec` lost `onDragOver`/`onDrop`/`onDragEnter` entirely (dead code, not layered under the new
+mechanism); `tabs/PresetSection.tsx` had its own now-dead copies of the same two props, removed too.
+
 ### Known gaps (not fixed this session, flagged rather than silently skipped)
 User also asked to restore "possibilities" the Electron port has fewer of than the Python script.
 Audited (`docs/audits/` not written — this was a direct code comparison, not a full audit plan);
@@ -102,11 +110,14 @@ findings beyond the tag-colour fix above:
 - Every dropdown/slider/multi-select option list checked (codecs, resolutions, presets, weapon/
   match-type/map filters, kill-count options, HLAE/CS2-effects quick values) matched Python's
   exactly — no other restriction found.
-- **Live drag reorder** (`SectionList.tsx`'s `onDragEnter`): the code and its unit test both show the
-  order updating before `drop`, but this could not be confirmed against the real, running app this
-  session (screenshot/real-drag tooling unavailable). Suspected root cause if it's still not live:
-  native HTML5 drag-and-drop is known to lose track of the hovered target when the DOM under the
-  cursor is reordered mid-drag — see `docs/audits/AUDIT_restyle6_polish_regressions.md` #8.
+- **Live drag reorder**: native HTML5 drag-and-drop (`onDragEnter`) was replaced entirely with a
+  pointer-based drag (`shell/useCardDrag.ts`, same `mousedown`-then-`window` `mousemove`/`mouseup`
+  pattern already used by the console-resize handle in `AppShell.tsx`) — native drag-and-drop is known
+  to lose track of the hovered target once the DOM under the cursor reorders mid-drag, which is
+  exactly what a live reorder needs to do. Confirmed by unit tests
+  (`useCardDrag.test.ts`, `SectionList.test.tsx`); **not confirmed against the real running app** this
+  session (no screenshot tooling available to drive a real mouse-drag gesture) — please test for real
+  before considering this closed. See `docs/audits/AUDIT_restyle6_polish_regressions.md` #8.
 
 ## [v299] — 2026-08-01
 
