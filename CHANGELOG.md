@@ -119,6 +119,38 @@ findings beyond the tag-colour fix above:
   session (no screenshot tooling available to drive a real mouse-drag gesture) — please test for real
   before considering this closed. See `docs/audits/AUDIT_restyle6_polish_regressions.md` #8.
 
+Project atlas (2026-08-02): a generated directory of the project's reusable resources, replacing
+four hand-maintained inventories that had all drifted out of sync with the code.
+
+### Added
+**Humanised:** Before writing any non-trivial change, the assistant now looks up whether a helper,
+component, config key, or bridge command already exists by querying a generated file instead of
+re-exploring the codebase from scratch or guessing. A safety check now blocks ending a work session
+if that file has gone stale.
+**Technical:** New `scripts/build_atlas.py` (AST walk over `csdm/` for Python functions/classes,
+regex sweep over `electron/renderer/src/**/*.ts(x)` for React components/hooks/exports, `DEFAULT_CONFIG`
+import for config keys, `mock-v12.css` selector sweep for the mock's owned class namespace,
+`KILL_FILTER_REGISTRY`/`COMMANDS` import for registries, AST walk over `csdm/engine/` for
+`self.state(...)` event literals, header-comment sweep over `tests/` and `**/__tests__/**` for what
+each guard test forbids) generates `PROJECT_ATLAS.md` (human summary) + `PROJECT_ATLAS.json`
+(machine-queried, never read whole) — same generated-never-hand-edited regime as
+`theme/mock-v12.css`, guarded by `tests/test_atlas.py` and a `--check` mode wired into a `Stop` hook.
+`context_guide.md` §2/§3 lost their hand-maintained file/method/class inventories (about a tenth of
+the file) in favour of atlas queries; the invariants and gotchas an analyser cannot derive stayed, two
+of them moved into §10 alongside the existing gotcha list. `graphify-out/GRAPH_REPORT.md` (dated
+April 13, predates every chantier) dropped out of the `init: full` reading ritual. Backfilled a
+missing one-line header on 18 guard test files (17 TypeScript + 1 Python) that had none — the new
+atlas test asserting every guard states what it forbids caught them.
+
+The atlas also gained five suspect-not-verdict detectors for context_guide.md §1 (KISS/DRY/Fail-Fast/
+HC.1/YAGNI): a `DEFAULT_CONFIG` value rewritten literally elsewhere (1238 hits — mostly common small
+integers like window sizes, not distinctive strings), a literal shared unnamed across 2+ files (585),
+two functions with an identical body once names are erased (3), an exported symbol with zero usages
+outside its own definition (313), and an `except` handler that neither re-raises nor logs (184).
+Principles 7 (root cause) and 8 (visual proof) are explicitly left undetected — they're about a way of
+working, not text a parser can grade. This is a first mechanical measurement, not a cleanup; acting on
+these numbers is a separate future plan.
+
 ## [v299] — 2026-08-01
 
 ### Fixed
