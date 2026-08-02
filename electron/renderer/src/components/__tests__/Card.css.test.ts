@@ -75,4 +75,11 @@ describe("hover scintillation is a finite burst, not constant (2026-08-02)", () 
       expect(block[1]).not.toMatch(/animation-iteration-count:\s*infinite/);
     }
   });
+
+  it("uses a higher-contrast keyframe than the mock's dim block-flick (2026-08-02)", () => {
+    expect(BARE).toMatch(/@keyframes card-scintillate\s*\{/);
+    for (const block of BARE.matchAll(/\.sec:hover \.(?:glx|cbr)\s*\{([^}]*)\}/g)) {
+      expect(block[1]).toMatch(/animation-name:\s*card-scintillate;/);
+    }
+  });
 });

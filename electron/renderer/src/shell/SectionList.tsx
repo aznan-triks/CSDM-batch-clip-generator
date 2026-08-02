@@ -58,39 +58,59 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
   const draggedId = useRef<string | null>(null);
   const byId = new Map(sections.map((section) => [section.id, section]));
 
-  // FLIP reorder (user feedback 2026-08-01: "not fluid, not live"). Every
-  // render, compare each card's freshly measured position against the one
-  // recorded last render; if a reorder or a fold moved it, jump it back to
-  // where it was with no transition, force one layout, then release the
-  // transition -- `.sec` already carries `transition: transform .2s
-  // ease-out` (mock-v12.css) for its own hover lift, and that same rule is
-  // what animates the release. Nothing here is a `:hover` rule, and this file
-  // has no mousemove/pointermove listener, so neither no-hover-motion.test.ts
+  // FLIP reorder (user feedback 2026-08-01: "not fluid, not live"). When a
+  // reorder/fold/resize actually happened since the last render, compare
+  // each card's freshly measured position (and width, for resize) against
+  // the one recorded last render, jump it back to where it was with no
+  // transition, force one layout, then release the transition -- `.sec`
+  // carries `transition: transform .2s ease-out, ...` (mock-v12.css +
+  // mock-bridge.css) for its own hover lift, and that same rule is what
+  // animates the release. Nothing here is a `:hover` rule, and this file has
+  // no mousemove/pointermove listener, so neither no-hover-motion.test.ts
   // guard applies -- this is a state-driven reflow, not pointer-driven
   // painting.
   const nodeRefs = useRef(new Map<string, HTMLElement>());
   const prevRects = useRef(new Map<string, DOMRect>());
+  // User feedback 2026-08-02: "selecting weapons makes everything move
+  // everywhere". Root cause -- this effect ran on EVERY render, so a card
+  // higher up growing/shrinking for an unrelated reason (a filter selection,
+  // a date preset) cascades a real position shift to every card below it in
+  // the grid, and all of them got FLIP-animated even though the user never
+  // touched a card's order or size. Confirmed live: clicking a date preset
+  // moved every single card, `dTop` in the tens/hundreds of pixels, nothing
+  // to do with reorder/resize. The FLIP dance is scoped to genuine
+  // order/collapse/wide changes now; an unrelated content reflow still moves
+  // cards (correctly), it just does so with the plain, instant browser
+  // reflow instead of a system-wide slide.
+  const layoutSignature = JSON.stringify([
+    order,
+    order.map((id) => isCollapsed(id)),
+    order.map((id) => wideOverride(id) ?? null),
+  ]);
+  const prevLayoutSignature = useRef<string | null>(null);
 
   useLayoutEffect(() => {
-    for (const [id, el] of nodeRefs.current) {
-      const prev = prevRects.current.get(id);
-      if (!prev) continue;
-      const next = el.getBoundingClientRect();
-      const dx = prev.left - next.left;
-      const dy = prev.top - next.top;
-      const dw = prev.width - next.width;
-      if (!dx && !dy && !dw) continue;
-      el.style.transition = "none";
-      el.style.transform = `translate(${dx}px, ${dy}px)`;
-      // A card's own width changes when `.wide` is toggled (menus-C resize),
-      // not just its position from a reorder -- FLIP it too (mock-bridge.css
-      // gives `.sec` a `width` transition for this), or the card would snap
-      // to its new width instantly while every other card glides into place.
-      if (dw) el.style.width = `${prev.width}px`;
-      el.getBoundingClientRect(); // forces the browser to commit the jump before releasing it
-      el.style.transition = "";
-      el.style.transform = "";
-      if (dw) el.style.width = "";
+    const layoutChanged =
+      prevLayoutSignature.current !== null && prevLayoutSignature.current !== layoutSignature;
+    prevLayoutSignature.current = layoutSignature;
+
+    if (layoutChanged) {
+      for (const [id, el] of nodeRefs.current) {
+        const prev = prevRects.current.get(id);
+        if (!prev) continue;
+        const next = el.getBoundingClientRect();
+        const dx = prev.left - next.left;
+        const dy = prev.top - next.top;
+        const dw = prev.width - next.width;
+        if (!dx && !dy && !dw) continue;
+        el.style.transition = "none";
+        el.style.transform = `translate(${dx}px, ${dy}px)`;
+        if (dw) el.style.width = `${prev.width}px`;
+        el.getBoundingClientRect(); // forces the browser to commit the jump before releasing it
+        el.style.transition = "";
+        el.style.transform = "";
+        if (dw) el.style.width = "";
+      }
     }
     const rects = new Map<string, DOMRect>();
     for (const [id, el] of nodeRefs.current) rects.set(id, el.getBoundingClientRect());

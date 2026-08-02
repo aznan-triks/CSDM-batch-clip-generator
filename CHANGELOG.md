@@ -78,6 +78,18 @@ rect instead of `event.clientX`/`clientY` — verified against the mock's actual
 (`mockup-v12-hologlass.html`), which never did this either; this is a deliberate addition beyond the
 mock, not a restored behaviour.
 
+**Humanised (same-day follow-up):** Selecting things like a filter no longer makes every card on the
+page slide around — only an actual reorder or resize animates now. The card-hover flicker is brighter
+too. Live drag reordering still isn't confirmed working for real (see Known gaps).
+**Technical:** `SectionList.tsx`'s FLIP effect ran unconditionally on every render, so any unrelated
+content-height change elsewhere in the tab (confirmed live: a date-preset click moved all 8 Capture
+cards, `dTop` up to 133px) got animated as if it were a reorder. It now only runs the invert/release
+dance when a signature of `order`/`isCollapsed`/`wideOverride` actually changed since the previous
+render; an unrelated reflow still moves cards, just without the slide. `Card.css` gained a local
+`card-scintillate` keyframe (peaks at .9/.75 instead of the mock's `block-flick` .5/.42,
+mock-v12.css:58) for `.sec:hover .glx`/`.cbr` — `.cbr`'s old `opacity:.85` (mock-v12.css:115) was
+always beaten by the lower-peaking animation running on top of it.
+
 ### Known gaps (not fixed this session, flagged rather than silently skipped)
 User also asked to restore "possibilities" the Electron port has fewer of than the Python script.
 Audited (`docs/audits/` not written — this was a direct code comparison, not a full audit plan);
@@ -90,6 +102,11 @@ findings beyond the tag-colour fix above:
 - Every dropdown/slider/multi-select option list checked (codecs, resolutions, presets, weapon/
   match-type/map filters, kill-count options, HLAE/CS2-effects quick values) matched Python's
   exactly — no other restriction found.
+- **Live drag reorder** (`SectionList.tsx`'s `onDragEnter`): the code and its unit test both show the
+  order updating before `drop`, but this could not be confirmed against the real, running app this
+  session (screenshot/real-drag tooling unavailable). Suspected root cause if it's still not live:
+  native HTML5 drag-and-drop is known to lose track of the hovered target when the DOM under the
+  cursor is reordered mid-drag — see `docs/audits/AUDIT_restyle6_polish_regressions.md` #8.
 
 ## [v299] — 2026-08-01
 

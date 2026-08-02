@@ -87,10 +87,35 @@
  * whole hover duration. `.cbr`'s `infinite` is the mock's own
  * (mock-v12.css:115, AUDIT_restyle6_polish_regressions.md #4) -- overridden
  * here since Card.css already owns this selector's border-colour hover state.
+ *
+ * Same-day follow-up: still not enough contrast. The mock's own `block-flick`
+ * keyframe (mock-v12.css:58) peaks at opacity .5/.42 -- too dim to read as a
+ * flash even at full mix-blend-mode:normal. `.cbr`'s hover rule also declares
+ * a static `opacity:.85` (mock-v12.css:115) that the animation always beats,
+ * since an animated property overrides its own static declaration for as
+ * long as the animation runs -- so the brackets were animating DOWN from
+ * their brightest resting state, never up to it. `card-scintillate` is a new
+ * keyframe (this file, not the mock's) with higher peaks for both layers.
  */
+@keyframes card-scintillate {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.9;
+  }
+  30% {
+    opacity: 0.25;
+  }
+  60% {
+    opacity: 0.75;
+  }
+}
+
 .sec:hover .glx {
   mix-blend-mode: normal;
-  animation-name: block-flick;
+  animation-name: card-scintillate;
   animation-duration: 0.6s;
   animation-timing-function: steps(2);
   animation-iteration-count: 3;
@@ -98,6 +123,7 @@
 
 .sec:hover .cbr {
   border-color: var(--accent);
+  animation-name: card-scintillate;
   animation-iteration-count: 3;
 }
 
