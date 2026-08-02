@@ -30,8 +30,17 @@ test.describe("the real window renders the shell", () => {
     await expect(page.locator("body")).toBeVisible();
   });
 
-  test("writes a shot of the capture tab", async () => {
-    const file = await shoot(session.page, "capture-tab");
-    expect(file).toContain("capture-tab.png");
+  test("matches its baseline", async () => {
+    const { compareToBaseline } = await import("./compare.mjs");
+    await shoot(session.page, "capture-tab");
+    const result = compareToBaseline("capture-tab");
+    if (result.status === "created") {
+      test.info().annotations.push({ type: "baseline", description: "recorded for the first time" });
+      return;
+    }
+    expect(
+      result.ratio,
+      `capture-tab drifted by ${(result.ratio * 100).toFixed(2)}% -- see ${result.diffFile}`,
+    ).toBeLessThanOrEqual(0.01);
   });
 });
