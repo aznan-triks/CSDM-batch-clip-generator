@@ -20,8 +20,6 @@ body.customcursor {
   transform: translate(-50%, -50%);
   opacity: 0;
   transition:
-    left var(--dur-fast) var(--ease),
-    top var(--dur-fast) var(--ease),
     width var(--dur-fast) var(--ease),
     height var(--dur-fast) var(--ease),
     opacity var(--dur-fast);

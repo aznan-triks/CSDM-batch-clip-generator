@@ -81,9 +81,13 @@ describe("the background list is an allowlist, matched on the target itself", ()
   it("snaps on more than the run/preview/stop/kill buttons", () => {
     // User feedback 2026-08-01: the crosshair is meant to lock onto anything
     // that reads as a button, not literally only ActionButton.
+    // User feedback 2026-08-02: .tab is deliberately excluded -- nav tabs
+    // are not action buttons, and locking the reticle onto them fought the
+    // indicator animation.
     const selector = namedClasses("SNAP_SELECTOR");
-    for (const target of ["btn", "chip", "tab"]) {
+    for (const target of ["btn", "chip"]) {
       expect(selector, `SNAP_SELECTOR no longer names .${target}`).toContain(target);
     }
+    expect(selector, "SNAP_SELECTOR must not name .tab (nav strip, not an action button)").not.toContain("tab");
   });
 });

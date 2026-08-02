@@ -123,6 +123,39 @@ findings beyond the tag-colour fix above:
   session (no screenshot tooling available to drive a real mouse-drag gesture) — please test for real
   before considering this closed. See `docs/audits/AUDIT_restyle6_polish_regressions.md` #8.
 
+---
+
+## Priority fixes (2026-08-02, from `IMPROVEMENT_SUGGESTIONS.md`)
+
+Five punch-list items reported against the running app, fixed and verified against the live
+renderer (Playwright + stubbed bridge, screenshots in `electron/e2e/output/`; 622/622 unit tests
+green, `npm run typecheck` unchanged — the two `restartEngine` mock errors are pre-existing on this
+branch, untouched by this change).
+
+### Fixed
+
+**Humanised:** Picking a weapon finally shows its icon in the cascade (before, most of them were
+invisible). Picking lots of weapons no longer hides the ones that don't fit in one row — they wrap
+to the next line instead. The crosshair no longer locks onto the navigation tabs (only real action
+buttons keep the "aim" treatment). Switching tabs no longer teleports the top bar while the bottom
+indicator slides. And the cursor stops feeling laggy/floaty outside the cards: the crosshair now
+tracks the mouse instantly, the way the approved mock always did.
+**Technical:** `tabs/WeaponFilterSection.css` gave `.casc .gun` the mock's own `height: 44px` (the
+mock's `.gun` is 44px; the port painted a `width: 96px` silhouette with no height, i.e. a 0-height
+mask nobody could see) and added `flex-wrap: wrap` to `.casc` (the mock shows two guns and never
+scrolls; the real database holds ~30 with art, so `nowrap` pushed every gun past the card edge).
+`cursor/Reticle.tsx` removed `.tab` from `SNAP_SELECTOR` (the restyle-6 widening to `.btn, .chip,
+.tab, .seg button` made the reticle fight the tab indicator animation and "aim at a menu";
+`Reticle.selectors.test.ts` now asserts `.tab` is NOT named). `components/Tab.css` added
+`transition: background .25s, transform .25s` to `.tab` and `transition: opacity .25s` to
+`.tab.active::after` — the mock animates `.ic`/`.tk`/`.ind` but never the tab box itself, so the top
+accent bar snapped while the bottom indicator slid; this is a documented addition beyond the mock
+(no pseudo-element transition exists there). `cursor/Reticle.css` dropped `left`/`top` from
+`.cursor-reticle`'s transition — the mock's `.tcursor` has no position transition either, so the
+port's `left/top var(--dur-fast)` tween is what made the crosshair drag behind the pointer over the
+background; it now follows `clientX/clientY` instantly (width/height/opacity still tween for the
+snap gesture).
+
 ## [v299] — 2026-08-01
 
 ### Fixed

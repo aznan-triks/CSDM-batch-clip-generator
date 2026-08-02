@@ -36,6 +36,7 @@
 .casc .gun {
   flex: 0 0 auto;
   width: 96px;
+  height: 44px;
   background: currentColor;
   -webkit-mask: var(--gun-art) center / contain no-repeat;
   mask: var(--gun-art) center / contain no-repeat;
@@ -46,4 +47,10 @@
      block instead of the intended silhouette. Force alpha explicitly. */
   mask-mode: alpha;
   -webkit-mask-mode: alpha;
+}
+
+/* The cascade slides guns in side by side and does not scroll. When more
+   weapons are picked than can fit in one row, they wrap so none disappear. */
+.casc {
+  flex-wrap: wrap;
 }

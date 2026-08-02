@@ -30,15 +30,18 @@ const BACKGROUND_SELECTOR =
 /**
  * Every activatable control the reticle locks onto, mock v12's own language
  * for "a target, not a background": the run/preview/stop/kill buttons
- * (`.btn`), a tag or filter pill (`.chip`), a nav tab (`.tab`), and one option
- * of a segmented control (`.seg button` -- the mock's own segment is a bare
- * `<span>`, `Segmented.tsx` wraps a real `<button>` around it as the
- * activatable element). User feedback 2026-08-01: the mock's crosshair
- * brackets are meant to "lock onto buttons on hover", and everything in this
- * list reads as a button to a user even though only `.btn` is literally
- * `ActionButton`.
+ * (`.btn`), a tag or filter pill (`.chip`), and one option of a segmented
+ * control (`.seg button` -- the mock's own segment is a bare `<span>`,
+ * `Segmented.tsx` wraps a real `<button>` around it as the activatable
+ * element). User feedback 2026-08-01: the mock's crosshair brackets are meant
+ * to "lock onto buttons on hover", and everything in this list reads as a
+ * button to a user even though only `.btn` is literally `ActionButton`.
+ *
+ * `.tab` is DELIBERATELY excluded (2026-08-02): tabs are a nav strip, not an
+ * action button. Locking the reticle onto them fought the indicator animation
+ * and made switching tabs feel like aiming at a menu.
  */
-const SNAP_SELECTOR = ".btn, .chip, .tab, .seg button";
+const SNAP_SELECTOR = ".btn, .chip, .seg button";
 
 /**
  * The CS2 crosshair cursor (mockup-v12-hologlass.html `.tcursor`). Position

@@ -36,7 +36,7 @@
 }
 
 /*
- * MEASURED DISAGREEMENT -- the open tab in the dark ground.
+ * MEASURED DISAGREEMENT — the open tab in the dark ground.
  *
  * The mock paints these two literally (`#fff` and `rgba(255,255,255,.7)`)
  * where every other surface it draws goes through a token. On its own light
@@ -48,8 +48,30 @@
  * `rgba(255,255,255,.72)` against the mock's `.7`, so this agrees with the
  * mock everywhere the mock was right, and follows the ground where it was not.
  */
+
+/*
+ * MEASURED DISAGREEMENT — the open tab's top accent bar teleports.
+ *
+ * The mock animates child elements (`.ic`, `.tk` have `transition:.25s`) and
+ * the bottom indicator (`.ind` has `transition:transform .4s`), but the tab
+ * itself and its `::after` accent bar have no transition at all -- switching
+ * tabs snaps the background and top glow into place while the indicator slides
+ * smoothly. Giving `.tab` the same `.25s` the mock already uses for its
+ * children keeps the whole strip in sync. The mock has no transition on
+ * `::after` pseudo-elements anywhere, so this is an addition for which the
+ * mock's picture offers no right answer.
+ */
+.tab {
+  transition: background .25s, transform .25s;
+}
+
 .tab.active {
   background: var(--solid);
+}
+
+/* The mock's `.tab.active::after` is a 2px gradient bar along the top edge. */
+.tab.active::after {
+  transition: opacity .25s;
 }
 
 .tab:hover {
