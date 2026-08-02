@@ -305,6 +305,7 @@ export default function TagsTab() {
                   className={active ? "chip on" : "chip"}
                   aria-pressed={active}
                   aria-label={`tag-${tagName}`}
+                  data-action="I3"
                   onClick={() => toggleTag(tagId)}
                 >
                   {/* The mock's own `.d` dot, which exists for exactly this and
@@ -325,6 +326,7 @@ export default function TagsTab() {
                   type="button"
                   className="chip danger tag-del"
                   aria-label={`delete-tag-${tagName}`}
+                  data-action="I2"
                   onClick={() => deleteTag(tagId, tagName)}
                 >
                   ×
@@ -335,13 +337,13 @@ export default function TagsTab() {
         </div>
 
         <div className="row">
-          <button type="button" className="chip" onClick={() => setCreating((v) => !v)}>
+          <button type="button" className="chip" data-action="I1" onClick={() => setCreating((v) => !v)}>
             + New tag
           </button>
-          <button type="button" className="chip" onClick={reload}>
+          <button type="button" className="chip" data-action="I17" onClick={reload}>
             Reload
           </button>
-          <button type="button" className="chip push-right" onClick={deselectAll}>
+          <button type="button" className="chip push-right" data-action="I4" onClick={deselectAll}>
             Deselect all
           </button>
         </div>
@@ -367,7 +369,7 @@ export default function TagsTab() {
                 <input type="color" value={newTagColor} onChange={(event) => setNewTagColor(event.target.value)} />
               </label>
             </div>
-            <button type="button" className="chip" onClick={createTag}>
+            <button type="button" className="chip" data-action="I1" onClick={createTag}>
               Create
             </button>
           </div>
@@ -395,27 +397,27 @@ export default function TagsTab() {
           dates as a filter in Capture.
         </p>
         <div className="row">
-          <button type="button" className="chip" onClick={calcRange}>
+          <button type="button" className="chip" data-action="I7" onClick={calcRange}>
             Calculate range
           </button>
         </div>
         {rangeStatus && <p className="tags-range-status">{rangeStatus}</p>}
         <div className="row">
-          <button type="button" className="chip" disabled={!range?.date_start} onClick={applyStart}>
+          <button type="button" className="chip" disabled={!range?.date_start} data-action="I8" onClick={applyStart}>
             Apply start
           </button>
-          <button type="button" className="chip" disabled={!range?.date_end} onClick={applyEnd}>
+          <button type="button" className="chip" disabled={!range?.date_end} data-action="I9" onClick={applyEnd}>
             Apply end
           </button>
           <button
             type="button"
             className="chip"
             disabled={!range?.date_start || !range?.date_end}
-            onClick={applyFullRange}
+            data-action="I10" onClick={applyFullRange}
           >
             Apply full range
           </button>
-          <button type="button" className="chip" disabled={!range?.date_after} onClick={applyAfterRange}>
+          <button type="button" className="chip" disabled={!range?.date_after} data-action="I11" onClick={applyAfterRange}>
             After range
           </button>
         </div>
@@ -424,10 +426,10 @@ export default function TagsTab() {
       <Card title="Operations" icon={<ICONS.operations />} className="wide">
         <div className="row">
           <span className="lab">Search:</span>
-          <button type="button" className="chip" onClick={searchByTag}>
+          <button type="button" className="chip" data-action="I5" onClick={searchByTag}>
             By tag
           </button>
-          <button type="button" className="chip" onClick={searchByConfig}>
+          <button type="button" className="chip" data-action="I6" onClick={searchByConfig}>
             By config
           </button>
         </div>
@@ -436,27 +438,27 @@ export default function TagsTab() {
           <button
             type="button"
             className="chip"
-            onClick={() => tagDemos([...selectedPaths])}
+            data-action="I12" onClick={() => tagDemos([...selectedPaths])}
           >
             Tag sel.
           </button>
           <button
             type="button"
             className="chip"
-            onClick={() => tagDemos(foundDemos.map((d) => d.path))}
+            data-action="I13" onClick={() => tagDemos(foundDemos.map((d) => d.path))}
           >
             Tag ALL
           </button>
-          <button type="button" className="chip danger" onClick={removeSelected}>
+          <button type="button" className="chip danger" data-action="I14" onClick={removeSelected}>
             Remove sel.
           </button>
         </div>
         <div className="row">
           <span className="lab">Transfer:</span>
-          <button type="button" className="chip" onClick={exportTags}>
+          <button type="button" className="chip" data-action="I15" onClick={exportTags}>
             Export
           </button>
-          <button type="button" className="chip" onClick={importTags}>
+          <button type="button" className="chip" data-action="I16" onClick={importTags}>
             Import
           </button>
         </div>

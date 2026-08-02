@@ -292,6 +292,7 @@ export default function LogConsole() {
             aria-checked={autoScroll}
             aria-label="Auto-scroll"
             className={autoScroll ? "chip on" : "chip"}
+            data-action="J1"
             onClick={() => setAutoScroll((previous) => !previous)}
           >
             ↓
@@ -303,6 +304,7 @@ export default function LogConsole() {
             aria-checked={showTimestamps}
             aria-label="Timestamps"
             className={showTimestamps ? "chip on" : "chip"}
+            data-action="J2"
             onClick={() => setShowTimestamps((previous) => !previous)}
           >
             TS
@@ -314,16 +316,17 @@ export default function LogConsole() {
             aria-checked={showBadges}
             aria-label="Level badges"
             className={showBadges ? "chip on" : "chip"}
+            data-action="J3"
             onClick={() => setShowBadges((previous) => !previous)}
           >
             Badges
           </button>
 
-          <button type="button" className="chip" onClick={copyAll}>
+          <button type="button" className="chip" data-action="J12" onClick={copyAll}>
             Copy all
           </button>
 
-          <button type="button" className="chip" onClick={copySelection}>
+          <button type="button" className="chip" data-action="J10" onClick={copySelection}>
             Copy sel.
           </button>
 
@@ -335,6 +338,7 @@ export default function LogConsole() {
               className="chip"
               aria-haspopup="menu"
               aria-expanded={exportMenuOpen}
+              data-action="K1"
               onClick={() => setExportMenuOpen((previous) => !previous)}
             >
               Export ▾
@@ -344,6 +348,7 @@ export default function LogConsole() {
                 <button
                   type="button"
                   role="menuitem"
+                  data-action="K2"
                   onClick={() => {
                     exportLinesAsHtml(lines);
                     setExportMenuOpen(false);
@@ -361,7 +366,7 @@ export default function LogConsole() {
         <div id="ask-panel" role="alertdialog" aria-label={ask.title}>
           <span>{ask.title} </span>
           {ask.choices.map((choice) => (
-            <button type="button" key={choice} onClick={() => answer(choice)}>
+            <button type="button" key={choice} data-action="P6" onClick={() => answer(choice)}>
               {choice}
             </button>
           ))}
@@ -370,11 +375,11 @@ export default function LogConsole() {
               which the engine handles as its own branch. Without this the
               engine thread blocks on `done.wait()` with no timeout. */}
           {ask.kind === "error" ? (
-            <button type="button" onClick={() => answer("ok")}>
+            <button type="button" data-action="P7" onClick={() => answer("ok")}>
               OK
             </button>
           ) : (
-            <button type="button" onClick={() => answer(null)}>
+            <button type="button" data-action="P9" onClick={() => answer(null)}>
               Cancel
             </button>
           )}

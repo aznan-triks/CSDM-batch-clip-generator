@@ -68,6 +68,7 @@ export default function ActionBar({
           label="PREVIEW"
           icon={<ICONS.preview />}
           variant="preview"
+          data-action="A2"
           onClick={onPreview}
         />
       </span>
@@ -77,6 +78,7 @@ export default function ActionBar({
           icon={<ICONS.stop />}
           variant="stop"
           disabled={!engine.stopEnabled}
+          data-action="A3"
           onClick={onStop}
         />
       </span>
@@ -86,6 +88,7 @@ export default function ActionBar({
           icon={<ICONS.kill />}
           variant="kill"
           disabled={!engine.killEnabled}
+          data-action="A4"
           onClick={onKill}
         />
       </span>
@@ -95,6 +98,7 @@ export default function ActionBar({
           icon={<ICONS.run />}
           variant="run"
           disabled={!engine.runEnabled}
+          data-action="A1"
           onClick={onRun}
         />
       </span>

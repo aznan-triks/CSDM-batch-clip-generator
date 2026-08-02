@@ -157,7 +157,7 @@ export default function SettingsTab() {
             </SettingControl>
           </div>
           <div className="row">
-            <button type="button" className="chip" onClick={testAndReload}>
+            <button type="button" className="chip" data-action="M10" onClick={testAndReload}>
               Test & Reload
             </button>
             {dbStatus && <span className="settings-db-status">{dbStatus}</span>}
@@ -313,13 +313,13 @@ export default function SettingsTab() {
             </SettingControl>
           </div>
           <div className="row">
-            <button type="button" className="chip" onClick={applyLayout}>
+            <button type="button" className="chip" data-action="M5" onClick={applyLayout}>
               Apply
             </button>
-            <button type="button" className="chip" onClick={autoLayout}>
+            <button type="button" className="chip" data-action="M6" onClick={autoLayout}>
               Auto
             </button>
-            <button type="button" className="chip" onClick={resetLayoutDefaults}>
+            <button type="button" className="chip" data-action="M7" onClick={resetLayoutDefaults}>
               Reset default
             </button>
             <SettingControl settingKey="ui_remember_layout">

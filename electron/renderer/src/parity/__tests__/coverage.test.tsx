@@ -2,6 +2,11 @@ import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import App from "../../App";
+import { SettingsProvider } from "../../settings/store";
+import CaptureTab from "../../tabs/CaptureTab";
+import SettingsTab from "../../tabs/SettingsTab";
+import TagsTab from "../../tabs/TagsTab";
+import VideoTab from "../../tabs/VideoTab";
 import { NOT_YET_PORTED, NO_PORT_BY_DESIGN } from "../action-ledger";
 import { readActionInventory } from "../inventory";
 
@@ -32,14 +37,42 @@ vi.mock("../../bridge", () => {
   };
 });
 
-/** Every `data-action` mounted anywhere in the interface. */
-function mountedActions(): Set<string> {
-  const { container } = render(<App />);
-  const found = new Set<string>();
+/** Scan a rendered container for every `data-action` marker. */
+function collectActions(container: HTMLElement, into: Set<string>) {
   for (const element of container.querySelectorAll("[data-action]")) {
     const id = element.getAttribute("data-action");
-    if (id) found.add(id);
+    if (id) into.add(id);
   }
+}
+
+/**
+ * Every `data-action` mounted anywhere in the interface.
+ *
+ * The top-level shell (`<App />`) only mounts the *active* tab; the three
+ * inactive tabs are conditionally absent from the DOM tree.  This helper
+ * renders the always-visible frame once, then mounts each of the four tabs
+ * individually so their markers are all collected.
+ */
+function mountedActions(): Set<string> {
+  const found = new Set<string>();
+
+  // Always-visible frame: HudNav, ActionBar, LogConsole, WeaponBand.
+  const { container: appContainer } = render(<App />);
+  collectActions(appContainer, found);
+
+  // Each tab, wrapped in the same provider that App uses.
+  const tabs = [
+    { Component: CaptureTab, label: "capture" },
+    { Component: TagsTab, label: "tags" },
+    { Component: VideoTab, label: "video" },
+    { Component: SettingsTab, label: "settings" },
+  ];
+
+  for (const { Component } of tabs) {
+    const { container } = render(<SettingsProvider><Component /></SettingsProvider>);
+    collectActions(container, found);
+  }
+
   return found;
 }
 

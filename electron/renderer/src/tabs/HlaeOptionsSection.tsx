@@ -62,7 +62,7 @@ export default function HlaeOptionsSection() {
                 key={quick}
                 type="button"
                 className="chip"
-                onClick={() => setGameSpeed(quick)}
+                data-action="L6" onClick={() => setGameSpeed(quick)}
               >
                 {quick}
               </button>

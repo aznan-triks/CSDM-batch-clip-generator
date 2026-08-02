@@ -42,7 +42,7 @@ export default function PathField({ value, onChange, placeholder, id, label, mod
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
         />
-        <button type="button" className="path-field-browse" onClick={browse}>
+        <button type="button" className="path-field-browse" data-action="M12" onClick={browse}>
           Browse…
         </button>
       </div>

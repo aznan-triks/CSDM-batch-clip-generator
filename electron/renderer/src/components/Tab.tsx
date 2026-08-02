@@ -25,7 +25,7 @@ export function Tab({ label, icon, active, onSelect }: TabProps) {
       type="button"
       role="tab"
       className={classes}
-      onClick={onSelect}
+      data-action="O1" onClick={onSelect}
       aria-selected={active ? "true" : "false"}
       aria-current={active ? "true" : undefined}
     >

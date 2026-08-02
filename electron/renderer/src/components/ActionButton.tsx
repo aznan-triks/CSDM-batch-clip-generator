@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentPropsWithoutRef, type ReactNode } from "react";
 
 import { MOTION } from "../motion/tokens";
 import "./ActionButton.css";
@@ -19,12 +19,11 @@ const MOCK_FACE: Record<Variant, string> = {
   kill: "danger",
 };
 
-interface ActionButtonProps {
+interface ActionButtonProps extends Omit<ComponentPropsWithoutRef<"button">, "onClick"> {
   label: string;
   icon?: ReactNode;
   variant: Variant;
   armed?: boolean;
-  disabled?: boolean;
   onClick: () => void;
 }
 
@@ -50,6 +49,7 @@ export default function ActionButton({
   armed,
   disabled,
   onClick,
+  ...rest
 }: ActionButtonProps) {
   const [hit, setHit] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -76,6 +76,7 @@ export default function ActionButton({
       onClick={onClick}
       onMouseDown={markImpact}
       disabled={disabled}
+      {...rest}
     >
       {/* Decorative layers, in the mock's own order. The ring is the primary
           button's alone -- on a quiet face it reads as a loading spinner. */}

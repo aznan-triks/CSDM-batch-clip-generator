@@ -168,7 +168,7 @@ export default function DemoSelectionSection() {
         <SettingControl settingKey="date_to">
           <div className="ds-date-to">
             <DateField id="date-to" label="To" value={dateTo ?? ""} onChange={setDateTo} />
-            <button type="button" className="chip" onClick={setToday}>
+            <button type="button" className="chip" data-action="F5" onClick={setToday}>
               Today
             </button>
           </div>
@@ -182,12 +182,12 @@ export default function DemoSelectionSection() {
             key={shortcut.label}
             type="button"
             className="chip"
-            onClick={() => applyShortcut(shortcut)}
+            data-action="F3" onClick={() => applyShortcut(shortcut)}
           >
             {shortcut.label}
           </button>
         ))}
-        <button type="button" className="chip" onClick={clearAll}>
+        <button type="button" className="chip" data-action="F4" onClick={clearAll}>
           Clear all
         </button>
       </div>

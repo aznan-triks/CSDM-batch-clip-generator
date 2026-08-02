@@ -67,10 +67,10 @@ export default function WeaponFilterSection() {
       <div className="row">
         <span className="lab">empty = all</span>
         <div className="chips push-right">
-          <button type="button" className="chip" onClick={() => setWeapons([...allWeapons])}>
+          <button type="button" className="chip" data-action="E1" onClick={() => setWeapons([...allWeapons])}>
             Select all
           </button>
-          <button type="button" className="chip" onClick={() => setWeapons([])}>
+          <button type="button" className="chip" data-action="E2" onClick={() => setWeapons([])}>
             Deselect all
           </button>
         </div>

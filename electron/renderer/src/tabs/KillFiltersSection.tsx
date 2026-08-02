@@ -313,7 +313,7 @@ export default function KillFiltersSection() {
         <button
           type="button"
           className="chip push-right"
-          onClick={() => setMany(buildClearChanges(tables))}
+          data-action="G3" onClick={() => setMany(buildClearChanges(tables))}
         >
           Clear
         </button>

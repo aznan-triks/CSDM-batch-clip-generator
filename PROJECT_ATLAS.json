@@ -17372,7 +17372,7 @@
       },
       {
         "file": "csdm/engine/core.py",
-        "line": 5011,
+        "line": 5010,
         "what": "' → '",
         "why": "the literal ' → ' appears unnamed in 2 files: csdm/engine/core.py, csdm_batch_clips_generator.py"
       },
@@ -17468,19 +17468,19 @@
       },
       {
         "file": "csdm/engine/core.py",
-        "line": 5844,
+        "line": 5843,
         "what": "'\" ct JOIN matches m ON m.\"'",
         "why": "the literal '\" ct JOIN matches m ON m.\"' appears unnamed in 2 files: csdm/engine/core.py, csdm_batch_clips_generator.py"
       },
       {
         "file": "csdm/engine/core.py",
-        "line": 5844,
+        "line": 5843,
         "what": "'\"=ct.\"'",
         "why": "the literal '\"=ct.\"' appears unnamed in 2 files: csdm/engine/core.py, csdm_batch_clips_generator.py"
       },
       {
         "file": "csdm/engine/core.py",
-        "line": 5844,
+        "line": 5843,
         "what": "'\" WHERE ct.\"'",
         "why": "the literal '\" WHERE ct.\"' appears unnamed in 2 files: csdm/engine/core.py, csdm_batch_clips_generator.py"
       },
@@ -17636,19 +17636,19 @@
       },
       {
         "file": "csdm/engine/core.py",
-        "line": 6086,
+        "line": 6085,
         "what": "'\" AS jt LEFT JOIN matches AS m ON m.\"'",
         "why": "the literal '\" AS jt LEFT JOIN matches AS m ON m.\"' appears unnamed in 2 files: csdm/engine/core.py, csdm_batch_clips_generator.py"
       },
       {
         "file": "csdm/engine/core.py",
-        "line": 6087,
+        "line": 6085,
         "what": "'\"=jt.\"'",
         "why": "the literal '\"=jt.\"' appears unnamed in 2 files: csdm/engine/core.py, csdm_batch_clips_generator.py"
       },
       {
         "file": "csdm/engine/core.py",
-        "line": 6092,
+        "line": 6091,
         "what": "'\" AS jt'",
         "why": "the literal '\" AS jt' appears unnamed in 2 files: csdm/engine/core.py, csdm_batch_clips_generator.py"
       },

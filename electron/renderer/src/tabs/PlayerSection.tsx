@@ -171,7 +171,7 @@ export default function PlayerSection() {
             className="chip"
             aria-label="Previous page"
             disabled={currentPage === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            data-action="N6" onClick={() => setPage((p) => Math.max(0, p - 1))}
           >
             ‹
           </button>
@@ -183,7 +183,7 @@ export default function PlayerSection() {
             className="chip"
             aria-label="Next page"
             disabled={currentPage >= pageCount - 1}
-            onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+            data-action="N7" onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
           >
             ›
           </button>
@@ -206,7 +206,7 @@ export default function PlayerSection() {
                   role="checkbox"
                   aria-checked={isActive}
                   className={isActive ? "ps-row ps-row-active" : "ps-row"}
-                  onClick={() => toggle(steamId)}
+                  data-action="N10" onClick={() => toggle(steamId)}
                 >
                   <span className="ps-dot" aria-hidden="true" />
                   <span className="ps-label">{label}</span>

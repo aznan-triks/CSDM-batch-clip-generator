@@ -171,7 +171,7 @@ export default function PresetSection({
       </div>
 
       <div className="row">
-        <button type="button" className="chip" onClick={save}>
+        <button type="button" className="chip" data-action="C3" onClick={save}>
           SAVE
         </button>
         {error && <span className="preset-message preset-message-error">{error}</span>}
@@ -184,13 +184,13 @@ export default function PresetSection({
           <li key={presetName} className="preset-row">
             <span className="preset-row-name">{presetName}</span>
             <span className="preset-row-cats">{(preset.cats ?? []).join(", ")}</span>
-            <button type="button" className="chip" onClick={() => load(presetName)}>
+            <button type="button" className="chip" data-action="C4" onClick={() => load(presetName)}>
               Load
             </button>
             <button
               type="button"
               className="chip danger"
-              onClick={() => remove(presetName)}
+              data-action="C5" onClick={() => remove(presetName)}
             >
               Delete
             </button>

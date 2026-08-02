@@ -75,23 +75,23 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll, onSetSe
           {total === 0 ? "no demos loaded" : `${onCount}/${total} selected`}
         </span>
         <div className="dp-buttons">
-          <button type="button" className="chip" onClick={() => onSetAll(true)}>
+          <button type="button" className="chip" data-action="D1" onClick={() => onSetAll(true)}>
             ✓ Check all
           </button>
-          <button type="button" className="chip" onClick={() => onSetAll(false)}>
+          <button type="button" className="chip" data-action="D2" onClick={() => onSetAll(false)}>
             ✕ Uncheck all
           </button>
           <button
             type="button"
             className="chip"
-            onClick={() => onSetSelected(Array.from(selected), true)}
+            data-action="D3" onClick={() => onSetSelected(Array.from(selected), true)}
           >
             ✓ Check selected
           </button>
           <button
             type="button"
             className="chip"
-            onClick={() => onSetSelected(Array.from(selected), false)}
+            data-action="D4" onClick={() => onSetSelected(Array.from(selected), false)}
           >
             ✕ Uncheck selected
           </button>
@@ -135,14 +135,14 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll, onSetSe
                 key={row.path}
                 className={rowClasses}
                 title={title}
-                onClick={(event) => handleRowClick(event, index, row.path)}
+                data-action="D5" onClick={(event) => handleRowClick(event, index, row.path)}
               >
                 <button
                   type="button"
                   role="checkbox"
                   aria-checked={isOn}
                   className="dp-check"
-                  onClick={(event) => {
+                  data-action="D7" onClick={(event) => {
                     event.stopPropagation();
                     onToggle(row.path);
                   }}

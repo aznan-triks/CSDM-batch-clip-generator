@@ -102,12 +102,12 @@ const Card = forwardRef<HTMLElement, CardProps>(function Card(
           type="button"
           className="resize-br"
           aria-label={`resize-${title}`}
-          onClick={onResizeToggle}
+          data-action="O4" onClick={onResizeToggle}
         />
       )}
       <span className="spot" aria-hidden="true" />
       <h5 className="panel-heading">
-        <button type="button" className="sh" aria-expanded={open} onClick={toggle}>
+        <button type="button" className="sh" aria-expanded={open} data-action="O4" onClick={toggle}>
           {dragHandle}
           {icon && <span className="gl">{icon}</span>}
           <span className="t">{title}</span>
