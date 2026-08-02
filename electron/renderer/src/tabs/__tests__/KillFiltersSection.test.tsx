@@ -25,7 +25,6 @@ const FILTERS_FIXTURE = {
     { key: "kill_mod_airborne", label: "AIRBORNE:", tip: "t", category: "dp2", hidden: false },
     { key: "kill_mod_collateral", label: "COLLATERAL:", tip: "t", category: "dp2", hidden: false },
     { key: "kill_mod_trois_shot", label: "TROIS SHOT:", tip: "t", category: "dp2", hidden: false },
-    { key: "kill_mod_no_trois_shot", label: "EXCLUDE:", tip: "t", category: "dp2", hidden: true },
     { key: "kill_mod_trois_tap", label: "TROIS TAP:", tip: "t", category: "dp2", hidden: false },
     { key: "kill_mod_one_tap", label: "ONE TAP:", tip: "t", category: "dp2", hidden: false },
     { key: "kill_mod_spray_transfer", label: "SPRAY TRANSFER:", tip: "t", category: "dp2", hidden: false },
@@ -90,7 +89,7 @@ describe("KillFiltersSection", () => {
 
   it("never builds a row for a hidden registry entry", async () => {
     const { container } = await renderTab();
-    for (const key of ["kill_mod_no_trois_shot", "kill_mod_mate_pov"]) {
+    for (const key of ["kill_mod_mate_pov"]) {
       expect(container.querySelector(`[data-config-key="${key}"]`)).toBeNull();
     }
   });

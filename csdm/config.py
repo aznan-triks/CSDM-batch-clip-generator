@@ -331,6 +331,34 @@ def _migrate_config(saved: dict, cfg: dict) -> None:
             if f"{_fr}{_sfx}" in saved and f"{_en}{_sfx}" not in saved:
                 cfg[f"{_en}{_sfx}"] = saved[f"{_fr}{_sfx}"]
 
+    migrate_legacy_filter_keys(cfg)
+
+
+# Legacy filter keys dropped from KILL_FILTER_REGISTRY, mapped onto their
+# replacement. Applied to the main config AND to preset payloads, since both
+# may have been written before the key was retired.
+_LEGACY_FILTER_KEYS = {
+    # kill_mod_no_trois_shot was the hand-wired inverse of TROIS SHOT; the
+    # generic per-filter Exclude mechanism now covers it identically.
+    "kill_mod_no_trois_shot": "kill_mod_trois_shot_exclude",
+}
+# Retired companion keys with no replacement (never read by anything).
+_DEAD_FILTER_KEYS = ("kill_mod_no_trois_shot_req",)
+
+
+def migrate_legacy_filter_keys(d: dict) -> None:
+    """Rewrite retired kill-filter keys in place. Idempotent.
+
+    A truthy legacy key is OR-ed into its replacement so that neither an old
+    config nor an already-migrated one loses the user's intent.
+    """
+    for _old, _new in _LEGACY_FILTER_KEYS.items():
+        if _old in d:
+            if d.pop(_old):
+                d[_new] = True
+    for _dead in _DEAD_FILTER_KEYS:
+        d.pop(_dead, None)
+
 
 def load_config():
     saved = _load_json(CONFIG_FILE)

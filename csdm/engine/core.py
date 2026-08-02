@@ -2579,7 +2579,6 @@ class EngineMixin:
         fire_keys = {
             "kill_mod_trois_tap",
             "kill_mod_trois_shot",
-            "kill_mod_no_trois_shot",
             "kill_mod_one_tap",
             "kill_mod_spray_transfer",
             "kill_mod_high_velocity",
@@ -2827,16 +2826,6 @@ class EngineMixin:
             self._stamp_mf(events, "kill_mod_trois_tap")
             return events
 
-        if cfg.get("kill_mod_no_trois_shot"):
-            n_before = _count_kills(events)
-            events = self._no_trois_shot_filter(dp, events, cfg)
-            n_after = _count_kills(events)
-            self.log(f"  🚫🎲 Exclude : {n_before} kills → {n_after} precise", "info")
-            if not events:
-                self.log("  ⏭ SKIP: 0 precise kills after Exclude in this demo", "dim")
-                return None
-            self._stamp_mf(events, "kill_mod_no_trois_shot")
-
         # ── dp2 exclusions — strip matching kills BEFORE any positive filter ─
         excl_dp2 = [(k, getattr(self, fn), ll)
                     for k, fn, _afn, ll, _rl, _sl in self._DP2_FILTER_DEFS
@@ -2859,7 +2848,7 @@ class EngineMixin:
 
         active = [(k, getattr(self, fn), ll, rl, sl)
                   for k, fn, _afn, ll, rl, sl in self._DP2_FILTER_DEFS
-                  if cfg.get(k) and k != "kill_mod_no_trois_shot"]
+                  if cfg.get(k)]
         if not active:
             # when no dp2 modifier is active (the most common case).
             return events
@@ -3005,14 +2994,6 @@ class EngineMixin:
                 evts, cfg, "kill_mod_trois_tap",
                 self._trois_tap_filter, "🎯🎲 TROIS TAP → TROIS TAP")
 
-        if cfg.get("kill_mod_no_trois_shot"):
-            self.log("  🚫🎲 Exclude — analyzing demos…", "info")
-            evts = self._apply_filter_to_events(
-                evts, cfg, "kill_mod_no_trois_shot",
-                self._no_trois_shot_filter, "🚫🎲 Exclude → precise")
-            if not evts:
-                return {}
-
         # ── dp2 exclusions — strip matching kills BEFORE any positive filter ─
         excl_dp2 = [(k, getattr(self, fn))
                     for k, fn, _afn, _ll, _rl, _sl in self._DP2_FILTER_DEFS
@@ -3038,7 +3019,7 @@ class EngineMixin:
                       self._apply_filter_to_events(evts, cfg, _k, getattr(self, _fn), _ll),
                    ll)
                   for k, fn, _afn, ll, _rl, _sl in self._DP2_FILTER_DEFS
-                  if cfg.get(k) and k != "kill_mod_no_trois_shot"]
+                  if cfg.get(k)]
         if not active:
             return evts
 

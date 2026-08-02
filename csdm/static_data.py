@@ -90,12 +90,6 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
         dp2_filter="_trois_shot_filter",        dp2_apply="_apply_trois_shot_to_events",
         dp2_log="🎲 TROIS SHOT",dp2_result="TROIS SHOT",  dp2_skip="0 TROIS SHOT",
         special="trois_shot"),
-    FilterDef("kill_mod_no_trois_shot",  "🚫🎲 EXCLUDE:",     "🚫🎲 Exclude",  "dp2",
-        ("Inverse of TROIS SHOT — removes lucky kills on these weapons.\n"
-         "When combined with other dp2 filters, acts as an exclusion gate first."),
-        dp2_filter="_no_trois_shot_filter",     dp2_apply="_apply_no_trois_shot_to_events",
-        dp2_log="🚫🎲 Exclude", dp2_result="precise",     dp2_skip="0 EXCLUDE",
-        hide_ui=True),  # rendered inside TROIS SHOT row
     FilterDef("kill_mod_trois_tap",      "🎯🎲 TROIS TAP:",   "🎯🎲 TROIS TAP","dp2",
         ("TROIS SHOT + ONE TAP: lucky isolated headshot.\n"
          "Must be a headshot, qualify as lucky, and have no other shot within 2s.\n"
@@ -177,7 +171,7 @@ KILL_FILTER_SQL_COLS: dict = {f.key: f.sql_cols
 # DEFAULT_CONFIG additions (auto-built from registry)
 _FILTER_CONFIG_DEFAULTS: dict = {}
 # Keys that must NOT get an auto-generated _exclude entry
-_NO_AUTO_EXCLUDE = {"kill_mod_no_trois_shot", "kill_mod_trois_tap"}
+_NO_AUTO_EXCLUDE = {"kill_mod_trois_tap"}
 # Perspective keys as used by the CSDM CLI, mapped to their display labels.
 PERSP_LABELS = {"killer": "POV Killer", "victim": "POV Victim", "both": "Both"}
 for _f in KILL_FILTER_REGISTRY:

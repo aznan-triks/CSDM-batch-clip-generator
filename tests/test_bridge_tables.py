@@ -29,7 +29,7 @@ class TestDescribeFilters(unittest.TestCase):
         _, msgs = _run([{"type": "command", "id": "1", "name": "describe_filters"}])
         data = [m for m in msgs if m["type"] == "result"][0]["data"]
         hidden = {f["key"] for f in data["filters"] if f["hidden"]}
-        self.assertEqual(hidden, {"kill_mod_no_trois_shot", "kill_mod_mate_pov"})
+        self.assertEqual(hidden, {"kill_mod_mate_pov"})
 
     def test_every_match_type_travels_in_order(self):
         from csdm.static_data import MATCH_TYPE_DEFS

@@ -4,7 +4,7 @@
 > Regenerate: `python scripts/build_atlas.py`
 > Freshness check: `python scripts/build_atlas.py --check`
 
-## Python functions (554)
+## Python functions (555)
 
 | Name | File:line | Signature | Tested |
 |---|---|---|---|
@@ -35,11 +35,11 @@
 | `show` | `csdm_batch_clips_generator.py:3387` | `show()` | - |
 | `show` | `csdm_batch_clips_generator.py:3543` | `show()` | - |
 | `show` | `csdm_batch_clips_generator.py:3652` | `show()` | - |
-| `load_config` | `csdm/config.py:335` | `load_config()` | yes |
+| `load_config` | `csdm/config.py:363` | `load_config()` | yes |
 | `_tab_video` | `csdm_batch_clips_generator.py:2372` | `_tab_video(self, parent)` | - |
-| `save_config` | `csdm/config.py:344` | `save_config(cfg)` | yes |
+| `save_config` | `csdm/config.py:372` | `save_config(cfg)` | yes |
 | `scroll` | `csdm/widgets.py:95` | `scroll(self, delta)` | - |
-| `start_run` | `csdm/engine/core.py:3221` | `start_run(self, cfg)` | yes |
+| `start_run` | `csdm/engine/core.py:3202` | `start_run(self, cfg)` | yes |
 | `__init__` | `csdm/bridge/host.py:26` | `__init__(self, ports)` | yes |
 | `__init__` | `csdm/bridge/ports.py:16` | `__init__(self, writer)` | yes |
 | `__init__` | `csdm/bridge/protocol.py:43` | `__init__(self, stream)` | yes |
@@ -49,7 +49,7 @@
 | `__init__` | `csdm/widgets.py:391` | `__init__(self, widget, text)` | yes |
 | `__init__` | `csdm/widgets.py:447` | `__init__(self, parent, title, collapsed=False, **kw)` | yes |
 
-> 514 more in PROJECT_ATLAS.json
+> 515 more in PROJECT_ATLAS.json
 
 ## Python classes (20)
 
@@ -76,7 +76,7 @@
 | `WrapRow` | `csdm/widgets.py:110` | - |
 | `BridgeHost` | `csdm/bridge/host.py:23` | yes |
 
-## Config keys (177)
+## Config keys (175)
 
 | Key | Default |
 |---|---|
@@ -121,7 +121,7 @@
 | `video_codec` | `'libx264'` |
 | `audio_codec` | `'libmp3lame'` |
 
-> 137 more in PROJECT_ATLAS.json
+> 135 more in PROJECT_ATLAS.json
 
 ## React components (41)
 
@@ -193,9 +193,9 @@ Owned by `theme/mock-v12.css` -- naming an internal class that collides silently
 
 ## Registries
 
-### KILL_FILTER_REGISTRY (21)
+### KILL_FILTER_REGISTRY (20)
 
-`kill_mod_through_smoke`, `kill_mod_no_scope`, `kill_mod_assisted_flash`, `kill_mod_wall_bang`, `kill_mod_attacker_blind`, `kill_mod_airborne`, `kill_mod_collateral`, `kill_mod_trois_shot`, `kill_mod_no_trois_shot`, `kill_mod_trois_tap`, `kill_mod_one_tap`, `kill_mod_spray_transfer`, `kill_mod_high_velocity`, `kill_mod_flick`, `kill_mod_savior`, `kill_mod_entry_frag`, `kill_mod_ace`, `kill_mod_multi_kill`, `kill_mod_bully`, `kill_mod_eco_frag`, `kill_mod_mate_pov`
+`kill_mod_through_smoke`, `kill_mod_no_scope`, `kill_mod_assisted_flash`, `kill_mod_wall_bang`, `kill_mod_attacker_blind`, `kill_mod_airborne`, `kill_mod_collateral`, `kill_mod_trois_shot`, `kill_mod_trois_tap`, `kill_mod_one_tap`, `kill_mod_spray_transfer`, `kill_mod_high_velocity`, `kill_mod_flick`, `kill_mod_savior`, `kill_mod_entry_frag`, `kill_mod_ace`, `kill_mod_multi_kill`, `kill_mod_bully`, `kill_mod_eco_frag`, `kill_mod_mate_pov`
 
 ### COMMANDS (29)
 
@@ -239,7 +239,7 @@ Owned by `theme/mock-v12.css` -- naming an internal class that collides silently
 
 `buttons`, `buttons_busy`, `buttons_idle`, `demo_entry`, `demos_unchecked`, `kill_requested`, `preview_ready`, `preview_started`, `process_exited`, `progress`, `run_started`, `stop_requested`, `summary`
 
-## Guards -- what each test forbids (100)
+## Guards -- what each test forbids (101)
 
 | File | Forbids |
 |---|---|
@@ -267,6 +267,7 @@ Owned by `theme/mock-v12.css` -- naming an internal class that collides silently
 | `tests/test_process_exit.py` | A process is announced dead only when the task list says it is gone. |
 | `tests/test_pure_logic.py` | Tests de la logique pure et des donnees statiques (Phase 2.3 — filet de securite). |
 | `tests/test_run_inputs.py` | Run and preview must be validatable with no window. |
+| `tests/test_ui_filter_rows.py` | Tests d'intégrité UI des lignes de filtres de kill (v208). |
 | `electron/renderer/src/__tests__/bridge-commands.test.ts` | The pipe must carry arguments and hand answers back. |
 | `electron/renderer/src/__tests__/EngineLostBanner.test.tsx` |  |
 | `electron/renderer/src/__tests__/ErrorBoundary.test.tsx` | A render crash must not unmount the whole app to a blank page. |
@@ -368,34 +369,34 @@ Suspects, not verdicts -- each is a signal of a possible §1 violation, ranked b
 | `csdm/core_utils.py:73` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
 | `csdm/core_utils.py:72` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
 | `csdm/core_utils.py:72` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:5191` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:5172` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
 | `csdm/engine/core.py:2300` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3659` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3665` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3670` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3671` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3777` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3787` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3790` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3775` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:5193` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:5193` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3237` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3239` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3248` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3250` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:5192` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:5192` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3516` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3519` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3640` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3646` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3651` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3652` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3758` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3768` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3771` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3756` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:5174` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:5174` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3218` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3220` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3229` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3231` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:5173` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:5173` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3497` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3500` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
 | `csdm/engine/core.py:2462` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
 | `csdm/engine/core.py:2462` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/engine/core.py:3633` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
-| `csdm/static_data.py:254` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3614` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/static_data.py:248` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
 
 > 1198 more in PROJECT_ATLAS.json
 
-### repeated_literals (585)
+### repeated_literals (584)
 
 | File:line | What | Why |
 |---|---|---|
@@ -440,17 +441,17 @@ Suspects, not verdicts -- each is a signal of a possible §1 violation, ranked b
 | `csdm/config.py:26` | `'pg_host'` | the literal 'pg_host' appears unnamed in 3 files: csdm/config.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
 | `csdm/config.py:26` | `'pg_port'` | the literal 'pg_port' appears unnamed in 3 files: csdm/config.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
 
-> 545 more in PROJECT_ATLAS.json
+> 544 more in PROJECT_ATLAS.json
 
 ### duplicate_bodies (3)
 
 | File:line | What | Why |
 |---|---|---|
-| `csdm/engine/core.py:5391` | `_demo_picker_fmt_date` | identical body (names erased) shared with: _demo_picker_fmt_date (csdm_batch_clips_generator.py:2185) |
-| `csdm/engine/core.py:5620` | `_untag_demo` | identical body (names erased) shared with: _untag_demo (csdm_batch_clips_generator.py:838) |
-| `csdm/engine/core.py:5670` | `_tag_by_checksum` | identical body (names erased) shared with: _tag_by_checksum (csdm_batch_clips_generator.py:3969) |
+| `csdm/engine/core.py:5372` | `_demo_picker_fmt_date` | identical body (names erased) shared with: _demo_picker_fmt_date (csdm_batch_clips_generator.py:2185) |
+| `csdm/engine/core.py:5601` | `_untag_demo` | identical body (names erased) shared with: _untag_demo (csdm_batch_clips_generator.py:838) |
+| `csdm/engine/core.py:5651` | `_tag_by_checksum` | identical body (names erased) shared with: _tag_by_checksum (csdm_batch_clips_generator.py:3969) |
 
-### unused_symbols (313)
+### unused_symbols (315)
 
 | File:line | What | Why |
 |---|---|---|
@@ -485,6 +486,7 @@ Suspects, not verdicts -- each is a signal of a possible §1 violation, ranked b
 | `csdm/bridge/host.py:322` | `_run_command` | `_run_command` has zero usages outside its own definition |
 | `csdm/config.py:233` | `preset_keys_for` | `preset_keys_for` has zero usages outside its own definition |
 | `csdm/config.py:258` | `preset_cats` | `preset_cats` has zero usages outside its own definition |
+| `csdm/config.py:349` | `migrate_legacy_filter_keys` | `migrate_legacy_filter_keys` has zero usages outside its own definition |
 | `csdm/engine/core.py:108` | `_detect_map_col` | `_detect_map_col` has zero usages outside its own definition |
 | `csdm/engine/core.py:379` | `_json_scalar` | `_json_scalar` has zero usages outside its own definition |
 | `csdm/engine/core.py:448` | `_await_process_exit` | `_await_process_exit` has zero usages outside its own definition |
@@ -493,9 +495,8 @@ Suspects, not verdicts -- each is a signal of a possible §1 violation, ranked b
 | `csdm/engine/core.py:610` | `_qe_headshot_sql` | `_qe_headshot_sql` has zero usages outside its own definition |
 | `csdm/engine/core.py:631` | `_qe_teamkill_sql` | `_qe_teamkill_sql` has zero usages outside its own definition |
 | `csdm/engine/core.py:654` | `_mods_dp2_global_any_union_enabled` | `_mods_dp2_global_any_union_enabled` has zero usages outside its own definition |
-| `csdm/engine/core.py:666` | `_qe_suicide_sql` | `_qe_suicide_sql` has zero usages outside its own definition |
 
-> 273 more in PROJECT_ATLAS.json
+> 275 more in PROJECT_ATLAS.json
 
 ### swallowed_exceptions (184)
 
@@ -515,31 +516,31 @@ Suspects, not verdicts -- each is a signal of a possible §1 violation, ranked b
 | `csdm/engine/core.py:37` | `ImportError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
 | `csdm/engine/core.py:1470` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
 | `csdm/engine/core.py:2497` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:2703` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:2804` | `AttributeError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:3327` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:3883` | `AttributeError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:4615` | `(TypeError, ValueError)` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:4645` | `(TypeError, ValueError)` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:5257` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:5269` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:5315` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:5347` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:5416` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:5578` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:5617` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:5667` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:5693` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:5707` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:2702` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:2803` | `AttributeError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:3308` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:3864` | `AttributeError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:4596` | `(TypeError, ValueError)` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:4626` | `(TypeError, ValueError)` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5238` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5250` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5296` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5328` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5397` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5559` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5598` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5648` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5674` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5688` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
 | `csdm/engine/core.py:531` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
 | `csdm/engine/core.py:581` | `ValueError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
 | `csdm/engine/core.py:587` | `ValueError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
 | `csdm/engine/core.py:2014` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:3290` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:3317` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:3644` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:4060` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:4087` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
-| `csdm/engine/core.py:4105` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:3271` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:3298` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:3625` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:4041` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:4068` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:4086` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
 
 > 144 more in PROJECT_ATLAS.json

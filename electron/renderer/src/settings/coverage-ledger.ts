@@ -27,8 +27,6 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   kill_mod_logic_mods: "forced to 'mixed'; no ANY/ALL/MIXED selector exists",
   kill_mod_logic_dp2: "forced to 'mixed'; no ANY/ALL/MIXED selector exists",
   kill_mod_logic_db: "forced to 'mixed'; no ANY/ALL/MIXED selector exists",
-  kill_mod_no_trois_shot: "dead branch since kill_mod_trois_shot_exclude exists",
-  kill_mod_no_trois_shot_req: "auto-generated; no Must box is ever built for it",
   kill_mod_high_velocity_exclude: "auto-generated; FERRARI PEEK builds no Exclude box",
   // Added in v213 with the confirmed process exit, after the inventory was
   // written. Read by the engine through _host_cfg; no widget was ever built.
