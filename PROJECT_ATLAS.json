@@ -6421,7 +6421,7 @@
     {
       "name": "NOT_YET_PORTED",
       "file": "electron/renderer/src/settings/coverage-ledger.ts",
-      "line": 42
+      "line": 40
     },
     {
       "name": "fieldForTab",
