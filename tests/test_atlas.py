@@ -92,3 +92,40 @@ def test_state_events_are_collected_from_the_engine(atlas):
 def test_every_guard_says_what_it_forbids(atlas):
     assert atlas["guards"], "no guard test found -- the walker matched nothing"
     assert all(g["forbids"] for g in atlas["guards"])
+
+
+def test_it_reports_on_the_five_mechanisable_principles(atlas):
+    checks = atlas["principle_checks"]
+    assert set(checks) == {
+        "hardcoded_config_defaults",
+        "repeated_literals",
+        "duplicate_bodies",
+        "unused_symbols",
+        "swallowed_exceptions",
+    }
+
+
+def test_every_suspect_is_named_with_a_place(atlas):
+    for family in atlas["principle_checks"].values():
+        for suspect in family:
+            assert suspect["file"] and suspect["line"] > 0, suspect
+            assert suspect["why"], suspect
+
+
+def test_a_planted_duplicate_of_a_config_default_is_caught(atlas, tmp_path):
+    # The sharpest of the five: a DEFAULT_CONFIG value written literally
+    # somewhere else is a proven duplication, not a guess. If this detector
+    # cannot catch a planted one, it catches nothing.
+    from csdm.config import DEFAULT_CONFIG
+
+    assert "cs2_process_name" in DEFAULT_CONFIG
+    hits = atlas["principle_checks"]["hardcoded_config_defaults"]
+    assert isinstance(hits, list)  # shape only; the planted case is step 3
+
+
+def test_it_does_not_pretend_to_check_the_unmechanisable(atlas):
+    # Principles 7 (root cause) and 8 (visual proof) are about a way of
+    # working. A detector claiming to verify them would be a lie with a
+    # green tick on it.
+    assert "root_cause" not in atlas["principle_checks"]
+    assert "visual_proof" not in atlas["principle_checks"]

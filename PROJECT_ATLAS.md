@@ -336,3 +336,203 @@ Owned by `theme/mock-v12.css` -- naming an internal class that collides silently
 | `electron/renderer/src/weapon/__tests__/silhouettes.test.ts` | Every weapon the database can return must have something to draw. |
 | `electron/renderer/src/weapon/__tests__/stop-waits.test.ts` | STOP has no timer. This is D18 written as a test. |
 | `electron/renderer/src/weapon/__tests__/WeaponBand.css.test.ts` | The weapon band must not restate the action bar's background, blur, or layout -- it rides inside it. |
+
+## Principle-1 mechanisable checks
+
+Suspects, not verdicts -- each is a signal of a possible §1 violation, ranked by how sure the signal is. See context_guide.md §1.
+
+### hardcoded_config_defaults (1238)
+
+| File:line | What | Why |
+|---|---|---|
+| `csdm/engine/core.py:543` | `pg_db` | the default value of `pg_db` ('csdm') is rewritten literally here |
+| `csdm/engine/core.py:554` | `pg_db` | the default value of `pg_db` ('csdm') is rewritten literally here |
+| `csdm_batch_clips_generator.py:2845` | `ui_window_w` | the default value of `ui_window_w` (1600) is rewritten literally here |
+| `csdm_batch_clips_generator.py:191` | `ui_window_w` | the default value of `ui_window_w` (1600) is rewritten literally here |
+| `csdm_batch_clips_generator.py:2800` | `ui_window_w` | the default value of `ui_window_w` (1600) is rewritten literally here |
+| `csdm_batch_clips_generator.py:191` | `ui_window_w` | the default value of `ui_window_w` (1600) is rewritten literally here |
+| `csdm_batch_clips_generator.py:2861` | `ui_window_w` | the default value of `ui_window_w` (1600) is rewritten literally here |
+| `csdm_batch_clips_generator.py:2846` | `ui_window_h` | the default value of `ui_window_h` (900) is rewritten literally here |
+| `csdm_batch_clips_generator.py:192` | `ui_window_h` | the default value of `ui_window_h` (900) is rewritten literally here |
+| `csdm_batch_clips_generator.py:2804` | `ui_window_h` | the default value of `ui_window_h` (900) is rewritten literally here |
+| `csdm_batch_clips_generator.py:192` | `ui_window_h` | the default value of `ui_window_h` (900) is rewritten literally here |
+| `csdm_batch_clips_generator.py:2861` | `ui_window_h` | the default value of `ui_window_h` (900) is rewritten literally here |
+| `csdm/core_utils.py:73` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/core_utils.py:73` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/core_utils.py:72` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/core_utils.py:72` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:5191` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:2300` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3659` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3665` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3670` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3671` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3777` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3787` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3790` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3775` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:5193` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:5193` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3237` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3239` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3248` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3250` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:5192` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:5192` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3516` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3519` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:2462` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:2462` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/engine/core.py:3633` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+| `csdm/static_data.py:254` | `ui_split_pct` | the default value of `ui_split_pct` (60) is rewritten literally here |
+
+> 1198 more in PROJECT_ATLAS.json
+
+### repeated_literals (585)
+
+| File:line | What | Why |
+|---|---|---|
+| `csdm/bridge/__main__.py:6` | `'__main__'` | the literal '__main__' appears unnamed in 2 files: csdm/bridge/__main__.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/__main__.py:13` | `'utf-8'` | the literal 'utf-8' appears unnamed in 5 files: csdm/bridge/__main__.py, csdm/config.py, csdm/core_utils.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/__main__.py:13` | `'replace'` | the literal 'replace' appears unnamed in 3 files: csdm/bridge/__main__.py, csdm/core_utils.py, csdm/engine/core.py |
+| `csdm/bridge/host.py:50` | `'dim'` | the literal 'dim' appears unnamed in 3 files: csdm/bridge/host.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:51` | `'data'` | the literal 'data' appears unnamed in 3 files: csdm/bridge/host.py, csdm/config.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:62` | `'info'` | the literal 'info' appears unnamed in 3 files: csdm/bridge/host.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:62` | `'warn'` | the literal 'warn' appears unnamed in 3 files: csdm/bridge/host.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:62` | `'err'` | the literal 'err' appears unnamed in 3 files: csdm/bridge/host.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:65` | `'buttons_idle'` | the literal 'buttons_idle' appears unnamed in 3 files: csdm/bridge/host.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:66` | `'buttons_busy'` | the literal 'buttons_busy' appears unnamed in 3 files: csdm/bridge/host.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:71` | `'confirm'` | the literal 'confirm' appears unnamed in 2 files: csdm/bridge/host.py, csdm/engine/core.py |
+| `csdm/bridge/host.py:136` | `'cfg'` | the literal 'cfg' appears unnamed in 3 files: csdm/bridge/host.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:182` | `'path'` | the literal 'path' appears unnamed in 3 files: csdm/bridge/host.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:331` | `'name'` | the literal 'name' appears unnamed in 5 files: csdm/bridge/host.py, csdm/bridge/ports.py, csdm/engine/core.py, csdm/widgets.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:50` | `' \| '` | the literal ' \| ' appears unnamed in 3 files: csdm/bridge/host.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:71` | `'include'` | the literal 'include' appears unnamed in 4 files: csdm/bridge/host.py, csdm/config.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:126` | `'demos'` | the literal 'demos' appears unnamed in 2 files: csdm/bridge/host.py, csdm/engine/core.py |
+| `csdm/bridge/host.py:156` | `'tag_names'` | the literal 'tag_names' appears unnamed in 2 files: csdm/bridge/host.py, csdm/engine/core.py |
+| `csdm/bridge/host.py:236` | `'cats'` | the literal 'cats' appears unnamed in 3 files: csdm/bridge/host.py, csdm/config.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:171` | `'tag_name'` | the literal 'tag_name' appears unnamed in 2 files: csdm/bridge/host.py, csdm/engine/core.py |
+| `csdm/bridge/host.py:171` | `'color'` | the literal 'color' appears unnamed in 4 files: csdm/bridge/host.py, csdm/engine/core.py, csdm/widgets.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:176` | `'tag_id'` | the literal 'tag_id' appears unnamed in 2 files: csdm/bridge/host.py, csdm/engine/core.py |
+| `csdm/bridge/host.py:340` | `'type'` | the literal 'type' appears unnamed in 6 files: csdm/bridge/host.py, csdm/bridge/ports.py, csdm/config.py, csdm/core_utils.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:372` | `'command'` | the literal 'command' appears unnamed in 3 files: csdm/bridge/host.py, csdm/bridge/protocol.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:78` | `'none'` | the literal 'none' appears unnamed in 5 files: csdm/bridge/host.py, csdm/config.py, csdm/engine/core.py, csdm/widgets.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:336` | `'error'` | the literal 'error' appears unnamed in 3 files: csdm/bridge/host.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/host.py:376` | `'answer'` | the literal 'answer' appears unnamed in 2 files: csdm/bridge/host.py, csdm/bridge/protocol.py |
+| `csdm/bridge/host.py:367` | `'message'` | the literal 'message' appears unnamed in 2 files: csdm/bridge/host.py, csdm/bridge/ports.py |
+| `csdm/bridge/host.py:368` | `'level'` | the literal 'level' appears unnamed in 4 files: csdm/bridge/host.py, csdm/bridge/ports.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/tables.py:18` | `'filters'` | the literal 'filters' appears unnamed in 4 files: csdm/bridge/tables.py, csdm/config.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/tables.py:23` | `'match_types'` | the literal 'match_types' appears unnamed in 2 files: csdm/bridge/tables.py, csdm/engine/core.py |
+| `csdm/bridge/tables.py:19` | `'key'` | the literal 'key' appears unnamed in 2 files: csdm/bridge/tables.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/tables.py:19` | `'label'` | the literal 'label' appears unnamed in 2 files: csdm/bridge/tables.py, csdm/widgets.py |
+| `csdm/bridge/tables.py:19` | `'tip'` | the literal 'tip' appears unnamed in 3 files: csdm/bridge/tables.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/tables.py:20` | `'hidden'` | the literal 'hidden' appears unnamed in 2 files: csdm/bridge/tables.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/tables.py:29` | `'width'` | the literal 'width' appears unnamed in 4 files: csdm/bridge/tables.py, csdm/config.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/tables.py:29` | `'height'` | the literal 'height' appears unnamed in 4 files: csdm/bridge/tables.py, csdm/config.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/bridge/tables.py:41` | `'full'` | the literal 'full' appears unnamed in 3 files: csdm/bridge/tables.py, csdm/config.py, csdm_batch_clips_generator.py |
+| `csdm/config.py:26` | `'pg_host'` | the literal 'pg_host' appears unnamed in 3 files: csdm/config.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+| `csdm/config.py:26` | `'pg_port'` | the literal 'pg_port' appears unnamed in 3 files: csdm/config.py, csdm/engine/core.py, csdm_batch_clips_generator.py |
+
+> 545 more in PROJECT_ATLAS.json
+
+### duplicate_bodies (3)
+
+| File:line | What | Why |
+|---|---|---|
+| `csdm/engine/core.py:5391` | `_demo_picker_fmt_date` | identical body (names erased) shared with: _demo_picker_fmt_date (csdm_batch_clips_generator.py:2185) |
+| `csdm/engine/core.py:5620` | `_untag_demo` | identical body (names erased) shared with: _untag_demo (csdm_batch_clips_generator.py:838) |
+| `csdm/engine/core.py:5670` | `_tag_by_checksum` | identical body (names erased) shared with: _tag_by_checksum (csdm_batch_clips_generator.py:3969) |
+
+### unused_symbols (313)
+
+| File:line | What | Why |
+|---|---|---|
+| `csdm/bridge/host.py:32` | `_cmd_ping` | `_cmd_ping` has zero usages outside its own definition |
+| `csdm/bridge/host.py:36` | `_cmd_hello` | `_cmd_hello` has zero usages outside its own definition |
+| `csdm/bridge/host.py:56` | `_cmd_describe_filters` | `_cmd_describe_filters` has zero usages outside its own definition |
+| `csdm/bridge/host.py:61` | `_cmd_demo_logs` | `_cmd_demo_logs` has zero usages outside its own definition |
+| `csdm/bridge/host.py:70` | `_cmd_demo_ask` | `_cmd_demo_ask` has zero usages outside its own definition |
+| `csdm/bridge/host.py:76` | `_cmd_tkinter_check` | `_cmd_tkinter_check` has zero usages outside its own definition |
+| `csdm/bridge/host.py:82` | `_cmd_request_stop` | `_cmd_request_stop` has zero usages outside its own definition |
+| `csdm/bridge/host.py:87` | `_cmd_request_kill` | `_cmd_request_kill` has zero usages outside its own definition |
+| `csdm/bridge/host.py:92` | `_cmd_cancel_preview` | `_cmd_cancel_preview` has zero usages outside its own definition |
+| `csdm/bridge/host.py:119` | `_cmd_list_demos` | `_cmd_list_demos` has zero usages outside its own definition |
+| `csdm/bridge/host.py:129` | `_cmd_tags_search` | `_cmd_tags_search` has zero usages outside its own definition |
+| `csdm/bridge/host.py:142` | `_cmd_tags_calc_range` | `_cmd_tags_calc_range` has zero usages outside its own definition |
+| `csdm/bridge/host.py:148` | `_cmd_tags_set_active` | `_cmd_tags_set_active` has zero usages outside its own definition |
+| `csdm/bridge/host.py:154` | `_cmd_tags_apply` | `_cmd_tags_apply` has zero usages outside its own definition |
+| `csdm/bridge/host.py:161` | `_cmd_tags_remove` | `_cmd_tags_remove` has zero usages outside its own definition |
+| `csdm/bridge/host.py:168` | `_cmd_tag_create` | `_cmd_tag_create` has zero usages outside its own definition |
+| `csdm/bridge/host.py:174` | `_cmd_tag_delete` | `_cmd_tag_delete` has zero usages outside its own definition |
+| `csdm/bridge/host.py:179` | `_cmd_tags_export` | `_cmd_tags_export` has zero usages outside its own definition |
+| `csdm/bridge/host.py:188` | `_cmd_tags_import_scan` | `_cmd_tags_import_scan` has zero usages outside its own definition |
+| `csdm/bridge/host.py:198` | `_cmd_tags_import_apply` | `_cmd_tags_import_apply` has zero usages outside its own definition |
+| `csdm/bridge/host.py:208` | `_cmd_load_config` | `_cmd_load_config` has zero usages outside its own definition |
+| `csdm/bridge/host.py:213` | `_cmd_save_config` | `_cmd_save_config` has zero usages outside its own definition |
+| `csdm/bridge/host.py:226` | `_cmd_list_presets` | `_cmd_list_presets` has zero usages outside its own definition |
+| `csdm/bridge/host.py:230` | `_cmd_save_preset` | `_cmd_save_preset` has zero usages outside its own definition |
+| `csdm/bridge/host.py:248` | `_cmd_load_preset` | `_cmd_load_preset` has zero usages outside its own definition |
+| `csdm/bridge/host.py:258` | `_cmd_delete_preset` | `_cmd_delete_preset` has zero usages outside its own definition |
+| `csdm/bridge/host.py:270` | `_cmd_start_run` | `_cmd_start_run` has zero usages outside its own definition |
+| `csdm/bridge/host.py:282` | `_cmd_start_preview` | `_cmd_start_preview` has zero usages outside its own definition |
+| `csdm/bridge/host.py:322` | `_run_command` | `_run_command` has zero usages outside its own definition |
+| `csdm/config.py:233` | `preset_keys_for` | `preset_keys_for` has zero usages outside its own definition |
+| `csdm/config.py:258` | `preset_cats` | `preset_cats` has zero usages outside its own definition |
+| `csdm/engine/core.py:108` | `_detect_map_col` | `_detect_map_col` has zero usages outside its own definition |
+| `csdm/engine/core.py:379` | `_json_scalar` | `_json_scalar` has zero usages outside its own definition |
+| `csdm/engine/core.py:448` | `_await_process_exit` | `_await_process_exit` has zero usages outside its own definition |
+| `csdm/engine/core.py:489` | `_pg_connect` | `_pg_connect` has zero usages outside its own definition |
+| `csdm/engine/core.py:591` | `_qe_match_type_sql` | `_qe_match_type_sql` has zero usages outside its own definition |
+| `csdm/engine/core.py:610` | `_qe_headshot_sql` | `_qe_headshot_sql` has zero usages outside its own definition |
+| `csdm/engine/core.py:631` | `_qe_teamkill_sql` | `_qe_teamkill_sql` has zero usages outside its own definition |
+| `csdm/engine/core.py:654` | `_mods_dp2_global_any_union_enabled` | `_mods_dp2_global_any_union_enabled` has zero usages outside its own definition |
+| `csdm/engine/core.py:666` | `_qe_suicide_sql` | `_qe_suicide_sql` has zero usages outside its own definition |
+
+> 273 more in PROJECT_ATLAS.json
+
+### swallowed_exceptions (184)
+
+| File:line | What | Why |
+|---|---|---|
+| `csdm/bridge/host.py:334` | `KeyError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/bridge/host.py:341` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/bridge/host.py:382` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/bridge/host.py:366` | `ValueError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/config.py:223` | `OSError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/config.py:215` | `(OSError, ValueError)` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/core_utils.py:24` | `ValueError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/core_utils.py:38` | `ValueError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/core_utils.py:147` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/core_utils.py:28` | `ValueError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/core_utils.py:42` | `ValueError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:37` | `ImportError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:1470` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:2497` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:2703` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:2804` | `AttributeError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:3327` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:3883` | `AttributeError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:4615` | `(TypeError, ValueError)` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:4645` | `(TypeError, ValueError)` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5257` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5269` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5315` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5347` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5416` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5578` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5617` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5667` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5693` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:5707` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:531` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:581` | `ValueError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:587` | `ValueError` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:2014` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:3290` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:3317` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:3644` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:4060` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:4087` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+| `csdm/engine/core.py:4105` | `Exception` | except handler neither re-raises nor logs -- the failure is swallowed silently |
+
+> 144 more in PROJECT_ATLAS.json

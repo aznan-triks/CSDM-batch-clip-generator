@@ -21,9 +21,11 @@ from __future__ import annotations
 
 import argparse
 import ast
+import copy
 import json
 import re
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,6 +45,8 @@ ATLAS_SOURCES = {
 ATLAS_OPTIONS = {
     "md_rows_per_table": 40,  # the .md is a summary; the .json is exhaustive
     "skip_dirs": {"__pycache__", "node_modules", "dist", "dist-app", ".venv"},
+    "repeated_literal_min_files": 2,  # a literal in >= this many files is unnamed duplication
+    "duplicate_body_min_statements": 5,  # bodies with more than this many statements get fingerprinted
 }
 
 
@@ -384,6 +388,181 @@ def read_guards(paths: dict) -> list[dict]:
     return out
 
 
+def _is_trivial_literal(value: object) -> bool:
+    """True/False/None/0/1/""/short strings appear everywhere legitimately -- not worth searching for."""
+    if isinstance(value, bool) or value is None:
+        return True
+    if isinstance(value, str):
+        return len(value) < 3
+    if isinstance(value, (int, float)):
+        return value in (0, 1)
+    return True  # dict/list/other: not a literal worth searching for
+
+
+def _collect_literal_occurrences() -> dict[tuple, list[dict]]:
+    """Every non-trivial Constant across the Python sources, indexed by (type, value).
+
+    Parsed once and shared by find_hardcoded_config_defaults and find_repeated_literals --
+    parsing per config key (177 of them) instead of once made the atlas take ~50s to build,
+    which is a real problem for a Stop hook that runs on every session end.
+    """
+    occurrences: dict[tuple, list[dict]] = defaultdict(list)
+    for py in iter_py_files(ATLAS_SOURCES["python"]):
+        try:
+            tree = ast.parse(py.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+        rp = rel(py)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Constant):
+                continue
+            value = node.value
+            if _is_trivial_literal(value) or not isinstance(value, (str, int, float)):
+                continue
+            occurrences[(type(value), value)].append({"file": rp, "line": node.lineno})
+    return occurrences
+
+
+def find_hardcoded_config_defaults(literal_index: dict[tuple, list[dict]]) -> list[dict]:
+    """A DEFAULT_CONFIG value written literally elsewhere is a proven duplication, not a guess."""
+    sys.path.insert(0, str(ROOT))
+    from csdm.config import DEFAULT_CONFIG
+
+    config_file = "csdm/config.py"
+    suspects: list[dict] = []
+    for key, value in DEFAULT_CONFIG.items():
+        if _is_trivial_literal(value) or not isinstance(value, (str, int, float)):
+            continue
+        for hit in literal_index.get((type(value), value), []):
+            if hit["file"] == config_file:
+                continue
+            suspects.append({
+                "file": hit["file"], "line": hit["line"],
+                "what": key,
+                "why": f"the default value of `{key}` ({value!r}) is rewritten literally here",
+            })
+    return suspects
+
+
+def find_repeated_literals(literal_index: dict[tuple, list[dict]]) -> list[dict]:
+    """A literal shared across files without a name is a duplication waiting to drift apart."""
+    min_files = ATLAS_OPTIONS["repeated_literal_min_files"]
+    suspects: list[dict] = []
+    for (_, value), hits in literal_index.items():
+        files = sorted({h["file"] for h in hits})
+        if len(files) < min_files:
+            continue
+        first = hits[0]
+        suspects.append({
+            "file": first["file"], "line": first["line"],
+            "what": repr(value),
+            "why": f"the literal {value!r} appears unnamed in {len(files)} files: {', '.join(files)}",
+        })
+    return suspects
+
+
+class _BodyNormalizer(ast.NodeTransformer):
+    """Erases local names so two functions that only differ by identifier naming fingerprint identically."""
+
+    def visit_Name(self, node):
+        return ast.copy_location(ast.Name(id="_VAR_", ctx=node.ctx), node)
+
+    def visit_arg(self, node):
+        node.arg = "_ARG_"
+        return node
+
+
+def _fingerprint_body(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str | None:
+    body = list(node.body)
+    if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) and isinstance(body[0].value.value, str):
+        body = body[1:]  # drop the docstring -- it's prose, not logic
+    if len(body) <= ATLAS_OPTIONS["duplicate_body_min_statements"]:
+        return None
+    normalized = [_BodyNormalizer().visit(copy.deepcopy(stmt)) for stmt in body]
+    return ast.dump(ast.Module(body=normalized, type_ignores=[]), annotate_fields=False)
+
+
+def find_duplicate_bodies() -> list[dict]:
+    """Two functions sharing a body fingerprint (names erased, docstring stripped) are one function wearing two names."""
+    fingerprints: dict[str, list[dict]] = defaultdict(list)
+    for py in iter_py_files(ATLAS_SOURCES["python"]):
+        try:
+            tree = ast.parse(py.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+        rp = rel(py)
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            fp = _fingerprint_body(node)
+            if fp is None:
+                continue
+            fingerprints[fp].append({"file": rp, "line": node.lineno, "name": node.name})
+
+    suspects: list[dict] = []
+    for hits in fingerprints.values():
+        if len(hits) < 2:
+            continue
+        first, *rest = hits
+        rest_desc = ", ".join(f"{h['name']} ({h['file']}:{h['line']})" for h in rest)
+        suspects.append({
+            "file": first["file"], "line": first["line"],
+            "what": first["name"],
+            "why": f"identical body (names erased) shared with: {rest_desc}",
+        })
+    return suspects
+
+
+def find_unused_symbols(functions: list[dict], classes: list[dict]) -> list[dict]:
+    """Free to compute -- `usages` is already known from the phase-1 walk. Zero means nobody calls it."""
+    suspects: list[dict] = []
+    for entry in functions + classes:
+        name = entry["name"]
+        if name in ("main", "__main__") or name.startswith("test_"):
+            continue
+        if entry.get("usages", 0) != 0:
+            continue
+        suspects.append({
+            "file": entry["file"], "line": entry["line"],
+            "what": name,
+            "why": f"`{name}` has zero usages outside its own definition",
+        })
+    return suspects
+
+
+def find_swallowed_exceptions() -> list[dict]:
+    """`except: pass` (or an except with no raise and no log call) hides the failure it caught."""
+    suspects: list[dict] = []
+    for py in iter_py_files(ATLAS_SOURCES["python"]):
+        try:
+            tree = ast.parse(py.read_text(encoding="utf-8"))
+        except (SyntaxError, UnicodeDecodeError):
+            continue
+        rp = rel(py)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ExceptHandler):
+                continue
+            body_nodes = [n for stmt in node.body for n in ast.walk(stmt)]
+            is_bare_pass = len(node.body) == 1 and isinstance(node.body[0], ast.Pass)
+            has_raise = any(isinstance(n, ast.Raise) for n in body_nodes)
+            has_log_call = any(
+                isinstance(n, ast.Call)
+                and (
+                    (isinstance(n.func, ast.Attribute) and n.func.attr in ("log", "log_parts"))
+                    or (isinstance(n.func, ast.Name) and n.func.id == "log")
+                )
+                for n in body_nodes
+            )
+            if is_bare_pass or not (has_raise or has_log_call):
+                exc_name = ast.unparse(node.type) if node.type else "bare except"
+                suspects.append({
+                    "file": rp, "line": node.lineno,
+                    "what": exc_name,
+                    "why": "except handler neither re-raises nor logs -- the failure is swallowed silently",
+                })
+    return suspects
+
+
 def build_atlas() -> dict:
     functions, classes = walk_python(ATLAS_SOURCES["python"])
     ts = walk_typescript(ATLAS_SOURCES["typescript"])
@@ -399,6 +578,18 @@ def build_atlas() -> dict:
         "bridge_commands": read_bridge_commands(),
         "state_events": read_state_events(ATLAS_SOURCES["engine"]),
         "guards": read_guards(ATLAS_SOURCES),
+        "principle_checks": build_principle_checks(functions, classes),
+    }
+
+
+def build_principle_checks(functions: list[dict], classes: list[dict]) -> dict:
+    literal_index = _collect_literal_occurrences()
+    return {
+        "hardcoded_config_defaults": find_hardcoded_config_defaults(literal_index),
+        "repeated_literals": find_repeated_literals(literal_index),
+        "duplicate_bodies": find_duplicate_bodies(),
+        "unused_symbols": find_unused_symbols(functions, classes),
+        "swallowed_exceptions": find_swallowed_exceptions(),
     }
 
 
@@ -521,6 +712,27 @@ def render_markdown(atlas: dict) -> str:
         L.append("")
         L.append(f"> {len(atlas['guards']) - n * 3} more in PROJECT_ATLAS.json")
     L.append("")
+
+    L.append("## Principle-1 mechanisable checks")
+    L.append("")
+    L.append("Suspects, not verdicts -- each is a signal of a possible §1 violation, ranked by how sure the signal is. See context_guide.md §1.")
+    L.append("")
+    for family, suspects in atlas["principle_checks"].items():
+        L.append(f"### {family} ({len(suspects)})")
+        L.append("")
+        if not suspects:
+            L.append("_None found._")
+        else:
+            L.append("| File:line | What | Why |")
+            L.append("|---|---|---|")
+            for s in suspects[:n]:
+                what = s["what"].replace("|", "\\|")
+                why = s["why"].replace("|", "\\|")
+                L.append(f"| `{s['file']}:{s['line']}` | `{what}` | {why} |")
+            if len(suspects) > n:
+                L.append("")
+                L.append(f"> {len(suspects) - n} more in PROJECT_ATLAS.json")
+        L.append("")
 
     return "\n".join(L)
 
