@@ -8,6 +8,13 @@ const { spawn, spawnSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
+const {
+  buildTreeKillArgs,
+  engineIsBusy,
+  noteEngineState,
+  resetEngineState,
+} = require("./lifecycle");
+
 /**
  * Where the Python engine lives.
  *
@@ -47,9 +54,16 @@ const WINDOW_DEFAULT_H = 900;
 const WINDOW_MIN_W = 900;
 const WINDOW_MIN_H = 640;
 
+// How long the engine is given to stop its own children cleanly before the
+// process tree is taken out from under it. Its own kill path (request_kill in
+// csdm/engine/core.py) stops the CSDM CLI, taskkills cs2.exe and reverts the
+// tags this batch applied -- all of it lost if we terminate Python first.
+const ENGINE_SHUTDOWN_GRACE_MS = 4000;
+
 let mainWindow = null;
 let child = null;
 let stdoutBuffer = ""; // holds a line fragment carried over between two stdout chunks
+let quitting = false; // true once before-quit has taken over the shutdown
 
 /**
  * Find a Python interpreter able to run this repo.
@@ -88,6 +102,9 @@ function sendToRenderer(message) {
 }
 
 function startEngine() {
+  stdoutBuffer = ""; // a fragment from a dead engine must never prefix a new one's first line
+  resetEngineState();
+
   const pythonPath = resolvePythonPath();
   const args = pythonPath === "py" ? ["-3", "-m", "csdm.bridge"] : ["-m", "csdm.bridge"];
 
@@ -108,7 +125,9 @@ function startEngine() {
     for (const line of lines) {
       if (!line.trim()) continue;
       try {
-        sendToRenderer(JSON.parse(line));
+        const message = JSON.parse(line);
+        noteEngineState(message);
+        sendToRenderer(message);
       } catch (err) {
         // A malformed line must never crash the shell; surface it as a log.
         sendToRenderer({ type: "log", level: "err", message: `unreadable line from engine: ${err.message}` });
@@ -134,11 +153,65 @@ function startEngine() {
   });
 }
 
+/**
+ * Stop the engine and everything it started.
+ *
+ * `child.kill()` alone is not enough on Windows: it terminates the Python
+ * process only. Windows has no inherited process group, so the CSDM CLI that
+ * the engine spawned (csdm/engine/core.py, `self._proc`) and the cs2.exe that
+ * CLI drives both keep running, with no interface left to stop them. That is
+ * D19's "no orphan is allowed to keep driving CS2", which this file claimed
+ * and did not do.
+ */
 function killEngine() {
-  if (child && !child.killed) {
-    child.kill();
-  }
+  if (!child) return;
+  const doomed = child;
+  const pid = doomed.pid;
   child = null;
+  stdoutBuffer = "";
+  resetEngineState();
+  if (process.platform === "win32" && pid) {
+    spawnSync("taskkill", buildTreeKillArgs(pid), { windowsHide: true });
+  }
+  if (!doomed.killed) {
+    doomed.kill();
+  }
+}
+
+/**
+ * Ask the engine to stop cleanly, then take the tree out regardless.
+ *
+ * The graceful step only happens during a run: at rest it would add a delay
+ * for nothing, and `request_kill` would taskkill a cs2.exe this app never
+ * launched. The grace period is a ceiling, not a wait -- the child's own
+ * `exit` ends it as soon as it really goes.
+ */
+function shutdownEngine() {
+  return new Promise((resolve) => {
+    if (!child) {
+      resolve();
+      return;
+    }
+    if (!engineIsBusy()) {
+      killEngine();
+      resolve();
+      return;
+    }
+    const doomed = child;
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      killEngine();
+      resolve();
+    };
+    const timer = setTimeout(finish, ENGINE_SHUTDOWN_GRACE_MS);
+    doomed.once("exit", finish);
+    // The engine is the only side that knows about cs2.exe and about the tags
+    // this batch applied. Let it undo its own work first.
+    sendCommandToEngine({ type: "command", id: "shutdown", name: "request_kill" });
+  });
 }
 
 function sendCommandToEngine(command) {
@@ -159,6 +232,28 @@ function createWindow() {
       nodeIntegration: false,
     },
   });
+
+  // Closing mid-run throws away work: the batch stops, the assembly never
+  // happens, and the tags applied so far are reverted. Ask first. Native
+  // dialog rather than a React one, because the renderer may be the thing
+  // that died.
+  mainWindow.on("close", (event) => {
+    if (quitting || !engineIsBusy()) return;
+    const choice = dialog.showMessageBoxSync(mainWindow, {
+      type: "warning",
+      buttons: ["Keep running", "Stop the run and quit"],
+      defaultId: 0, // Enter keeps the run: the safe answer is the default one
+      cancelId: 0, // Escape and the title-bar cross do too
+      noLink: true,
+      title: "A run is in progress",
+      message: "A run is still going.",
+      detail:
+        "Quitting stops it now: the remaining demos are skipped, no video is assembled, " +
+        "and the tags applied during this batch are reverted.",
+    });
+    if (choice === 0) event.preventDefault();
+  });
+
   // In development `scripts/dev.mjs` sets VITE_DEV_SERVER_URL so the window
   // gets hot reload; in production the built bundle is loaded from disk, with
   // no server and no network involved.
@@ -200,13 +295,18 @@ app.whenReady().then(() => {
   createWindow();
 });
 
-// D19: no orphan is allowed to keep driving CS2. Both exit paths on
-// Windows/Linux/macOS must kill the child.
+// D19: no orphan is allowed to keep driving CS2. Closing the last window
+// quits, which fires `before-quit` -- the single place the engine is stopped,
+// so there is no second path that could diverge from it.
 app.on("window-all-closed", () => {
-  killEngine();
   app.quit();
 });
 
-app.on("before-quit", () => {
-  killEngine();
+app.on("before-quit", (event) => {
+  if (quitting || !child) return;
+  // Stopping the engine is asynchronous (it may have a cs2.exe to kill first)
+  // and `before-quit` is not. Hold the quit, do the work, then exit for real.
+  event.preventDefault();
+  quitting = true;
+  shutdownEngine().then(() => app.exit(0));
 });

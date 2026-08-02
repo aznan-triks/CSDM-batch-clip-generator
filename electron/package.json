@@ -22,6 +22,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "lifecycle.js",
       "renderer/dist/**"
     ],
     "win": {
