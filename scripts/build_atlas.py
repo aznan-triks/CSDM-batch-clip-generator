@@ -187,12 +187,133 @@ def read_config_keys() -> list[dict]:
     return [{"name": k, "default": v} for k, v in DEFAULT_CONFIG.items()]
 
 
+_COMPONENT_RE = re.compile(r"export\s+(?:default\s+)?function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+_EXPORT_CONST_RE = re.compile(r"export\s+const\s+([A-Za-z_][A-Za-z0-9_]*)\s*[:=]")
+_EXPORT_DEFAULT_NAME_RE = re.compile(r"export\s+default\s+([A-Za-z_][A-Za-z0-9_]*)\s*;")
+_ANY_FUNC_DEF_RE = re.compile(r"function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(")
+_PROP_NAME_RE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\??\s*:", re.M)
+
+
+def _line_at(text: str, offset: int) -> int:
+    return text[:offset].count("\n") + 1
+
+
+def _extract_props(text: str, component_name: str) -> list[str]:
+    m = re.search(rf"interface\s+{re.escape(component_name)}Props\s*\{{(.*?)\n\}}", text, re.S)
+    if not m:
+        return []
+    return _PROP_NAME_RE.findall(m.group(1))
+
+
+def walk_typescript(paths: list[str]) -> dict:
+    """Regex sweep over .ts/.tsx -- we're citing names, not compiling (KISS).
+
+    component = `export [default] function <Name>(` in a .tsx file whose
+    name starts uppercase; props = the `<Name>Props` interface, if any.
+    hook = exported function starting with `use`. Everything else exported
+    lands in `exports`.
+    """
+    components: list[dict] = []
+    hooks: list[dict] = []
+    exports: list[dict] = []
+
+    for entry in paths:
+        root = ROOT / entry
+        if not root.exists():
+            continue
+        for f in sorted(root.rglob("*.ts")) + sorted(root.rglob("*.tsx")):
+            if ATLAS_OPTIONS["skip_dirs"] & set(f.relative_to(ROOT).parts):
+                continue
+            try:
+                text = f.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            rp = rel(f)
+            is_tsx = f.suffix == ".tsx"
+
+            seen_names: set[str] = set()
+            for m in _COMPONENT_RE.finditer(text):
+                name = m.group(1)
+                seen_names.add(name)
+                line = _line_at(text, m.start())
+                if is_tsx and name[0].isupper():
+                    components.append({
+                        "name": name, "file": rp, "line": line,
+                        "props": _extract_props(text, name),
+                    })
+                elif name.startswith("use"):
+                    hooks.append({"name": name, "file": rp, "line": line})
+                else:
+                    exports.append({"name": name, "file": rp, "line": line})
+
+            for m in _EXPORT_CONST_RE.finditer(text):
+                name = m.group(1)
+                if name in seen_names:
+                    continue
+                seen_names.add(name)
+                line = _line_at(text, m.start())
+                if name.startswith("use"):
+                    hooks.append({"name": name, "file": rp, "line": line})
+                else:
+                    exports.append({"name": name, "file": rp, "line": line})
+
+            # `const Name = forwardRef(function Name(...` ends in `export default Name;`
+            # rather than `export default function Name(` -- the definition and the
+            # export live on different lines, so match them up by name.
+            for m in _EXPORT_DEFAULT_NAME_RE.finditer(text):
+                name = m.group(1)
+                if name in seen_names or not is_tsx or not name[0].isupper():
+                    continue
+                found = next((d for d in _ANY_FUNC_DEF_RE.finditer(text) if d.group(1) == name), None)
+                if not found:
+                    continue
+                seen_names.add(name)
+                components.append({
+                    "name": name, "file": rp, "line": _line_at(text, found.start()),
+                    "props": _extract_props(text, name),
+                })
+
+    return {"components": components, "hooks": hooks, "exports": exports}
+
+
+_MOCK_CLASS_RE = re.compile(r"\.([a-zA-Z][\w-]*)")
+
+
+def read_mock_classes(path: Path) -> list[str]:
+    """All `.classname` tokens in the generated mock stylesheet -- the cascade this app inherits from."""
+    text = path.read_text(encoding="utf-8")
+    return sorted(set(_MOCK_CLASS_RE.findall(text)))
+
+
+def read_registries(sources: dict) -> dict:
+    """Import each registry named in ATLAS_SOURCES["registries"] and render its keys. Import, never parse."""
+    import importlib
+
+    out: dict[str, list[str]] = {}
+    for reg_name, module_path in sources.items():
+        mod = importlib.import_module(module_path)
+        value = getattr(mod, reg_name)
+        if isinstance(value, dict):
+            out[reg_name] = sorted(value.keys())
+        elif isinstance(value, (list, tuple)):
+            out[reg_name] = [getattr(item, "key", str(item)) for item in value]
+        else:
+            out[reg_name] = []
+    return out
+
+
 def build_atlas() -> dict:
     functions, classes = walk_python(ATLAS_SOURCES["python"])
+    ts = walk_typescript(ATLAS_SOURCES["typescript"])
     return {
         "python_functions": functions,
         "python_classes": classes,
         "config_keys": read_config_keys(),
+        "react_components": ts["components"],
+        "react_hooks": ts["hooks"],
+        "react_exports": ts["exports"],
+        "mock_css_classes": read_mock_classes(ROOT / ATLAS_SOURCES["mock_css"]),
+        "registries": read_registries(ATLAS_SOURCES["registries"]),
     }
 
 
@@ -246,6 +367,50 @@ def render_markdown(atlas: dict) -> str:
         L.append("")
         L.append(f"> {len(atlas['config_keys']) - n} more in PROJECT_ATLAS.json")
     L.append("")
+
+    L.append(f"## React components ({len(atlas['react_components'])})")
+    L.append("")
+    L.append("| Name | File:line | Props |")
+    L.append("|---|---|---|")
+    for e in atlas["react_components"][:n]:
+        props = ", ".join(e["props"]) or "-"
+        L.append(f"| `{e['name']}` | `{e['file']}:{e['line']}` | {props} |")
+    if len(atlas["react_components"]) > n:
+        L.append("")
+        L.append(f"> {len(atlas['react_components']) - n} more in PROJECT_ATLAS.json")
+    L.append("")
+
+    L.append(f"## React hooks ({len(atlas['react_hooks'])})")
+    L.append("")
+    L.append("| Name | File:line |")
+    L.append("|---|---|")
+    for e in atlas["react_hooks"][:n]:
+        L.append(f"| `{e['name']}` | `{e['file']}:{e['line']}` |")
+    if len(atlas["react_hooks"]) > n:
+        L.append("")
+        L.append(f"> {len(atlas['react_hooks']) - n} more in PROJECT_ATLAS.json")
+    L.append("")
+
+    L.append(f"## Mock CSS classes ({len(atlas['mock_css_classes'])})")
+    L.append("")
+    L.append("Owned by `theme/mock-v12.css` -- naming an internal class that collides silently inherits its rule (section 10).")
+    L.append("")
+    L.append(", ".join(f"`{c}`" for c in atlas["mock_css_classes"][:n * 3]))
+    if len(atlas["mock_css_classes"]) > n * 3:
+        L.append("")
+        L.append(f"> {len(atlas['mock_css_classes']) - n * 3} more in PROJECT_ATLAS.json")
+    L.append("")
+
+    L.append("## Registries")
+    L.append("")
+    for reg_name, keys in atlas["registries"].items():
+        L.append(f"### {reg_name} ({len(keys)})")
+        L.append("")
+        L.append(", ".join(f"`{k}`" for k in keys[:n]) or "-")
+        if len(keys) > n:
+            L.append("")
+            L.append(f"> {len(keys) - n} more in PROJECT_ATLAS.json")
+        L.append("")
 
     return "\n".join(L)
 

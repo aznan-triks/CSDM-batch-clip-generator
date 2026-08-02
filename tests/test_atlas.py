@@ -56,3 +56,22 @@ def test_check_mode_notices_a_stale_atlas(atlas, tmp_path):
         assert done.returncode != 0
     finally:
         ATLAS_JSON.write_text(original, encoding="utf-8")
+
+
+def test_it_found_the_react_half(atlas):
+    names = {c["name"] for c in atlas["react_components"]}
+    # Named, not counted: a count would drift, these three will not vanish
+    # without someone noticing.
+    assert {"Card", "ActionButton", "AppShell"} <= names
+
+
+def test_component_props_are_captured(atlas):
+    button = next(c for c in atlas["react_components"] if c["name"] == "ActionButton")
+    assert "label" in button["props"] and "variant" in button["props"]
+
+
+def test_the_mock_owns_a_global_class_namespace(atlas):
+    # section 10: naming an internal class that the mock already styles has cost
+    # two bugs. This list is how the next one gets caught before it is written.
+    owned = set(atlas["mock_css_classes"])
+    assert {"shell", "sec", "chip", "btn"} <= owned

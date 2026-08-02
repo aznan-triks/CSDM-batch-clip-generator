@@ -5880,5 +5880,915 @@
       "name": "cs2_process_name",
       "default": "cs2.exe"
     }
-  ]
+  ],
+  "react_components": [
+    {
+      "name": "App",
+      "file": "electron/renderer/src/App.tsx",
+      "line": 4,
+      "props": []
+    },
+    {
+      "name": "ActionButton",
+      "file": "electron/renderer/src/components/ActionButton.tsx",
+      "line": 46,
+      "props": [
+        "label",
+        "icon",
+        "variant",
+        "armed",
+        "disabled",
+        "onClick"
+      ]
+    },
+    {
+      "name": "Card",
+      "file": "electron/renderer/src/components/Card.tsx",
+      "line": 58,
+      "props": [
+        "title",
+        "icon",
+        "children",
+        "className",
+        "count",
+        "open",
+        "onToggle",
+        "dragHandle",
+        "onResizeToggle"
+      ]
+    },
+    {
+      "name": "Chip",
+      "file": "electron/renderer/src/components/Chip.tsx",
+      "line": 20,
+      "props": [
+        "label",
+        "selected",
+        "onToggle",
+        "disabled"
+      ]
+    },
+    {
+      "name": "DateField",
+      "file": "electron/renderer/src/components/DateField.tsx",
+      "line": 38,
+      "props": [
+        "id",
+        "label",
+        "value",
+        "onChange"
+      ]
+    },
+    {
+      "name": "DemoPicker",
+      "file": "electron/renderer/src/components/DemoPicker.tsx",
+      "line": 39,
+      "props": [
+        "demos",
+        "checked",
+        "onToggle",
+        "onSetAll",
+        "onSetSelected"
+      ]
+    },
+    {
+      "name": "Field",
+      "file": "electron/renderer/src/components/Field.tsx",
+      "line": 25,
+      "props": [
+        "value",
+        "onChange",
+        "mono",
+        "placeholder",
+        "id",
+        "label",
+        "type"
+      ]
+    },
+    {
+      "name": "NumberField",
+      "file": "electron/renderer/src/components/NumberField.tsx",
+      "line": 25,
+      "props": [
+        "value",
+        "onChange",
+        "min",
+        "max",
+        "step",
+        "label",
+        "id"
+      ]
+    },
+    {
+      "name": "PathField",
+      "file": "electron/renderer/src/components/PathField.tsx",
+      "line": 23,
+      "props": [
+        "value",
+        "onChange",
+        "placeholder",
+        "id",
+        "label",
+        "mode"
+      ]
+    },
+    {
+      "name": "Segmented",
+      "file": "electron/renderer/src/components/Segmented.tsx",
+      "line": 28,
+      "props": [
+        "options",
+        "value",
+        "onChange",
+        "label",
+        "disabled"
+      ]
+    },
+    {
+      "name": "Slider",
+      "file": "electron/renderer/src/components/Slider.tsx",
+      "line": 27,
+      "props": [
+        "value",
+        "onChange",
+        "min",
+        "max",
+        "step",
+        "label",
+        "readout",
+        "id"
+      ]
+    },
+    {
+      "name": "StatStrip",
+      "file": "electron/renderer/src/components/StatStrip.tsx",
+      "line": 40,
+      "props": [
+        "compact"
+      ]
+    },
+    {
+      "name": "Tab",
+      "file": "electron/renderer/src/components/Tab.tsx",
+      "line": 21,
+      "props": [
+        "label",
+        "icon",
+        "active",
+        "onSelect"
+      ]
+    },
+    {
+      "name": "TabBar",
+      "file": "electron/renderer/src/components/Tab.tsx",
+      "line": 60,
+      "props": [
+        "children"
+      ]
+    },
+    {
+      "name": "Reticle",
+      "file": "electron/renderer/src/cursor/Reticle.tsx",
+      "line": 53,
+      "props": []
+    },
+    {
+      "name": "ClickSpark",
+      "file": "electron/renderer/src/effects/ClickSpark.tsx",
+      "line": 24,
+      "props": []
+    },
+    {
+      "name": "FilterRow",
+      "file": "electron/renderer/src/settings/FilterRow.tsx",
+      "line": 17,
+      "props": []
+    },
+    {
+      "name": "SettingControl",
+      "file": "electron/renderer/src/settings/SettingControl.tsx",
+      "line": 19,
+      "props": []
+    },
+    {
+      "name": "SettingsProvider",
+      "file": "electron/renderer/src/settings/store.tsx",
+      "line": 32,
+      "props": []
+    },
+    {
+      "name": "DatabaseProvider",
+      "file": "electron/renderer/src/settings/useDatabase.tsx",
+      "line": 106,
+      "props": []
+    },
+    {
+      "name": "TablesProvider",
+      "file": "electron/renderer/src/settings/useTables.tsx",
+      "line": 105,
+      "props": []
+    },
+    {
+      "name": "ActionBar",
+      "file": "electron/renderer/src/shell/ActionBar.tsx",
+      "line": 38,
+      "props": [
+        "registerButton",
+        "weapon"
+      ]
+    },
+    {
+      "name": "AppShell",
+      "file": "electron/renderer/src/shell/AppShell.tsx",
+      "line": 34,
+      "props": []
+    },
+    {
+      "name": "Backdrop",
+      "file": "electron/renderer/src/shell/Backdrop.tsx",
+      "line": 46,
+      "props": []
+    },
+    {
+      "name": "LogConsole",
+      "file": "electron/renderer/src/shell/LogConsole.tsx",
+      "line": 147,
+      "props": []
+    },
+    {
+      "name": "SectionList",
+      "file": "electron/renderer/src/shell/SectionList.tsx",
+      "line": 48,
+      "props": [
+        "tabId",
+        "sections"
+      ]
+    },
+    {
+      "name": "CaptureTab",
+      "file": "electron/renderer/src/tabs/CaptureTab.tsx",
+      "line": 62,
+      "props": []
+    },
+    {
+      "name": "Cs2EffectsSection",
+      "file": "electron/renderer/src/tabs/Cs2EffectsSection.tsx",
+      "line": 85,
+      "props": []
+    },
+    {
+      "name": "DemoSelectionSection",
+      "file": "electron/renderer/src/tabs/DemoSelectionSection.tsx",
+      "line": 82,
+      "props": []
+    },
+    {
+      "name": "HlaeOptionsSection",
+      "file": "electron/renderer/src/tabs/HlaeOptionsSection.tsx",
+      "line": 24,
+      "props": []
+    },
+    {
+      "name": "KillFiltersSection",
+      "file": "electron/renderer/src/tabs/KillFiltersSection.tsx",
+      "line": 254,
+      "props": []
+    },
+    {
+      "name": "MapFilterSection",
+      "file": "electron/renderer/src/tabs/MapFilterSection.tsx",
+      "line": 23,
+      "props": []
+    },
+    {
+      "name": "MatchTypesSection",
+      "file": "electron/renderer/src/tabs/MatchTypesSection.tsx",
+      "line": 44,
+      "props": []
+    },
+    {
+      "name": "PlayerSection",
+      "file": "electron/renderer/src/tabs/PlayerSection.tsx",
+      "line": 79,
+      "props": []
+    },
+    {
+      "name": "PresetSection",
+      "file": "electron/renderer/src/tabs/PresetSection.tsx",
+      "line": 56,
+      "props": [
+        "open",
+        "onToggle",
+        "dragHandle"
+      ]
+    },
+    {
+      "name": "SettingsTab",
+      "file": "electron/renderer/src/tabs/SettingsTab.tsx",
+      "line": 52,
+      "props": []
+    },
+    {
+      "name": "TagsTab",
+      "file": "electron/renderer/src/tabs/TagsTab.tsx",
+      "line": 54,
+      "props": []
+    },
+    {
+      "name": "VideoTab",
+      "file": "electron/renderer/src/tabs/VideoTab.tsx",
+      "line": 60,
+      "props": []
+    },
+    {
+      "name": "WeaponFilterSection",
+      "file": "electron/renderer/src/tabs/WeaponFilterSection.tsx",
+      "line": 32,
+      "props": []
+    },
+    {
+      "name": "WeaponBand",
+      "file": "electron/renderer/src/weapon/WeaponBand.tsx",
+      "line": 46,
+      "props": [
+        "weaponId",
+        "status",
+        "progress",
+        "counter",
+        "frameRef",
+        "buttonRef"
+      ]
+    }
+  ],
+  "react_hooks": [
+    {
+      "name": "useEngineState",
+      "file": "electron/renderer/src/motion/useEngineState.ts",
+      "line": 124
+    },
+    {
+      "name": "useSectionLayout",
+      "file": "electron/renderer/src/shell/sectionLayout.ts",
+      "line": 37
+    },
+    {
+      "name": "useCardDrag",
+      "file": "electron/renderer/src/shell/useCardDrag.ts",
+      "line": 18
+    },
+    {
+      "name": "useTypewriter",
+      "file": "electron/renderer/src/shell/useTypewriter.ts",
+      "line": 30
+    },
+    {
+      "name": "useSettingsBatch",
+      "file": "electron/renderer/src/settings/store.tsx",
+      "line": 116
+    },
+    {
+      "name": "useAllSettings",
+      "file": "electron/renderer/src/settings/store.tsx",
+      "line": 128
+    },
+    {
+      "name": "useSettingsStatus",
+      "file": "electron/renderer/src/settings/store.tsx",
+      "line": 133
+    },
+    {
+      "name": "useDatabase",
+      "file": "electron/renderer/src/settings/useDatabase.tsx",
+      "line": 111
+    },
+    {
+      "name": "useTables",
+      "file": "electron/renderer/src/settings/useTables.tsx",
+      "line": 110
+    }
+  ],
+  "react_exports": [
+    {
+      "name": "send",
+      "file": "electron/renderer/src/bridge.ts",
+      "line": 101
+    },
+    {
+      "name": "sendCommand",
+      "file": "electron/renderer/src/bridge.ts",
+      "line": 159
+    },
+    {
+      "name": "runCommand",
+      "file": "electron/renderer/src/bridge.ts",
+      "line": 168
+    },
+    {
+      "name": "onMessage",
+      "file": "electron/renderer/src/bridge.ts",
+      "line": 187
+    },
+    {
+      "name": "pickPath",
+      "file": "electron/renderer/src/bridge.ts",
+      "line": 192
+    },
+    {
+      "name": "pickSavePath",
+      "file": "electron/renderer/src/bridge.ts",
+      "line": 197
+    },
+    {
+      "name": "registerSequence",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 76
+    },
+    {
+      "name": "registeredSequences",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 85
+    },
+    {
+      "name": "resetSequences",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 90
+    },
+    {
+      "name": "setIntensity",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 99
+    },
+    {
+      "name": "getIntensity",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 104
+    },
+    {
+      "name": "onIntensityChange",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 108
+    },
+    {
+      "name": "prefersReducedMotion",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 114
+    },
+    {
+      "name": "effectiveIntensity",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 124
+    },
+    {
+      "name": "isOverriddenBySystem",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 129
+    },
+    {
+      "name": "play",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 146
+    },
+    {
+      "name": "playsDecorative",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 218
+    },
+    {
+      "name": "INTENSITIES",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 22
+    },
+    {
+      "name": "FX_CLASS_PREFIX",
+      "file": "electron/renderer/src/motion/engine.ts",
+      "line": 36
+    },
+    {
+      "name": "MOTION",
+      "file": "electron/renderer/src/motion/tokens.ts",
+      "line": 13
+    },
+    {
+      "name": "DECORATIVE_SEQUENCES",
+      "file": "electron/renderer/src/motion/tokens.ts",
+      "line": 210
+    },
+    {
+      "name": "reduceEngineState",
+      "file": "electron/renderer/src/motion/useEngineState.ts",
+      "line": 73
+    },
+    {
+      "name": "INITIAL_ENGINE_STATE",
+      "file": "electron/renderer/src/motion/useEngineState.ts",
+      "line": 59
+    },
+    {
+      "name": "NO_CONTROL_BY_DESIGN",
+      "file": "electron/renderer/src/settings/coverage-ledger.ts",
+      "line": 20
+    },
+    {
+      "name": "NOT_YET_PORTED",
+      "file": "electron/renderer/src/settings/coverage-ledger.ts",
+      "line": 42
+    },
+    {
+      "name": "fieldForTab",
+      "file": "electron/renderer/src/shell/backdropField.ts",
+      "line": 120
+    },
+    {
+      "name": "valueNoise",
+      "file": "electron/renderer/src/shell/backdropField.ts",
+      "line": 137
+    },
+    {
+      "name": "cellIntensity",
+      "file": "electron/renderer/src/shell/backdropField.ts",
+      "line": 156
+    },
+    {
+      "name": "parseAlpha",
+      "file": "electron/renderer/src/shell/backdropField.ts",
+      "line": 190
+    },
+    {
+      "name": "borderAlpha",
+      "file": "electron/renderer/src/shell/backdropField.ts",
+      "line": 201
+    },
+    {
+      "name": "drawMotif",
+      "file": "electron/renderer/src/shell/backdropField.ts",
+      "line": 213
+    },
+    {
+      "name": "BACKDROP",
+      "file": "electron/renderer/src/shell/backdropField.ts",
+      "line": 60
+    },
+    {
+      "name": "BACKDROP_BY_TAB",
+      "file": "electron/renderer/src/shell/backdropField.ts",
+      "line": 108
+    },
+    {
+      "name": "narrate",
+      "file": "electron/renderer/src/shell/consoleNarrative.ts",
+      "line": 107
+    },
+    {
+      "name": "promptFor",
+      "file": "electron/renderer/src/shell/consoleNarrative.ts",
+      "line": 185
+    },
+    {
+      "name": "reciteSelection",
+      "file": "electron/renderer/src/shell/consoleNarrative.ts",
+      "line": 267
+    },
+    {
+      "name": "PROMPT_COMMANDS",
+      "file": "electron/renderer/src/shell/consoleNarrative.ts",
+      "line": 176
+    },
+    {
+      "name": "clampSplitPct",
+      "file": "electron/renderer/src/shell/splitPane.ts",
+      "line": 13
+    },
+    {
+      "name": "SPLIT_PCT_RANGE",
+      "file": "electron/renderer/src/shell/splitPane.ts",
+      "line": 10
+    },
+    {
+      "name": "SPLIT_PCT_DEFAULT",
+      "file": "electron/renderer/src/shell/splitPane.ts",
+      "line": 11
+    },
+    {
+      "name": "TABS",
+      "file": "electron/renderer/src/shell/tabs.ts",
+      "line": 17
+    },
+    {
+      "name": "resolveAccent",
+      "file": "electron/renderer/src/theme/accent.ts",
+      "line": 54
+    },
+    {
+      "name": "hexToRgb",
+      "file": "electron/renderer/src/theme/accent.ts",
+      "line": 66
+    },
+    {
+      "name": "rgbToHex",
+      "file": "electron/renderer/src/theme/accent.ts",
+      "line": 85
+    },
+    {
+      "name": "relativeLuminance",
+      "file": "electron/renderer/src/theme/accent.ts",
+      "line": 94
+    },
+    {
+      "name": "contrastRatio",
+      "file": "electron/renderer/src/theme/accent.ts",
+      "line": 104
+    },
+    {
+      "name": "scaleLightness",
+      "file": "electron/renderer/src/theme/accent.ts",
+      "line": 112
+    },
+    {
+      "name": "readableOn",
+      "file": "electron/renderer/src/theme/accent.ts",
+      "line": 152
+    },
+    {
+      "name": "applyAccent",
+      "file": "electron/renderer/src/theme/accent.ts",
+      "line": 164
+    },
+    {
+      "name": "ACCENT_PRESETS",
+      "file": "electron/renderer/src/theme/accent.ts",
+      "line": 28
+    },
+    {
+      "name": "DEFAULT_ACCENT",
+      "file": "electron/renderer/src/theme/accent.ts",
+      "line": 40
+    },
+    {
+      "name": "applyMode",
+      "file": "electron/renderer/src/theme/mode.ts",
+      "line": 59
+    },
+    {
+      "name": "GROUND_MODES",
+      "file": "electron/renderer/src/theme/mode.ts",
+      "line": 29
+    },
+    {
+      "name": "DEFAULT_GROUND",
+      "file": "electron/renderer/src/theme/mode.ts",
+      "line": 43
+    },
+    {
+      "name": "createActionController",
+      "file": "electron/renderer/src/weapon/controller.ts",
+      "line": 58
+    },
+    {
+      "name": "registerWeaponSequences",
+      "file": "electron/renderer/src/weapon/sequences.ts",
+      "line": 517
+    },
+    {
+      "name": "forgetWeaponSequences",
+      "file": "electron/renderer/src/weapon/sequences.ts",
+      "line": 530
+    },
+    {
+      "name": "ACTION_SEQUENCES",
+      "file": "electron/renderer/src/weapon/sequences.ts",
+      "line": 503
+    },
+    {
+      "name": "classOf",
+      "file": "electron/renderer/src/weapon/silhouettes.ts",
+      "line": 103
+    },
+    {
+      "name": "silhouetteFor",
+      "file": "electron/renderer/src/weapon/silhouettes.ts",
+      "line": 122
+    },
+    {
+      "name": "PACK_NAMES",
+      "file": "electron/renderer/src/weapon/silhouettes.ts",
+      "line": 128
+    },
+    {
+      "name": "BAND_ART",
+      "file": "electron/renderer/src/weapon/silhouettes.ts",
+      "line": 131
+    },
+    {
+      "name": "weaponById",
+      "file": "electron/renderer/src/weapon/weapons.ts",
+      "line": 91
+    },
+    {
+      "name": "WEAPONS",
+      "file": "electron/renderer/src/weapon/weapons.ts",
+      "line": 55
+    },
+    {
+      "name": "DEFAULT_WEAPON_ID",
+      "file": "electron/renderer/src/weapon/weapons.ts",
+      "line": 89
+    },
+    {
+      "name": "C4_ART",
+      "file": "electron/renderer/src/weapon/weapons.ts",
+      "line": 102
+    },
+    {
+      "name": "ICONS",
+      "file": "electron/renderer/src/icons/index.tsx",
+      "line": 363
+    },
+    {
+      "name": "SAVE_DEBOUNCE_MS",
+      "file": "electron/renderer/src/settings/store.tsx",
+      "line": 17
+    },
+    {
+      "name": "LOG_CONSOLE",
+      "file": "electron/renderer/src/shell/LogConsole.tsx",
+      "line": 18
+    },
+    {
+      "name": "rangeForShortcut",
+      "file": "electron/renderer/src/tabs/DemoSelectionSection.tsx",
+      "line": 58
+    },
+    {
+      "name": "PLAYER_LIST",
+      "file": "electron/renderer/src/tabs/PlayerSection.tsx",
+      "line": 45
+    }
+  ],
+  "mock_css_classes": [
+    "a",
+    "actbar",
+    "active",
+    "amb",
+    "app",
+    "av",
+    "b",
+    "bento",
+    "big-sw",
+    "bl",
+    "blue",
+    "body",
+    "boomfx",
+    "box",
+    "br",
+    "brand",
+    "brs",
+    "btn",
+    "bx",
+    "c4",
+    "car",
+    "casc",
+    "casc-g",
+    "cbr",
+    "cc",
+    "cd",
+    "ch",
+    "chip",
+    "chips",
+    "closed",
+    "cnt",
+    "console",
+    "cring",
+    "cur",
+    "customcursor",
+    "d",
+    "danger",
+    "derived",
+    "dot",
+    "dv",
+    "excl",
+    "fire",
+    "fl",
+    "fld",
+    "g",
+    "ghost",
+    "gl",
+    "glx",
+    "go",
+    "grid",
+    "gun",
+    "gun2",
+    "gunmini",
+    "guns",
+    "hexin",
+    "hit",
+    "html",
+    "hud-inner",
+    "hud-nav",
+    "ic",
+    "in",
+    "ind",
+    "k",
+    "lab",
+    "mark",
+    "muzzle",
+    "navtools",
+    "o",
+    "on",
+    "p",
+    "panel",
+    "pcard",
+    "pl",
+    "primary",
+    "prompt",
+    "rc",
+    "reticle",
+    "row",
+    "sb",
+    "scrollwrap",
+    "sec",
+    "seg",
+    "sel",
+    "sh",
+    "shake",
+    "shell",
+    "show",
+    "slider",
+    "snap",
+    "spark",
+    "spot",
+    "sq",
+    "st",
+    "stats",
+    "swrow",
+    "t",
+    "tab",
+    "tabs",
+    "tcursor",
+    "test",
+    "tk",
+    "tl",
+    "tools",
+    "tr",
+    "tracer",
+    "ts",
+    "v",
+    "wband",
+    "wide"
+  ],
+  "registries": {
+    "KILL_FILTER_REGISTRY": [
+      "kill_mod_through_smoke",
+      "kill_mod_no_scope",
+      "kill_mod_assisted_flash",
+      "kill_mod_wall_bang",
+      "kill_mod_attacker_blind",
+      "kill_mod_airborne",
+      "kill_mod_collateral",
+      "kill_mod_trois_shot",
+      "kill_mod_no_trois_shot",
+      "kill_mod_trois_tap",
+      "kill_mod_one_tap",
+      "kill_mod_spray_transfer",
+      "kill_mod_high_velocity",
+      "kill_mod_flick",
+      "kill_mod_savior",
+      "kill_mod_entry_frag",
+      "kill_mod_ace",
+      "kill_mod_multi_kill",
+      "kill_mod_bully",
+      "kill_mod_eco_frag",
+      "kill_mod_mate_pov"
+    ],
+    "COMMANDS": [
+      "cancel_preview",
+      "connect_db",
+      "delete_preset",
+      "demo_ask",
+      "demo_logs",
+      "describe_filters",
+      "hello",
+      "list_demos",
+      "list_presets",
+      "load_config",
+      "load_preset",
+      "ping",
+      "request_kill",
+      "request_stop",
+      "save_config",
+      "save_preset",
+      "start_preview",
+      "start_run",
+      "tag_create",
+      "tag_delete",
+      "tags_apply",
+      "tags_calc_range",
+      "tags_export",
+      "tags_import_apply",
+      "tags_import_scan",
+      "tags_remove",
+      "tags_search",
+      "tags_set_active",
+      "tkinter_check"
+    ]
+  }
 }

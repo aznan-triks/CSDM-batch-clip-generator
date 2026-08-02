@@ -122,3 +122,78 @@
 | `audio_codec` | `'libmp3lame'` |
 
 > 137 more in PROJECT_ATLAS.json
+
+## React components (40)
+
+| Name | File:line | Props |
+|---|---|---|
+| `App` | `electron/renderer/src/App.tsx:4` | - |
+| `ActionButton` | `electron/renderer/src/components/ActionButton.tsx:46` | label, icon, variant, armed, disabled, onClick |
+| `Card` | `electron/renderer/src/components/Card.tsx:58` | title, icon, children, className, count, open, onToggle, dragHandle, onResizeToggle |
+| `Chip` | `electron/renderer/src/components/Chip.tsx:20` | label, selected, onToggle, disabled |
+| `DateField` | `electron/renderer/src/components/DateField.tsx:38` | id, label, value, onChange |
+| `DemoPicker` | `electron/renderer/src/components/DemoPicker.tsx:39` | demos, checked, onToggle, onSetAll, onSetSelected |
+| `Field` | `electron/renderer/src/components/Field.tsx:25` | value, onChange, mono, placeholder, id, label, type |
+| `NumberField` | `electron/renderer/src/components/NumberField.tsx:25` | value, onChange, min, max, step, label, id |
+| `PathField` | `electron/renderer/src/components/PathField.tsx:23` | value, onChange, placeholder, id, label, mode |
+| `Segmented` | `electron/renderer/src/components/Segmented.tsx:28` | options, value, onChange, label, disabled |
+| `Slider` | `electron/renderer/src/components/Slider.tsx:27` | value, onChange, min, max, step, label, readout, id |
+| `StatStrip` | `electron/renderer/src/components/StatStrip.tsx:40` | compact |
+| `Tab` | `electron/renderer/src/components/Tab.tsx:21` | label, icon, active, onSelect |
+| `TabBar` | `electron/renderer/src/components/Tab.tsx:60` | children |
+| `Reticle` | `electron/renderer/src/cursor/Reticle.tsx:53` | - |
+| `ClickSpark` | `electron/renderer/src/effects/ClickSpark.tsx:24` | - |
+| `FilterRow` | `electron/renderer/src/settings/FilterRow.tsx:17` | - |
+| `SettingControl` | `electron/renderer/src/settings/SettingControl.tsx:19` | - |
+| `SettingsProvider` | `electron/renderer/src/settings/store.tsx:32` | - |
+| `DatabaseProvider` | `electron/renderer/src/settings/useDatabase.tsx:106` | - |
+| `TablesProvider` | `electron/renderer/src/settings/useTables.tsx:105` | - |
+| `ActionBar` | `electron/renderer/src/shell/ActionBar.tsx:38` | registerButton, weapon |
+| `AppShell` | `electron/renderer/src/shell/AppShell.tsx:34` | - |
+| `Backdrop` | `electron/renderer/src/shell/Backdrop.tsx:46` | - |
+| `LogConsole` | `electron/renderer/src/shell/LogConsole.tsx:147` | - |
+| `SectionList` | `electron/renderer/src/shell/SectionList.tsx:48` | tabId, sections |
+| `CaptureTab` | `electron/renderer/src/tabs/CaptureTab.tsx:62` | - |
+| `Cs2EffectsSection` | `electron/renderer/src/tabs/Cs2EffectsSection.tsx:85` | - |
+| `DemoSelectionSection` | `electron/renderer/src/tabs/DemoSelectionSection.tsx:82` | - |
+| `HlaeOptionsSection` | `electron/renderer/src/tabs/HlaeOptionsSection.tsx:24` | - |
+| `KillFiltersSection` | `electron/renderer/src/tabs/KillFiltersSection.tsx:254` | - |
+| `MapFilterSection` | `electron/renderer/src/tabs/MapFilterSection.tsx:23` | - |
+| `MatchTypesSection` | `electron/renderer/src/tabs/MatchTypesSection.tsx:44` | - |
+| `PlayerSection` | `electron/renderer/src/tabs/PlayerSection.tsx:79` | - |
+| `PresetSection` | `electron/renderer/src/tabs/PresetSection.tsx:56` | open, onToggle, dragHandle |
+| `SettingsTab` | `electron/renderer/src/tabs/SettingsTab.tsx:52` | - |
+| `TagsTab` | `electron/renderer/src/tabs/TagsTab.tsx:54` | - |
+| `VideoTab` | `electron/renderer/src/tabs/VideoTab.tsx:60` | - |
+| `WeaponFilterSection` | `electron/renderer/src/tabs/WeaponFilterSection.tsx:32` | - |
+| `WeaponBand` | `electron/renderer/src/weapon/WeaponBand.tsx:46` | weaponId, status, progress, counter, frameRef, buttonRef |
+
+## React hooks (9)
+
+| Name | File:line |
+|---|---|
+| `useEngineState` | `electron/renderer/src/motion/useEngineState.ts:124` |
+| `useSectionLayout` | `electron/renderer/src/shell/sectionLayout.ts:37` |
+| `useCardDrag` | `electron/renderer/src/shell/useCardDrag.ts:18` |
+| `useTypewriter` | `electron/renderer/src/shell/useTypewriter.ts:30` |
+| `useSettingsBatch` | `electron/renderer/src/settings/store.tsx:116` |
+| `useAllSettings` | `electron/renderer/src/settings/store.tsx:128` |
+| `useSettingsStatus` | `electron/renderer/src/settings/store.tsx:133` |
+| `useDatabase` | `electron/renderer/src/settings/useDatabase.tsx:111` |
+| `useTables` | `electron/renderer/src/settings/useTables.tsx:110` |
+
+## Mock CSS classes (109)
+
+Owned by `theme/mock-v12.css` -- naming an internal class that collides silently inherits its rule (section 10).
+
+`a`, `actbar`, `active`, `amb`, `app`, `av`, `b`, `bento`, `big-sw`, `bl`, `blue`, `body`, `boomfx`, `box`, `br`, `brand`, `brs`, `btn`, `bx`, `c4`, `car`, `casc`, `casc-g`, `cbr`, `cc`, `cd`, `ch`, `chip`, `chips`, `closed`, `cnt`, `console`, `cring`, `cur`, `customcursor`, `d`, `danger`, `derived`, `dot`, `dv`, `excl`, `fire`, `fl`, `fld`, `g`, `ghost`, `gl`, `glx`, `go`, `grid`, `gun`, `gun2`, `gunmini`, `guns`, `hexin`, `hit`, `html`, `hud-inner`, `hud-nav`, `ic`, `in`, `ind`, `k`, `lab`, `mark`, `muzzle`, `navtools`, `o`, `on`, `p`, `panel`, `pcard`, `pl`, `primary`, `prompt`, `rc`, `reticle`, `row`, `sb`, `scrollwrap`, `sec`, `seg`, `sel`, `sh`, `shake`, `shell`, `show`, `slider`, `snap`, `spark`, `spot`, `sq`, `st`, `stats`, `swrow`, `t`, `tab`, `tabs`, `tcursor`, `test`, `tk`, `tl`, `tools`, `tr`, `tracer`, `ts`, `v`, `wband`, `wide`
+
+## Registries
+
+### KILL_FILTER_REGISTRY (21)
+
+`kill_mod_through_smoke`, `kill_mod_no_scope`, `kill_mod_assisted_flash`, `kill_mod_wall_bang`, `kill_mod_attacker_blind`, `kill_mod_airborne`, `kill_mod_collateral`, `kill_mod_trois_shot`, `kill_mod_no_trois_shot`, `kill_mod_trois_tap`, `kill_mod_one_tap`, `kill_mod_spray_transfer`, `kill_mod_high_velocity`, `kill_mod_flick`, `kill_mod_savior`, `kill_mod_entry_frag`, `kill_mod_ace`, `kill_mod_multi_kill`, `kill_mod_bully`, `kill_mod_eco_frag`, `kill_mod_mate_pov`
+
+### COMMANDS (29)
+
+`cancel_preview`, `connect_db`, `delete_preset`, `demo_ask`, `demo_logs`, `describe_filters`, `hello`, `list_demos`, `list_presets`, `load_config`, `load_preset`, `ping`, `request_kill`, `request_stop`, `save_config`, `save_preset`, `start_preview`, `start_run`, `tag_create`, `tag_delete`, `tags_apply`, `tags_calc_range`, `tags_export`, `tags_import_apply`, `tags_import_scan`, `tags_remove`, `tags_search`, `tags_set_active`, `tkinter_check`
