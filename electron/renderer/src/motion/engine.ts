@@ -94,11 +94,39 @@ export function resetSequences(): void {
 // -- intensity --
 
 let intensity: Intensity = "full";
+
+/**
+ * False while this window is not the one being worked in.
+ *
+ * A capture run puts CS2 in front and leaves this window visible on a second
+ * screen. Electron's own `backgroundThrottling` only slows a window that is
+ * hidden or minimised, so nothing was stopping the backdrop from repainting
+ * its whole grid at full rate against the very recording it exists to help
+ * make. This is a gate, deliberately separate from `intensity`: coming back
+ * to the window must restore the user's choice, not overwrite it.
+ */
+let windowActive = true;
+
 const listeners = new Set<(value: Intensity) => void>();
+
+function notify(): void {
+  for (const listener of listeners) listener(effectiveIntensity());
+}
 
 export function setIntensity(value: Intensity): void {
   intensity = value;
-  for (const listener of listeners) listener(effectiveIntensity());
+  notify();
+}
+
+/** Report whether this window is the active one. Idempotent: same value, no notification. */
+export function setWindowActive(value: boolean): void {
+  if (windowActive === value) return;
+  windowActive = value;
+  notify();
+}
+
+export function isWindowActive(): boolean {
+  return windowActive;
 }
 
 export function getIntensity(): Intensity {
@@ -122,6 +150,8 @@ export function prefersReducedMotion(): boolean {
  * screen shows why the control is neutralised rather than silently ignoring it.
  */
 export function effectiveIntensity(): Intensity {
+  // The gate first: an inactive window animates nothing, whatever else is set.
+  if (!windowActive) return "none";
   return prefersReducedMotion() ? "none" : intensity;
 }
 

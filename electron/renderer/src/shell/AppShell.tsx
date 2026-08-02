@@ -5,6 +5,7 @@ import Reticle from "../cursor/Reticle";
 import ClickSpark from "../effects/ClickSpark";
 import { ICONS } from "../icons";
 import { useEngineState } from "../motion/useEngineState";
+import { useWindowActivity } from "../motion/useWindowActivity";
 import { useSetting } from "../settings/store";
 import CaptureTab from "../tabs/CaptureTab";
 import SettingsTab from "../tabs/SettingsTab";
@@ -34,6 +35,10 @@ import "./AppShell.css";
 export default function AppShell() {
   const [active, setActive] = useState<TabSpec["id"]>(TABS[0].id);
   const engine = useEngineState();
+
+  // The backdrop and every sequence read the motion gate; this is what closes
+  // it when CS2 takes the front during a run.
+  useWindowActivity();
 
   // main.tsx applies the hardcoded defaults before first paint (the async
   // settings store hasn't loaded yet). This shell is mounted for the app's
