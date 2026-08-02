@@ -1,0 +1,5884 @@
+{
+  "python_functions": [
+    {
+      "name": "_cmd_ping",
+      "file": "csdm/bridge/host.py",
+      "line": 32,
+      "signature": "_cmd_ping(host, command)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_hello",
+      "file": "csdm/bridge/host.py",
+      "line": 36,
+      "signature": "_cmd_hello(host, command)",
+      "doc": "Announce the engine on the log socket and name the build.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_describe_filters",
+      "file": "csdm/bridge/host.py",
+      "line": 56,
+      "signature": "_cmd_describe_filters(host, command)",
+      "doc": "Hand the renderer every static table it needs to build its rows.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_demo_logs",
+      "file": "csdm/bridge/host.py",
+      "line": 61,
+      "signature": "_cmd_demo_logs(host, command)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_demo_ask",
+      "file": "csdm/bridge/host.py",
+      "line": 70,
+      "signature": "_cmd_demo_ask(host, command)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_tkinter_check",
+      "file": "csdm/bridge/host.py",
+      "line": 76,
+      "signature": "_cmd_tkinter_check(host, command)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_request_stop",
+      "file": "csdm/bridge/host.py",
+      "line": 82,
+      "signature": "_cmd_request_stop(host, command)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_request_kill",
+      "file": "csdm/bridge/host.py",
+      "line": 87,
+      "signature": "_cmd_request_kill(host, command)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_cancel_preview",
+      "file": "csdm/bridge/host.py",
+      "line": 92,
+      "signature": "_cmd_cancel_preview(host, command)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_connect_db",
+      "file": "csdm/bridge/host.py",
+      "line": 97,
+      "signature": "_cmd_connect_db(host, command)",
+      "doc": "Resolve connection settings, read the CSDM database, adopt what it says,",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_cmd_list_demos",
+      "file": "csdm/bridge/host.py",
+      "line": 119,
+      "signature": "_cmd_list_demos(host, command)",
+      "doc": "Manual mode: hand the renderer every demo a match row points to.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_tags_search",
+      "file": "csdm/bridge/host.py",
+      "line": 129,
+      "signature": "_cmd_tags_search(host, command)",
+      "doc": "Find demos carrying the given tags, optionally filtered by a run cfg.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_tags_calc_range",
+      "file": "csdm/bridge/host.py",
+      "line": 142,
+      "signature": "_cmd_tags_calc_range(host, command)",
+      "doc": "Compute the date range spanned by demos carrying every given tag.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_tags_set_active",
+      "file": "csdm/bridge/host.py",
+      "line": 148,
+      "signature": "_cmd_tags_set_active(host, command)",
+      "doc": "Replace the server-side active-tag selection. An empty list deselects all.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_tags_apply",
+      "file": "csdm/bridge/host.py",
+      "line": 154,
+      "signature": "_cmd_tags_apply(host, command)",
+      "doc": "Apply every tag in `tag_names` to every demo in `demo_paths`.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_tags_remove",
+      "file": "csdm/bridge/host.py",
+      "line": 161,
+      "signature": "_cmd_tags_remove(host, command)",
+      "doc": "Remove every tag in `tag_names` from every demo in `demo_paths`.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_tag_create",
+      "file": "csdm/bridge/host.py",
+      "line": 168,
+      "signature": "_cmd_tag_create(host, command)",
+      "doc": "Create a tag. `tag_name` (not `name` -- that key already carries the",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_tag_delete",
+      "file": "csdm/bridge/host.py",
+      "line": 174,
+      "signature": "_cmd_tag_delete(host, command)",
+      "doc": "Delete a tag and its assignments.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_tags_export",
+      "file": "csdm/bridge/host.py",
+      "line": 179,
+      "signature": "_cmd_tags_export(host, command)",
+      "doc": "Write every tag (or only `tag_ids`, when given) and its assignments",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_tags_import_scan",
+      "file": "csdm/bridge/host.py",
+      "line": 188,
+      "signature": "_cmd_tags_import_scan(host, command)",
+      "doc": "Read a tags export file and report which tags it references that",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_tags_import_apply",
+      "file": "csdm/bridge/host.py",
+      "line": 198,
+      "signature": "_cmd_tags_import_apply(host, command)",
+      "doc": "Create `tags_to_create`, then re-parse `path` and replay its",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_load_config",
+      "file": "csdm/bridge/host.py",
+      "line": 208,
+      "signature": "_cmd_load_config(host, command)",
+      "doc": "Hand the saved configuration to the renderer, migrations already applied.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_save_config",
+      "file": "csdm/bridge/host.py",
+      "line": 213,
+      "signature": "_cmd_save_config(host, command)",
+      "doc": "Write the configuration the renderer holds.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_list_presets",
+      "file": "csdm/bridge/host.py",
+      "line": 226,
+      "signature": "_cmd_list_presets(host, command)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_save_preset",
+      "file": "csdm/bridge/host.py",
+      "line": 230,
+      "signature": "_cmd_save_preset(host, command)",
+      "doc": "Store one preset. The preset's own name travels as `preset`, not `name`:",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_load_preset",
+      "file": "csdm/bridge/host.py",
+      "line": 248,
+      "signature": "_cmd_load_preset(host, command)",
+      "doc": "Return a preset's values and the keys it is allowed to overwrite.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_delete_preset",
+      "file": "csdm/bridge/host.py",
+      "line": 258,
+      "signature": "_cmd_delete_preset(host, command)",
+      "doc": "Drop one preset. Refuses a name nobody has, like `load_preset` does:",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_start_run",
+      "file": "csdm/bridge/host.py",
+      "line": 270,
+      "signature": "_cmd_start_run(host, command)",
+      "doc": "Launch a batch run from the configuration the renderer holds.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_cmd_start_preview",
+      "file": "csdm/bridge/host.py",
+      "line": 282,
+      "signature": "_cmd_start_preview(host, command)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_run_command",
+      "file": "csdm/bridge/host.py",
+      "line": 322,
+      "signature": "_run_command(host, writer, command)",
+      "doc": "Execute one command in its own thread and send its `result` line.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "serve",
+      "file": "csdm/bridge/host.py",
+      "line": 345,
+      "signature": "serve(stdin, stdout)",
+      "doc": "Read commands from `stdin`, write protocol lines to `stdout`. Returns an exit code.",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/bridge/host.py",
+      "line": 26,
+      "signature": "__init__(self, ports)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/bridge/ports.py",
+      "line": 16,
+      "signature": "__init__(self, writer)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "log",
+      "file": "csdm/bridge/ports.py",
+      "line": 23,
+      "signature": "log(self, message, level='')",
+      "doc": "",
+      "usages": 25,
+      "tested": true
+    },
+    {
+      "name": "log_parts",
+      "file": "csdm/bridge/ports.py",
+      "line": 26,
+      "signature": "log_parts(self, parts)",
+      "doc": "",
+      "usages": 9,
+      "tested": true
+    },
+    {
+      "name": "state",
+      "file": "csdm/bridge/ports.py",
+      "line": 30,
+      "signature": "state(self, name, payload=None)",
+      "doc": "",
+      "usages": 46,
+      "tested": true
+    },
+    {
+      "name": "ask",
+      "file": "csdm/bridge/ports.py",
+      "line": 34,
+      "signature": "ask(self, kind, message, options)",
+      "doc": "Send a question and BLOCK this thread until the answer comes back.",
+      "usages": 9,
+      "tested": true
+    },
+    {
+      "name": "resolve_answer",
+      "file": "csdm/bridge/ports.py",
+      "line": 49,
+      "signature": "resolve_answer(self, answer_id, value)",
+      "doc": "Deliver an answer. Returns False for an id nobody is waiting on.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "encode",
+      "file": "csdm/bridge/protocol.py",
+      "line": 22,
+      "signature": "encode(obj)",
+      "doc": "Serialize one message to a single line, without its trailing newline.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "decode",
+      "file": "csdm/bridge/protocol.py",
+      "line": 27,
+      "signature": "decode(line)",
+      "doc": "Parse one line into a message. Raises ValueError on anything else.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/bridge/protocol.py",
+      "line": 43,
+      "signature": "__init__(self, stream)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "send",
+      "file": "csdm/bridge/protocol.py",
+      "line": 47,
+      "signature": "send(self, obj)",
+      "doc": "",
+      "usages": 29,
+      "tested": true
+    },
+    {
+      "name": "describe_filters",
+      "file": "csdm/bridge/tables.py",
+      "line": 15,
+      "signature": "describe_filters()",
+      "doc": "Every table the Capture and Video tabs need, in one round trip.",
+      "usages": 18,
+      "tested": true
+    },
+    {
+      "name": "_load_json",
+      "file": "csdm/config.py",
+      "line": 210,
+      "signature": "_load_json(path, default_factory=dict)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_save_json",
+      "file": "csdm/config.py",
+      "line": 219,
+      "signature": "_save_json(path, data)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "load_presets",
+      "file": "csdm/config.py",
+      "line": 226,
+      "signature": "load_presets()",
+      "doc": "",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "save_presets",
+      "file": "csdm/config.py",
+      "line": 229,
+      "signature": "save_presets(presets)",
+      "doc": "",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "preset_keys_for",
+      "file": "csdm/config.py",
+      "line": 233,
+      "signature": "preset_keys_for(cats)",
+      "doc": "Return the config keys a preset of these categories covers.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "build_preset",
+      "file": "csdm/config.py",
+      "line": 250,
+      "signature": "build_preset(cfg, cats)",
+      "doc": "Extract from `cfg` the preset the user asked to save.",
+      "usages": 3,
+      "tested": true
+    },
+    {
+      "name": "preset_cats",
+      "file": "csdm/config.py",
+      "line": 258,
+      "signature": "preset_cats(preset)",
+      "doc": "A stored preset's categories, old format or new.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "preset_payload",
+      "file": "csdm/config.py",
+      "line": 266,
+      "signature": "preset_payload(preset)",
+      "doc": "Return `(data, keys)` for a stored preset, old format or new.",
+      "usages": 3,
+      "tested": true
+    },
+    {
+      "name": "normalize_presets",
+      "file": "csdm/config.py",
+      "line": 275,
+      "signature": "normalize_presets(presets)",
+      "doc": "Presets as the bridge should send them: `cats` always present.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "load_saved_players",
+      "file": "csdm/config.py",
+      "line": 290,
+      "signature": "load_saved_players()",
+      "doc": "",
+      "usages": 3,
+      "tested": false
+    },
+    {
+      "name": "save_saved_players",
+      "file": "csdm/config.py",
+      "line": 293,
+      "signature": "save_saved_players(players)",
+      "doc": "",
+      "usages": 3,
+      "tested": false
+    },
+    {
+      "name": "load_asm_names",
+      "file": "csdm/config.py",
+      "line": 296,
+      "signature": "load_asm_names()",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "save_asm_names",
+      "file": "csdm/config.py",
+      "line": 299,
+      "signature": "save_asm_names(names)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_migrate_config",
+      "file": "csdm/config.py",
+      "line": 302,
+      "signature": "_migrate_config(saved, cfg)",
+      "doc": "Apply all backward-compatibility migrations from a saved config dict into cfg.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "load_config",
+      "file": "csdm/config.py",
+      "line": 335,
+      "signature": "load_config()",
+      "doc": "",
+      "usages": 8,
+      "tested": true
+    },
+    {
+      "name": "save_config",
+      "file": "csdm/config.py",
+      "line": 344,
+      "signature": "save_config(cfg)",
+      "doc": "",
+      "usages": 6,
+      "tested": true
+    },
+    {
+      "name": "iso_to_display",
+      "file": "csdm/core_utils.py",
+      "line": 19,
+      "signature": "iso_to_display(iso_str)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "display_to_iso",
+      "file": "csdm/core_utils.py",
+      "line": 32,
+      "signature": "display_to_iso(disp_str)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "ensure_csdm_dirs",
+      "file": "csdm/core_utils.py",
+      "line": 49,
+      "signature": "ensure_csdm_dirs()",
+      "doc": "",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "check_ffmpeg_available",
+      "file": "csdm/core_utils.py",
+      "line": 58,
+      "signature": "check_ffmpeg_available()",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "fmt_duration",
+      "file": "csdm/core_utils.py",
+      "line": 69,
+      "signature": "fmt_duration(seconds)",
+      "doc": "",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "progress_bar",
+      "file": "csdm/core_utils.py",
+      "line": 76,
+      "signature": "progress_bar(done, total, width=12, full='▰', empty='▱')",
+      "doc": "A terminal-style text progress bar: \"▰▰▰▱▱ 12/17\".",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "safe_folder_name",
+      "file": "csdm/core_utils.py",
+      "line": 90,
+      "signature": "safe_folder_name(name)",
+      "doc": "",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "build_camera_ticks",
+      "file": "csdm/core_utils.py",
+      "line": 96,
+      "signature": "build_camera_ticks(seq, tickrate)",
+      "doc": "",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "_generate_id_for_type",
+      "file": "csdm/core_utils.py",
+      "line": 107,
+      "signature": "_generate_id_for_type(data_type)",
+      "doc": "",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "_count_kills",
+      "file": "csdm/core_utils.py",
+      "line": 120,
+      "signature": "_count_kills(events)",
+      "doc": "Count kill-type events in a list.",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "process_is_running",
+      "file": "csdm/core_utils.py",
+      "line": 134,
+      "signature": "process_is_running(name)",
+      "doc": "True when a process with this image name is in the task list.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_detect_map_col",
+      "file": "csdm/engine/core.py",
+      "line": 108,
+      "signature": "_detect_map_col(schema)",
+      "doc": "Return (col, alias, join_sql) for the map-name column, or (None, \"m\", \"\").",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "discover_database",
+      "file": "csdm/engine/core.py",
+      "line": 136,
+      "signature": "discover_database(self)",
+      "doc": "Read the CSDM schema and everything the screens need to offer choices.",
+      "usages": 4,
+      "tested": true
+    },
+    {
+      "name": "_json_scalar",
+      "file": "csdm/engine/core.py",
+      "line": 379,
+      "signature": "_json_scalar(value)",
+      "doc": "Reduce one database scalar to something json.dumps accepts as-is.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "discovery_to_json",
+      "file": "csdm/engine/core.py",
+      "line": 387,
+      "signature": "discovery_to_json(self, data)",
+      "doc": "Return a discovery result the JSON pipe can carry unchanged.",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "apply_discovery",
+      "file": "csdm/engine/core.py",
+      "line": 405,
+      "signature": "apply_discovery(self, data)",
+      "doc": "Adopt a discovery result as this host's live database state.",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "_host_cfg",
+      "file": "csdm/engine/core.py",
+      "line": 437,
+      "signature": "_host_cfg(self, key)",
+      "doc": "Read one setting from the host's config, falling back to the default.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_await_process_exit",
+      "file": "csdm/engine/core.py",
+      "line": 448,
+      "signature": "_await_process_exit(self, name, probe=None)",
+      "doc": "Block until `name` is gone, then announce it. Returns False on timeout.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "set_pg_params",
+      "file": "csdm/engine/core.py",
+      "line": 472,
+      "signature": "set_pg_params(self, params)",
+      "doc": "Adopt the five PostgreSQL identifiers `_pg`/`_pg_fresh` read from `_pg_params`.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_pg_connect",
+      "file": "csdm/engine/core.py",
+      "line": 489,
+      "signature": "_pg_connect(self)",
+      "doc": "Open one new psycopg2 connection from `_pg_params`, or raise a readable error.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_pg",
+      "file": "csdm/engine/core.py",
+      "line": 521,
+      "signature": "_pg(self)",
+      "doc": "Return a live psycopg2 connection, reusing the existing one when possible.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_pg_fresh",
+      "file": "csdm/engine/core.py",
+      "line": 536,
+      "signature": "_pg_fresh(self)",
+      "doc": "Always create a new connection (used by background threads that must",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_resolve_cli",
+      "file": "csdm/engine/core.py",
+      "line": 541,
+      "signature": "_resolve_cli(self, p)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_find_col",
+      "file": "csdm/engine/core.py",
+      "line": 557,
+      "signature": "_find_col(self, table, candidates)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_qe_epoch_bounds",
+      "file": "csdm/engine/core.py",
+      "line": 573,
+      "signature": "_qe_epoch_bounds(cfg)",
+      "doc": "Epoch bounds (ts_from, ts_to) for the post-query Python date filter.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_qe_match_type_sql",
+      "file": "csdm/engine/core.py",
+      "line": 591,
+      "signature": "_qe_match_type_sql(self, cfg)",
+      "doc": "Match-type WHERE fragment: \"\" or (clause_str, [param values]).",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_qe_headshot_sql",
+      "file": "csdm/engine/core.py",
+      "line": 610,
+      "signature": "_qe_headshot_sql(self, cfg)",
+      "doc": "Headshot WHERE fragment. Returns (hs_col, clause).",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_qe_teamkill_sql",
+      "file": "csdm/engine/core.py",
+      "line": 631,
+      "signature": "_qe_teamkill_sql(self, cfg)",
+      "doc": "Teamkill include/exclude/only WHERE fragment.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_mods_dp2_global_any_union_enabled",
+      "file": "csdm/engine/core.py",
+      "line": 654,
+      "signature": "_mods_dp2_global_any_union_enabled(self, cfg)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_qe_suicide_sql",
+      "file": "csdm/engine/core.py",
+      "line": 666,
+      "signature": "_qe_suicide_sql(cfg, weapon_col)",
+      "doc": "Suicide WHERE fragment (params = SUICIDE_WEAPONS appended by caller).",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_mod_sql_expr",
+      "file": "csdm/engine/core.py",
+      "line": 679,
+      "signature": "_mod_sql_expr(mod_key, col, positive=True)",
+      "doc": "SQL expression for one mod column.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_qe_mod_sql",
+      "file": "csdm/engine/core.py",
+      "line": 692,
+      "signature": "_qe_mod_sql(self, cfg)",
+      "doc": "SQL-mod filter fragment.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_qe_detect_date_col",
+      "file": "csdm/engine/core.py",
+      "line": 771,
+      "signature": "_qe_detect_date_col(self)",
+      "doc": "Return the matches date column, auto-detecting and caching it once.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_qe_map_filter_sql",
+      "file": "csdm/engine/core.py",
+      "line": 797,
+      "signature": "_qe_map_filter_sql(self, cfg)",
+      "doc": "Map-filter WHERE fragment. Returns (clause, raw DB values as params).",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_query_events",
+      "file": "csdm/engine/core.py",
+      "line": 809,
+      "signature": "_query_events(self, cfg)",
+      "doc": "",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "_apply_db_postfilters",
+      "file": "csdm/engine/core.py",
+      "line": 1080,
+      "signature": "_apply_db_postfilters(self, cfg, results, sids)",
+      "doc": "Apply DB-level post-query filters that require cross-round context.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_fetch_all_kills_for_demos",
+      "file": "csdm/engine/core.py",
+      "line": 1358,
+      "signature": "_fetch_all_kills_for_demos(self, demo_paths)",
+      "doc": "Return a dict {demo_path: [kill_row, ...]} with ALL kills (all players)",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_apply_clutch_filter",
+      "file": "csdm/engine/core.py",
+      "line": 1475,
+      "signature": "_apply_clutch_filter(self, results, sids, cfg, all_kills_by_demo)",
+      "doc": "Filter results so that only events occurring during a clutch phase are kept.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_effective_before",
+      "file": "csdm/engine/core.py",
+      "line": 1778,
+      "signature": "_effective_before(self, cfg)",
+      "doc": "Return the effective BEFORE duration in seconds.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_build_sequences",
+      "file": "csdm/engine/core.py",
+      "line": 1789,
+      "signature": "_build_sequences(self, events, tickrate, before_s, after_s)",
+      "doc": "Build merged clip sequences from a list of events.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_get_sids",
+      "file": "csdm/engine/core.py",
+      "line": 1826,
+      "signature": "_get_sids(self, cfg)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_player_str",
+      "file": "csdm/engine/core.py",
+      "line": 1829,
+      "signature": "_player_str(self, cfg)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_cfg_num",
+      "file": "csdm/engine/core.py",
+      "line": 1838,
+      "signature": "_cfg_num(self, cfg, key, default, lo=None, hi=None, as_int=True)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_cfg_int",
+      "file": "csdm/engine/core.py",
+      "line": 1852,
+      "signature": "_cfg_int(self, cfg, key, default, lo=None, hi=None)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_cfg_float",
+      "file": "csdm/engine/core.py",
+      "line": 1855,
+      "signature": "_cfg_float(self, cfg, key, default, lo=None, hi=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_cfg_bool",
+      "file": "csdm/engine/core.py",
+      "line": 1858,
+      "signature": "_cfg_bool(self, cfg, key, default)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_common_cs2_injection",
+      "file": "csdm/engine/core.py",
+      "line": 1873,
+      "signature": "_common_cs2_injection(self, cfg)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_resolve_cs2_cfg_dir",
+      "file": "csdm/engine/core.py",
+      "line": 1897,
+      "signature": "_resolve_cs2_cfg_dir(self, cfg)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_inject_cs_runtime_cfg",
+      "file": "csdm/engine/core.py",
+      "line": 1937,
+      "signature": "_inject_cs_runtime_cfg(self, cfg, shared)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_inject_hlae_extra_args",
+      "file": "csdm/engine/core.py",
+      "line": 1990,
+      "signature": "_inject_hlae_extra_args(self, cfg, shared)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_seq_anchor_sid",
+      "file": "csdm/engine/core.py",
+      "line": 2022,
+      "signature": "_seq_anchor_sid(seq, sids_active, primary_sid)",
+      "doc": "First active killer in the sequence, else first active victim, else primary.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_build_cams_killer",
+      "file": "csdm/engine/core.py",
+      "line": 2036,
+      "signature": "_build_cams_killer(seq, sids_active, primary_sid)",
+      "doc": "Killer mode: follow each active killer. One entry per killer change.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_build_cams_victim",
+      "file": "csdm/engine/core.py",
+      "line": 2062,
+      "signature": "_build_cams_victim(seq, sids_active, primary_sid, cfg)",
+      "doc": "Victim mode: camera fixed on the victim of the first kill by our player.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_build_cams_both",
+      "file": "csdm/engine/core.py",
+      "line": 2090,
+      "signature": "_build_cams_both(seq, sids_active, primary_sid, cfg, tickrate, victim_pre_ticks)",
+      "doc": "Both mode: camera on the killer from the start of the sequence,",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_bj_players_options",
+      "file": "csdm/engine/core.py",
+      "line": 2159,
+      "signature": "_bj_players_options(seq, cams, perspective, sids_active, sids_active_list, name_for, name_override)",
+      "doc": "Per-sequence playersOptions list (who is shown/highlighted in deathnotices).",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_bj_output_dir",
+      "file": "csdm/engine/core.py",
+      "line": 2204,
+      "signature": "_bj_output_dir(demo_path, cfg)",
+      "doc": "Resolve (and create) the clip output folder for this demo.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_bj_output_params",
+      "file": "csdm/engine/core.py",
+      "line": 2214,
+      "signature": "_bj_output_params(cfg)",
+      "doc": "FFmpeg output parameters, with -preset injected for CPU codecs only.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_build_json",
+      "file": "csdm/engine/core.py",
+      "line": 2226,
+      "signature": "_build_json(self, demo_path, sequences, cfg)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_start_cs2_send_to_back_watcher",
+      "file": "csdm/engine/core.py",
+      "line": 2325,
+      "signature": "_start_cs2_send_to_back_watcher(self)",
+      "doc": "Start a thread that keeps CS2 behind all other windows for the entire recording.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_exec",
+      "file": "csdm/engine/core.py",
+      "line": 2440,
+      "signature": "_exec(self, cmd, cfg, timeout_s=0)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_preparse_dp2",
+      "file": "csdm/engine/core.py",
+      "line": 2505,
+      "signature": "_preparse_dp2(self, cfg, demo_paths)",
+      "doc": "Pre-parse demo files with demoparser2 in parallel threads.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_dp2_required_sections",
+      "file": "csdm/engine/core.py",
+      "line": 2577,
+      "signature": "_dp2_required_sections(cfg)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_assemble_clips",
+      "file": "csdm/engine/core.py",
+      "line": 2609,
+      "signature": "_assemble_clips(self, cfg, produced_dirs)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_get_dp2_filter_defs",
+      "file": "csdm/engine/core.py",
+      "line": 2790,
+      "signature": "_get_dp2_filter_defs()",
+      "doc": "Derive dp2 filter defs from KILL_FILTER_REGISTRY — replaces _DP2_FILTER_DEFS.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_DP2_FILTER_DEFS",
+      "file": "csdm/engine/core.py",
+      "line": 2801,
+      "signature": "_DP2_FILTER_DEFS(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_apply_dp2_modifiers",
+      "file": "csdm/engine/core.py",
+      "line": 2808,
+      "signature": "_apply_dp2_modifiers(self, dp, events, cfg)",
+      "doc": "Apply active demoparser2 kill modifiers for one demo (batch worker path).",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_apply_dp2_filters_to_events",
+      "file": "csdm/engine/core.py",
+      "line": 2994,
+      "signature": "_apply_dp2_filters_to_events(self, evts, cfg)",
+      "doc": "Apply active dp2 modifiers to a full {demo_path: events} dict (preview/redo path).",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_preview_worker",
+      "file": "csdm/engine/core.py",
+      "line": 3147,
+      "signature": "_preview_worker(self, cfg)",
+      "doc": "Compute a preview and hand the result over the state channel.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "derive_event_flags",
+      "file": "csdm/engine/core.py",
+      "line": 3188,
+      "signature": "derive_event_flags(cfg)",
+      "doc": "Turn the `events` list into the three booleans the queries read.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "build_run_cfg",
+      "file": "csdm/engine/core.py",
+      "line": 3203,
+      "signature": "build_run_cfg(self, cfg)",
+      "doc": "Return `cfg` plus the derived event flags, ready for run or preview.",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "validate_run_inputs",
+      "file": "csdm/engine/core.py",
+      "line": 3211,
+      "signature": "validate_run_inputs(self, cfg)",
+      "doc": "Check the preconditions run and preview share. False stops the caller.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "start_run",
+      "file": "csdm/engine/core.py",
+      "line": 3221,
+      "signature": "start_run(self, cfg)",
+      "doc": "Launch a batch run on its own thread. False when the inputs are unusable.",
+      "usages": 6,
+      "tested": true
+    },
+    {
+      "name": "start_preview",
+      "file": "csdm/engine/core.py",
+      "line": 3244,
+      "signature": "start_preview(self, cfg)",
+      "doc": "Compute a preview on its own thread. False when the inputs are unusable.",
+      "usages": 4,
+      "tested": true
+    },
+    {
+      "name": "request_stop",
+      "file": "csdm/engine/core.py",
+      "line": 3258,
+      "signature": "request_stop(self)",
+      "doc": "Dispatch stop to the right handler based on current state.",
+      "usages": 3,
+      "tested": true
+    },
+    {
+      "name": "cancel_preview",
+      "file": "csdm/engine/core.py",
+      "line": 3265,
+      "signature": "cancel_preview(self)",
+      "doc": "Cancel a running preview computation.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_stop_graceful",
+      "file": "csdm/engine/core.py",
+      "line": 3272,
+      "signature": "_stop_graceful(self)",
+      "doc": "Stop after current demo: kill the running CSDM process immediately,",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "request_kill",
+      "file": "csdm/engine/core.py",
+      "line": 3293,
+      "signature": "request_kill(self, probe=None)",
+      "doc": "Hard kill: stop everything immediately, kill CS2 process, skip assembly,",
+      "usages": 3,
+      "tested": true
+    },
+    {
+      "name": "_worker",
+      "file": "csdm/engine/core.py",
+      "line": 3332,
+      "signature": "_worker(self, cfg)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_non_kill_only",
+      "file": "csdm/engine/core.py",
+      "line": 3846,
+      "signature": "_non_kill_only(events)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_stamp_mf",
+      "file": "csdm/engine/core.py",
+      "line": 3850,
+      "signature": "_stamp_mf(events, cfg_key)",
+      "doc": "Add cfg_key to the _mf (matched-filters) set on every kill event.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_split_required_optional",
+      "file": "csdm/engine/core.py",
+      "line": 3863,
+      "signature": "_split_required_optional(cfg, keys)",
+      "doc": "Split active filter cfg_keys into (required, optional) from ★ Must flags.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_get_filter_badge_defs",
+      "file": "csdm/engine/core.py",
+      "line": 3873,
+      "signature": "_get_filter_badge_defs()",
+      "doc": "Derive badge defs from KILL_FILTER_REGISTRY — replaces _FILTER_BADGE_DEFS.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_FILTER_BADGE_DEFS",
+      "file": "csdm/engine/core.py",
+      "line": 3880,
+      "signature": "_FILTER_BADGE_DEFS(self)",
+      "doc": "",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "_dp2_parse_demo",
+      "file": "csdm/engine/core.py",
+      "line": 3887,
+      "signature": "_dp2_parse_demo(self, demo_path, required_sections=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_spray_transfer_filter",
+      "file": "csdm/engine/core.py",
+      "line": 4122,
+      "signature": "_spray_transfer_filter(self, demo_path, events, cfg)",
+      "doc": "Keep only kills that are part of a spray transfer.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_high_velocity_filter",
+      "file": "csdm/engine/core.py",
+      "line": 4211,
+      "signature": "_high_velocity_filter(self, demo_path, events, cfg)",
+      "doc": "Ferrari Peek — kill faster than the opponent can react.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_flick_filter",
+      "file": "csdm/engine/core.py",
+      "line": 4351,
+      "signature": "_flick_filter(self, demo_path, events, cfg)",
+      "doc": "Keep kills where the player made a large view-angle change relative to their prior kill.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_savior_filter",
+      "file": "csdm/engine/core.py",
+      "line": 4408,
+      "signature": "_savior_filter(self, demo_path, events, cfg)",
+      "doc": "Keep kills where the player killed an enemy who was hurting a teammate.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_parse_mate_positions",
+      "file": "csdm/engine/core.py",
+      "line": 4483,
+      "signature": "_parse_mate_positions(self, demo_path, kill_ticks)",
+      "doc": "Lazily parse player positions + view-angles at the given ticks and cache them.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_find_sid_in_tick",
+      "file": "csdm/engine/core.py",
+      "line": 4602,
+      "signature": "_find_sid_in_tick(self, tick_data, db_sid)",
+      "doc": "Return the dp2 SteamID key in tick_data that corresponds to db_sid.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_fuzzy_sid_in_set",
+      "file": "csdm/engine/core.py",
+      "line": 4636,
+      "signature": "_fuzzy_sid_in_set(self, dp2_sid, db_sids_set)",
+      "doc": "Return True if dp2_sid is within ±_DP2_SID_TOLERANCE of any SID in db_sids_set.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_find_best_mate_sid",
+      "file": "csdm/engine/core.py",
+      "line": 4655,
+      "signature": "_find_best_mate_sid(self, demo_path, victim_sid, kill_tick, sids_active)",
+      "doc": "Return (mate_dp2_sid, victim_dp2_sid) for the best-angle qualifying teammate.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_mate_pov_filter",
+      "file": "csdm/engine/core.py",
+      "line": 4759,
+      "signature": "_mate_pov_filter(self, demo_path, events, cfg)",
+      "doc": "Stamp evt['_mate_pov_sid'] on qualifying kills; optionally filter out the rest.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_mate_pov_camera_sid",
+      "file": "csdm/engine/core.py",
+      "line": 4801,
+      "signature": "_mate_pov_camera_sid(self, demo_path, event, cfg)",
+      "doc": "camera_fn hook: return the stamped mate SID for this kill event, or None.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_death_flag_filter",
+      "file": "csdm/engine/core.py",
+      "line": 4811,
+      "signature": "_death_flag_filter(self, demo_path, events, cfg, flag_name, threshold=True)",
+      "doc": "Generic filter: keep kills whose player_death event has flag_name truthy.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_death_flags_for_kill",
+      "file": "csdm/engine/core.py",
+      "line": 4852,
+      "signature": "_death_flags_for_kill(self, death_flags, evt)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_penetrated_kills",
+      "file": "csdm/engine/core.py",
+      "line": 4861,
+      "signature": "_penetrated_kills(self, demo_path, events)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_wall_bang_dp2_filter",
+      "file": "csdm/engine/core.py",
+      "line": 4886,
+      "signature": "_wall_bang_dp2_filter(self, demo_path, events, cfg)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_airborne_dp2_filter",
+      "file": "csdm/engine/core.py",
+      "line": 4906,
+      "signature": "_airborne_dp2_filter(self, demo_path, events, cfg)",
+      "doc": "Airborne killer via dp2 — attackerinair = True in player_death event.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_attacker_blind_dp2_filter",
+      "file": "csdm/engine/core.py",
+      "line": 4910,
+      "signature": "_attacker_blind_dp2_filter(self, demo_path, events, cfg)",
+      "doc": "Blind fire via dp2 — attackerblind = True in player_death event.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_collateral_dp2_filter",
+      "file": "csdm/engine/core.py",
+      "line": 4914,
+      "signature": "_collateral_dp2_filter(self, demo_path, events, cfg)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_weapon_suffix_key",
+      "file": "csdm/engine/core.py",
+      "line": 4942,
+      "signature": "_weapon_suffix_key(weapon_raw)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_trois_shot_filter",
+      "file": "csdm/engine/core.py",
+      "line": 4951,
+      "signature": "_trois_shot_filter(self, demo_path, events, cfg)",
+      "doc": "Keep only lucky kills (TROIS SHOT filter).",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_one_tap_filter",
+      "file": "csdm/engine/core.py",
+      "line": 5031,
+      "signature": "_one_tap_filter(self, demo_path, events, cfg)",
+      "doc": "Keep only isolated single-shot kills.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_no_trois_shot_filter",
+      "file": "csdm/engine/core.py",
+      "line": 5099,
+      "signature": "_no_trois_shot_filter(self, demo_path, events, cfg)",
+      "doc": "Keep only precise kills — inverse of TROIS SHOT.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_trois_tap_filter",
+      "file": "csdm/engine/core.py",
+      "line": 5118,
+      "signature": "_trois_tap_filter(self, demo_path, events, cfg)",
+      "doc": "TROIS TAP = TROIS SHOT AND ONE TAP combined.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_apply_global_filter_gate_events",
+      "file": "csdm/engine/core.py",
+      "line": 5125,
+      "signature": "_apply_global_filter_gate_events(self, events, cfg)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_apply_global_filter_gate_dict",
+      "file": "csdm/engine/core.py",
+      "line": 5146,
+      "signature": "_apply_global_filter_gate_dict(self, evts, cfg)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_apply_filter_to_events",
+      "file": "csdm/engine/core.py",
+      "line": 5154,
+      "signature": "_apply_filter_to_events(self, evts, cfg, cfg_key, filter_fn, label)",
+      "doc": "Apply a per-demo filter function to all demos in evts.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_hms",
+      "file": "csdm/engine/core.py",
+      "line": 5189,
+      "signature": "_hms(self, s)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_read_demo_date_from_info",
+      "file": "csdm/engine/core.py",
+      "line": 5196,
+      "signature": "_read_demo_date_from_info(demo_path)",
+      "doc": "Read the .info file next to the .dem and extract the Unix timestamp",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_ts_from_demo_path",
+      "file": "csdm/engine/core.py",
+      "line": 5262,
+      "signature": "_ts_from_demo_path(demo_path)",
+      "doc": "Return the .dem file mtime as a Unix timestamp, or None if not found.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_normalize_recsys",
+      "file": "csdm/engine/core.py",
+      "line": 5274,
+      "signature": "_normalize_recsys(value)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_get_demo_ts",
+      "file": "csdm/engine/core.py",
+      "line": 5278,
+      "signature": "_get_demo_ts(self, demo_path)",
+      "doc": "Return the canonical demo timestamp. Cached after the first call.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_format_demo_date",
+      "file": "csdm/engine/core.py",
+      "line": 5289,
+      "signature": "_format_demo_date(self, demo_path)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_demo_sort_key",
+      "file": "csdm/engine/core.py",
+      "line": 5319,
+      "signature": "_demo_sort_key(self, demo_path)",
+      "doc": "Cached sort key — avoids repeated strptime on the same raw date value.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_check_demo_compat",
+      "file": "csdm/engine/core.py",
+      "line": 5351,
+      "signature": "_check_demo_compat(self, demo_path)",
+      "doc": "Check whether a CS2 demo may be incompatible with the current CS2 version.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_demo_picker_fmt_name",
+      "file": "csdm/engine/core.py",
+      "line": 5384,
+      "signature": "_demo_picker_fmt_name(demo_path)",
+      "doc": "Shorten long demo filenames for display: keep last ~40 chars, prefix …",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_demo_picker_fmt_date",
+      "file": "csdm/engine/core.py",
+      "line": 5391,
+      "signature": "_demo_picker_fmt_date(self, demo_path)",
+      "doc": "Return dd-mm-yyyy hh:mm for a demo path.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_demo_picker_fmt_map",
+      "file": "csdm/engine/core.py",
+      "line": 5420,
+      "signature": "_demo_picker_fmt_map(self, demo_path)",
+      "doc": "Return the map name for a demo, shortened for display.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_describe_demo",
+      "file": "csdm/engine/core.py",
+      "line": 5430,
+      "signature": "_describe_demo(self, demo_path)",
+      "doc": "One demo's picker row: path, display name/date/map, compat status.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "list_all_demos",
+      "file": "csdm/engine/core.py",
+      "line": 5441,
+      "signature": "list_all_demos(self)",
+      "doc": "Return every demo any match row points to, formatted for the picker.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_demo_picker_get_active",
+      "file": "csdm/engine/core.py",
+      "line": 5504,
+      "signature": "_demo_picker_get_active(self)",
+      "doc": "Return list of demo paths that are checked in the picker.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_get_active_tag_names",
+      "file": "csdm/engine/core.py",
+      "line": 5511,
+      "signature": "_get_active_tag_names(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_tag_log_line",
+      "file": "csdm/engine/core.py",
+      "line": 5514,
+      "signature": "_tag_log_line(self, msg)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_get_demo_checksum",
+      "file": "csdm/engine/core.py",
+      "line": 5517,
+      "signature": "_get_demo_checksum(self, demo_path)",
+      "doc": "Return the matches checksum for a demo path.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_tag_demo",
+      "file": "csdm/engine/core.py",
+      "line": 5582,
+      "signature": "_tag_demo(self, demo_path, tag_name)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_untag_demo",
+      "file": "csdm/engine/core.py",
+      "line": 5620,
+      "signature": "_untag_demo(self, demo_path, tag_name)",
+      "doc": "Remove one tag from one demo. Pure DB logic, ported from",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_tag_by_checksum",
+      "file": "csdm/engine/core.py",
+      "line": 5670,
+      "signature": "_tag_by_checksum(self, checksum, tag_id)",
+      "doc": "Apply a tag using a checksum directly (no demo_path -> checksum",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_checksum_in_db",
+      "file": "csdm/engine/core.py",
+      "line": 5696,
+      "signature": "_checksum_in_db(self, checksum, mkm_col)",
+      "doc": "Return True if the given checksum exists in the matches table.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_tags_dc_mkm",
+      "file": "csdm/engine/core.py",
+      "line": 5710,
+      "signature": "_tags_dc_mkm(self)",
+      "doc": "Return (demo-path column, match-key column) of `matches`, or (None, None).",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "search_tagged_demos",
+      "file": "csdm/engine/core.py",
+      "line": 5717,
+      "signature": "search_tagged_demos(self, tag_ids, cfg=None)",
+      "doc": "Find demos carrying the given tags, optionally filtered by a run config.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "calc_tag_date_range",
+      "file": "csdm/engine/core.py",
+      "line": 5814,
+      "signature": "calc_tag_date_range(self, tag_ids)",
+      "doc": "Compute the date range spanned by demos carrying every given tag.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "set_active_tags",
+      "file": "csdm/engine/core.py",
+      "line": 5896,
+      "signature": "set_active_tags(self, tag_ids)",
+      "doc": "Replace the active-tag selection wholesale. An empty list deselects all.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "apply_tags",
+      "file": "csdm/engine/core.py",
+      "line": 5910,
+      "signature": "apply_tags(self, demo_paths, tag_names)",
+      "doc": "Apply every tag in `tag_names` to every demo in `demo_paths`.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "remove_tags",
+      "file": "csdm/engine/core.py",
+      "line": 5951,
+      "signature": "remove_tags(self, demo_paths, tag_names)",
+      "doc": "Remove every tag in `tag_names` from every demo in `demo_paths`.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "create_tag",
+      "file": "csdm/engine/core.py",
+      "line": 5977,
+      "signature": "create_tag(self, name, color)",
+      "doc": "Create a tag row. Ported from `_create_tag_programmatic`.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "delete_tag",
+      "file": "csdm/engine/core.py",
+      "line": 6010,
+      "signature": "delete_tag(self, tag_id)",
+      "doc": "Delete a tag row and its assignments. Ported from",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "export_tags",
+      "file": "csdm/engine/core.py",
+      "line": 6039,
+      "signature": "export_tags(self, path, tag_ids=None)",
+      "doc": "Write every tag (or only `tag_ids`, when given) and its demo",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_read_tags_import_file",
+      "file": "csdm/engine/core.py",
+      "line": 6120,
+      "signature": "_read_tags_import_file(path)",
+      "doc": "Read and validate a tags export file. Shared by `scan_tag_import`",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "scan_tag_import",
+      "file": "csdm/engine/core.py",
+      "line": 6132,
+      "signature": "scan_tag_import(self, path)",
+      "doc": "Read a tags export file and report which tags it references that",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "apply_tag_import",
+      "file": "csdm/engine/core.py",
+      "line": 6155,
+      "signature": "apply_tag_import(self, path, tags_to_create=None)",
+      "doc": "Create `tags_to_create`, then re-parse `path` and replay its",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_calc_summary",
+      "file": "csdm/engine/core.py",
+      "line": 6198,
+      "signature": "_calc_summary(self, all_events, cfg)",
+      "doc": "Return (nb_demos, nb_clips, total_sec, avg_sec) from events and config.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_summary_counts",
+      "file": "csdm/engine/core.py",
+      "line": 6215,
+      "signature": "_summary_counts(self, nb_demos, nb_clips, total_sec, avg_sec)",
+      "doc": "The summary's numbers, unformatted.",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "_fmt_summary",
+      "file": "csdm/engine/core.py",
+      "line": 6227,
+      "signature": "_fmt_summary(self, nb_demos, nb_clips, total_sec, avg_sec)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_demo_passes_date_filter",
+      "file": "csdm/engine/core.py",
+      "line": 816,
+      "signature": "_demo_passes_date_filter(demo_path)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_norm_wpn",
+      "file": "csdm/engine/core.py",
+      "line": 1157,
+      "signature": "_norm_wpn(w)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_round_key_from_kill",
+      "file": "csdm/engine/core.py",
+      "line": 1503,
+      "signature": "_round_key_from_kill(kill, dp)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_name",
+      "file": "csdm/engine/core.py",
+      "line": 2237,
+      "signature": "_name(psid)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_watch",
+      "file": "csdm/engine/core.py",
+      "line": 2345,
+      "signature": "_watch()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_run_or",
+      "file": "csdm/engine/core.py",
+      "line": 2881,
+      "signature": "_run_or(filters)",
+      "doc": "Run filters independently on original events, return sig→keys union.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_run_and",
+      "file": "csdm/engine/core.py",
+      "line": 2896,
+      "signature": "_run_and(filters)",
+      "doc": "Chain filters, return surviving event list.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_chain",
+      "file": "csdm/engine/core.py",
+      "line": 3048,
+      "signature": "_chain(filters, src)",
+      "doc": "AND-chain: each apply_fn narrows the dict further.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_union",
+      "file": "csdm/engine/core.py",
+      "line": 3056,
+      "signature": "_union(filters, src)",
+      "doc": "OR-union: run each independently, merge _mf per sig.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_angle_delta",
+      "file": "csdm/engine/core.py",
+      "line": 4377,
+      "signature": "_angle_delta(a, b)",
+      "doc": "Smallest angle between two yaw values (handles 360→0 wrap).",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_is_lucky",
+      "file": "csdm/engine/core.py",
+      "line": 4969,
+      "signature": "_is_lucky(kill_tick, killer_sid, weapon_raw)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_is_isolated",
+      "file": "csdm/engine/core.py",
+      "line": 5056,
+      "signature": "_is_isolated(kill_tick, killer_sid, weapon_raw)",
+      "doc": "True iff exactly 1 shot with this weapon was fired in [kill_tick-WINDOW, kill_tick+WINDOW].",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_demo_to_date_str",
+      "file": "csdm/engine/core.py",
+      "line": 5866,
+      "signature": "_demo_to_date_str(dp)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_round_key",
+      "file": "csdm/engine/core.py",
+      "line": 1182,
+      "signature": "_round_key(e)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_entry_sigs",
+      "file": "csdm/engine/core.py",
+      "line": 1215,
+      "signature": "_entry_sigs()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_ace_sigs",
+      "file": "csdm/engine/core.py",
+      "line": 1224,
+      "signature": "_ace_sigs()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_multi_sigs",
+      "file": "csdm/engine/core.py",
+      "line": 1233,
+      "signature": "_multi_sigs()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_bully_sigs",
+      "file": "csdm/engine/core.py",
+      "line": 1244,
+      "signature": "_bully_sigs()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_eco_sigs",
+      "file": "csdm/engine/core.py",
+      "line": 1264,
+      "signature": "_eco_sigs()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_exe_of",
+      "file": "csdm/engine/core.py",
+      "line": 2361,
+      "signature": "_exe_of(hwnd)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_is_cs2",
+      "file": "csdm/engine/core.py",
+      "line": 2382,
+      "signature": "_is_cs2(hwnd)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_find_cs2",
+      "file": "csdm/engine/core.py",
+      "line": 2393,
+      "signature": "_find_cs2()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_push_to_back",
+      "file": "csdm/engine/core.py",
+      "line": 2401,
+      "signature": "_push_to_back(hwnds)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_fc",
+      "file": "csdm/engine/core.py",
+      "line": 4520,
+      "signature": "_fc(name)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_fv",
+      "file": "csdm/engine/core.py",
+      "line": 4561,
+      "signature": "_fv(v)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_build_dsql",
+      "file": "csdm/engine/core.py",
+      "line": 875,
+      "signature": "_build_dsql(base_params)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_find_cw",
+      "file": "csdm/engine/core.py",
+      "line": 1745,
+      "signature": "_find_cw(e_tick, e_rk)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_watchdog",
+      "file": "csdm/engine/core.py",
+      "line": 2457,
+      "signature": "_watchdog()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_try_remove_dir",
+      "file": "csdm/engine/core.py",
+      "line": 2740,
+      "signature": "_try_remove_dir(d)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_bg",
+      "file": "csdm/engine/core.py",
+      "line": 3523,
+      "signature": "_bg()",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_col",
+      "file": "csdm/engine/core.py",
+      "line": 3945,
+      "signature": "_col(name)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_dc",
+      "file": "csdm/engine/core.py",
+      "line": 4008,
+      "signature": "_dc(name)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "log",
+      "file": "csdm/engine/ports.py",
+      "line": 40,
+      "signature": "log(self, message, level='')",
+      "doc": "",
+      "usages": 25,
+      "tested": true
+    },
+    {
+      "name": "log_parts",
+      "file": "csdm/engine/ports.py",
+      "line": 43,
+      "signature": "log_parts(self, parts)",
+      "doc": "",
+      "usages": 9,
+      "tested": true
+    },
+    {
+      "name": "state",
+      "file": "csdm/engine/ports.py",
+      "line": 46,
+      "signature": "state(self, name, payload=None)",
+      "doc": "",
+      "usages": 46,
+      "tested": true
+    },
+    {
+      "name": "ask",
+      "file": "csdm/engine/ports.py",
+      "line": 49,
+      "signature": "ask(self, kind, message, options)",
+      "doc": "",
+      "usages": 9,
+      "tested": true
+    },
+    {
+      "name": "as_ports",
+      "file": "csdm/engine/ports.py",
+      "line": 53,
+      "signature": "as_ports(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "init_engine_state",
+      "file": "csdm/engine/state.py",
+      "line": 51,
+      "signature": "init_engine_state(self, pg_params=None)",
+      "doc": "",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "_weapon_category",
+      "file": "csdm/static_data.py",
+      "line": 456,
+      "signature": "_weapon_category(weapon_name)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_nudge_hex",
+      "file": "csdm/theme.py",
+      "line": 59,
+      "signature": "_nudge_hex(hex_str)",
+      "doc": "Return a hex colour differing by 1 unit — visually imperceptible.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_ensure_unique_hex",
+      "file": "csdm/theme.py",
+      "line": 70,
+      "signature": "_ensure_unique_hex(theme)",
+      "doc": "Guarantee every value in the theme is unique (in place) and return it.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_build_theme",
+      "file": "csdm/theme.py",
+      "line": 91,
+      "signature": "_build_theme(bg_name, accent_name_or_hex)",
+      "doc": "Build a complete theme dict from a bg-preset name and accent name or raw hex.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_t",
+      "file": "csdm/theme.py",
+      "line": 143,
+      "signature": "_t(key)",
+      "doc": "The theme colour in force for one key, e.g. _t('BG').",
+      "usages": 3,
+      "tested": true
+    },
+    {
+      "name": "apply_theme",
+      "file": "csdm/theme.py",
+      "line": 148,
+      "signature": "apply_theme(bg_name, accent)",
+      "doc": "Rebuild the theme and update _THEME IN PLACE. Returns _THEME.",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "resolve_mono_family",
+      "file": "csdm/ui_kit.py",
+      "line": 53,
+      "signature": "resolve_mono_family(preferred='auto')",
+      "doc": "The first monospace family actually available.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "init_fonts",
+      "file": "csdm/ui_kit.py",
+      "line": 72,
+      "signature": "init_fonts(root, family='auto')",
+      "doc": "Create, or reconfigure, the FONT_* named fonts.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "apply_ttk_style",
+      "file": "csdm/ui_kit.py",
+      "line": 90,
+      "signature": "apply_ttk_style(root)",
+      "doc": "Apply the flat, terminal-like ttk style.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_contrast_fg",
+      "file": "csdm/ui_kit.py",
+      "line": 198,
+      "signature": "_contrast_fg(hex_color)",
+      "doc": "Return black or white — whichever is readable on the given background.",
+      "usages": 3,
+      "tested": false
+    },
+    {
+      "name": "sentry",
+      "file": "csdm/widgets.py",
+      "line": 253,
+      "signature": "sentry(parent, var, **kw)",
+      "doc": "Styled Entry widget bound to var.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "scombo",
+      "file": "csdm/widgets.py",
+      "line": 259,
+      "signature": "scombo(parent, var, values, width=15)",
+      "doc": "Read-only Combobox bound to var.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "mlabel",
+      "file": "csdm/widgets.py",
+      "line": 263,
+      "signature": "mlabel(parent, text, **kw)",
+      "doc": "Muted-colour small label for field names and secondary text.",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "flabel",
+      "file": "csdm/widgets.py",
+      "line": 273,
+      "signature": "flabel(parent, text, **kw)",
+      "doc": "Filter name label — slightly brighter than mlabel to distinguish filter names.",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "slabel",
+      "file": "csdm/widgets.py",
+      "line": 277,
+      "signature": "slabel(parent, text, **kw)",
+      "doc": "Subcategory section header label — accent-coloured to visually separate sections.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_safe_trace_remove",
+      "file": "csdm/widgets.py",
+      "line": 282,
+      "signature": "_safe_trace_remove(var, mode, tid)",
+      "doc": "Remove a tkinter variable trace silently — safe to call even if already removed.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_make_highlight_toggle",
+      "file": "csdm/widgets.py",
+      "line": 290,
+      "signature": "_make_highlight_toggle(widget, var, is_active_fn)",
+      "doc": "Shared highlight/dim logic for hchk and hradio widgets.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "hchk",
+      "file": "csdm/widgets.py",
+      "line": 314,
+      "signature": "hchk(parent, text, var, **kw)",
+      "doc": "Styled Checkbutton with highlight-on-active toggle. Returns the widget.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "hradio",
+      "file": "csdm/widgets.py",
+      "line": 323,
+      "signature": "hradio(parent, text, var, value, **kw)",
+      "doc": "Radiobutton with highlight when selected.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_bind_wraplength",
+      "file": "csdm/widgets.py",
+      "line": 334,
+      "signature": "_bind_wraplength(lbl)",
+      "doc": "Debounced <Configure> binding that keeps a label's wraplength = widget width.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "desc_label",
+      "file": "csdm/widgets.py",
+      "line": 362,
+      "signature": "desc_label(parent, text)",
+      "doc": "Return a muted descriptive Label with automatic wraplength binding.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_sep",
+      "file": "csdm/widgets.py",
+      "line": 374,
+      "signature": "_sep(parent, pady=(6, 4), padx=0)",
+      "doc": "Horizontal rule between UI sub-sections.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_chk_tip",
+      "file": "csdm/widgets.py",
+      "line": 378,
+      "signature": "_chk_tip(parent, label, var, tip, anchor='w', pady=2, **kw)",
+      "doc": "hchk + pack + add_tip in one call.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "add_tip",
+      "file": "csdm/widgets.py",
+      "line": 420,
+      "signature": "add_tip(widget, text)",
+      "doc": "Attach a tooltip to widget if text is non-empty.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "dp2_badge",
+      "file": "csdm/widgets.py",
+      "line": 425,
+      "signature": "dp2_badge(parent)",
+      "doc": "Blue 'demoparser2' label with a shared tooltip — attach with .pack().",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/widgets.py",
+      "line": 40,
+      "signature": "__init__(self, parent, **kw)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "_on_canvas_configure",
+      "file": "csdm/widgets.py",
+      "line": 61,
+      "signature": "_on_canvas_configure(self, event)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_apply_width",
+      "file": "csdm/widgets.py",
+      "line": 70,
+      "signature": "_apply_width(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_on_destroy",
+      "file": "csdm/widgets.py",
+      "line": 77,
+      "signature": "_on_destroy(self, _event=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "apply_theme",
+      "file": "csdm/widgets.py",
+      "line": 83,
+      "signature": "apply_theme(self)",
+      "doc": "Explicitly repaint canvas and inner frame with current BG — bypasses",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "scroll",
+      "file": "csdm/widgets.py",
+      "line": 95,
+      "signature": "scroll(self, delta)",
+      "doc": "",
+      "usages": 6,
+      "tested": false
+    },
+    {
+      "name": "contains_point",
+      "file": "csdm/widgets.py",
+      "line": 98,
+      "signature": "contains_point(self, x_root, y_root)",
+      "doc": "True when screen point (x_root, y_root) is inside this canvas AND it is visible.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/widgets.py",
+      "line": 127,
+      "signature": "__init__(self, parent, gap_x=6, gap_y=4, **kw)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "add",
+      "file": "csdm/widgets.py",
+      "line": 139,
+      "signature": "add(self, widget)",
+      "doc": "Register widget for wrapping layout. Returns widget for chaining.",
+      "usages": 24,
+      "tested": true
+    },
+    {
+      "name": "_schedule",
+      "file": "csdm/widgets.py",
+      "line": 145,
+      "signature": "_schedule(self, _event=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_relayout",
+      "file": "csdm/widgets.py",
+      "line": 150,
+      "signature": "_relayout(self, *_)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_on_destroy",
+      "file": "csdm/widgets.py",
+      "line": 170,
+      "signature": "_on_destroy(self, _e=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/widgets.py",
+      "line": 194,
+      "signature": "__init__(self, parent, breakpoint_px=UI_BENTO_BREAKPOINT, gap=UI_BENTO_GAP, **kw)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "add",
+      "file": "csdm/widgets.py",
+      "line": 207,
+      "signature": "add(self, card)",
+      "doc": "Register a card, Sec or Frame. Returns it, so calls can be chained.",
+      "usages": 24,
+      "tested": true
+    },
+    {
+      "name": "_schedule",
+      "file": "csdm/widgets.py",
+      "line": 213,
+      "signature": "_schedule(self, _e=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_relayout",
+      "file": "csdm/widgets.py",
+      "line": 218,
+      "signature": "_relayout(self, *_)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_on_destroy",
+      "file": "csdm/widgets.py",
+      "line": 236,
+      "signature": "_on_destroy(self, _e=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "apply_theme",
+      "file": "csdm/widgets.py",
+      "line": 242,
+      "signature": "apply_theme(self)",
+      "doc": "",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "_update",
+      "file": "csdm/widgets.py",
+      "line": 292,
+      "signature": "_update(*args)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_apply",
+      "file": "csdm/widgets.py",
+      "line": 345,
+      "signature": "_apply(w=lbl)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_schedule",
+      "file": "csdm/widgets.py",
+      "line": 353,
+      "signature": "_schedule(e, w=lbl)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/widgets.py",
+      "line": 391,
+      "signature": "__init__(self, widget, text)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "_show",
+      "file": "csdm/widgets.py",
+      "line": 399,
+      "signature": "_show(self, event=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_hide",
+      "file": "csdm/widgets.py",
+      "line": 412,
+      "signature": "_hide(self, event=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/widgets.py",
+      "line": 447,
+      "signature": "__init__(self, parent, title, collapsed=False, **kw)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "pack",
+      "file": "csdm/widgets.py",
+      "line": 497,
+      "signature": "pack(self, **kw)",
+      "doc": "",
+      "usages": 4,
+      "tested": false
+    },
+    {
+      "name": "pack_forget",
+      "file": "csdm/widgets.py",
+      "line": 501,
+      "signature": "pack_forget(self)",
+      "doc": "",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "grid",
+      "file": "csdm/widgets.py",
+      "line": 504,
+      "signature": "grid(self, **kw)",
+      "doc": "",
+      "usages": 24,
+      "tested": false
+    },
+    {
+      "name": "grid_forget",
+      "file": "csdm/widgets.py",
+      "line": 507,
+      "signature": "grid_forget(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "place",
+      "file": "csdm/widgets.py",
+      "line": 510,
+      "signature": "place(self, **kw)",
+      "doc": "",
+      "usages": 18,
+      "tested": true
+    },
+    {
+      "name": "_toggle",
+      "file": "csdm/widgets.py",
+      "line": 515,
+      "signature": "_toggle(self, *_)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_collapse_now",
+      "file": "csdm/widgets.py",
+      "line": 521,
+      "signature": "_collapse_now(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_expand_now",
+      "file": "csdm/widgets.py",
+      "line": 527,
+      "signature": "_expand_now(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "apply_theme",
+      "file": "csdm/widgets.py",
+      "line": 535,
+      "signature": "apply_theme(self)",
+      "doc": "",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/widgets.py",
+      "line": 553,
+      "signature": "__init__(self, parent, label, desc, var, mode='file')",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/widgets.py",
+      "line": 579,
+      "signature": "__init__(self, parent, callback, initial_date=None)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "_check_focus",
+      "file": "csdm/widgets.py",
+      "line": 617,
+      "signature": "_check_focus(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_prev",
+      "file": "csdm/widgets.py",
+      "line": 624,
+      "signature": "_prev(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_next",
+      "file": "csdm/widgets.py",
+      "line": 630,
+      "signature": "_next(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_draw",
+      "file": "csdm/widgets.py",
+      "line": 636,
+      "signature": "_draw(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_select",
+      "file": "csdm/widgets.py",
+      "line": 655,
+      "signature": "_select(self, d)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/widgets.py",
+      "line": 663,
+      "signature": "__init__(self, parent, initial_color='#f97316')",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "_pick",
+      "file": "csdm/widgets.py",
+      "line": 705,
+      "signature": "_pick(self, c)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_hex",
+      "file": "csdm/widgets.py",
+      "line": 708,
+      "signature": "_on_hex(self, *_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_upd",
+      "file": "csdm/widgets.py",
+      "line": 713,
+      "signature": "_upd(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_sys",
+      "file": "csdm/widgets.py",
+      "line": 719,
+      "signature": "_sys(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_ok",
+      "file": "csdm/widgets.py",
+      "line": 724,
+      "signature": "_ok(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/widgets.py",
+      "line": 735,
+      "signature": "__init__(self, parent, missing_names, tag_defs)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "_ok",
+      "file": "csdm/widgets.py",
+      "line": 788,
+      "signature": "_ok(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_skip",
+      "file": "csdm/widgets.py",
+      "line": 792,
+      "signature": "_skip(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/widgets.py",
+      "line": 800,
+      "signature": "__init__(self, parent, label, var, **kw)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "_open",
+      "file": "csdm/widgets.py",
+      "line": 814,
+      "signature": "_open(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_cb",
+      "file": "csdm/widgets.py",
+      "line": 824,
+      "signature": "_cb(self, d)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "__init__",
+      "file": "csdm/widgets.py",
+      "line": 841,
+      "signature": "__init__(self, parent, on_change=None, **kw)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "_refresh_saved_display",
+      "file": "csdm/widgets.py",
+      "line": 990,
+      "signature": "_refresh_saved_display(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_update_active_lbl",
+      "file": "csdm/widgets.py",
+      "line": 1040,
+      "signature": "_update_active_lbl(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_toggle_saved",
+      "file": "csdm/widgets.py",
+      "line": 1070,
+      "signature": "_toggle_saved(self, p)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_save_lb_selection",
+      "file": "csdm/widgets.py",
+      "line": 1081,
+      "signature": "_save_lb_selection(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_remove_saved",
+      "file": "csdm/widgets.py",
+      "line": 1104,
+      "signature": "_remove_saved(self, idx)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_move_saved",
+      "file": "csdm/widgets.py",
+      "line": 1116,
+      "signature": "_move_saved(self, idx, direction)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_is_placeholder",
+      "file": "csdm/widgets.py",
+      "line": 1125,
+      "signature": "_is_placeholder(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_search_focus_in",
+      "file": "csdm/widgets.py",
+      "line": 1128,
+      "signature": "_on_search_focus_in(self, *_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_search_focus_out",
+      "file": "csdm/widgets.py",
+      "line": 1133,
+      "signature": "_on_search_focus_out(self, *_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_search_key",
+      "file": "csdm/widgets.py",
+      "line": 1139,
+      "signature": "_on_search_key(self, *_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "set_players",
+      "file": "csdm/widgets.py",
+      "line": 1143,
+      "signature": "set_players(self, data, restore_steam_id='')",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_set_sort",
+      "file": "csdm/widgets.py",
+      "line": 1157,
+      "signature": "_set_sort(self, key)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_update_sort_buttons",
+      "file": "csdm/widgets.py",
+      "line": 1167,
+      "signature": "_update_sort_buttons(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_refresh",
+      "file": "csdm/widgets.py",
+      "line": 1179,
+      "signature": "_refresh(self, query='')",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_page_count",
+      "file": "csdm/widgets.py",
+      "line": 1217,
+      "signature": "_page_count(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_render_page",
+      "file": "csdm/widgets.py",
+      "line": 1220,
+      "signature": "_render_page(self)",
+      "doc": "Repopulate the listbox with the current page of _filtered.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_page_first",
+      "file": "csdm/widgets.py",
+      "line": 1258,
+      "signature": "_page_first(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_page_prev",
+      "file": "csdm/widgets.py",
+      "line": 1262,
+      "signature": "_page_prev(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_page_next",
+      "file": "csdm/widgets.py",
+      "line": 1267,
+      "signature": "_page_next(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_page_last",
+      "file": "csdm/widgets.py",
+      "line": 1272,
+      "signature": "_page_last(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_page_jump",
+      "file": "csdm/widgets.py",
+      "line": 1276,
+      "signature": "_page_jump(self, *_)",
+      "doc": "Jump to the page number typed in the entry field.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_lb_select",
+      "file": "csdm/widgets.py",
+      "line": 1285,
+      "signature": "_on_lb_select(self, *_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "get_steam_ids",
+      "file": "csdm/widgets.py",
+      "line": 1299,
+      "signature": "get_steam_ids(self)",
+      "doc": "",
+      "usages": 3,
+      "tested": true
+    },
+    {
+      "name": "get_steam_id",
+      "file": "csdm/widgets.py",
+      "line": 1302,
+      "signature": "get_steam_id(self)",
+      "doc": "",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "get_name",
+      "file": "csdm/widgets.py",
+      "line": 1311,
+      "signature": "get_name(self)",
+      "doc": "",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "get_label",
+      "file": "csdm/widgets.py",
+      "line": 1315,
+      "signature": "get_label(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "browse",
+      "file": "csdm/widgets.py",
+      "line": 564,
+      "signature": "browse()",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_last_seen",
+      "file": "csdm/widgets.py",
+      "line": 1183,
+      "signature": "_last_seen(entry)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_apply_theme_globals",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 66,
+      "signature": "_apply_theme_globals(bg_name, accent)",
+      "doc": "Recompute _THEME and update every module-level colour global in-place.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "__init__",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 178,
+      "signature": "__init__(self)",
+      "doc": "",
+      "usages": 5,
+      "tested": true
+    },
+    {
+      "name": "_sync_pg_params",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 344,
+      "signature": "_sync_pg_params(self, *_trace_args)",
+      "doc": "Copy the five PostgreSQL identifier widgets into `self._pg_params`,",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_watch_pg_params",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 356,
+      "signature": "_watch_pg_params(self)",
+      "doc": "Keep `_pg_params` live for the rest of the session.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_on_player_change",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 375,
+      "signature": "_on_player_change(self, name, sid)",
+      "doc": "Called when the DB search list selection changes.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_preflight",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 384,
+      "signature": "_preflight(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_collect_config",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 397,
+      "signature": "_collect_config(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_auto_save",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 432,
+      "signature": "_auto_save(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_apply_config",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 436,
+      "signature": "_apply_config(self, cfg, keys=None)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_restore_active_tags",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 496,
+      "signature": "_restore_active_tags(self, tag_names)",
+      "doc": "Restore the set of active (checked) tags from a list of names.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_connect_and_load",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 513,
+      "signature": "_connect_and_load(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_on_load_ok",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 528,
+      "signature": "_on_load_ok(self, data)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_load_fail",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 552,
+      "signature": "_on_load_fail(self, err)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_build_weapons",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 559,
+      "signature": "_build_weapons(self, weapons)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_weapons_select_all",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 618,
+      "signature": "_weapons_select_all(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_weapons_deselect_all",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 625,
+      "signature": "_weapons_deselect_all(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_refresh_weapon_label",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 632,
+      "signature": "_refresh_weapon_label(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_toggle_category",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 640,
+      "signature": "_toggle_category(self, cat)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_update_cat_var",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 648,
+      "signature": "_update_cat_var(self, cat)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_refresh_match_type_ui",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 657,
+      "signature": "_refresh_match_type_ui(self)",
+      "doc": "Rebuild the match type checkboxes.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_match_type_toggle",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 705,
+      "signature": "_on_match_type_toggle(self, *_)",
+      "doc": "Apply enable/disable state to all type checkboxes.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_refresh_map_filter_ui",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 719,
+      "signature": "_refresh_map_filter_ui(self)",
+      "doc": "Rebuild map filter checkboxes from self._db_maps.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_map_filter_toggle",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 765,
+      "signature": "_on_map_filter_toggle(self, *_)",
+      "doc": "Enable/disable map checkboxes based on master toggle.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_create_new_tag_dialog",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 782,
+      "signature": "_create_new_tag_dialog(self, from_combo=True)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_delete_tag_from_db",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 819,
+      "signature": "_delete_tag_from_db(self, tag_id, tag_name)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_untag_demo",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 838,
+      "signature": "_untag_demo(self, demo_path, tag_name)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_do_tag_demos",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 885,
+      "signature": "_do_tag_demos(self, demos, tag_name)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_build_ui",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 922,
+      "signature": "_build_ui(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_build_log_panel",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1149,
+      "signature": "_build_log_panel(self, parent)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_log_get_text",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1282,
+      "signature": "_log_get_text(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_log_copy_all",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1285,
+      "signature": "_log_copy_all(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_log_copy_sel",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1292,
+      "signature": "_log_copy_sel(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_log_save",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1302,
+      "signature": "_log_save(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_log_flash",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1316,
+      "signature": "_log_flash(self, msg, tag='ok')",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_apply_log_filter",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1332,
+      "signature": "_apply_log_filter(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_log_search_open",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1367,
+      "signature": "_log_search_open(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_log_search_close",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1371,
+      "signature": "_log_search_close(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_log_search_highlight",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1377,
+      "signature": "_log_search_highlight(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_log_search_goto",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1400,
+      "signature": "_log_search_goto(self, n)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_log_search_next",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1416,
+      "signature": "_log_search_next(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_log_search_prev",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1419,
+      "signature": "_log_search_prev(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_make_tab_scroll",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1423,
+      "signature": "_make_tab_scroll(self, parent)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_tab_capturer",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1431,
+      "signature": "_tab_capturer(self, parent)",
+      "doc": "",
+      "usages": 5,
+      "tested": false
+    },
+    {
+      "name": "_open_cal",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2086,
+      "signature": "_open_cal(self, var, anchor=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_set_date_range",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2098,
+      "signature": "_set_date_range(self, key)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_check_demo_compat",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2145,
+      "signature": "_check_demo_compat(self, demo_path)",
+      "doc": "Check whether a CS2 demo may be incompatible with the current CS2 version.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_demo_picker_fmt_name",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2178,
+      "signature": "_demo_picker_fmt_name(self, demo_path)",
+      "doc": "Shorten long demo filenames for display: keep last ~40 chars, prefix …",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_demo_picker_fmt_date",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2185,
+      "signature": "_demo_picker_fmt_date(self, demo_path)",
+      "doc": "Return dd-mm-yyyy hh:mm for a demo path.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_demo_picker_fmt_map",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2214,
+      "signature": "_demo_picker_fmt_map(self, demo_path)",
+      "doc": "Return the map name for a demo, shortened for display.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_demo_picker_populate",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2225,
+      "signature": "_demo_picker_populate(self, demo_paths, keep_existing=False)",
+      "doc": "Populate the demo picker treeview with the given paths.",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "_demo_picker_clear",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2279,
+      "signature": "_demo_picker_clear(self)",
+      "doc": "Clear the picker when dates are cleared.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_demo_tree_click",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2288,
+      "signature": "_on_demo_tree_click(self, event)",
+      "doc": "Allow native treeview row selection without toggling the check state.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_demo_picker_update_items",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2296,
+      "signature": "_demo_picker_update_items(self, iids, value)",
+      "doc": "Update picker state and tree display for given item IDs.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_demo_picker_set_all",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2316,
+      "signature": "_demo_picker_set_all(self, value)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_demo_picker_set_selected",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2319,
+      "signature": "_demo_picker_set_selected(self, value)",
+      "doc": "Set the check state of all currently highlighted (native-selected) rows.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_on_picker_mode_change",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2323,
+      "signature": "_on_picker_mode_change(self, *_)",
+      "doc": "Switch between range-only and manual (all demos) mode.",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "_tab_video",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2372,
+      "signature": "_tab_video(self, parent)",
+      "doc": "",
+      "usages": 6,
+      "tested": false
+    },
+    {
+      "name": "_asm_save_current_name",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2739,
+      "signature": "_asm_save_current_name(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_asm_delete_name",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2751,
+      "signature": "_asm_delete_name(self, name)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_refresh_asm_names",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2757,
+      "signature": "_refresh_asm_names(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_game_speed_var",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2779,
+      "signature": "_on_game_speed_var(self, *_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_clamp_layout_values",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2796,
+      "signature": "_clamp_layout_values(self, w, h, split)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_apply_layout_vars",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2816,
+      "signature": "_apply_layout_vars(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_auto_layout",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2834,
+      "signature": "_auto_layout(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_reset_layout_defaults",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2844,
+      "signature": "_reset_layout_defaults(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_splitter_release",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2850,
+      "signature": "_on_splitter_release(self, event=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_window_configure",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2866,
+      "signature": "_on_window_configure(self, event=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_remember_layout_state",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2878,
+      "signature": "_remember_layout_state(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_recsys_change",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2897,
+      "signature": "_on_recsys_change(self, *_)",
+      "doc": "",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "_on_perspective_change",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2913,
+      "signature": "_on_perspective_change(self, *_)",
+      "doc": "Show/hide the 'Switch delay' slider, total-before hint, and Mate POV row.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_res_structured",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2935,
+      "signature": "_on_res_structured(self, *_)",
+      "doc": "Compute width × height from (definition × ratio) and update vars.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_res_custom_toggle",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2949,
+      "signature": "_on_res_custom_toggle(self, *_)",
+      "doc": "Enable/disable structured selectors and manual input fields.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_update_res_preview",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2976,
+      "signature": "_update_res_preview(self)",
+      "doc": "Refresh the computed resolution label.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_vcodec",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2986,
+      "signature": "_on_vcodec(self, e=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_acodec",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2989,
+      "signature": "_on_acodec(self, e=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_trois_shot_toggle",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2993,
+      "signature": "_on_trois_shot_toggle(self, *_)",
+      "doc": "Toggle TROIS SHOT. Mutually exclusive with Exclude only.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_no_trois_shot_toggle",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3000,
+      "signature": "_on_no_trois_shot_toggle(self, *_)",
+      "doc": "Toggle Exclude (inverse TROIS SHOT).",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_logic_mode_change",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3011,
+      "signature": "_on_logic_mode_change(self, category, *_)",
+      "doc": "Ensure ★ Must toggles are visible (fixed required+optional logic).",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_build_filter_row",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3018,
+      "signature": "_build_filter_row(self, parent, fdef, must_list, pady=2)",
+      "doc": "Build one standard kill-filter row from a FilterDef.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_kill_logic_change",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3092,
+      "signature": "_on_kill_logic_change(self, *_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_clear_kill_filters",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3101,
+      "signature": "_clear_kill_filters(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_wire_enable_must",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3111,
+      "signature": "_wire_enable_must(self, enable_var, req_var)",
+      "doc": "Couple an Enable checkbox with its ★ Must checkbox.",
+      "usages": 3,
+      "tested": false
+    },
+    {
+      "name": "_retrigger_toggle_vars",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3137,
+      "signature": "_retrigger_toggle_vars(self)",
+      "doc": "Nudge every BooleanVar and StringVar so hchk/hradio _update closures re-fire.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_tab_tags",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3151,
+      "signature": "_tab_tags(self, parent)",
+      "doc": "",
+      "usages": 3,
+      "tested": false
+    },
+    {
+      "name": "_tags_deselect_all",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3333,
+      "signature": "_tags_deselect_all(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_tag_toggle",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3337,
+      "signature": "_tag_toggle(self, tag_id)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_tag_search_by_tag",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3344,
+      "signature": "_tag_search_by_tag(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_refresh_tags_list_display",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3403,
+      "signature": "_refresh_tags_list_display(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_tag_search_demos",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3471,
+      "signature": "_tag_search_demos(self)",
+      "doc": "Find demos matching config (player+events+weapons+dates).",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_tag_calc_range",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3566,
+      "signature": "_tag_calc_range(self)",
+      "doc": "Compute the date range of demos with selected tags (no config filter).",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_tag_apply_range_start",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3677,
+      "signature": "_tag_apply_range_start(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_tag_apply_range_end",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3682,
+      "signature": "_tag_apply_range_end(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_tag_apply_range_full",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3687,
+      "signature": "_tag_apply_range_full(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_tag_apply_range_after",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3693,
+      "signature": "_tag_apply_range_after(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_tag_apply_selected",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3703,
+      "signature": "_tag_apply_selected(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_tag_apply_all",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3716,
+      "signature": "_tag_apply_all(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_tag_remove_selected",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3728,
+      "signature": "_tag_remove_selected(self)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_tags_export",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3769,
+      "signature": "_tags_export(self)",
+      "doc": "Export tag assignments to a JSON file (all, or active-tag-filtered).",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_tags_export_worker",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3783,
+      "signature": "_tags_export_worker(self, path)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_tags_import",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3859,
+      "signature": "_tags_import(self)",
+      "doc": "Import tag assignments from a JSON export file.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_tags_import_worker",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3881,
+      "signature": "_tags_import_worker(self, data)",
+      "doc": "",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_create_tag_programmatic",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3946,
+      "signature": "_create_tag_programmatic(self, name, color)",
+      "doc": "Create a tag in DB without interactive dialogs. Returns (ok, tag_id_or_err).",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_tag_by_checksum",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3969,
+      "signature": "_tag_by_checksum(self, checksum, tag_id)",
+      "doc": "Apply a tag using a checksum directly (no demo_path → checksum lookup).",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_checksum_in_db",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3993,
+      "signature": "_checksum_in_db(self, checksum, mkm_col)",
+      "doc": "Return True if the given checksum exists in the matches table.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_delete_tag_ui",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4006,
+      "signature": "_delete_tag_ui(self, tag_id, tag_name)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_apply_dark_titlebar",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4020,
+      "signature": "_apply_dark_titlebar(self)",
+      "doc": "Dark title bar on Windows, best-effort. Follows the light/dark theme.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_change_theme",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4038,
+      "signature": "_change_theme(self, bg_name=None, accent=None)",
+      "doc": "Change theme at runtime. Pass None to keep the current value.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_reapply_ttk_styles",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4076,
+      "signature": "_reapply_ttk_styles(self)",
+      "doc": "Reapply ttk styles with current theme colours (source unique: ui_kit).",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_apply_theme_to_widgets",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4103,
+      "signature": "_apply_theme_to_widgets(root, old, new, exclude_ids=frozenset())",
+      "doc": "Recursively walk all tk widgets and swap old theme colours for new ones.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_tab_outils",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4188,
+      "signature": "_tab_outils(self, parent)",
+      "doc": "",
+      "usages": 5,
+      "tested": false
+    },
+    {
+      "name": "_save_preset",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4463,
+      "signature": "_save_preset(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_load_preset",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4478,
+      "signature": "_load_preset(self, name)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_post_apply_ui",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4488,
+      "signature": "_post_apply_ui(self)",
+      "doc": "Sync derived widgets after _apply_config (resolution, slow-motion…).",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_delete_preset",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4514,
+      "signature": "_delete_preset(self, name)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_quick_preset_load",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4520,
+      "signature": "_quick_preset_load(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_quick_preset_save",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4525,
+      "signature": "_quick_preset_save(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_preset_tooltip",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4540,
+      "signature": "_preset_tooltip(p)",
+      "doc": "Build a human-readable tooltip showing what categories a preset covers.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_refresh_preset_list",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4553,
+      "signature": "_refresh_preset_list(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_chk",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4592,
+      "signature": "_chk(self, p, text, var, **kw)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_slider",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4597,
+      "signature": "_slider(self, p, label, var, mn, mx, row, col)",
+      "doc": "Slider widget. row/col kept for backward-compat but layout is pack-based.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_log",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4617,
+      "signature": "_log(self, msg, tag='')",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_log_parts",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4632,
+      "signature": "_log_parts(self, parts)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_async_log",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4643,
+      "signature": "_async_log(self, msg, tag='')",
+      "doc": "Thread-safe async log — schedules a direct _log call on the main thread.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_async_log_parts",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4647,
+      "signature": "_async_log_parts(self, parts)",
+      "doc": "Thread-safe async log for multi-part lines (badge rows).",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "log",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4654,
+      "signature": "log(self, message, level='')",
+      "doc": "Engine port: write one line to the console. Thread-safe, no pump.",
+      "usages": 25,
+      "tested": true
+    },
+    {
+      "name": "log_parts",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4658,
+      "signature": "log_parts(self, parts)",
+      "doc": "Engine port: write one multicolor console line. Thread-safe, no pump.",
+      "usages": 9,
+      "tested": true
+    },
+    {
+      "name": "state",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4662,
+      "signature": "state(self, name, payload=None)",
+      "doc": "Engine port: report a typed state change. Rendered on the main thread.",
+      "usages": 46,
+      "tested": true
+    },
+    {
+      "name": "_on_state_main",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4669,
+      "signature": "_on_state_main(self, name, payload)",
+      "doc": "Route one state event to the widgets. Main thread only.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "ask",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4715,
+      "signature": "ask(self, kind, message, options)",
+      "doc": "Engine port: ask the user and BLOCK until the answer comes back.",
+      "usages": 9,
+      "tested": true
+    },
+    {
+      "name": "_uncheck_demos_in_picker",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4740,
+      "signature": "_uncheck_demos_in_picker(self, paths)",
+      "doc": "Uncheck a set of demo paths in the picker. Main thread only.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_dp2_cache_put_locked",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4766,
+      "signature": "_dp2_cache_put_locked(self, demo_path, data)",
+      "doc": "Write to _dp2_cache and evict the oldest entry if cache exceeds _DP2_CACHE_MAX.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_clear_log",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4788,
+      "signature": "_clear_log(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_update_log_counts",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4796,
+      "signature": "_update_log_counts(self)",
+      "doc": "Refresh the E:/W: counter labels in the log header.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_toggle_log_timestamps",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4807,
+      "signature": "_toggle_log_timestamps(self, event=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_log_right_click",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4817,
+      "signature": "_log_right_click(self, event)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_log_copy_line",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4834,
+      "signature": "_log_copy_line(self, x, y)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_toggle_log_badges",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4846,
+      "signature": "_toggle_log_badges(self, event=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_build_filter_badges",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4863,
+      "signature": "_build_filter_badges(self, cfg, events=None)",
+      "doc": "Return (text, tag) badge tuples for kill filters that matched this clip.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_build_filter_header_parts",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4888,
+      "signature": "_build_filter_header_parts(self, cfg)",
+      "doc": "Return grouped filter strings for the preview header Filters: line.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_build_clip_badges",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4911,
+      "signature": "_build_clip_badges(self, events, cfg)",
+      "doc": "Build inline badges that describe what a sequence *contains* followed by which",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_build_demo_log_base",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4993,
+      "signature": "_build_demo_log_base(self, date_str, demo_name, event_count, seq_count, idx=None, total=None, timing_str='')",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_emit_demo_log_entry",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4998,
+      "signature": "_emit_demo_log_entry(self, date_str, demo_name, events, seq_count, cfg, idx=None, total=None, timing_str='', async_emit=False)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_build_run_cfg",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5025,
+      "signature": "_build_run_cfg(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_refresh_injection_preview",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5028,
+      "signature": "_refresh_injection_preview(self)",
+      "doc": "Rebuild the live INJECTION PREVIEW display from current config.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_run",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5089,
+      "signature": "_run(self)",
+      "doc": "Button hook: the launch lives in the engine, not in the window.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "_handle_stop",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5093,
+      "signature": "_handle_stop(self)",
+      "doc": "Button hook: the decision lives in the engine, not in the window.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_kill_now",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5097,
+      "signature": "_kill_now(self)",
+      "doc": "Button hook: hard kill runs on a thread -- it waits for cs2.exe to die.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_reset_btns",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5101,
+      "signature": "_reset_btns(self)",
+      "doc": "",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_dry_run",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5108,
+      "signature": "_dry_run(self)",
+      "doc": "Button hook: same shape as _run.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_show_preview",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5112,
+      "signature": "_show_preview(self, evts, cfg, timings=None)",
+      "doc": "Display preview results. Must be called on the main thread.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "_show_preview_impl",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5120,
+      "signature": "_show_preview_impl(self, evts, cfg, timings=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_export_preview_html",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5261,
+      "signature": "_export_preview_html(self)",
+      "doc": "Export the last preview result as a standalone HTML file.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_preview_clip_rows",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5337,
+      "signature": "_preview_clip_rows(self)",
+      "doc": "Shared helper — yield dicts for every clip in the last preview result.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_export_preview_txt",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5371,
+      "signature": "_export_preview_txt(self)",
+      "doc": "Export the last preview result as a plain-text file.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_export_preview_json",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 5423,
+      "signature": "_export_preview_json(self)",
+      "doc": "Export the last preview result as JSON.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_sync_res",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 323,
+      "signature": "_sync_res(*_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "task",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 519,
+      "signature": "task()",
+      "doc": "",
+      "usages": 12,
+      "tested": true
+    },
+    {
+      "name": "task",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 889,
+      "signature": "task()",
+      "doc": "",
+      "usages": 12,
+      "tested": true
+    },
+    {
+      "name": "_global_wheel",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 930,
+      "signature": "_global_wheel(event)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_release",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 953,
+      "signature": "_on_release(e)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_on_tab_changed",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1039,
+      "signature": "_on_tab_changed(_event=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_set_sash",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1131,
+      "signature": "_set_sash(event=None)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_btn",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1203,
+      "signature": "_btn(text, cmd, fg=MUTED)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_show_export_menu",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1215,
+      "signature": "_show_export_menu(btn=_export_btn)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_remove",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1323,
+      "signature": "_remove()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_tree_tip_hide",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1542,
+      "signature": "_tree_tip_hide()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_tree_motion",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1548,
+      "signature": "_tree_motion(event)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_make_event_toggle",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1641,
+      "signature": "_make_event_toggle(parent, label, var, tip)",
+      "doc": "Styled toggle button for event types.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_update_both_total",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1708,
+      "signature": "_update_both_total(*_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_clutch_toggle_state",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2045,
+      "signature": "_clutch_toggle_state(*_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_bg",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2330,
+      "signature": "_bg()",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_sync_concat_state",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 2392,
+      "signature": "_sync_concat_state(*_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_make_enable_cmd",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3045,
+      "signature": "_make_enable_cmd(f_key=fdef.key, ex_k=ex_key, base_cmd=cmd)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_req_change",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3126,
+      "signature": "_on_req_change(*_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_enable_change",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3130,
+      "signature": "_on_enable_change(*_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_tag_auto_toggle",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3194,
+      "signature": "_on_tag_auto_toggle(*_)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "task",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3363,
+      "signature": "task()",
+      "doc": "",
+      "usages": 12,
+      "tested": true
+    },
+    {
+      "name": "task",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3500,
+      "signature": "task()",
+      "doc": "",
+      "usages": 12,
+      "tested": true
+    },
+    {
+      "name": "task",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3591,
+      "signature": "task()",
+      "doc": "",
+      "usages": 12,
+      "tested": true
+    },
+    {
+      "name": "task",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3742,
+      "signature": "task()",
+      "doc": "",
+      "usages": 12,
+      "tested": true
+    },
+    {
+      "name": "finish",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3932,
+      "signature": "finish()",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_walk",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4151,
+      "signature": "_walk(widget)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_pick_custom_accent",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4282,
+      "signature": "_pick_custom_accent()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_full_toggle",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4417,
+      "signature": "_on_full_toggle()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_partial_toggle",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4422,
+      "signature": "_on_partial_toggle()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_open",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4724,
+      "signature": "_open()",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_wpn_str",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4931,
+      "signature": "_wpn_str(event_list)",
+      "doc": "Return a compact weapon string for a list of events.",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "finish",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 904,
+      "signature": "finish()",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_flush",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 954,
+      "signature": "_flush()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_refresh",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1646,
+      "signature": "_refresh(*_)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_toggle",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1651,
+      "signature": "_toggle()",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_on",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3046,
+      "signature": "_on()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_make_excl_cmd",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3066,
+      "signature": "_make_excl_cmd(f_key=fdef.key, ex_k=ex_key, req_k=f'{fdef.key}_req')",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "show",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3387,
+      "signature": "show()",
+      "doc": "",
+      "usages": 9,
+      "tested": false
+    },
+    {
+      "name": "show",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3543,
+      "signature": "show()",
+      "doc": "",
+      "usages": 9,
+      "tested": false
+    },
+    {
+      "name": "_demo_to_date_str",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3629,
+      "signature": "_demo_to_date_str(dp)",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "_to_next_day",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3644,
+      "signature": "_to_next_day(dstr)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "show",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3652,
+      "signature": "show()",
+      "doc": "",
+      "usages": 9,
+      "tested": false
+    },
+    {
+      "name": "finish",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3752,
+      "signature": "finish()",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "show_dialog",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3892,
+      "signature": "show_dialog()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_make_bg_cmd",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4243,
+      "signature": "_make_bg_cmd(k=_bg_key)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_make_ac_cmd",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4268,
+      "signature": "_make_ac_cmd(k=_ac_key)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_fmt",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 4934,
+      "signature": "_fmt(w)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on_hv_toggle",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 1917,
+      "signature": "_on_hv_toggle(*_, _inner=_hv_inner)",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    },
+    {
+      "name": "_on",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 3067,
+      "signature": "_on()",
+      "doc": "",
+      "usages": 0,
+      "tested": false
+    }
+  ],
+  "python_classes": [
+    {
+      "name": "BridgeHost",
+      "file": "csdm/bridge/host.py",
+      "line": 23,
+      "signature": "class BridgeHost",
+      "doc": "Everything an engine host needs, wired to the JSON pipe instead of Tk.",
+      "usages": 0,
+      "tested": true
+    },
+    {
+      "name": "PipePorts",
+      "file": "csdm/bridge/ports.py",
+      "line": 13,
+      "signature": "class PipePorts",
+      "doc": "Writes engine output to the pipe, and blocks on `ask` until an answer returns.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "LineWriter",
+      "file": "csdm/bridge/protocol.py",
+      "line": 35,
+      "signature": "class LineWriter",
+      "doc": "Serializes writes from every thread onto one stream.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "EngineMixin",
+      "file": "csdm/engine/core.py",
+      "line": 95,
+      "signature": "class EngineMixin",
+      "doc": "The engine half of App. See module docstring for the three sockets.",
+      "usages": 4,
+      "tested": true
+    },
+    {
+      "name": "EnginePorts",
+      "file": "csdm/engine/ports.py",
+      "line": 23,
+      "signature": "class EnginePorts",
+      "doc": "Container for the three sockets. Frozen: an engine never rewires itself.",
+      "usages": 1,
+      "tested": true
+    },
+    {
+      "name": "CollectingPorts",
+      "file": "csdm/engine/ports.py",
+      "line": 32,
+      "signature": "class CollectingPorts",
+      "doc": "Test double: records every call, answers `ask` from a preloaded queue.",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "EngineStateMixin",
+      "file": "csdm/engine/state.py",
+      "line": 48,
+      "signature": "class EngineStateMixin",
+      "doc": "Gives a host every attribute the engine expects, with neutral values.",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "FilterDef",
+      "file": "csdm/static_data.py",
+      "line": 25,
+      "signature": "class FilterDef",
+      "doc": "",
+      "usages": 4,
+      "tested": false
+    },
+    {
+      "name": "ScrollableFrame",
+      "file": "csdm/widgets.py",
+      "line": 33,
+      "signature": "class ScrollableFrame",
+      "doc": "A vertically scrollable frame.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "WrapRow",
+      "file": "csdm/widgets.py",
+      "line": 110,
+      "signature": "class WrapRow",
+      "doc": "Horizontal list of widgets that wraps into new rows based on available width.",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "BentoGrid",
+      "file": "csdm/widgets.py",
+      "line": 180,
+      "signature": "class BentoGrid",
+      "doc": "A responsive container: it lays its cards out in one or two columns.",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "Tooltip",
+      "file": "csdm/widgets.py",
+      "line": 389,
+      "signature": "class Tooltip",
+      "doc": "Hover tooltip widget. Use add_tip(widget, text).",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "Sec",
+      "file": "csdm/widgets.py",
+      "line": 435,
+      "signature": "class Sec",
+      "doc": "Collapsible section card — drop-in replacement for the old LabelFrame Sec.",
+      "usages": 6,
+      "tested": false
+    },
+    {
+      "name": "PathField",
+      "file": "csdm/widgets.py",
+      "line": 552,
+      "signature": "class PathField",
+      "doc": "",
+      "usages": 3,
+      "tested": false
+    },
+    {
+      "name": "CalendarPopup",
+      "file": "csdm/widgets.py",
+      "line": 578,
+      "signature": "class CalendarPopup",
+      "doc": "",
+      "usages": 1,
+      "tested": false
+    },
+    {
+      "name": "ColorPickerDialog",
+      "file": "csdm/widgets.py",
+      "line": 662,
+      "signature": "class ColorPickerDialog",
+      "doc": "",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "TagImportMissingDialog",
+      "file": "csdm/widgets.py",
+      "line": 727,
+      "signature": "class TagImportMissingDialog",
+      "doc": "Lists tags that exist in the import file but are absent from the current DB.",
+      "usages": 2,
+      "tested": true
+    },
+    {
+      "name": "DateField",
+      "file": "csdm/widgets.py",
+      "line": 799,
+      "signature": "class DateField",
+      "doc": "",
+      "usages": 4,
+      "tested": false
+    },
+    {
+      "name": "PlayerSearchWidget",
+      "file": "csdm/widgets.py",
+      "line": 832,
+      "signature": "class PlayerSearchWidget",
+      "doc": "Player system v26 — multi-selection:",
+      "usages": 2,
+      "tested": false
+    },
+    {
+      "name": "App",
+      "file": "csdm_batch_clips_generator.py",
+      "line": 177,
+      "signature": "class App",
+      "doc": "",
+      "usages": 9,
+      "tested": true
+    }
+  ],
+  "config_keys": [
+    {
+      "name": "pg_host",
+      "default": "127.0.0.1"
+    },
+    {
+      "name": "pg_port",
+      "default": "5432"
+    },
+    {
+      "name": "pg_user",
+      "default": "postgres"
+    },
+    {
+      "name": "pg_pass",
+      "default": ""
+    },
+    {
+      "name": "pg_db",
+      "default": "csdm"
+    },
+    {
+      "name": "csdm_exe",
+      "default": "C:\\Users\\Trois\\AppData\\Local\\Programs\\cs-demo-manager\\csdm.CMD"
+    },
+    {
+      "name": "output_dir",
+      "default": "H:\\CS\\CSVideos\\Raws"
+    },
+    {
+      "name": "output_dir_clips",
+      "default": "H:\\CS\\CSVideos\\Raws"
+    },
+    {
+      "name": "output_dir_concat",
+      "default": ""
+    },
+    {
+      "name": "output_dir_assembled",
+      "default": ""
+    },
+    {
+      "name": "cs2_cfg_dir",
+      "default": ""
+    },
+    {
+      "name": "ui_window_w",
+      "default": 1600
+    },
+    {
+      "name": "ui_window_h",
+      "default": 900
+    },
+    {
+      "name": "ui_split_pct",
+      "default": 60
+    },
+    {
+      "name": "ui_remember_layout",
+      "default": true
+    },
+    {
+      "name": "ui_sections",
+      "default": {}
+    },
+    {
+      "name": "theme_bg",
+      "default": "dark"
+    },
+    {
+      "name": "theme_accent",
+      "default": "green"
+    },
+    {
+      "name": "ui_font_family",
+      "default": "auto"
+    },
+    {
+      "name": "steam_id",
+      "default": ""
+    },
+    {
+      "name": "player_name",
+      "default": ""
+    },
+    {
+      "name": "player_name_override",
+      "default": ""
+    },
+    {
+      "name": "events",
+      "default": [
+        "Kills"
+      ]
+    },
+    {
+      "name": "weapons",
+      "default": []
+    },
+    {
+      "name": "date_from",
+      "default": ""
+    },
+    {
+      "name": "date_to",
+      "default": ""
+    },
+    {
+      "name": "before",
+      "default": 3
+    },
+    {
+      "name": "after",
+      "default": 5
+    },
+    {
+      "name": "encoder",
+      "default": "FFmpeg"
+    },
+    {
+      "name": "recsys",
+      "default": "HLAE"
+    },
+    {
+      "name": "tickrate",
+      "default": 64
+    },
+    {
+      "name": "use_config_file_mode",
+      "default": true
+    },
+    {
+      "name": "close_game_after",
+      "default": true
+    },
+    {
+      "name": "subfolder_per_demo",
+      "default": true
+    },
+    {
+      "name": "width",
+      "default": 1920
+    },
+    {
+      "name": "height",
+      "default": 1080
+    },
+    {
+      "name": "framerate",
+      "default": 60
+    },
+    {
+      "name": "crf",
+      "default": 18
+    },
+    {
+      "name": "video_codec",
+      "default": "libx264"
+    },
+    {
+      "name": "audio_codec",
+      "default": "libmp3lame"
+    },
+    {
+      "name": "audio_bitrate",
+      "default": 256
+    },
+    {
+      "name": "video_container",
+      "default": "mp4"
+    },
+    {
+      "name": "ffmpeg_input_params",
+      "default": ""
+    },
+    {
+      "name": "ffmpeg_output_params",
+      "default": ""
+    },
+    {
+      "name": "death_notices_duration",
+      "default": 5
+    },
+    {
+      "name": "show_only_death_notices",
+      "default": true
+    },
+    {
+      "name": "concatenate_sequences",
+      "default": false
+    },
+    {
+      "name": "true_view",
+      "default": true
+    },
+    {
+      "name": "tag_on_export",
+      "default": ""
+    },
+    {
+      "name": "tag_enabled",
+      "default": false
+    },
+    {
+      "name": "retry_count",
+      "default": 2
+    },
+    {
+      "name": "retry_delay",
+      "default": 15
+    },
+    {
+      "name": "delay_between_demos",
+      "default": 3
+    },
+    {
+      "name": "recording_timeout",
+      "default": 0
+    },
+    {
+      "name": "assemble_after",
+      "default": false
+    },
+    {
+      "name": "delete_after_assemble",
+      "default": false
+    },
+    {
+      "name": "assemble_output",
+      "default": "assembled.mp4"
+    },
+    {
+      "name": "perspective",
+      "default": "killer"
+    },
+    {
+      "name": "victim_pre_s",
+      "default": 2
+    },
+    {
+      "name": "clip_order",
+      "default": "chrono"
+    },
+    {
+      "name": "headshots_mode",
+      "default": "all"
+    },
+    {
+      "name": "teamkills_mode",
+      "default": "include"
+    },
+    {
+      "name": "suicides_mode",
+      "default": "include"
+    },
+    {
+      "name": "kill_mod_logic_mods",
+      "default": "mixed"
+    },
+    {
+      "name": "kill_mod_logic_dp2",
+      "default": "mixed"
+    },
+    {
+      "name": "kill_mod_logic_db",
+      "default": "mixed"
+    },
+    {
+      "name": "kill_mod_through_smoke",
+      "default": false
+    },
+    {
+      "name": "kill_mod_through_smoke_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_through_smoke_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_no_scope",
+      "default": false
+    },
+    {
+      "name": "kill_mod_no_scope_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_no_scope_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_assisted_flash",
+      "default": false
+    },
+    {
+      "name": "kill_mod_assisted_flash_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_assisted_flash_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_wall_bang",
+      "default": false
+    },
+    {
+      "name": "kill_mod_wall_bang_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_wall_bang_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_attacker_blind",
+      "default": false
+    },
+    {
+      "name": "kill_mod_attacker_blind_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_attacker_blind_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_airborne",
+      "default": false
+    },
+    {
+      "name": "kill_mod_airborne_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_airborne_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_collateral",
+      "default": false
+    },
+    {
+      "name": "kill_mod_collateral_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_collateral_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_trois_shot",
+      "default": false
+    },
+    {
+      "name": "kill_mod_trois_shot_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_trois_shot_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_no_trois_shot",
+      "default": false
+    },
+    {
+      "name": "kill_mod_no_trois_shot_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_trois_tap",
+      "default": false
+    },
+    {
+      "name": "kill_mod_trois_tap_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_one_tap",
+      "default": false
+    },
+    {
+      "name": "kill_mod_one_tap_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_one_tap_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_one_tap_s",
+      "default": 2
+    },
+    {
+      "name": "kill_mod_spray_transfer",
+      "default": false
+    },
+    {
+      "name": "kill_mod_spray_transfer_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_spray_transfer_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_high_velocity",
+      "default": false
+    },
+    {
+      "name": "kill_mod_high_velocity_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_high_velocity_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_hv_one_shot",
+      "default": true
+    },
+    {
+      "name": "kill_mod_high_vel_thr",
+      "default": 100
+    },
+    {
+      "name": "kill_mod_flick",
+      "default": false
+    },
+    {
+      "name": "kill_mod_flick_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_flick_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_flick_deg",
+      "default": 50
+    },
+    {
+      "name": "kill_mod_savior",
+      "default": false
+    },
+    {
+      "name": "kill_mod_savior_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_savior_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_entry_frag",
+      "default": false
+    },
+    {
+      "name": "kill_mod_entry_frag_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_entry_frag_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_ace",
+      "default": false
+    },
+    {
+      "name": "kill_mod_ace_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_ace_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_multi_kill",
+      "default": false
+    },
+    {
+      "name": "kill_mod_multi_kill_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_multi_kill_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_multi_kill_n",
+      "default": 3
+    },
+    {
+      "name": "kill_mod_multi_kill_s",
+      "default": 12
+    },
+    {
+      "name": "kill_mod_bully",
+      "default": false
+    },
+    {
+      "name": "kill_mod_bully_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_bully_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_bully_n",
+      "default": 3
+    },
+    {
+      "name": "kill_mod_eco_frag",
+      "default": false
+    },
+    {
+      "name": "kill_mod_eco_frag_req",
+      "default": false
+    },
+    {
+      "name": "kill_mod_eco_frag_exclude",
+      "default": false
+    },
+    {
+      "name": "kill_mod_mate_pov",
+      "default": false
+    },
+    {
+      "name": "kill_mod_mate_pov_req",
+      "default": false
+    },
+    {
+      "name": "clutch_enabled",
+      "default": false
+    },
+    {
+      "name": "clutch_wins_only",
+      "default": false
+    },
+    {
+      "name": "clutch_mode",
+      "default": "kills_only"
+    },
+    {
+      "name": "clutch_1v1",
+      "default": false
+    },
+    {
+      "name": "clutch_1v2",
+      "default": false
+    },
+    {
+      "name": "clutch_1v3",
+      "default": false
+    },
+    {
+      "name": "clutch_1v4",
+      "default": false
+    },
+    {
+      "name": "clutch_1v5",
+      "default": false
+    },
+    {
+      "name": "match_type_premier",
+      "default": false
+    },
+    {
+      "name": "match_type_competitive",
+      "default": false
+    },
+    {
+      "name": "match_type_wingman",
+      "default": false
+    },
+    {
+      "name": "match_type_casual",
+      "default": false
+    },
+    {
+      "name": "match_type_deathmatch",
+      "default": false
+    },
+    {
+      "name": "match_type_training",
+      "default": false
+    },
+    {
+      "name": "match_type_new_user",
+      "default": false
+    },
+    {
+      "name": "match_type_armsrace",
+      "default": false
+    },
+    {
+      "name": "match_type_armsrace_alt",
+      "default": false
+    },
+    {
+      "name": "match_type_demolition",
+      "default": false
+    },
+    {
+      "name": "match_type_coop",
+      "default": false
+    },
+    {
+      "name": "match_type_skirmish",
+      "default": false
+    },
+    {
+      "name": "match_type_retake",
+      "default": false
+    },
+    {
+      "name": "match_type_filter_enabled",
+      "default": false
+    },
+    {
+      "name": "map_filter_enabled",
+      "default": false
+    },
+    {
+      "name": "map_filter",
+      "default": []
+    },
+    {
+      "name": "show_xray",
+      "default": true
+    },
+    {
+      "name": "video_preset",
+      "default": "medium"
+    },
+    {
+      "name": "hlae_fov",
+      "default": 90
+    },
+    {
+      "name": "hlae_slow_motion",
+      "default": 100
+    },
+    {
+      "name": "hlae_afx_stream",
+      "default": false
+    },
+    {
+      "name": "hlae_no_spectator_ui",
+      "default": true
+    },
+    {
+      "name": "hlae_fix_scope_fov",
+      "default": true
+    },
+    {
+      "name": "hlae_extra_args",
+      "default": ""
+    },
+    {
+      "name": "phys_ragdoll_gravity",
+      "default": 600
+    },
+    {
+      "name": "phys_ragdoll_scale",
+      "default": 1.0
+    },
+    {
+      "name": "phys_ragdoll_enable",
+      "default": true
+    },
+    {
+      "name": "phys_sv_gravity",
+      "default": 800
+    },
+    {
+      "name": "phys_blood",
+      "default": true
+    },
+    {
+      "name": "phys_dynamic_lighting",
+      "default": true
+    },
+    {
+      "name": "cs2_window_mode",
+      "default": "none"
+    },
+    {
+      "name": "cs2_send_to_back",
+      "default": false
+    },
+    {
+      "name": "dp2_threads",
+      "default": 8
+    },
+    {
+      "name": "process_exit_poll_interval",
+      "default": 0.5
+    },
+    {
+      "name": "process_exit_timeout",
+      "default": 60.0
+    },
+    {
+      "name": "cs2_process_name",
+      "default": "cs2.exe"
+    }
+  ]
+}
