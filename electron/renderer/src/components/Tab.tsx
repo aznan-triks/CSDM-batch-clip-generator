@@ -69,7 +69,12 @@ export function TabBar({ children }: TabBarProps) {
       const scale = (activeTab.offsetWidth - TAB_SLANT) / IND_BASE_WIDTH;
       const tx = `translateX(${activeTab.offsetLeft}px) scaleX(${scale})`;
       ind.style.transform = tx;
-      top.style.transform = tx;
+      // The top accent bar follows the tab's TOP edge, and the tab is a
+      // parallelogram (clip-path shears TAB_SLANT off each end): its top edge
+      // starts TAB_SLANT px to the right of its bottom edge. The bottom .ind
+      // tracks the bottom edge (offsetLeft); the top bar must track the top
+      // edge (offsetLeft + TAB_SLANT) or it reads as off-centre.
+      top.style.transform = `translateX(${activeTab.offsetLeft + TAB_SLANT}px) scaleX(${scale})`;
     }
 
     moveIndicators();

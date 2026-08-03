@@ -115,8 +115,9 @@
   height: 2px;
   width: 100px;
   transform-origin: left;
-  background: linear-gradient(90deg, var(--lime-glow), var(--accent), transparent);
-  transition: transform .4s;
+  background: linear-gradient(90deg, var(--lime-glow), var(--accent));
+  transition: transform .4s var(--ease);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent);
   z-index: 7;
   pointer-events: none;
 }
