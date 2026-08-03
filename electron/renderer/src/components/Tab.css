@@ -20,6 +20,7 @@
 .tab {
   appearance: none;
   font-family: inherit;
+  position: relative;
 }
 
 /* Keyboard focus. The mock has no focus state anywhere: it is a picture, and
@@ -55,4 +56,22 @@
 
 .tab:hover {
   background: var(--surface);
+}
+
+/* Optional gold dot on a tab, pulsing to draw the eye. The mock never drew
+   a badge, so the whole thing is the component's own. */
+.tab-badge {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: tab-badge-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes tab-badge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }

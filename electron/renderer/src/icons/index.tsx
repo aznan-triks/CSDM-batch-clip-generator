@@ -350,6 +350,17 @@ function IconPresets() {
   );
 }
 
+/** Editing: a checklist block — three rows, one checked. */
+function IconEditing() {
+  return (
+    <Glyph>
+      <path d="M2 4h20v3H2zm0 7h20v3H2zm0 7h20v3H2z" />
+      <path d="M4 6h3v-1H4zm0 7h3v-1H4zm0 7h3v-1H4z" />
+      <path d="M5 5l2 2 1-3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </Glyph>
+  );
+}
+
 export type IconName =
   | "capture" | "tags" | "video" | "settings"
   | "run" | "preview" | "stop" | "kill"
@@ -358,7 +369,8 @@ export type IconName =
   | "resolution" | "encoding" | "inGameOptions" | "recordingSystem"
   | "hlaeOptions" | "cs2Effects" | "tagRange" | "operations"
   | "paths" | "uiTheme" | "uiLayout" | "postgresql"
-  | "performance" | "injectionPreview" | "presets";
+  | "performance" | "injectionPreview" | "presets"
+  | "editing";
 
 export const ICONS: Record<IconName, () => JSX.Element> = {
   capture: IconCapture,
@@ -392,4 +404,5 @@ export const ICONS: Record<IconName, () => JSX.Element> = {
   performance: IconPerformance,
   injectionPreview: IconInjectionPreview,
   presets: IconPresets,
+  editing: IconEditing,
 };

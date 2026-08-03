@@ -8,6 +8,7 @@ interface HudNavTab<T extends string> {
   id: T;
   label: string;
   icon: ReactNode;
+  badge?: boolean;
 }
 
 interface HudNavProps<T extends string> {
@@ -54,6 +55,7 @@ export default function HudNav<T extends string>({
               label={tab.label}
               icon={tab.icon}
               active={tab.id === active}
+              badge={tab.badge}
               onSelect={() => onSelect(tab.id)}
             />
           ))}

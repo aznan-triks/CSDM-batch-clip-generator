@@ -6,13 +6,14 @@ interface TabProps {
   label: string;
   icon?: ReactNode;
   active?: boolean;
+  badge?: boolean;
   onSelect: () => void;
 }
 
 /**
  * One tab, extracted from the mock's `.tab` (mockup-v12-hologlass.html).
  */
-export function Tab({ label, icon, active, onSelect }: TabProps) {
+export function Tab({ label, icon, active, badge, onSelect }: TabProps) {
   const classes = active ? "tab active" : "tab";
   return (
     <button
@@ -26,6 +27,7 @@ export function Tab({ label, icon, active, onSelect }: TabProps) {
       {icon}
       <span className="tk" aria-hidden="true" />
       {label}
+      {badge && <span className="tab-badge" />}
     </button>
   );
 }
