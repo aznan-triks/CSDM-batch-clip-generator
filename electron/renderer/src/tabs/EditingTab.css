@@ -1,0 +1,132 @@
+/*
+ * The Editing tab's layout: a sticky header over a scrollable clip checklist.
+ *
+ * The checklist is the whole content of this tab, so `.editing-tab` owns its
+ * own scroll (`overflow-y: auto`) rather than leaving it to the shell's
+ * `.scrollwrap` -- the header needs to stay pinned while the clip rows below
+ * it scroll.
+ *
+ * NO :hover rule here may translate or scale anything (D13/D16).
+ */
+.editing-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: var(--sp-2);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.editing-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-1);
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.editing-summary {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}
+
+.editing-summary strong {
+  color: var(--txt);
+  font-weight: var(--fw-bold);
+}
+
+.editing-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--dim);
+  font-style: italic;
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+}
+
+.editing-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-1);
+}
+
+.editing-clip {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--r-mid);
+  background: var(--surface);
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.editing-clip:hover {
+  background: var(--raise-hi);
+}
+
+/* The hand-drawn check is a CSS glyph, so the box itself is a tiny flex cell
+   with no native input behind it -- the whole row carries the click. */
+.editing-clip .clip-check {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--line-hi);
+  border-radius: var(--r-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+
+.editing-clip.selected .clip-check {
+  border-color: var(--gold-d);
+  background: var(--gold-d);
+}
+
+.editing-clip.selected .clip-check::after {
+  content: "";
+  display: block;
+  width: 5px;
+  height: 8px;
+  border: solid var(--on-gold);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  margin-top: -1px;
+}
+
+.editing-clip .clip-duration {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+  font-weight: var(--fw-bold);
+  min-width: 3.5rem;
+  font-size: var(--fs-sm);
+}
+
+.editing-clip .clip-type {
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: var(--tr-tight);
+  min-width: 3.5rem;
+}
+
+.editing-clip .clip-player {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--txt);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
