@@ -45,10 +45,14 @@ const IND_BASE_WIDTH = 100;
  * (bottom) and `.top-ind` (top accent bar). Both slide fluidly via
  * `translateX()` whenever the active tab changes.
  *
- * Uses the active tab's `offsetLeft` and `offsetWidth` (the same arithmetic
- * `.ind` always used), read inside `useEffect` so the DOM has committed the
- * new `.active` class before the indicators move. `[children]` dependency
- * forces a re-measure on every tab switch.
+ * Positioning is driven by a MutationObserver on the `.tabs` container, NOT by
+ * a React effect keyed on `[children]`. A React effect depends on the parent
+ * re-rendering with a new `children` reference; under production React (no
+ * StrictMode double-render) a fast tab switch can be batched into a render
+ * whose children reference the effect misses, leaving `.top-ind` one tab
+ * behind while `.ind` — driven by the same effect — appears correct. The
+ * observer watches the DOM itself: the moment any child's `class` attribute
+ * changes (`.tab` gaining/losing `.active`), both bars are re-measured.
  */
 export function TabBar({ children }: TabBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
@@ -70,8 +74,13 @@ export function TabBar({ children }: TabBarProps) {
 
     moveIndicators();
     window.addEventListener("resize", moveIndicators);
-    return () => window.removeEventListener("resize", moveIndicators);
-  }, [children]);
+    const observer = new MutationObserver(() => moveIndicators());
+    observer.observe(bar, { attributes: true, attributeFilter: ["class"], subtree: true });
+    return () => {
+      window.removeEventListener("resize", moveIndicators);
+      observer.disconnect();
+    };
+  }, []);
 
   return (
     <div className="tabs" role="tablist" ref={barRef}>
