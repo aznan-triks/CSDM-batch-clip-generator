@@ -276,6 +276,6 @@ A **UI THEME** section in the Settings tab lets you change the entire interface 
 *Built with Claude. My code knowledge is equal to the void space separating our planet from the sun.*
 *Do as you wish with it.*
 
-*Assisted by GPT-5.3 Codex alongside Claude.*
+*Assisted by GPT-5.3 Codex alongside Claude Sonnet/Opus 4.6 and Deepseek V4.*
 
 </div>
