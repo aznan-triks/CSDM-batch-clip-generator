@@ -198,6 +198,8 @@ export default function AppShell() {
         <EngineLostBanner onRegain={() => window.location.reload()} />
         <ActionBar
           registerButton={registerButton}
+          active={active}
+          onSetTab={setActive}
           weapon={
             <WeaponBand
               status={engine.progress ?? (engine.busy ? "working…" : "idle")}

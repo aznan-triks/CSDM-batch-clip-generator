@@ -17,6 +17,7 @@ import ActionButton from "../components/ActionButton";
 import { ICONS } from "../icons";
 import { useEngineState } from "../motion/useEngineState";
 import { useAllSettings } from "../settings/store";
+import type { TabSpec } from "./tabs";
 import "./ActionBar.css";
 
 export interface ActionBarProps {
@@ -31,6 +32,15 @@ export interface ActionBarProps {
    * the action bar as `.wband`, leading the row, with the buttons trailing.
    */
   weapon?: ReactNode;
+  /**
+   * The open tab. The editing tab swaps the capture actions for GENERATE /
+   * SAVE / CANCEL, which read the preview selection instead of driving the
+   * engine directly. Passed down from `AppShell`, which owns the tab state
+   * (`useState` in AppShell.tsx, the same `active` that HudNav highlights).
+   */
+  active: TabSpec["id"];
+  /** Switch tabs -- CANCEL uses it to return to the capture tab. */
+  onSetTab: (tab: TabSpec["id"]) => void;
 }
 
 const noRegistration = () => () => {};
@@ -38,6 +48,8 @@ const noRegistration = () => () => {};
 export default function ActionBar({
   registerButton = noRegistration,
   weapon,
+  active,
+  onSetTab,
 }: ActionBarProps) {
   const engine = useEngineState();
   const settings = useAllSettings();
@@ -59,6 +71,80 @@ export default function ActionBar({
   const onKill = useCallback(() => {
     void runCommand("request_kill");
   }, []);
+
+  // The preview selection, in the snake_case shape the Python `_worker`
+  // expects (the composite key `(demo_path, start_tick)` that addresses a
+  // clip uniquely). Both GENERATE and SAVE send it; only GENERATE runs.
+  const selectedClips = useCallback(
+    () =>
+      engine.previewClips
+        .filter((clip) => clip.selected)
+        .map((clip) => ({ demo_path: clip.demoPath, start_tick: clip.startTick })),
+    [engine.previewClips],
+  );
+
+  const hasPreview = engine.previewClips.length > 0;
+  const hasSelected = engine.previewClips.some((clip) => clip.selected);
+
+  // GENERATE is the editing tab's primary: like RUN it starts a real run,
+  // but restricted to the clips the user checked on the editing checklist.
+  const onGenerate = useCallback(() => {
+    void runCommand("start_run", { cfg: settings, selected_clips: selectedClips() });
+  }, [settings, selectedClips]);
+
+  // SAVE opens the same preset-save path PresetSection uses (`save_preset`),
+  // carrying the current cfg and the selection that produced the preview.
+  const onSave = useCallback(() => {
+    void runCommand("save_preset", { cfg: settings, selected_clips: selectedClips() });
+  }, [settings, selectedClips]);
+
+  const onCancel = useCallback(() => {
+    onSetTab("capture");
+  }, [onSetTab]);
+
+  const busy = engine.busy;
+
+  // The editing tab swaps the whole capture action set: GENERATE / SAVE /
+  // CANCEL replace RUN / PREVIEW / STOP / KILL. These are not registered with
+  // the weapon controller (it only aims at run/preview/stop/kill), and none of
+  // them keep the capture actions mounted, so the capture bar's own
+  // registration refs simply stay null while editing is open.
+  if (active === "editing") {
+    return (
+      <div className="actbar">
+        {weapon}
+        <span className="action-bar-btn">
+          <ActionButton
+            label="GENERATE"
+            icon={<ICONS.run />}
+            variant="run"
+            disabled={!hasSelected || busy}
+            data-action="E1"
+            onClick={onGenerate}
+          />
+        </span>
+        <span className="action-bar-btn">
+          <ActionButton
+            label="SAVE"
+            icon={<ICONS.presets />}
+            variant="preview"
+            disabled={!hasPreview || busy}
+            data-action="E2"
+            onClick={onSave}
+          />
+        </span>
+        <span className="action-bar-btn">
+          <ActionButton
+            label="CANCEL"
+            icon={<ICONS.editing />}
+            variant="preview"
+            data-action="E3"
+            onClick={onCancel}
+          />
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="actbar">

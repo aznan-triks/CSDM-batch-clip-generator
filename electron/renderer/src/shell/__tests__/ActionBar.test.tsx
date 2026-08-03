@@ -45,10 +45,17 @@ function emit(message: BridgeMessage): void {
   for (const cb of listeners) cb(message);
 }
 
-async function renderBar() {
+async function renderBar(active = "capture" as "capture" | "editing") {
   sent.length = 0;
-  const utils = render(<ActionBar registerButton={() => () => {}} />);
-  return { ...utils, sent, emit };
+  const setTab = vi.fn();
+  const utils = render(
+    <ActionBar
+      registerButton={() => () => {}}
+      active={active}
+      onSetTab={setTab}
+    />,
+  );
+  return { ...utils, sent, emit, setTab };
 }
 
 describe("ActionBar", () => {
@@ -78,7 +85,14 @@ describe("ActionBar", () => {
   // lines themselves are asserted where they are now wired, in AppShell.
   it("renders whatever weapon row it is handed, ahead of the buttons", async () => {
     sent.length = 0;
-    render(<ActionBar registerButton={() => () => {}} weapon={<i>weapon slot</i>} />);
+    render(
+      <ActionBar
+        registerButton={() => () => {}}
+        active="capture"
+        onSetTab={() => {}}
+        weapon={<i>weapon slot</i>}
+      />,
+    );
     const slot = screen.getByText("weapon slot");
     const run = screen.getByRole("button", { name: /RUN/ });
     expect(slot).toBeTruthy();
@@ -112,5 +126,113 @@ describe("ActionBar", () => {
       emit({ type: "state", name: "buttons", payload: { stop: false, stop_label: "⏸ Stop" } }),
     );
     expect(screen.getByRole("button", { name: /^STOP$/ })).toBeTruthy();
+  });
+
+  describe("editing tab", () => {
+    it("shows GENERATE, SAVE and CANCEL instead of the capture actions", async () => {
+      await renderBar("editing");
+      expect(screen.getByRole("button", { name: /GENERATE/ })).toBeTruthy();
+      expect(screen.getByRole("button", { name: /SAVE/ })).toBeTruthy();
+      expect(screen.getByRole("button", { name: /CANCEL/ })).toBeTruthy();
+      expect(screen.queryByRole("button", { name: /RUN/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /PREVIEW/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /STOP/ })).toBeNull();
+      expect(screen.queryByRole("button", { name: /KILL/ })).toBeNull();
+    });
+
+    it("disables GENERATE when no clip is selected, SAVE when there is no preview", async () => {
+      const { emit } = await renderBar("editing");
+      // No preview yet: both GENERATE (nothing selected) and SAVE (no data) disabled.
+      expect(screen.getByRole("button", { name: /GENERATE/ })).toHaveProperty("disabled", true);
+      expect(screen.getByRole("button", { name: /SAVE/ })).toHaveProperty("disabled", true);
+
+      // A preview arrives with two clips, one unselected.
+      act(() =>
+        emit({
+          type: "state",
+          name: "preview_ready",
+          payload: {
+            cfg: { tickrate: 64, player_name: "x" },
+            sequences: {
+              "demo1": [
+                { start_tick: 1000, end_tick: 2000, events: [{ type: "Kill" }] },
+                { start_tick: 3000, end_tick: 4000, events: [{ type: "Death" }] },
+              ],
+            },
+          },
+        }),
+      );
+      // Both clips arrive selected=true by default, so GENERATE and SAVE enable.
+      expect(screen.getByRole("button", { name: /GENERATE/ })).toHaveProperty("disabled", false);
+      expect(screen.getByRole("button", { name: /SAVE/ })).toHaveProperty("disabled", false);
+
+      // Unselect the second clip; GENERATE stays enabled (one still selected).
+      act(() => emit({ type: "state", name: "editing_toggle", payload: { index: 1 } }));
+      expect(screen.getByRole("button", { name: /GENERATE/ })).toHaveProperty("disabled", false);
+
+      // Unselect the last clip too: GENERATE disables, SAVE keeps working.
+      act(() => emit({ type: "state", name: "editing_toggle", payload: { index: 0 } }));
+      expect(screen.getByRole("button", { name: /GENERATE/ })).toHaveProperty("disabled", true);
+      expect(screen.getByRole("button", { name: /SAVE/ })).toHaveProperty("disabled", false);
+    });
+
+    it("GENERATE sends start_run with the selected clips in snake_case, and nothing else", async () => {
+      const { sent, emit } = await renderBar("editing");
+      act(() =>
+        emit({
+          type: "state",
+          name: "preview_ready",
+          payload: {
+            cfg: { tickrate: 64 },
+            sequences: {
+              "demo1": [
+                { start_tick: 1000, end_tick: 2000, events: [{ type: "Kill" }] },
+                { start_tick: 3000, end_tick: 4000, events: [{ type: "Death" }] },
+              ],
+            },
+          },
+        }),
+      );
+      act(() => emit({ type: "state", name: "editing_toggle", payload: { index: 1 } }));
+
+      sent.length = 0;
+      act(() => screen.getByRole("button", { name: /GENERATE/ }).click());
+      expect(sent).toHaveLength(1);
+      expect(sent[0].name).toBe("start_run");
+      expect(sent[0].selected_clips).toEqual([
+        { demo_path: "demo1", start_tick: 1000 },
+      ]);
+      // The full cfg rides along, exactly like the capture-tab RUN button.
+      expect(sent[0].cfg).toEqual({ steam_ids: ["1"], events: ["Kills"] });
+    });
+
+    it("SAVE sends save_preset with the cfg and selection, and nothing else", async () => {
+      const { sent, emit } = await renderBar("editing");
+      act(() =>
+        emit({
+          type: "state",
+          name: "preview_ready",
+          payload: {
+            cfg: { tickrate: 64 },
+            sequences: {
+              "demo1": [{ start_tick: 1000, end_tick: 2000, events: [{ type: "Kill" }] }],
+            },
+          },
+        }),
+      );
+      sent.length = 0;
+      act(() => screen.getByRole("button", { name: /SAVE/ }).click());
+      expect(sent).toHaveLength(1);
+      expect(sent[0].name).toBe("save_preset");
+      expect(sent[0].selected_clips).toEqual([{ demo_path: "demo1", start_tick: 1000 }]);
+    });
+
+    it("CANCEL switches back to the capture tab and sends no command", async () => {
+      const { sent, setTab } = await renderBar("editing");
+      sent.length = 0;
+      act(() => screen.getByRole("button", { name: /CANCEL/ }).click());
+      expect(setTab).toHaveBeenCalledWith("capture");
+      expect(sent).toHaveLength(0);
+    });
   });
 });
