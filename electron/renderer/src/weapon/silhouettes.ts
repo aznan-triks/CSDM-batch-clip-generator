@@ -45,12 +45,31 @@ const CS2_ICONS = import.meta.glob("./assets/cs2/*.svg", {
  * sequence to the %XX escapes `btoa()` can consume, producing a valid
  * base64 data URI for every weapon in the pack.
  */
+/** Pre-built lookup: file stem → base64 data URI. */
 const ICON_BY_STEM: Record<string, string> = {};
+
+/**
+ * Pre-built lookup: file stem → aspect ratio (width ÷ height of the viewBox).
+ *
+ * The cascade gives every silhouette the same 44px height; the width is
+ * derived from THIS so a HE grenade no longer sits in a 96px-wide slot with
+ * the empty space on both sides (reported 2026-08-03). Built from the same
+ * loop as `ICON_BY_STEM` so the two lookups can never disagree.
+ */
+const RATIO_BY_STEM: Record<string, number> = {};
+
 for (const [path, svg] of Object.entries(CS2_ICONS)) {
   const match = path.match(/\/([^/]+)\.svg$/);
   if (match) {
+    const stem = match[1];
     const safe = btoa(unescape(encodeURIComponent(svg)));
-    ICON_BY_STEM[match[1]] = `data:image/svg+xml;base64,${safe}`;
+    ICON_BY_STEM[stem] = `data:image/svg+xml;base64,${safe}`;
+    const viewBox = svg.match(/viewBox="([-\d.]+)[ ,]+([-\d.]+)[ ,]+([-\d.]+)[ ,]+([-\d.]+)"/);
+    if (viewBox) {
+      const w = parseFloat(viewBox[3]);
+      const h = parseFloat(viewBox[4]);
+      if (w > 0 && h > 0) RATIO_BY_STEM[stem] = w / h;
+    }
   }
 }
 
@@ -124,6 +143,19 @@ export function silhouetteFor(weaponName: string): string | null {
   const stem = GAME_FILE[weaponName];
   if (!stem) return null;
   return ICON_BY_STEM[stem] ?? null;
+}
+
+/**
+ * The silhouette's aspect ratio (width ÷ height), for laying the icon out at
+ * its own proportions instead of a fixed square slot.
+ *
+ * Null when the pack has no icon for the weapon (same gap `silhouetteFor`
+ * reports) or the SVG carries no readable viewBox.
+ */
+export function silhouetteRatio(weaponName: string): number | null {
+  const stem = GAME_FILE[weaponName];
+  if (!stem) return null;
+  return RATIO_BY_STEM[stem] ?? null;
 }
 
 /** Names the vendored pack covers, for the coverage test to walk. */

@@ -168,6 +168,18 @@ drops Must, so a required filter can never stay armed under a disabled one.
 on). Both toggles go through dedicated handlers; `FilterRow.test.tsx` and `CaptureTab.test.tsx`
 updated from "refuses to arm" to "arms Must on its own and auto-enables the filter".
 
+## Weapon cascade proportions (2026-08-03)
+
+### Changed
+
+**Humanised:** Weapon silhouettes in the Weapon Filter card keep their own proportions — a HE
+grenade no longer floats in empty space and a sniper rifle no longer dominates the row.
+**Technical:** `weapon/silhouettes.ts` exposes `silhouetteRatio()` (from each SVG viewBox);
+`tabs/WeaponFilterSection.tsx` renders every icon at a shared 44px height with a width that
+follows the weapon's own ratio, clamped to keep tiny grenades readable and stop long rifles from
+crowding the cascade. Silhouette fade-out mirrors the CSS transition duration instead of a
+hardcoded delay. CS2 weapon art refreshed from the community pack (`scripts/refetch_cs2_icons.mjs`).
+
 ## [v299] — 2026-08-01
 
 ### Fixed

@@ -23,12 +23,11 @@ export const MOTION = {
   buttonImpact: { duration: 0.4 },
 
   /**
-   * The silhouettes arriving beside the weapon filter's chips: each one slides
-   * in behind the one before it. The mock's `casc` keyframes run .55s; the
-   * stagger is what makes it read as a cascade rather than a single block
-   * appearing.
+   * The silhouettes beside the weapon filter's chips. Every icon appears
+   * together at its own proportion (width driven by the SVG viewBox), and a
+   * deselected one fades out in `casc-out` seconds instead of vanishing.
    */
-  weaponCascade: { stagger: 0.06 },
+  weaponCascade: { out: 0.25 },
 
   /**
    * The console's typewriter, measured in the approved mock's own `pump()`:
