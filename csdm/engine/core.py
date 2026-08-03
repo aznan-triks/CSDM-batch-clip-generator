@@ -104,6 +104,11 @@ class EngineMixin:
     #   join_sql — extra JOIN clause to append to FROM, or "" if the col is in matches
     _MAP_COL_CANDIDATES = ("map_name", "game_map", "map", "level_name", "server_map")
 
+    # Optional set of clips a batch run is restricted to, as {demo_path: [start_tick, ...]}.
+    # None means "no restriction" (backward compatible). Set by start_run, read by _worker,
+    # cleared when a run ends.
+    _selected_clips = None
+
     @staticmethod
     def _detect_map_col(schema):
         """Return (col, alias, join_sql) for the map-name column, or (None, "m", "")."""
@@ -3213,13 +3218,16 @@ class EngineMixin:
             return False
         return True
 
-    def start_run(self, cfg):
+    def start_run(self, cfg, selected_clips=None):
         """Launch a batch run on its own thread. False when the inputs are unusable.
 
         The header lines and the flag reset are lifted from the window's own
         `_run`, character for character: a run must read the same in the
         console whichever host started it. `_worker` raises `run_started` and
         `buttons_busy` itself -- do not raise them twice.
+
+        selected_clips: optional list of {demo_path, start_tick} dicts restricting
+        the run to those clips; None (default) runs every clip.
         """
         if not self.validate_run_inputs(cfg):
             return False
@@ -3227,6 +3235,7 @@ class EngineMixin:
         self._running = True
         self._stop_after_current = False
         self._kill_triggered = False
+        self._selected_clips = selected_clips
         self._tagged_this_batch = []   # [(demo_path, tag_name), ...] -- for rollback
         self.state("buttons", {"run": False, "stop": True, "kill": True})
         self.log(f"\n{'═' * 60}", "dim")
@@ -3568,6 +3577,13 @@ class EngineMixin:
                 events, cfg["tickrate"],
                 self._effective_before(cfg), cfg["after"])
             t_seq = time.time() - t0_seq
+            if self._selected_clips is not None:
+                selected = {(s["demo_path"], s["start_tick"])
+                            for s in self._selected_clips}
+                seqs = [s for s in seqs
+                        if (dp, s["start_tick"]) in selected]
+                if not seqs:
+                    continue
             if not seqs:
                 continue
             dn = Path(dp).name
@@ -3832,6 +3848,7 @@ class EngineMixin:
                 msg += f" ({_rb_fail} failed)"
             self.log(msg, "warn")
         self._tagged_this_batch = []
+        self._selected_clips = None
 
         self.state("buttons_idle")
 
