@@ -38,12 +38,20 @@ export default function FilterRow({
   const [required, setRequired] = useSetting<boolean>(`${def.key}_req`);
   const [excluded, setExcluded] = useSetting<boolean>(`${def.key}_exclude`);
 
-  // `_wire_enable_must`: a Must left armed under a disabled filter silently
-  // skips clips nobody asked to skip.
+  // `_wire_enable_must` (mirror of the Tkinter window): arming ★ Must
+  // auto-enables the filter (Enable is not a prerequisite), and switching
+  // Enable off drops Must — a Must left armed under a disabled filter
+  // silently skips clips nobody asked to skip.
   function toggleEnabled() {
     const next = !enabled;
     setEnabled(next);
     if (!next) setRequired(false);
+  }
+
+  function toggleRequired() {
+    const next = !required;
+    setRequired(next);
+    if (next && !enabled) setEnabled(true);
   }
 
   return (
@@ -56,7 +64,7 @@ export default function FilterRow({
         <Chip
           label="★ Must"
           selected={!!required}
-          onToggle={() => enabled && setRequired(!required)}
+          onToggle={toggleRequired}
         />
       </SettingControl>
       {hasExclude && (

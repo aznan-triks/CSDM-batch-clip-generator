@@ -94,10 +94,17 @@ export default function CaptureTab() {
 
   // The window switches the Must box off with its Enable box, never the other
   // way round: a Must left armed under a disabled filter silently drops clips.
+  // Arming ★ Must auto-enables Enable (`_wire_enable_must` mirror).
   function toggleMatePov() {
     const next = !matePov;
     setMatePov(next);
     if (!next) setMatePovReq(false);
+  }
+
+  function toggleMatePovReq() {
+    const next = !matePovReq;
+    setMatePovReq(next);
+    if (next && !matePov) setMatePov(true);
   }
 
   const SECTIONS: SectionSpec[] = [
@@ -186,7 +193,7 @@ export default function CaptureTab() {
                 <Chip
                   label="★ Must"
                   selected={!!matePovReq}
-                  onToggle={() => matePov && setMatePovReq(!matePovReq)}
+                  onToggle={toggleMatePovReq}
                 />
               </SettingControl>
             </div>

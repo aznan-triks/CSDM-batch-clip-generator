@@ -143,13 +143,17 @@ describe("CaptureTab conditional rows", () => {
     expect(must.getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("refuses to arm Must while Mate POV is off", async () => {
+  it("arms Must on its own and auto-enables Mate POV", async () => {
+    // `_wire_enable_must`: Enable is not a prerequisite for ★ Must — clicking
+    // Must arms it and switches Mate POV Enable on by itself.
     await renderTab();
     choosePerspective("victim");
+    const enable = screen.getByRole("button", { name: /^Enable$/ });
     const must = screen.getByRole("button", { name: /Must/ });
 
     act(() => must.click());
-    expect(must.getAttribute("aria-pressed")).toBe("false");
+    expect(must.getAttribute("aria-pressed")).toBe("true");
+    expect(enable.getAttribute("aria-pressed")).toBe("true");
   });
 
   it("toggles an event kind without dropping the others", async () => {

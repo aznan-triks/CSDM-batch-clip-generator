@@ -156,6 +156,18 @@ port's `left/top var(--dur-fast)` tween is what made the crosshair drag behind t
 background; it now follows `clientX/clientY` instantly (width/height/opacity still tween for the
 snap gesture).
 
+## Must/Enable coupling fix (2026-08-03)
+
+### Fixed
+
+**Humanised:** The ★ Must box now behaves like the Tkinter window: clicking it arms the filter
+and turns Enable on by itself — Enable is no longer required first. Switching Enable off still
+drops Must, so a required filter can never stay armed under a disabled one.
+**Technical:** `settings/FilterRow.tsx` and `tabs/CaptureTab.tsx` now mirror the engine's
+`_wire_enable_must` coupling (React previously refused to arm `*_req` unless the base key was
+on). Both toggles go through dedicated handlers; `FilterRow.test.tsx` and `CaptureTab.test.tsx`
+updated from "refuses to arm" to "arms Must on its own and auto-enables the filter".
+
 ## [v299] — 2026-08-01
 
 ### Fixed
