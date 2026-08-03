@@ -1,0 +1,65 @@
+# ════════════════════════════════════════════════════════════════
+#  PERIMETRE VERROUILLE — depot public limite aux fichiers du programme
+#
+#  Regle : on ignore TOUT par defaut, puis on autorise UNIQUEMENT
+#  les fichiers du programme. Impossible de publier par accident un
+#  secret (csdm_config.json = mot de passe base), un document de
+#  travail (PLAN, CONTEXT_GUIDE) ou un fichier perso.
+#
+#  Pour publier un NOUVEAU fichier un jour : ajouter une ligne
+#  "!nom_du_fichier" ci-dessous, en pleine conscience.
+# ════════════════════════════════════════════════════════════════
+
+# 1) Tout ignorer (fichiers ET dossiers a la racine)
+/*
+
+# 2) Autoriser les fichiers publics du depot
+!.gitignore
+!CHANGELOG.md
+!LICENSE
+!README.md
+!csdm_batch_clips_generator.py
+!requirements.txt
+
+# 3) Package interne csdm/ — UNIQUEMENT les sources .py (jamais un .json
+#    secret qui s'y glisserait). On autorise le dossier puis ses .py.
+!csdm/
+!csdm/**/*.py
+
+# 4) Suite de tests — UNIQUEMENT les sources .py (le filet de securite,
+#    aucune donnee sensible : que des cas synthetiques).
+!tests/
+!tests/**/*.py
+
+# 5) Ne jamais publier les caches compiles Python, meme dans csdm/ ou tests/.
+__pycache__/
+*.pyc
+
+# 6) Shell Electron squelette (chantier 2) — jamais node_modules/ (paquets
+#    tiers, jamais commit), jamais le paquet construit (regenere par
+#    `npm run build`).
+!electron/
+electron/node_modules/
+electron/renderer/dist/
+electron/dist-app/
+
+# 7) Atlas — genere, jamais edite a la main (voir scripts/build_atlas.py).
+#    (L'atlas lui-meme est ignore en section 9 — le test le regenere.)
+!scripts/
+!scripts/**/*.py
+.worktrees/
+
+# 8) Fichiers de travail / debug jetables — jamais sur GitHub.
+#    Un fichier tracke AVANT la creation de ce .gitignore echappe au verrou
+#    /* : le retirer de l'index avec `git rm --cached` (il reste sur le disque).
+VAULT/
+docs/audits/
+docs/INVENTAIRE_ACTIONS.md
+electron/.repro-*
+electron/scripts/refetch_cs2_icons.mjs
+
+# 9) Journal de chantier interne + atlas genere par script (jamais edites
+#    a la main — le test tests/test_atlas.py les regenere tout seul).
+CHANGELOG_DEV.md
+PROJECT_ATLAS.md
+PROJECT_ATLAS.json
