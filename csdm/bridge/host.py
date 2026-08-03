@@ -276,7 +276,8 @@ def _cmd_start_run(host, command):
     cfg = command.get("cfg")
     if not isinstance(cfg, dict):
         raise ValueError("start_run needs a `cfg` object")
-    return {"started": host.start_run(host.build_run_cfg(cfg))}
+    selected_clips = command.get("selected_clips")
+    return {"started": host.start_run(host.build_run_cfg(cfg), selected_clips)}
 
 
 def _cmd_start_preview(host, command):
