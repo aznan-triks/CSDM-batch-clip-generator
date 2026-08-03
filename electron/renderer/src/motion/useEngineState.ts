@@ -33,6 +33,21 @@ export interface SummaryLine {
   avgSeconds?: number;
 }
 
+export interface PreviewClip {
+  /** Composite key: (demo_path, start_tick) */
+  demoPath: string;
+  startTick: number;
+  endTick: number;
+  /** Duration in seconds */
+  durationS: number;
+  /** First event's type (Kill, Death, Round) */
+  eventType: string;
+  /** Player name from the first event's killer or victim */
+  playerName: string;
+  /** Whether this clip is selected (default: true) */
+  selected: boolean;
+}
+
 export interface EngineState {
   /** False once the engine has reported it is idle again. */
   busy: boolean;
@@ -54,6 +69,10 @@ export interface EngineState {
   killEnabled: boolean;
   /** The engine's own STOP label ("⏸ Stop" or "⏸ Stop Preview"), raw. */
   stopLabel: string;
+  /** Clips from the most recent preview, or empty. */
+  previewClips: PreviewClip[];
+  /** True when a new preview has arrived and hasn't been viewed yet. */
+  editingBadge: boolean;
 }
 
 export const INITIAL_ENGINE_STATE: EngineState = {
@@ -67,6 +86,8 @@ export const INITIAL_ENGINE_STATE: EngineState = {
   stopEnabled: false,
   killEnabled: false,
   stopLabel: "⏸ Stop",
+  previewClips: [],
+  editingBadge: false,
 };
 
 /** Fold one state event into the current state. Pure, so it is directly testable. */
@@ -112,8 +133,44 @@ export function reduceEngineState(
       };
     case "demo_entry":
       return { ...state, demoEntries: state.demoEntries + 1 };
-    case "preview_ready":
-      return { ...state, previewReady: true, busy: false };
+    case "preview_ready": {
+      const sequences = payload.sequences as Record<string, Array<{
+        start_tick: number; end_tick: number;
+        events: Array<Record<string, unknown>>;
+      }>> | undefined;
+      const clipCfg = payload.cfg as Record<string, unknown> | undefined;
+      const tickrate = (clipCfg?.tickrate as number) ?? 64;
+      const playerName = (clipCfg?.player_name as string) ?? "";
+
+      const clips: PreviewClip[] = [];
+      if (sequences) {
+        for (const [dp, seqs] of Object.entries(sequences)) {
+          for (const seq of seqs) {
+            const firstEvt = seq.events?.[0] ?? {};
+            clips.push({
+              demoPath: dp,
+              startTick: seq.start_tick,
+              endTick: seq.end_tick,
+              durationS: (seq.end_tick - seq.start_tick) / tickrate,
+              eventType: String(firstEvt.type ?? "?"),
+              playerName: String(firstEvt.killer_sid ?? playerName),
+              selected: true,
+            });
+          }
+        }
+      }
+      return { ...state, previewReady: true, busy: false, previewClips: clips, editingBadge: true };
+    }
+    case "editing_toggle": {
+      const idx = payload.index as number;
+      const clips = [...state.previewClips];
+      if (idx >= 0 && idx < clips.length) {
+        clips[idx] = { ...clips[idx], selected: !clips[idx].selected };
+      }
+      return { ...state, previewClips: clips };
+    }
+    case "editing_viewed":
+      return { ...state, editingBadge: false };
     default:
       // An unknown event is not an error: the engine may grow new ones, and an
       // interface that crashes on them would block the engine from evolving.

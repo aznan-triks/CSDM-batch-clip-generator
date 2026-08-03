@@ -33,7 +33,9 @@ export type StateName =
   | "preview_started"
   | "stop_requested"
   | "kill_requested"
-  | "process_exited";
+  | "process_exited"
+  | "editing_toggle"
+  | "editing_viewed";
 
 export type BridgeMessage =
   | { type: "log"; message: string; level: LogLevel }
