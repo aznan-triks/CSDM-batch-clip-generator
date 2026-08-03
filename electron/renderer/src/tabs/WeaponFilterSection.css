@@ -48,9 +48,3 @@
   mask-mode: alpha;
   -webkit-mask-mode: alpha;
 }
-
-/* The cascade slides guns in side by side and does not scroll. When more
-   weapons are picked than can fit in one row, they wrap so none disappear. */
-.casc {
-  flex-wrap: wrap;
-}
