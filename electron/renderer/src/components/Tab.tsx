@@ -55,32 +55,39 @@ const IND_BASE_WIDTH = 100; // mock: .ind{width:100px}
 /**
  * Row layout for a set of `Tab`s (mock `.tabs`), plus the sliding `.ind`
  * underline (mock `moveInd`, mockup-v12-hologlass.html) that always sits under
- * whichever child carries `.active`.
+ * whichever child carries `.active`, and a matching `.top-ind` accent bar
+ * above the row — same fluid slide, same transition, just at the top instead
+ * of the bottom.
  */
 export function TabBar({ children }: TabBarProps) {
   const barRef = useRef<HTMLDivElement>(null);
   const indRef = useRef<HTMLSpanElement>(null);
+  const topIndRef = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {
-    function moveIndicator() {
+    function moveIndicators() {
       const bar = barRef.current;
       const ind = indRef.current;
-      if (!bar || !ind) return;
+      const top = topIndRef.current;
+      if (!bar || !ind || !top) return;
       const activeTab = bar.querySelector<HTMLElement>(".tab.active");
       if (!activeTab) return;
       const scale = (activeTab.offsetWidth - TAB_SLANT) / IND_BASE_WIDTH;
-      ind.style.transform = `translateX(${activeTab.offsetLeft}px) scaleX(${scale})`;
+      const tx = `translateX(${activeTab.offsetLeft}px) scaleX(${scale})`;
+      ind.style.transform = tx;
+      top.style.transform = tx;
     }
 
-    moveIndicator();
-    window.addEventListener("resize", moveIndicator);
-    return () => window.removeEventListener("resize", moveIndicator);
+    moveIndicators();
+    window.addEventListener("resize", moveIndicators);
+    return () => window.removeEventListener("resize", moveIndicators);
   });
 
   return (
     <div className="tabs" role="tablist" ref={barRef}>
       {children}
       <span className="ind" ref={indRef} />
+      <span className="top-ind" ref={topIndRef} />
     </div>
   );
 }

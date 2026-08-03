@@ -89,44 +89,30 @@
     width 0.2s ease-out;
 }
 
-/* MEASURED (2026-08-02, improvement_suggestions.md P4): the tab's top accent
-   bar teleports while the bottom indicator slides smoothly.
+/* MEASURED (2026-08-03, improvement_suggestions.md P4): the tab strip's
+   bottom indicator (`.ind`) slides fluidly between tabs, but the top accent
+   bar (`.tab.active::after`, a 2px gradient) teleports because it is a
+   per-tab pseudo-element — destroyed on the old active tab and created on
+   the new one, with nothing to interpolate.
 
-   The mock's `.tab` already has `transition:color .25s,background .2s,transform .26s
-   var(--ease)` (mock-v12.css:84). The bottom indicator (`.ind`) slides via
-   `transition:transform .4s`. But clicking a tab destroys the old active `::after`
-   and creates a new one — a transition on a created/destroyed pseudo-element has
-   nothing to interpolate, so the top bar snaps into place.
-
-   Fix: make the `::after` accent bar ALWAYS present on every tab (base: `opacity:0;
-   content:""`), then only give it colour and opacity:1 on the active one. The
-   transition from .tab.active fires on the opacity change instead of on element
-   creation, matching the bottom indicator's smoothness. The mock's own `.tab.active
-   ::after` stays untouched — this rule adds the missing base state it couldn't
-   exercise in a static picture. */
-.tab::after {
-  content: "";
+   Replace with a single `.top-ind` element (same pattern as `.ind`): one
+   absolute-positioned bar that the TabBar's JS moves via `translateX()`
+   whenever the active tab changes, with the same `.4s` transition the bottom
+   indicator already uses. The mock's own `.tab.active::after` is hidden
+   because the sliding element draws the same gradient at the same position. */
+.top-ind {
   position: absolute;
-  left: 18px;
-  right: 0;
   top: 0;
+  left: 0;
   height: 2px;
-  opacity: 0;
-  transition: opacity .25s;
+  width: 100px;
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--lime-glow), var(--accent), transparent);
+  transition: transform .4s;
 }
 
 .tab.active::after {
-  opacity: 1;
-  background: linear-gradient(90deg, var(--lime-glow), var(--accent), transparent);
-}
-
-/* MEASURED (2026-08-02, improvement_suggestions.md P4 cont'd): the mock's tab
-   transition animates colour/background/transform, but switching an inactive tab
-   to active also changes its background visibly (mock-v12.css:89 has
-   `background:#fff`). Our `.tab` transition extends the mock's existing one
-   so the whole strip moves together — same duration the mock's children use. */
-.tab {
-  transition: background .25s, transform .25s;
+  display: none;
 }
 
 /* MEASURED (2026-08-02, improvement_suggestions.md P1): the weapon silhouette

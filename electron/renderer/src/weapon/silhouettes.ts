@@ -14,25 +14,39 @@ import { WEAPONS } from "./weapons";
  * hand-drawn shape this project ever carried is gone: there is one source of
  * weapon art now, and it is the game.
  *
- * URLS, NOT MARKUP. Each icon is ~11 kB and there are 41 of them: inlining
- * them with `?raw` would have added 461 kB of string literals to the bundle.
- * They are loaded as asset URLs and painted through a CSS mask
- * (`background: currentColor; mask: url(...)`) which keeps them on the accent,
- * keeps them out of the bundle, and removes the `dangerouslySetInnerHTML` the
- * cascade used to need.
+ * DATA URIS, NOT URLS. `import.meta.glob` with `?url` was the original choice:
+ * each icon is ~11 kB and there are 41 of them, so emitting separate asset
+ * files kept 461 kB out of the JavaScript bundle. Vite 6 / Rolldown tree-shakes
+ * eager globs by tracing the object keys statically, and the only caller
+ * (`iconUrl` → `GAME_FILE` → 22 stems) caused Rolldown to emit only 22 SVGs.
+ * The user-selected weapons whose stems fell outside that set showed nothing.
+ * `?raw` inlines every SVG into the bundle (~500 kB) and, crucially, cannot
+ * be tree-shaken because the strings are embedded eagerly. The trade-off is
+ * real but acceptable: it is still ~500 kB of text before gzip, and an offline
+ * desktop app does not pay the network cost of a URL-based approach. A
+ * pre-built lookup (stem → data URI) makes `silhouetteFor` O(1) instead of
+ * O(n) per call, which was the reported slowness with 30 selected weapons.
  */
 
-/** Every vendored CS2 icon, by its file name, as a URL Vite emits. */
+/** Every vendored CS2 icon, as its raw SVG text, indexed by file path. */
 const CS2_ICONS = import.meta.glob("./assets/cs2/*.svg", {
   eager: true,
-  query: "?url",
+  query: "?raw",
   import: "default",
 }) as Record<string, string>;
 
-const iconUrl = (map: Record<string, string>, stem: string): string | null => {
-  const key = Object.keys(map).find((path) => path.endsWith(`/${stem}.svg`));
-  return key ? map[key] : null;
-};
+/**
+ * Pre-built lookup: file stem → base64 data URI.
+ * Built once at module load so `silhouetteFor` is O(1) instead of calling
+ * `Object.keys(map).find(…endsWith(…))` for every picked weapon.
+ */
+const ICON_BY_STEM: Record<string, string> = {};
+for (const [path, svg] of Object.entries(CS2_ICONS)) {
+  const match = path.match(/\/([^/]+)\.svg$/);
+  if (match) {
+    ICON_BY_STEM[match[1]] = `data:image/svg+xml;base64,${btoa(svg)}`;
+  }
+}
 
 /**
  * Database weapon name -> the file name the game uses for it.
@@ -88,10 +102,26 @@ const GAME_FILE: Record<string, string> = {
   "Tec-9": "tec9",
   "UMP-45": "ump45",
   "USP-S": "usp_silencer",
+  World: "prop_exploding_barrel",
   XM1014: "xm1014",
   "Zeus x27": "taser",
-  World: "prop_exploding_barrel",
 };
+
+/**
+ * The icon URL to paint for a weapon, or null when the pack has nothing for it.
+ *
+ * Null rather than a placeholder: a weapon the pack does not cover is a real
+ * gap, and a generic shape over it would hide that this table needs a line.
+ * There is no longer any hand-drawn shape to fall back to, on purpose.
+ */
+export function silhouetteFor(weaponName: string): string | null {
+  const stem = GAME_FILE[weaponName];
+  if (!stem) return null;
+  return ICON_BY_STEM[stem] ?? null;
+}
+
+/** Names the vendored pack covers, for the coverage test to walk. */
+export const PACK_NAMES = Object.keys(GAME_FILE);
 
 /**
  * The class a weapon belongs to, from the engine's own table.
@@ -111,21 +141,6 @@ export function classOf(
   }
   return null;
 }
-
-/**
- * The icon URL to paint for a weapon, or null when the pack has nothing for it.
- *
- * Null rather than a placeholder: a weapon the pack does not cover is a real
- * gap, and a generic shape over it would hide that this table needs a line.
- * There is no longer any hand-drawn shape to fall back to, on purpose.
- */
-export function silhouetteFor(weaponName: string): string | null {
-  const stem = GAME_FILE[weaponName];
-  return stem ? iconUrl(CS2_ICONS, stem) : null;
-}
-
-/** Names the vendored pack covers, for the coverage test to walk. */
-export const PACK_NAMES = Object.keys(GAME_FILE);
 
 /** The firing table's own art, still inline: the band animates its internals. */
 export const BAND_ART: Record<string, string> = Object.fromEntries(
