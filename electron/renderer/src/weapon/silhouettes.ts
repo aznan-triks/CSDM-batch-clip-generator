@@ -37,14 +37,20 @@ const CS2_ICONS = import.meta.glob("./assets/cs2/*.svg", {
 
 /**
  * Pre-built lookup: file stem → base64 data URI.
- * Built once at module load so `silhouetteFor` is O(1) instead of calling
- * `Object.keys(map).find(…endsWith(…))` for every picked weapon.
+ * Built once at module load so `silhouetteFor` is O(1).
+ *
+ * `btoa()` throws on strings outside Latin-1 (0–255). Some vendored SVGs
+ * carry Unicode whitespace / non-breaking spaces that break it. The
+ * `unescape(encodeURIComponent(svg))` round-trip converts any UTF-8 byte
+ * sequence to the %XX escapes `btoa()` can consume, producing a valid
+ * base64 data URI for every weapon in the pack.
  */
 const ICON_BY_STEM: Record<string, string> = {};
 for (const [path, svg] of Object.entries(CS2_ICONS)) {
   const match = path.match(/\/([^/]+)\.svg$/);
   if (match) {
-    ICON_BY_STEM[match[1]] = `data:image/svg+xml;base64,${btoa(svg)}`;
+    const safe = btoa(unescape(encodeURIComponent(svg)));
+    ICON_BY_STEM[match[1]] = `data:image/svg+xml;base64,${safe}`;
   }
 }
 

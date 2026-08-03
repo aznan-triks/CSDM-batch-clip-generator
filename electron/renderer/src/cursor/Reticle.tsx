@@ -76,6 +76,16 @@ export default function Reticle() {
       // background case, not a reason to bail out silently.
       const target = event.target instanceof Element ? event.target : null;
 
+      // Nav tabs are explicitly excluded from the reticle. `.tab` was
+      // removed from SNAP_SELECTOR but could still pass the background
+      // check if the pointer lands on a child deep inside the tab strip
+      // whose parent chain eventually sits in `.shell`. An early
+      // closest(".tab") guards against every path into that strip.
+      if (target?.closest(".tab")) {
+        hide();
+        return;
+      }
+
       const button = target?.closest(SNAP_SELECTOR);
       if (button) {
         const rect = button.getBoundingClientRect();
