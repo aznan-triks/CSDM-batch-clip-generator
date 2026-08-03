@@ -3151,13 +3151,27 @@ class EngineMixin:
             evts = self._apply_dp2_filters_to_events(evts, cfg)
             evts = self._apply_global_filter_gate_dict(evts, cfg)
             t_filters = time.time() - t0
+            t0 = time.time()
+            seqs = {}
+            for dp, events in evts.items():
+                if events:
+                    seqs[dp] = self._build_sequences(
+                        events, cfg["tickrate"],
+                        self._effective_before(cfg), cfg["after"])
+            t_seq = time.time() - t0
             timings = {
                 "query":    t_query,
                 "preparse": t_preparse,
                 "filters":  t_filters,
+                "seqs":     t_seq,
                 "total":    time.time() - t0_total,
             }
-            self.state("preview_ready", {"events": evts, "cfg": cfg, "timings": timings})
+            self.state("preview_ready", {
+                "events": evts,
+                "sequences": seqs,
+                "cfg": cfg,
+                "timings": timings,
+            })
         except Exception as e:
             import traceback
             self.log(f"Preview error: {e}\n{traceback.format_exc()}", "err")
