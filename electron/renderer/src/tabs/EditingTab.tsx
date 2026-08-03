@@ -45,7 +45,9 @@ export const EditingTab: React.FC = () => {
     return (
       <div className="editing-tab">
         <div className="editing-empty">
-          No preview available. Run a PREVIEW first.
+          <div className="editing-empty-box">
+            No preview available. Run a PREVIEW first.
+          </div>
         </div>
       </div>
     );

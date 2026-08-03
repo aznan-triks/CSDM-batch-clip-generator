@@ -51,6 +51,15 @@
   font-size: var(--fs-md);
 }
 
+/* The empty state floats on the bare backdrop -- it needs its own box, or
+   the message disappears against the dark ground. */
+.editing-empty-box {
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-mid);
+  background: var(--surface);
+}
+
 .editing-list {
   display: flex;
   flex-direction: column;
