@@ -99,7 +99,15 @@
    absolute-positioned bar that the TabBar's JS moves via `translateX()`
    whenever the active tab changes, with the same `.4s` transition the bottom
    indicator already uses. The mock's own `.tab.active::after` is hidden
-   because the sliding element draws the same gradient at the same position. */
+   because the sliding element draws the same gradient at the same position.
+
+   `z-index: 7` is NOT decoration: `.tab.active` carries `z-index: 6`
+   (mock-v12.css:89) and `transform: translateY(-2px)` — the active tab lifts
+   2px and, with its opaque background, would otherwise paint OVER the bar at
+   `top: 0`. The bottom `.ind` is visible only because the lifted tab leaves a
+   2px gap at the bottom; the top bar gets an explicit layer instead.
+   `pointer-events: none` keeps the bar from swallowing clicks meant for the
+   tabs beneath it. */
 .top-ind {
   position: absolute;
   top: 0;
@@ -109,6 +117,8 @@
   transform-origin: left;
   background: linear-gradient(90deg, var(--lime-glow), var(--accent), transparent);
   transition: transform .4s;
+  z-index: 7;
+  pointer-events: none;
 }
 
 .tab.active::after {
