@@ -118,14 +118,17 @@
 /* MEASURED (2026-08-02, improvement_suggestions.md P1): the weapon silhouette
    cascade (`.casc .gun`) draws 96px-wide icons through a CSS mask. The mock's
    generic `.gun{width:100%;height:44px}` is a catch-all for inline SVG; our
-   mask-based silhouettes need a different width. Our component already sets
-   these in WeaponFilterSection.css, but they land in the CSS bundle BEFORE the
-   mock (Tab.css ~37KB, mock ~48KB), so the mock's later `.gun` beats ours on
-   `width`. Re-stating with the cascade combinator keeps specificity at (0,2,0)
-   and, crucially, comes AFTER the mock in the bundle. */
+   mask-based silhouettes need a different width.
+
+   `mask-size: contain` is stated explicitly because the shorthand `mask: ...
+   / contain` can lose the sizing keyword when the mask source is a data URI
+   (several vendored SVGs have intrinsic dimensions far outside 96×44,
+   producing giant truncated fragments instead of recognisable silhouettes). */
 .casc .gun {
   width: 96px;
   height: 44px;
+  -webkit-mask-size: contain;
+  mask-size: contain;
 }
 
 /* MEASURED (2026-08-02, improvement_suggestions.md P2): the cascade must wrap
