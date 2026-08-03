@@ -8,6 +8,7 @@ import { useEngineState } from "../motion/useEngineState";
 import { useWindowActivity } from "../motion/useWindowActivity";
 import { useSetting } from "../settings/store";
 import CaptureTab from "../tabs/CaptureTab";
+import { EditingTab } from "../tabs/EditingTab";
 import SettingsTab from "../tabs/SettingsTab";
 import TagsTab from "../tabs/TagsTab";
 import VideoTab from "../tabs/VideoTab";
@@ -131,8 +132,21 @@ export default function AppShell() {
 
   const hudTabs = TABS.map((tab) => {
     const Icon = ICONS[tab.icon];
-    return { id: tab.id, label: tab.label, icon: <Icon /> };
+    return {
+      id: tab.id,
+      label: tab.label,
+      icon: <Icon />,
+      badge: tab.id === "editing" ? engine.editingBadge : undefined,
+    };
   });
+
+  // When the user opens the EDITING tab, clear the "new previews ready"
+  // badge the engine set on it (see editing_viewed in useEngineState).
+  useEffect(() => {
+    if (active === "editing" && engine.editingBadge) {
+      sendCommand("editing_viewed", {});
+    }
+  }, [active, engine.editingBadge]);
 
   return (
     <>
@@ -167,6 +181,7 @@ export default function AppShell() {
         >
           <div className="scrollwrap" role="tabpanel" aria-label={active}>
             {active === "capture" && <CaptureTab />}
+            {active === "editing" && <EditingTab />}
             {active === "tags" && <TagsTab />}
             {active === "video" && <VideoTab />}
             {active === "settings" && <SettingsTab />}
