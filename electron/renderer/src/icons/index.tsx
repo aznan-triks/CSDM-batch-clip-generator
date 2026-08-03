@@ -356,7 +356,7 @@ function IconEditing() {
     <Glyph>
       <path d="M2 4h20v3H2zm0 7h20v3H2zm0 7h20v3H2z" />
       <path d="M4 6h3v-1H4zm0 7h3v-1H4zm0 7h3v-1H4z" />
-      <path d="M5 5l2 2 1-3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M5 5l2 2 1-3z" />
     </Glyph>
   );
 }

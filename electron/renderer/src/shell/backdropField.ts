@@ -107,6 +107,7 @@ export const BACKDROP: BackdropField = {
  */
 export const BACKDROP_BY_TAB: Readonly<Record<string, Partial<BackdropField>>> = {
   capture: { motif: "crosshair" },
+  editing: { motif: "bracket" },
   tags: { reach: 6, threshold: 0.68, motif: "dots" },
   video: { threshold: 0.7, falloffFloor: 0.35, motif: "bracket" },
   settings: { reach: 10, threshold: 0.56, motif: "hatch" },

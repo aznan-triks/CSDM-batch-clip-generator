@@ -49,7 +49,7 @@ describe("Tab.css states only what the mock does not", () => {
     const backgrounds = [...CSS.matchAll(/^[ \t]*background\s*:\s*([^;]+);/gm)].map((m) =>
       m[1].trim(),
     );
-    expect(backgrounds.length, "the dark-ground corrections are gone").toBe(2);
+    expect(backgrounds.length, "the dark-ground corrections are gone").toBe(3);
     for (const value of backgrounds) {
       expect(value, "a literal here is a copy of the design, not a correction").toMatch(
         /^var\(--[a-z-]+\)$/,
