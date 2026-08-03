@@ -38,14 +38,38 @@ def test_build_preset_full_copies_everything_and_does_not_alias():
     assert cfg["crf"] == 18, "the preset must not share the caller's dict"
 
 
+def test_build_preset_stores_selected_clips_when_given():
+    clips = [{"demo_path": "x.dem", "start_tick": 100}]
+    preset = build_preset({"crf": 18}, ["capture"], clips)
+    assert preset["selected_clips"] == clips
+
+
+def test_build_preset_omits_selected_clips_when_absent():
+    preset = build_preset({"crf": 18}, ["capture"])
+    assert "selected_clips" not in preset
+
+
 def test_preset_payload_reads_the_new_format():
-    data, keys = preset_payload({"cats": ["date"], "data": {"date_from": "x"}})
+    data, keys, _ = preset_payload({"cats": ["date"], "data": {"date_from": "x"}})
     assert data == {"date_from": "x"}
     assert keys == ["date_from", "date_to"]
 
 
+def test_preset_payload_returns_none_for_selected_clips_when_absent():
+    _, _, sc = preset_payload({"cats": ["date"], "data": {"date_from": "x"}})
+    assert sc is None
+
+
+def test_preset_payload_returns_selected_clips_when_present():
+    clips = [{"demo_path": "x.dem", "start_tick": 100}]
+    _, _, sc = preset_payload(
+        {"cats": ["date"], "data": {"date_from": "x"}, "selected_clips": clips}
+    )
+    assert sc == clips
+
+
 def test_preset_payload_still_reads_the_old_type_format():
-    data, keys = preset_payload({"type": "full", "data": {"crf": 18}})
+    data, keys, _ = preset_payload({"type": "full", "data": {"crf": 18}})
     assert data == {"crf": 18}
     assert keys is None
 
@@ -68,3 +92,14 @@ def test_normalize_presets_gives_every_entry_a_cats_list():
 def test_normalize_presets_defaults_a_missing_data_key_to_empty():
     normalized = normalize_presets({"bare": {"type": "date"}})
     assert normalized["bare"]["data"] == {}
+
+
+def test_normalize_presets_keeps_selected_clips_when_present():
+    clips = [{"demo_path": "x.dem", "start_tick": 100}]
+    normalized = normalize_presets(
+        {"p": {"cats": ["capture"], "data": {}, "selected_clips": clips}}
+    )
+    assert normalized["p"]["selected_clips"] == clips
+    assert "selected_clips" not in normalize_presets(
+        {"p": {"cats": ["capture"], "data": {}}}
+    )["p"]

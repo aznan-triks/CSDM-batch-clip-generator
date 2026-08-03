@@ -240,7 +240,8 @@ def _cmd_save_preset(host, command):
     if not isinstance(cfg, dict):
         raise ValueError("save_preset needs a `cfg` object")
     presets = load_presets()
-    presets[preset_name] = build_preset(cfg, cats)
+    selected_clips = command.get("selected_clips")
+    presets[preset_name] = build_preset(cfg, cats, selected_clips)
     save_presets(presets)
     return {"data": normalize_presets(presets)}
 
@@ -251,8 +252,11 @@ def _cmd_load_preset(host, command):
     presets = load_presets()
     if preset_name not in presets:
         raise ValueError(f"no preset named {preset_name}")
-    data, keys = preset_payload(presets[preset_name])
-    return {"data": data, "keys": keys}
+    data, keys, selected_clips = preset_payload(presets[preset_name])
+    result = {"data": data, "keys": keys}
+    if selected_clips is not None:
+        result["selected_clips"] = selected_clips
+    return result
 
 
 def _cmd_delete_preset(host, command):

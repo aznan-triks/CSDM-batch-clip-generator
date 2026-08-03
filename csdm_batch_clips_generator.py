@@ -4480,7 +4480,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         if not p:
             return
         # Both old {"type": "..."} and new {"cats": [...]} formats are read there.
-        data, keys = preset_payload(p)
+        data, keys, _ = preset_payload(p)
         self._apply_config(data, keys=keys)
         self._post_apply_ui()
         self._log(f"Preset '{name}' loaded.", "ok")

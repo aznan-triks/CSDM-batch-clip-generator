@@ -247,12 +247,18 @@ def preset_keys_for(cats):
     return keys
 
 
-def build_preset(cfg, cats):
-    """Extract from `cfg` the preset the user asked to save."""
+def build_preset(cfg, cats, selected_clips=None):
+    """Extract from `cfg` the preset the user asked to save.
+
+    selected_clips: optional list of {demo_path, start_tick} dicts — the
+    user's clip selection from the editing page, stored alongside the config.
+    """
     keys = preset_keys_for(cats)
-    if keys is None:
-        return {"cats": ["full"], "data": dict(cfg)}
-    return {"cats": list(cats), "data": {k: cfg[k] for k in keys if k in cfg}}
+    preset = {"cats": ["full"], "data": dict(cfg)} if keys is None \
+        else {"cats": list(cats), "data": {k: cfg[k] for k in keys if k in cfg}}
+    if selected_clips:
+        preset["selected_clips"] = selected_clips
+    return preset
 
 
 def preset_cats(preset):
@@ -264,12 +270,18 @@ def preset_cats(preset):
 
 
 def preset_payload(preset):
-    """Return `(data, keys)` for a stored preset, old format or new.
+    """Return `(data, keys, selected_clips)` for a stored preset.
 
     `keys` is None for a full preset, which is exactly what
     `_apply_config(cfg, keys=None)` expects.
+    `selected_clips` is None when the preset has no clip selection
+    (saved before editing support, or intentionally omitted).
     """
-    return preset.get("data", {}), preset_keys_for(preset_cats(preset))
+    return (
+        preset.get("data", {}),
+        preset_keys_for(preset_cats(preset)),
+        preset.get("selected_clips"),
+    )
 
 
 def normalize_presets(presets):
@@ -282,10 +294,13 @@ def normalize_presets(presets):
     format's history) -- normalizing here, once, is cheaper than teaching
     every renderer reader about a storage detail two formats deep.
     """
-    return {
-        name: {"cats": preset_cats(preset), "data": preset.get("data", {})}
-        for name, preset in presets.items()
-    }
+    result = {}
+    for name, preset in presets.items():
+        entry = {"cats": preset_cats(preset), "data": preset.get("data", {})}
+        if "selected_clips" in preset:
+            entry["selected_clips"] = preset["selected_clips"]
+        result[name] = entry
+    return result
 
 def load_saved_players():
     return _load_json(PLAYERS_FILE, list)
