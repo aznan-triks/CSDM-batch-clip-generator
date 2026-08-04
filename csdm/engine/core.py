@@ -634,7 +634,14 @@ class EngineMixin:
         return hc, hsql
 
     def _qe_teamkill_sql(self, cfg):
-        """Teamkill include/exclude/only WHERE fragment."""
+        """Teamkill include/exclude/only WHERE fragment.
+
+        DEPRECATED (events-beyond-kill, Task 5): superseded by
+        `_build_team_filter_sql`. The legacy `teamkills_mode` key is migrated
+        to the 2-axis `event_ally` / `event_enemy` keys in `_migrate_config`,
+        so this helper is no longer referenced by the query path. Kept for
+        backward compatibility with old callers/tests until they are removed.
+        """
         _tkmode = cfg.get("teamkills_mode", "include")
         include_teamkills = (_tkmode != "exclude")
         teamkills_only    = (_tkmode == "only")
@@ -649,6 +656,43 @@ class EngineMixin:
                 return f' AND k."{tkc_k}" != k."{tkc_v}"'
             self.log("⚠ Exclude teamkills: team columns not found — filter ignored.", "warn")
         return ""
+
+    def _build_team_filter_sql(self, cfg, table_alias, params_list, table="kills"):
+        """Build SQL clause filtering by team relationship.
+
+        Replaces the legacy `teamkills_mode` handling. Reads the 2-axis
+        `_events_ally` / `_events_enemy` derived flags (falling back to the
+        raw `event_ally` / `event_enemy` keys) and returns a WHERE fragment
+        comparing the table's attacker/victim team-name columns.
+
+        Returns (clause_sql, needs_team_cols):
+          - clause_sql: "" when no filter applies, " AND 1=0" when both ally
+            and enemy are excluded (match nothing), or " AND <alias>.<at> =
+            <alias>.<vt>" / "!= " when exactly one side is enabled.
+          - needs_team_cols: True only when the clause actually depends on the
+            attacker/victim team columns (so a caller may warn on absence).
+
+        `params_list` is accepted for signature parity with the other
+        `_qe_*`/`_build_*` clause builders; team filtering compares two
+        columns, so it appends no bound values.
+        """
+        ally = cfg.get("_events_ally", cfg.get("event_ally", False))
+        enemy = cfg.get("_events_enemy", cfg.get("event_enemy", True))
+
+        if ally and enemy:
+            return "", False  # no filter — include all
+        if not ally and not enemy:
+            return " AND 1=0", False  # exclude all
+
+        at_col = self._find_col(table, ["attacker_team_name", "attacker_team"])
+        vt_col = self._find_col(table, ["victim_team_name", "victim_team"])
+        if not at_col or not vt_col:
+            return "", False  # can't filter without team columns
+
+        if ally and not enemy:
+            return f' AND {table_alias}."{at_col}" = {table_alias}."{vt_col}"', True
+        else:  # enemy only
+            return f' AND {table_alias}."{at_col}" != {table_alias}."{vt_col}"', True
 
     _SQL_MOD_KEYS = (
         "kill_mod_through_smoke",
@@ -863,7 +907,7 @@ class EngineMixin:
                 # ── WHERE fragments, one named builder per concern (Phase 1.3) ─
                 mtsql       = self._qe_match_type_sql(cfg)
                 hc, hsql    = self._qe_headshot_sql(cfg)
-                tksql       = self._qe_teamkill_sql(cfg)
+                tksql       = self._build_team_filter_sql(cfg, "k", [], table="kills")[0]
                 suicidesql  = self._qe_suicide_sql(cfg, wc)
                 modsql, active_mods, _mods_empty = self._qe_mod_sql(cfg)
                 if _mods_empty:
@@ -1110,8 +1154,6 @@ class EngineMixin:
         hg = self._find_col("damages", ["hitgroup"])
         hd = self._find_col("damages", ["health_damage", "hp_damage"])
         ad = self._find_col("damages", ["armor_damage"])
-        at = self._find_col("damages", ["attacker_team_name", "attacker_team"])
-        vt = self._find_col("damages", ["victim_team_name", "victim_team"])
 
         if not all([dc, mkk, mkm, tc, ak, vk]):
             return
@@ -1119,8 +1161,6 @@ class EngineMixin:
         sids_set = set(sids)
         actor_on = cfg.get("_events_actor", True)
         target_on = cfg.get("_events_target", False)
-        ally_on = cfg.get("_events_ally", False)
-        enemy_on = cfg.get("_events_enemy", True)
 
         with conn.cursor() as cur:
             extra = ""
@@ -1154,19 +1194,14 @@ class EngineMixin:
             if not conditions:
                 return
 
-            # Ally/enemy team filter
-            if at and vt:
-                if ally_on and not enemy_on:
-                    conditions.append(f'd."{at}" = d."{vt}"')
-                elif enemy_on and not ally_on:
-                    conditions.append(f'd."{at}" != d."{vt}"')
-                # both or neither → no team filter
+            # Ally/enemy team filter — shared helper, applied as an AND clause
+            team_clause, _ = self._build_team_filter_sql(cfg, "d", params, table="damages")
 
             psql = "(" + " OR ".join(conditions) + ")"
 
             sql = (f'SELECT {",".join(col_list)}{extra} FROM damages d '
                    f'JOIN matches m ON m."{mkm}"=d."{mkk}" '
-                   f'WHERE {psql} ORDER BY m."{dc}",d."{tc}"')
+                   f'WHERE {psql}{team_clause} ORDER BY m."{dc}",d."{tc}"')
             cur.execute(sql, params)
 
             for row in cur.fetchall():
