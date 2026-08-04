@@ -12,10 +12,9 @@
  * the same `useSetting` bridge the rest of the tab uses -- never a local
  * state shadow of the config.
  *
- * Lethal is not a stored key: it is derived (`event_actor || event_target`),
- * which is exactly what `derive_event_flags_v2` does with `_events_lethal`.
- * It is shown as an always-on, dimmed chip rather than a checkbox, because
- * there is nothing to toggle off while a perspective is selected.
+ * Lethal is now a proper config toggle (event_lethal, default True).
+ * It requires a selected perspective; unchecking it disables kill/death clips
+ * while keeping damage/shots active.
  */
 import Chip from "../components/Chip";
 import SettingControl from "../settings/SettingControl";
@@ -30,6 +29,7 @@ function asBool(value: unknown, fallback: boolean): boolean {
 export default function EventTypeSection() {
   const [actor, setActor] = useSetting<boolean>("event_actor");
   const [target, setTarget] = useSetting<boolean>("event_target");
+  const [lethal, setLethal] = useSetting<boolean>("event_lethal");
   const [ally, setAlly] = useSetting<boolean>("event_ally");
   const [enemy, setEnemy] = useSetting<boolean>("event_enemy");
   const [nonLethal, setNonLethal] = useSetting<boolean>("event_non_lethal");
@@ -37,8 +37,8 @@ export default function EventTypeSection() {
 
   const actorOn = asBool(actor, true);
   const targetOn = asBool(target, false);
-  // Lethal is derived: any selected perspective implies a lethal clip set.
-  const lethalOn = actorOn || targetOn;
+  // Lethal requires at least one perspective to make sense.
+  const lethalEnabled = actorOn || targetOn;
   // "Other" (shots, jumps) only makes sense from the actor's own camera.
   const otherEnabled = actorOn;
 
@@ -56,8 +56,14 @@ export default function EventTypeSection() {
 
       <div className="row">
         <span className="lab">Action type</span>
-        {/* Lethal has no stored key; it follows the perspective axis. */}
-        <Chip label="Lethal" selected={lethalOn} disabled onToggle={() => {}} />
+        <SettingControl settingKey="event_lethal">
+          <Chip
+            label="Lethal"
+            selected={asBool(lethal, true)}
+            onToggle={() => setLethal(!asBool(lethal, true))}
+            disabled={!lethalEnabled}
+          />
+        </SettingControl>
         <SettingControl settingKey="event_non_lethal">
           <Chip
             label="Non-lethal"

@@ -3591,7 +3591,7 @@ class EngineMixin:
 
         return {
             # Action-type booleans (what to query)
-            "_events_lethal": actor or target,  # Kills & Deaths — always on when perspective selected
+            "_events_lethal": cfg.get("event_lethal", True) and (actor or target),
             "_events_non_lethal": cfg.get("event_non_lethal", False),  # Separate toggle
             "_events_other": cfg.get("event_other", False),           # Separate toggle
             # Perspective booleans (prefixed _events_ to avoid collision with config keys)

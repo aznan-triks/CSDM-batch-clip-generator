@@ -43,6 +43,7 @@ DEFAULT_CONFIG = {
     # Event model (2-axis: Actor/Target × Lethal/Non-lethal/Other)
     "event_actor": True,      # Actor perspective — I am the one acting
     "event_target": False,    # Target perspective — I am the one acted upon
+    "event_lethal": True,     # Include lethal events (kills & deaths)
     "event_ally": False,      # Include ally-on-ally / ally-on-me events
     "event_enemy": True,      # Include enemy-on-me / me-on-enemy events
     "event_non_lethal": False,  # Include non-lethal damage events
@@ -149,7 +150,7 @@ PRESET_KEYS = {
     # ── Capture group ──────────────────────────────────────────────────────────
     "players":     ["steam_id", "player_name", "player_name_override"],
     "date":        ["date_from", "date_to"],
-    "filters":     ["event_actor", "event_target", "event_ally", "event_enemy",
+    "filters":     ["event_actor", "event_target", "event_lethal", "event_ally", "event_enemy",
                     "event_non_lethal", "event_other",
                     "weapons", "perspective", "victim_pre_s",
                     "headshots_mode", "suicides_mode", "teamkills_mode",
@@ -178,7 +179,7 @@ PRESET_KEYS = {
                     "retry_count", "retry_delay", "delay_between_demos", "recording_timeout"],
     # ── Backward-compat aliases (old format → new granular keys) ───────────────
     "player":      ["steam_id", "player_name", "event_actor", "event_target",
-                    "event_ally", "event_enemy", "event_non_lethal", "event_other",
+                    "event_lethal", "event_ally", "event_enemy", "event_non_lethal", "event_other",
                     "weapons", "date_from", "date_to",
                     "perspective", "victim_pre_s", "headshots_mode", "suicides_mode",
                     "teamkills_mode", "kill_mod_logic_mods", "kill_mod_logic_dp2",
@@ -368,6 +369,7 @@ def _migrate_config(saved: dict, cfg: dict) -> None:
         old_events = saved["events"] or []
         cfg["event_actor"] = "Kills" in old_events or "Deaths" in old_events
         cfg["event_target"] = "Deaths" in old_events
+        cfg["event_lethal"] = "Kills" in old_events or "Deaths" in old_events
         cfg["event_enemy"] = True
         # teamkills_mode migration:
         #   "include" → ally=True,  enemy=True  (both pass)
