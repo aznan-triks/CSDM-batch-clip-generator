@@ -1,14 +1,21 @@
-# Dependances du programme. Versions minimales connues pour fonctionner
-# (plancher = version testee actuellement). Le ">=" autorise les mises a
-# jour compatibles sans permettre une version trop ancienne.
+# Program dependencies. Minimal versions known to work
+# (floor = version currently tested). ">=" allows compatible upgrades
+# without permitting a version that is too old.
 #
-# Teste avec Python 3.14.
+# Tested with Python 3.14.
 
 # Database connectivity
 psycopg2-binary>=2.9.11
 
-# CS2 Demo parsing
+# CS2 demo parsing (weapon-fire detail)
 demoparser2>=0.41.1
+
+# Direct import in csdm/engine/core.py (weapon-fire fallback). demoparser2
+# pulls it in transitively; declared here because the code imports it.
+numpy>=2.4.3
 
 # Windows-specific functionality (Optional)
 # pywin32>=311; sys_platform == 'win32'
+
+# Test suite (dev only, not a program dependency):
+# pytest — install separately, e.g. `pip install pytest`
