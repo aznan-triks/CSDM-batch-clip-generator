@@ -136,6 +136,7 @@ export function reduceEngineState(
     case "preview_ready": {
       const sequences = payload.sequences as Record<string, Array<{
         start_tick: number; end_tick: number;
+        event_type?: string;
         events: Array<Record<string, unknown>>;
       }>> | undefined;
       const clipCfg = payload.cfg as Record<string, unknown> | undefined;
@@ -147,13 +148,22 @@ export function reduceEngineState(
         for (const [dp, seqs] of Object.entries(sequences)) {
           for (const seq of seqs) {
             const firstEvt = seq.events?.[0] ?? {};
+            const etype = String(seq.event_type ?? firstEvt.type ?? "?");
+            // Non-kill events carry the tracked player on attacker_sid (damage,
+            // shot) or victim_sid (damage_target / death) instead of killer_sid.
+            let pn = playerName;
+            if (etype === "death" || etype === "damage_target") {
+              pn = String(firstEvt.victim_sid ?? pn);
+            } else {
+              pn = String(firstEvt.attacker_sid ?? firstEvt.killer_sid ?? pn);
+            }
             clips.push({
               demoPath: dp,
               startTick: seq.start_tick,
               endTick: seq.end_tick,
               durationS: (seq.end_tick - seq.start_tick) / tickrate,
-              eventType: String(firstEvt.type ?? "?"),
-              playerName: String(firstEvt.killer_sid ?? playerName),
+              eventType: etype,
+              playerName: pn,
               selected: true,
             });
           }

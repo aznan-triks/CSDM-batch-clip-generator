@@ -30,6 +30,26 @@ function formatTotal(seconds: number): string {
   return `${mins} min ${secs} s`;
 }
 
+/**
+ * Human label + visual kind for every event type the engine can produce.
+ * Unknown types fall back to their raw string under the "other" kind so the
+ * checklist never renders an empty badge for a future event type.
+ */
+const EVENT_TYPE_META: Record<string, { label: string; kind: string }> = {
+  kill:          { label: "💀 Kill",  kind: "kill" },
+  death:         { label: "☠ Death", kind: "kill" },
+  damage_actor:  { label: "🔫 Dmg",  kind: "damage" },
+  damage_target: { label: "🩹 Hit",  kind: "damage" },
+  shot:          { label: "🎯 Shot", kind: "shot" },
+  jump:          { label: "🦘 Jump", kind: "shot" },
+  knife_swing:   { label: "🔪 Swing", kind: "shot" },
+  grenade_miss:  { label: "💣 Miss", kind: "shot" },
+};
+
+function eventTypeMeta(eventType: string): { label: string; kind: string } {
+  return EVENT_TYPE_META[eventType] ?? { label: eventType, kind: "other" };
+}
+
 export const EditingTab: React.FC = () => {
   const state = useEngineState();
   const clips = state.previewClips;
@@ -63,18 +83,21 @@ export const EditingTab: React.FC = () => {
         </span>
       </div>
       <div className="editing-list">
-        {clips.map((clip, idx) => (
-          <div
-            key={`${clip.demoPath}:${clip.startTick}`}
-            className={`editing-clip${clip.selected ? " selected" : ""}`}
-            onClick={() => handleToggle(idx)}
-          >
-            <div className="clip-check" />
-            <span className="clip-duration">{formatDuration(clip.durationS)}</span>
-            <span className="clip-type">{clip.eventType}</span>
-            <span className="clip-player">{clip.playerName}</span>
-          </div>
-        ))}
+        {clips.map((clip, idx) => {
+          const meta = eventTypeMeta(clip.eventType);
+          return (
+            <div
+              key={`${clip.demoPath}:${clip.startTick}`}
+              className={`editing-clip${clip.selected ? " selected" : ""}`}
+              onClick={() => handleToggle(idx)}
+            >
+              <div className="clip-check" />
+              <span className="clip-duration">{formatDuration(clip.durationS)}</span>
+              <span className={`clip-type clip-badge clip-badge--${meta.kind}`}>{meta.label}</span>
+              <span className="clip-player">{clip.playerName}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

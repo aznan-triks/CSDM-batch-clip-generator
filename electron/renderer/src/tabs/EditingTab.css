@@ -131,6 +131,38 @@
   min-width: 3.5rem;
 }
 
+/* The event-type badge turns the raw type string into a labelled pill, colour-coded
+   per kind so Kill / Damage / Shot rows are scannable at a glance. All paints are
+   theme token or color-mix based, so they hold up in both light and dark themes. */
+.editing-clip .clip-type.clip-badge {
+  min-width: 4.2rem;
+  padding: 1px var(--sp-2);
+  border-radius: var(--r-mid);
+  text-align: center;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.editing-clip .clip-type.clip-badge--kill {
+  color: var(--gold-hi);
+  background: var(--accent-soft);
+}
+
+.editing-clip .clip-type.clip-badge--damage {
+  color: #f97316;
+  background: color-mix(in srgb, #f97316 16%, transparent);
+}
+
+.editing-clip .clip-type.clip-badge--shot {
+  color: #14b8a6;
+  background: color-mix(in srgb, #14b8a6 16%, transparent);
+}
+
+.editing-clip .clip-type.clip-badge--other {
+  color: var(--dim);
+  background: var(--surface-2);
+}
+
 .editing-clip .clip-player {
   font-family: var(--font-display);
   font-size: var(--fs-sm);
