@@ -406,5 +406,73 @@ class QueryEventsWiringTests(unittest.TestCase):
         self.assertIn("damage_actor", types)
 
 
+    def test_lethal_toggle_controls_kill_query(self):
+        """Unchecking Lethal while keeping Non-lethal → no kill events produced."""
+        cfg = self.app.build_run_cfg(dict(
+            event_actor=True, event_target=True,
+            event_lethal=False, event_non_lethal=True, event_other=False,
+            event_ally=True, event_enemy=True, steam_ids=[ME]))
+
+        # Only damage rows, no kill rows.
+        class _NoKillConn(FakeConn):
+            def __init__(self):
+                super().__init__([])
+                self.batch = [
+                    [],   # kills query — should NOT be called, but if it is, empty
+                    [("d1.dem", 200, ME, ENEMY, "ak-47", 1, 40, 0)],  # damage row
+                    [],
+                ]
+
+            def cursor(self):
+                cur = FakeCursor(self.batch.pop(0) if self.batch else [])
+                return cur
+
+        conn = _NoKillConn()
+        self.app._pg = lambda: conn
+
+        # Verify flags are correct before query
+        self.assertFalse(cfg.get("events_kills"), "events_kills should be False when event_lethal=False")
+        self.assertFalse(cfg.get("events_deaths"), "events_deaths should be False when event_lethal=False")
+        self.assertTrue(cfg.get("_events_non_lethal"))
+
+        results = self.app._query_events(cfg)
+        self.assertIn("d1.dem", results, "Damage events should still be produced")
+        types = {e["type"] for e in results["d1.dem"]}
+        self.assertNotIn("kill", types, "Kill events must NOT appear when Lethal is unchecked")
+        self.assertIn("damage_actor", types, "Damage events must still appear")
+
+    def test_lethal_toggle_on_produces_kills(self):
+        """With Lethal=True + Non-lethal, both kill and damage events appear."""
+        cfg = self.app.build_run_cfg(dict(
+            event_actor=True, event_target=True,
+            event_lethal=True, event_non_lethal=True, event_other=False,
+            event_ally=True, event_enemy=True, steam_ids=[ME]))
+
+        self.assertTrue(cfg.get("events_kills"))
+        self.assertTrue(cfg.get("events_deaths"))
+
+        class _BothConn(FakeConn):
+            def __init__(self):
+                super().__init__([])
+                self.batch = [
+                    [("d1.dem", 100, "chk1", None, None, "ak-47",
+                      ME, ENEMY, "", "")],
+                    [("d1.dem", 150, ME, ENEMY, "ak-47", 1, 40, 0)],
+                    [],
+                ]
+
+            def cursor(self):
+                cur = FakeCursor(self.batch.pop(0) if self.batch else [])
+                return cur
+
+        conn = _BothConn()
+        self.app._pg = lambda: conn
+
+        results = self.app._query_events(cfg)
+        types = {e["type"] for e in results["d1.dem"]}
+        self.assertIn("kill", types)
+        self.assertIn("damage_actor", types)
+
+
 if __name__ == "__main__":
     unittest.main()

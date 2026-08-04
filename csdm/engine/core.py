@@ -3602,9 +3602,10 @@ class EngineMixin:
             "_events_enemy": enemy,
             # Rounds stays independent
             "_events_rounds": "Rounds" in (cfg.get("events") or []),
-            # Legacy booleans (backward-compat; _query_events still reads these)
-            "events_kills": actor,
-            "events_deaths": target,
+            # Legacy booleans (backward-compat; _query_events still reads these).
+            # Respect event_lethal so the UI toggle actually controls kill/death output.
+            "events_kills": actor and cfg.get("event_lethal", True),
+            "events_deaths": target and cfg.get("event_lethal", True),
         }
 
     @staticmethod
