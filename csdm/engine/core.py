@@ -1053,6 +1053,12 @@ class EngineMixin:
                         except Exception:
                             pass
 
+            # ── Non-lethal damage events ──
+            self._query_damages(cfg, sids, conn, results)
+
+            # ── "Other" events (shots, jumps, etc.) ──
+            self._query_shots(cfg, sids, conn, results)
+
         finally:
             pass  # persistent connection — kept open for reuse
 
@@ -1081,6 +1087,158 @@ class EngineMixin:
                     "warn")
 
         return results
+
+    def _query_damages(self, cfg, sids, conn, results):
+        """Query the damages table for non-lethal damage events.
+
+        Builds events of type 'damage_actor' (tracked player is the attacker)
+        or 'damage_target' (tracked player is the victim) with attacker/victim
+        SIDs, weapon, hitgroup, health_damage and armor_damage when the
+        relevant columns exist. Applies the actor/target perspective and
+        ally/enemy team filter like the kills query.
+        """
+        if not (cfg.get("_events_non_lethal") and self._db_schema.get("damages")):
+            return
+
+        dc = self._find_col("matches", ["demo_path", "demo_file_path", "share_code"])
+        mkk = self._find_col("damages", ["match_checksum", "match_id"])
+        mkm = self._find_col("matches", ["checksum", "id", "match_id"])
+        tc = self._find_col("damages", ["tick"])
+        ak = self._find_col("damages", ["attacker_steam_id", "attacker_steamid"])
+        vk = self._find_col("damages", ["victim_steam_id", "victim_steamid"])
+        wc = self._find_col("damages", ["weapon_name", "weapon"])
+        hg = self._find_col("damages", ["hitgroup"])
+        hd = self._find_col("damages", ["health_damage", "hp_damage"])
+        ad = self._find_col("damages", ["armor_damage"])
+        at = self._find_col("damages", ["attacker_team_name", "attacker_team"])
+        vt = self._find_col("damages", ["victim_team_name", "victim_team"])
+
+        if not all([dc, mkk, mkm, tc, ak, vk]):
+            return
+
+        sids_set = set(sids)
+        actor_on = cfg.get("_events_actor", True)
+        target_on = cfg.get("_events_target", False)
+        ally_on = cfg.get("_events_ally", False)
+        enemy_on = cfg.get("_events_enemy", True)
+
+        with conn.cursor() as cur:
+            extra = ""
+            col_list = [f'm."{dc}"', f'd."{tc}"', f'd."{ak}"', f'd."{vk}"']
+            if wc:
+                extra += f',d."{wc}"'
+                col_list.append(f'd."{wc}"')
+            if hg:
+                extra += f',d."{hg}"'
+                col_list.append(f'd."{hg}"')
+            if hd:
+                extra += f',d."{hd}"'
+                col_list.append(f'd."{hd}"')
+            if ad:
+                extra += f',d."{ad}"'
+                col_list.append(f'd."{ad}"')
+
+            sid_ph = ",".join(["%s"] * len(sids))
+            conditions = []
+            params = []
+
+            # Actor perspective: attacker is a tracked player
+            if actor_on:
+                conditions.append(f'd."{ak}" IN ({sid_ph})')
+                params.extend(sids)
+            # Target perspective: victim is a tracked player
+            if target_on:
+                conditions.append(f'd."{vk}" IN ({sid_ph})')
+                params.extend(sids)
+
+            if not conditions:
+                return
+
+            # Ally/enemy team filter
+            if at and vt:
+                if ally_on and not enemy_on:
+                    conditions.append(f'd."{at}" = d."{vt}"')
+                elif enemy_on and not ally_on:
+                    conditions.append(f'd."{at}" != d."{vt}"')
+                # both or neither → no team filter
+
+            psql = "(" + " OR ".join(conditions) + ")"
+
+            sql = (f'SELECT {",".join(col_list)}{extra} FROM damages d '
+                   f'JOIN matches m ON m."{mkm}"=d."{mkk}" '
+                   f'WHERE {psql} ORDER BY m."{dc}",d."{tc}"')
+            cur.execute(sql, params)
+
+            for row in cur.fetchall():
+                dp, tick = row[0], row[1]
+                if not dp or tick is None:
+                    continue
+                attacker_sid = str(row[2])
+                victim_sid = str(row[3])
+
+                et = "damage_actor" if attacker_sid in sids_set else "damage_target"
+                evt = {"tick": int(tick), "type": et,
+                       "attacker_sid": attacker_sid, "victim_sid": victim_sid}
+                # Attach optional extra columns in the same order they were selected
+                ci = 4
+                if wc:
+                    evt["weapon"] = str(row[ci] or "")
+                    ci += 1
+                if hg:
+                    evt["hitgroup"] = row[ci]
+                    ci += 1
+                if hd:
+                    evt["health_damage"] = row[ci]
+                    ci += 1
+                if ad:
+                    evt["armor_damage"] = row[ci]
+                    ci += 1
+
+                results.setdefault(dp, []).append(evt)
+
+    def _query_shots(self, cfg, sids, conn, results):
+        """Query the shots table for "other" events (near-miss, void shots).
+
+        Builds a 'shot' event per shot fired by a tracked player. A shot is
+        inherently an actor action, so it only applies when the actor
+        perspective is selected. Jump / knife-swing / grenade-miss refinement
+        from player_positions is left to the shared modifier layer (Task 3);
+        here we surface the raw shot stream with weapon when available.
+        """
+        if not (cfg.get("_events_other") and self._db_schema.get("shots")):
+            return
+        if not cfg.get("_events_actor", True):
+            return
+
+        dc = self._find_col("matches", ["demo_path", "demo_file_path",
+                                        "demo_filepath", "share_code"])
+        mkk = self._find_col("shots", ["match_checksum", "match_id", "checksum"])
+        mkm = self._find_col("matches", ["checksum", "id", "match_id"])
+        tc = self._find_col("shots", ["tick"])
+        pk = self._find_col("shots", ["player_steam_id", "attacker_steam_id",
+                                      "shooter_steam_id", "steam_id"])
+        wc = self._find_col("shots", ["weapon_name", "weapon", "weapon_type"])
+
+        if not all([dc, mkk, mkm, tc, pk]):
+            return
+
+        sids_list = list(sids)
+        with conn.cursor() as cur:
+            sid_ph = ",".join(["%s"] * len(sids_list))
+            extra = f',s."{wc}"' if wc else ""
+            sql = (f'SELECT m."{dc}",s."{tc}",s."{pk}"{extra} FROM shots s '
+                   f'JOIN matches m ON m."{mkm}"=s."{mkk}" '
+                   f'WHERE s."{pk}" IN ({sid_ph}) ORDER BY m."{dc}",s."{tc}"')
+            cur.execute(sql, sids_list)
+
+            for row in cur.fetchall():
+                dp, tick = row[0], row[1]
+                if not dp or tick is None:
+                    continue
+                evt = {"tick": int(tick), "type": "shot", "attacker_sid": str(row[2])}
+                if wc:
+                    evt["weapon"] = str(row[3] or "")
+                results.setdefault(dp, []).append(evt)
 
     def _apply_db_postfilters(self, cfg, results, sids):
         """Apply DB-level post-query filters that require cross-round context.

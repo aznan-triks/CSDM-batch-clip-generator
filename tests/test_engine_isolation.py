@@ -17,6 +17,7 @@ class TestNoDirectWidgetReads(unittest.TestCase):
 ENGINE_METHODS = [
     "_qe_suicide_sql", "_mod_sql_expr", "_qe_mod_sql", "_qe_detect_date_col",
     "_qe_map_filter_sql", "_query_events", "_apply_db_postfilters",
+    "_query_damages", "_query_shots",
     "_fetch_all_kills_for_demos", "_apply_clutch_filter", "_effective_before",
     "_build_sequences", "_get_sids", "_player_str", "_cfg_num", "_cfg_int",
     "_cfg_float", "_cfg_bool", "_common_cs2_injection", "_resolve_cs2_cfg_dir",
