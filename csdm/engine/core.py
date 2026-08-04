@@ -2148,7 +2148,16 @@ class EngineMixin:
 
     def _build_sequences(self, events, tickrate, before_s, after_s):
         """Build merged clip sequences from a list of events.
-        Events must be sorted by tick (guaranteed by SQL ORDER BY in _query_events).
+
+        Works for any event carrying a `tick` — kill/death, but also non-lethal
+        damage (damage_actor / damage_target) and raw shot events. Non-kill events
+        carry the same {start_tick, end_tick, events, event_type} sequence structure
+        as kills, so the downstream camera/JSON builders can treat them uniformly.
+
+        Sorting: events are re-sorted by tick (stable) here so that kill, damage and
+        shot rows — appended per-query in _query_events — are interleaved in true
+        tick order. Individual SQL ORDER BYs guarantee order within each query but
+        not across the concatenated lists.
 
         If an event carries _seq_start_tick / _seq_end_tick (set by clutch full_clutch
         mode), those values are used directly as clip boundaries — before/after padding
@@ -2162,6 +2171,7 @@ class EngineMixin:
         """
         if not events:
             return []
+        events = sorted(events, key=lambda e: e.get("tick", 0))
         bt, at = int(before_s * tickrate), int(after_s * tickrate)
         raw = []
         for e in events:
@@ -2171,7 +2181,8 @@ class EngineMixin:
             else:
                 s_tick = max(0, e["tick"] - bt)
                 e_tick = e["tick"] + at
-            raw.append({"start_tick": s_tick, "end_tick": e_tick, "events": [e]})
+            raw.append({"start_tick": s_tick, "end_tick": e_tick,
+                        "events": [e], "event_type": e.get("type", "kill")})
         merged = [raw[0]]
         for s in raw[1:]:
             p = merged[-1]
@@ -2179,6 +2190,8 @@ class EngineMixin:
             if s["start_tick"] - p["end_tick"] <= bt:
                 p["end_tick"] = max(p["end_tick"], s["end_tick"])
                 p["events"].extend(s["events"])
+                # Primary event type stays the first event's; mark any secondary types
+                p["event_types"] = sorted({p["event_type"], s["event_type"]})
             else:
                 merged.append(s)
         return merged
@@ -2379,11 +2392,18 @@ class EngineMixin:
         return hlae_options
 
     @staticmethod
+    def _seq_actor_sid(e):
+        """Actor-role SID for an event: killer for kills/deaths, attacker for
+        damage (damage_actor / damage_target) and shot events."""
+        return e.get("killer_sid") or e.get("attacker_sid")
+
+    @staticmethod
     def _seq_anchor_sid(seq, sids_active, primary_sid):
-        """First active killer in the sequence, else first active victim, else primary."""
+        """First active actor (killer/attacker) in the sequence, else first active
+        victim, else primary. Handles non-kill events via attacker_sid."""
         sorted_evts = sorted(seq["events"], key=lambda e: e["tick"])
         for e in sorted_evts:
-            ks = str(e.get("killer_sid") or "")
+            ks = str(EngineMixin._seq_actor_sid(e) or "")
             if ks in sids_active:
                 return ks
         for e in sorted_evts:
@@ -2394,24 +2414,26 @@ class EngineMixin:
 
     @staticmethod
     def _build_cams_killer(seq, sids_active, primary_sid):
-        """Killer mode: follow each active killer. One entry per killer change."""
-        kill_evts = sorted(
-            [e for e in seq["events"] if e.get("killer_sid") in sids_active],
+        """Killer mode: follow each active actor (killer or attacker). One entry
+        per actor change. damage_actor / shot events follow the attacker; damage_target
+        events fall back to the anchor (the tracked target)."""
+        act_evts = sorted(
+            [e for e in seq["events"] if EngineMixin._seq_actor_sid(e) in sids_active],
             key=lambda e: e["tick"]
         )
-        if not kill_evts:
+        if not act_evts:
             anchor = (primary_sid if primary_sid in sids_active
                       else EngineMixin._seq_anchor_sid(seq, sids_active, primary_sid))
             return [{"tick": seq["start_tick"], "playerSteamId": anchor,
                      "playerName": ""}]
-        # Start at sequence start pointing to the first killer
-        first_ks = kill_evts[0]["killer_sid"]
+        # Start at sequence start pointing to the first actor
+        first_ks = EngineMixin._seq_actor_sid(act_evts[0])
         cams = [{"tick": seq["start_tick"], "playerSteamId": first_ks,
                  "playerName": ""}]
-        # Add a switch entry each time the killer changes
+        # Add a switch entry each time the actor changes
         prev_ks = first_ks
-        for ev in kill_evts[1:]:
-            ks = ev["killer_sid"]
+        for ev in act_evts[1:]:
+            ks = EngineMixin._seq_actor_sid(ev)
             if ks != prev_ks:
                 cams.append({"tick": ev["tick"], "playerSteamId": ks,
                              "playerName": ""})
@@ -2425,7 +2447,7 @@ class EngineMixin:
         If kill_mod_mate_pov is on and a mate SID was stamped, use that instead.
         No camera switch during the whole sequence."""
         sorted_evts = sorted(
-            [e for e in seq["events"] if e.get("killer_sid") in sids_active
+            [e for e in seq["events"] if EngineMixin._seq_actor_sid(e) in sids_active
              or e.get("victim_sid") in sids_active],
             key=lambda e: e["tick"]
         )
@@ -2438,7 +2460,9 @@ class EngineMixin:
                 # Our player dies: follow them
                 target_sid = first_ev["victim_sid"]
             elif first_ev.get("victim_sid"):
-                # Our player kills: follow victim (or their best-angle teammate).
+                # Our player acts (kill / damage_actor / shot): follow the target
+                # (or their best-angle teammate). For damage_target the victim is
+                # our player and is handled above by the anchor fallback.
                 mate_sid   = first_ev.get("_mate_pov_sid") if cfg.get("kill_mod_mate_pov") else None
                 target_sid = mate_sid or first_ev["victim_sid"]
 
@@ -2453,7 +2477,7 @@ class EngineMixin:
         Sequence already extended by victim_pre_s via _effective_before,
         so the switch is guaranteed inside the clip."""
         sorted_evts = sorted(
-            [e for e in seq["events"] if e.get("killer_sid") in sids_active
+            [e for e in seq["events"] if EngineMixin._seq_actor_sid(e) in sids_active
              or e.get("victim_sid") in sids_active],
             key=lambda e: e["tick"]
         )
@@ -2481,7 +2505,7 @@ class EngineMixin:
                 timeline.clear()
                 break
 
-            ksid = ev.get("killer_sid") or primary_sid
+            ksid = EngineMixin._seq_actor_sid(ev) or primary_sid
             # In mate_pov mode, switch to the best-angle teammate instead of victim.
             mate_sid   = ev.get("_mate_pov_sid") if cfg.get("kill_mod_mate_pov") else None
             victim_cam = ev.get("victim_sid") or primary_sid
@@ -2526,8 +2550,10 @@ class EngineMixin:
                 if vsid:
                     cam_sids.add(vsid)
 
-        # Collect killers and victims for the sequence
+        # Collect killers and victims for the sequence (non-kill damage/shot events
+        # carry attacker_sid instead of killer_sid — include both).
         seq_killer_sids = {ev.get("killer_sid") for ev in seq["events"] if ev.get("killer_sid")}
+        seq_killer_sids |= {ev.get("attacker_sid") for ev in seq["events"] if ev.get("attacker_sid")}
         seq_victim_sids  = {ev.get("victim_sid")  for ev in seq["events"] if ev.get("victim_sid")}
         all_seq_sids = (cam_sids | seq_killer_sids | seq_victim_sids) - {None, ""}
 

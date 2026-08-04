@@ -598,5 +598,88 @@ def test_detect_map_col_returns_none_when_absent():
     assert join == ""
 
 
+# ════════════════════════════════════════════════════════════════════════════
+#  Non-kill events (Task 4) — damage_actor / damage_target / shot
+# ════════════════════════════════════════════════════════════════════════════
+def _damage(tick, attacker, victim, **extra):
+    return {"tick": tick, "type": "damage_actor",
+            "attacker_sid": attacker, "victim_sid": victim, **extra}
+
+
+def _shot(tick, attacker, **extra):
+    return {"tick": tick, "type": "shot", "attacker_sid": attacker, **extra}
+
+
+class NonKillSequenceTests(unittest.TestCase):
+    """Task 4 — _build_sequences must handle damage/shot events."""
+
+    def test_sequences_interleave_kill_damage_shot_by_tick(self):
+        # Feed events in per-query (non-interleaved) order: kills, then damages,
+        # then shots. _build_sequences must re-sort by tick.
+        events = [
+            _kill(1000, "111", "222"),         # kill at 1000
+            _damage(200, "111", "222"),        # damage at 200 (out of order)
+            _shot(600, "111"),                 # shot at 600 (out of order)
+        ]
+        seqs = App._build_sequences(None, events, 64, 2, 2)
+        # Each event is tick-disjoint (bt=128, at=128, gaps > 128) → separate clips,
+        # produced in ascending tick order.
+        types = [s["event_type"] for s in seqs]
+        self.assertEqual(types, ["damage_actor", "shot", "kill"])
+        self.assertEqual([s["start_tick"] for s in seqs], [72, 472, 872])
+
+    def test_sequences_merge_tick_adjacent_kill_and_damage(self):
+        # A damage 1s before a kill should merge into one clip when the gap ≤ before.
+        events = [
+            _kill(500, "111", "222"),
+            _damage(300, "111", "222"),
+        ]
+        seqs = App._build_sequences(None, events, 64, 3, 2)
+        self.assertEqual(len(seqs), 1)
+        merged_events = [e["type"] for e in seqs[0]["events"]]
+        self.assertIn("kill", merged_events)
+        self.assertIn("damage_actor", merged_events)
+
+    def test_sequence_events_preserve_order_inside_merged_clip(self):
+        events = [_damage(300, "111", "222"), _kill(350, "111", "222")]
+        seqs = App._build_sequences(None, events, 64, 3, 2)
+        self.assertEqual([e["tick"] for e in seqs[0]["events"]], [300, 350])
+
+    def test_cams_killer_follows_attacker_for_damage_actor(self):
+        seq = _seq([_damage(300, "111", "222")])
+        cams = App._build_cams_killer(seq, {"111"}, "111")
+        self.assertEqual(cams, [{"tick": 100, "playerSteamId": "111",
+                                 "playerName": ""}])
+
+    def test_cams_killer_follows_attacker_for_shot(self):
+        # Shot has no victim — camera stays on the shooter.
+        seq = _seq([_shot(300, "111")])
+        cams = App._build_cams_killer(seq, {"111"}, "111")
+        self.assertEqual(cams, [{"tick": 100, "playerSteamId": "111",
+                                 "playerName": ""}])
+
+    def test_cams_killer_damage_target_falls_back_to_anchor(self):
+        # Our player is the target (victim), attacker is not tracked → anchor = us.
+        seq = _seq([{"tick": 300, "type": "damage_target",
+                     "attacker_sid": "999", "victim_sid": "111"}])
+        cams = App._build_cams_killer(seq, {"111"}, "111")
+        self.assertEqual(cams[0]["playerSteamId"], "111")
+
+    def test_anchor_prefers_active_attacker(self):
+        seq = _seq([_damage(300, "111", "222"), _shot(400, "333")])
+        self.assertEqual(App._seq_anchor_sid(seq, {"111"}, "111"), "111")
+        self.assertEqual(App._seq_anchor_sid(seq, {"333"}, "333"), "333")
+
+    def test_players_options_lists_attacker_for_damage(self):
+        seq = _seq([_damage(300, "111", "222")])
+        cams = [{"tick": 100, "playerSteamId": "111", "playerName": ""}]
+        opts = App._bj_players_options(
+            seq, cams, "killer", {"111"}, ["111"],
+            lambda sid: {"111": "Us", "222": "Them"}.get(str(sid), ""), "")
+        by_sid = {o["steamId"]: o for o in opts}
+        self.assertIn("111", by_sid)
+        self.assertIn("222", by_sid)
+
+
 if __name__ == "__main__":
     unittest.main()
