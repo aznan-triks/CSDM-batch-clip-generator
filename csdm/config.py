@@ -40,7 +40,14 @@ DEFAULT_CONFIG = {
     "theme_accent": "green", # accent preset or custom hex: green | blue | orange | purple | red | cyan | pink | yellow | #rrggbb
     "ui_font_family": "auto", # "auto" = first available of UI_FONT_STACK; or a forced name (e.g. "JetBrains Mono")
     "steam_id": "", "player_name": "", "player_name_override": "",
-    "events": ["Kills"], "weapons": [],
+    # Event model (2-axis: Actor/Target × Lethal/Non-lethal/Other)
+    "event_actor": True,      # Actor perspective — I am the one acting
+    "event_target": False,    # Target perspective — I am the one acted upon
+    "event_ally": False,      # Include ally-on-ally / ally-on-me events
+    "event_enemy": True,      # Include enemy-on-me / me-on-enemy events
+    # Derived booleans (set by build_run_cfg, NOT stored):
+    #   events_lethal, events_non_lethal, events_other
+    "weapons": [],
     "date_from": "", "date_to": "",
     "before": 3, "after": 5,
     "encoder": "FFmpeg", "recsys": "HLAE",
@@ -140,7 +147,8 @@ PRESET_KEYS = {
     # ── Capture group ──────────────────────────────────────────────────────────
     "players":     ["steam_id", "player_name", "player_name_override"],
     "date":        ["date_from", "date_to"],
-    "filters":     ["events", "weapons", "perspective", "victim_pre_s",
+    "filters":     ["event_actor", "event_target", "event_ally", "event_enemy",
+                    "weapons", "perspective", "victim_pre_s",
                     "headshots_mode", "suicides_mode", "teamkills_mode",
                     "kill_mod_logic_mods", "kill_mod_logic_dp2", "kill_mod_logic_db",
                     *_FILTER_PRESET_PLAYER_KEYS,
@@ -166,7 +174,8 @@ PRESET_KEYS = {
     "timing":      ["before", "after", "close_game_after",
                     "retry_count", "retry_delay", "delay_between_demos", "recording_timeout"],
     # ── Backward-compat aliases (old format → new granular keys) ───────────────
-    "player":      ["steam_id", "player_name", "events", "weapons", "date_from", "date_to",
+    "player":      ["steam_id", "player_name", "event_actor", "event_target",
+                    "event_ally", "event_enemy", "weapons", "date_from", "date_to",
                     "perspective", "victim_pre_s", "headshots_mode", "suicides_mode",
                     "teamkills_mode", "kill_mod_logic_mods", "kill_mod_logic_dp2",
                     "kill_mod_logic_db", *_FILTER_PRESET_PLAYER_KEYS, "clip_order",
@@ -347,6 +356,32 @@ def _migrate_config(saved: dict, cfg: dict) -> None:
                 cfg[f"{_en}{_sfx}"] = saved[f"{_fr}{_sfx}"]
 
     migrate_legacy_filter_keys(cfg)
+
+    # flat events list → 2-axis event model  (events-beyond-kill, Task 1)
+    # Old configs stored `events: ["Kills", "Deaths", "Rounds"]`; derive the
+    # new Actor/Target/team keys from it so old configs migrate transparently.
+    if "events" in saved and saved["events"]:
+        old_events = saved["events"] or []
+        cfg["event_actor"] = "Kills" in old_events or "Deaths" in old_events
+        cfg["event_target"] = "Deaths" in old_events
+        cfg["event_enemy"] = True
+        # teamkills_mode migration:
+        #   "include" → ally=True,  enemy=True  (both pass)
+        #   "exclude" → ally=False, enemy=True  (only enemy passes)
+        #   "only"    → ally=True,  enemy=False (only ally passes)
+        old_tk_mode = saved.pop("teamkills_mode", "include")
+        if old_tk_mode == "include":
+            cfg["event_ally"] = True
+            cfg["event_enemy"] = True
+        elif old_tk_mode == "exclude":
+            cfg["event_ally"] = False
+            cfg["event_enemy"] = True
+        elif old_tk_mode == "only":
+            cfg["event_ally"] = True
+            cfg["event_enemy"] = False
+        # "Rounds" is kept in events list temporarily for backward compat
+        if "Rounds" in old_events:
+            cfg["events"] = ["Rounds"]
 
 
 # Legacy filter keys dropped from KILL_FILTER_REGISTRY, mapped onto their

@@ -49,15 +49,17 @@ def test_validation_refuses_a_run_with_no_account():
     assert "account" in host.asked[0][1]
 
 
-def test_validation_refuses_a_run_with_no_event():
+def test_validation_refuses_a_run_with_no_perspective():
     host = Host()
-    assert host.validate_run_inputs({"steam_ids": ["76561198"], "events": []}) is False
-    assert "event" in host.asked[0][1]
+    assert host.validate_run_inputs(
+        {"steam_ids": ["76561198"], "event_actor": False, "event_target": False}) is False
+    assert "perspective" in host.asked[0][1]
 
 
 def test_validation_accepts_a_usable_configuration():
     host = Host()
-    assert host.validate_run_inputs({"steam_ids": ["76561198"], "events": ["Kills"]}) is True
+    assert host.validate_run_inputs(
+        {"steam_ids": ["76561198"], "event_actor": True, "event_target": False}) is True
     assert host.asked == []
 
 
@@ -96,13 +98,13 @@ def _no_threads(monkeypatch, host):
     monkeypatch.setattr(_t, "Thread", FakeThread)
 
 
-VALID = {"steam_ids": ["76561198"], "events": ["Kills"]}
+VALID = {"steam_ids": ["76561198"], "event_actor": True, "event_target": False}
 
 
 def test_start_run_refuses_and_starts_nothing_when_inputs_are_bad(monkeypatch):
     host = RecordingHost()
     _no_threads(monkeypatch, host)
-    assert host.start_run({"steam_ids": [], "events": ["Kills"]}) is False
+    assert host.start_run({"steam_ids": [], "event_actor": True}) is False
     assert host.workers == []
     assert host._running is False
 
@@ -119,7 +121,7 @@ def test_start_run_arms_the_run_state_and_hands_cfg_to_the_worker(monkeypatch):
     assert len(host.workers) == 1
     target, args = host.workers[0]
     assert target == host._worker
-    assert args[0]["events"] == ["Kills"]
+    assert args[0]["event_actor"] is True
 
 
 def test_start_run_disables_run_and_enables_stop_and_kill(monkeypatch):

@@ -3185,13 +3185,44 @@ class EngineMixin:
             self.state("buttons", {"stop": False, "stop_label": "⏸ Stop"})
 
     @staticmethod
-    def derive_event_flags(cfg):
-        """Turn the `events` list into the three booleans the queries read.
+    def derive_event_flags_v2(cfg):
+        """Turn the 2-axis event model into query booleans.
 
-        The window kept three checkbox variables in step with `cfg["events"]`:
-        it builds them from that key at startup and rewrites them from it on
-        every config load, so they hold no information of their own. A
-        windowless host has no checkboxes, and derives them here instead.
+        Reads the new `event_actor` / `event_target` / `event_ally` /
+        `event_enemy` keys and produces both the new derived booleans and the
+        legacy `events_kills` / `events_deaths` / `events_rounds` ones so the
+        current `_query_events` keeps working (a later task rewires it onto
+        events_lethal / events_non_lethal / events_other).
+        """
+        actor = cfg.get("event_actor", True)
+        target = cfg.get("event_target", False)
+        ally = cfg.get("event_ally", False)
+        enemy = cfg.get("event_enemy", True)
+
+        return {
+            # Action-type booleans (what to query)
+            "_events_lethal": actor or target,  # Kills & Deaths — always on when perspective selected
+            "_events_non_lethal": cfg.get("event_non_lethal", False),  # Separate toggle
+            "_events_other": cfg.get("event_other", False),           # Separate toggle
+            # Perspective booleans (prefixed _events_ to avoid collision with config keys)
+            "_events_actor": actor,
+            "_events_target": target,
+            # Team filter booleans
+            "_events_ally": ally,
+            "_events_enemy": enemy,
+            # Rounds stays independent
+            "_events_rounds": "Rounds" in (cfg.get("events") or []),
+            # Legacy booleans (backward-compat; _query_events still reads these)
+            "events_kills": actor,
+            "events_deaths": target,
+        }
+
+    @staticmethod
+    def derive_event_flags(cfg):
+        """Backward-compat wrapper: old flat `events` list → legacy booleans.
+
+        Kept so legacy callers and tests that still pass an `events` list keep
+        working. New code should use `derive_event_flags_v2`.
         """
         events = cfg.get("events") or []
         return {
@@ -3206,16 +3237,19 @@ class EngineMixin:
         A copy, never the caller's dict: the window reuses the one it
         collected, and a run must not leave marks on it.
         """
-        return {**cfg, **self.derive_event_flags(cfg)}
+        return {**cfg, **self.derive_event_flags_v2(cfg)}
 
     def validate_run_inputs(self, cfg):
         """Check the preconditions run and preview share. False stops the caller."""
         if not cfg.get("steam_ids"):
             self.ask("error", "Check at least one registered account.", [])
             return False
-        if not (cfg.get("events") or []):
-            self.ask("error", "Select at least one event.", [])
-            return False
+        if not (cfg.get("event_actor") or cfg.get("event_target")):
+            # Rounds is independent of the perspective axis;
+            # allow a config with only Rounds enabled.
+            if not (cfg.get("events") or []):
+                self.ask("error", "Select at least one perspective (Actor / Target) or enable Rounds.", [])
+                return False
         return True
 
     def start_run(self, cfg, selected_clips=None):
