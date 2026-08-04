@@ -1,0 +1,17 @@
+/*
+ * The EVENT TYPE section -- the 2-axis capture model.
+ *
+ * Rows, labels and chips come from the mock (`theme/mock-v12.css`): `.row`,
+ * `.lab`, `.chip`. Colours here come from `theme/tokens.css` only. The
+ * `.evt` wrapper exists to give the three rows a rhythm of their own inside
+ * the CAPTURE & TIMING card -- the mock never had a three-row event block.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.evt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding-top: var(--sp-2);
+}

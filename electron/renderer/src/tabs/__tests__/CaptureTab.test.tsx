@@ -156,15 +156,30 @@ describe("CaptureTab conditional rows", () => {
     expect(enable.getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("toggles an event kind without dropping the others", async () => {
+  it("toggles a perspective without dropping the other", async () => {
+    // Actor defaults on (engine default), Target off; the two perspectives
+    // are independent toggles, never a radio group.
     await renderTab();
-    const deaths = screen.getByRole("button", { name: /DEATHS BY/ });
-    const kills = screen.getByRole("button", { name: /^KILLS$/ });
+    const actor = screen.getByRole("button", { name: /^Actor$/ });
+    const target = screen.getByRole("button", { name: /^Target$/ });
 
-    expect(kills.getAttribute("aria-pressed")).toBe("true");
-    act(() => deaths.click());
-    expect(deaths.getAttribute("aria-pressed")).toBe("true");
-    expect(kills.getAttribute("aria-pressed")).toBe("true");
+    expect(actor.getAttribute("aria-pressed")).toBe("true");
+    expect(target.getAttribute("aria-pressed")).toBe("false");
+    act(() => target.click());
+    expect(target.getAttribute("aria-pressed")).toBe("true");
+    expect(actor.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("keeps the standalone Rounds checkbox separate from the action types", async () => {
+    // Rounds is independent of the perspective/action-type axes: toggling an
+    // action-type chip must not touch the Rounds flag and vice versa.
+    await renderTab();
+    const rounds = screen.getByRole("button", { name: /^ROUNDS$/ });
+    const nonLethal = screen.getByRole("button", { name: /^Non-lethal$/ });
+
+    act(() => rounds.click());
+    expect(rounds.getAttribute("aria-pressed")).toBe("true");
+    expect(nonLethal.getAttribute("aria-pressed")).toBe("false");
   });
 
   it("adds the switch delay to the before seconds in its readout", async () => {

@@ -45,6 +45,8 @@ DEFAULT_CONFIG = {
     "event_target": False,    # Target perspective — I am the one acted upon
     "event_ally": False,      # Include ally-on-ally / ally-on-me events
     "event_enemy": True,      # Include enemy-on-me / me-on-enemy events
+    "event_non_lethal": False,  # Include non-lethal damage events
+    "event_other": False,     # Include "other" events (shots, jumps, grenade misses)
     # Derived booleans (set by build_run_cfg, NOT stored):
     #   events_lethal, events_non_lethal, events_other
     "weapons": [],
@@ -148,6 +150,7 @@ PRESET_KEYS = {
     "players":     ["steam_id", "player_name", "player_name_override"],
     "date":        ["date_from", "date_to"],
     "filters":     ["event_actor", "event_target", "event_ally", "event_enemy",
+                    "event_non_lethal", "event_other",
                     "weapons", "perspective", "victim_pre_s",
                     "headshots_mode", "suicides_mode", "teamkills_mode",
                     "kill_mod_logic_mods", "kill_mod_logic_dp2", "kill_mod_logic_db",
@@ -175,7 +178,8 @@ PRESET_KEYS = {
                     "retry_count", "retry_delay", "delay_between_demos", "recording_timeout"],
     # ── Backward-compat aliases (old format → new granular keys) ───────────────
     "player":      ["steam_id", "player_name", "event_actor", "event_target",
-                    "event_ally", "event_enemy", "weapons", "date_from", "date_to",
+                    "event_ally", "event_enemy", "event_non_lethal", "event_other",
+                    "weapons", "date_from", "date_to",
                     "perspective", "victim_pre_s", "headshots_mode", "suicides_mode",
                     "teamkills_mode", "kill_mod_logic_mods", "kill_mod_logic_dp2",
                     "kill_mod_logic_db", *_FILTER_PRESET_PLAYER_KEYS, "clip_order",

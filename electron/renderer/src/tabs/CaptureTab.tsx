@@ -23,6 +23,7 @@ import { useSetting } from "../settings/store";
 import { DatabaseProvider } from "../settings/useDatabase";
 import { TablesProvider } from "../settings/useTables";
 import DemoSelectionSection from "./DemoSelectionSection";
+import EventTypeSection from "./EventTypeSection";
 import KillFiltersSection from "./KillFiltersSection";
 import MapFilterSection from "./MapFilterSection";
 import MatchTypesSection from "./MatchTypesSection";
@@ -30,14 +31,9 @@ import PlayerSection from "./PlayerSection";
 import WeaponFilterSection from "./WeaponFilterSection";
 import "./CaptureTab.css";
 
-/** Event kinds, and the exact strings `cfg["events"]` carries. */
-const EVENT_KINDS = [
-  { value: "Kills", label: "KILLS" },
-  { value: "Deaths", label: "DEATHS BY" },
-  { value: "Rounds", label: "ROUNDS" },
-] as const;
-
-/** Perspective values, exactly as the engine reads them. */
+/**
+ * Perspective values, exactly as the engine reads them.
+ */
 const PERSPECTIVES = ["killer", "victim", "both"] as const;
 
 /** Demo processing order, exactly as the engine reads them. */
@@ -141,17 +137,18 @@ export default function CaptureTab() {
       id: "capture-timing",
       element: (
         <Card title="Capture &amp; Timing" icon={<ICONS.captureTiming />} count={perspective ?? PERSPECTIVES[0]}>
+          <EventTypeSection />
+
+          {/* Rounds is independent of the perspective/action-type axes; the
+              engine still reads it from the legacy `events` list. */}
           <SettingControl settingKey="events">
             <div className="row">
-              <span className="lab">Capture</span>
-              {EVENT_KINDS.map((kind) => (
-                <Chip
-                  key={kind.value}
-                  label={kind.label}
-                  selected={selectedEvents.includes(kind.value)}
-                  onToggle={() => toggleEvent(kind.value)}
-                />
-              ))}
+              <span className="lab">Rounds</span>
+              <Chip
+                label="ROUNDS"
+                selected={selectedEvents.includes("Rounds")}
+                onToggle={() => toggleEvent("Rounds")}
+              />
             </div>
           </SettingControl>
 
