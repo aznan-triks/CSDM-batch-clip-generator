@@ -23,8 +23,8 @@ Clip capture is no longer kill-only: the engine now also selects non-lethal dama
 shots, jumps and near-miss, through a new two-axis selection model (Perspective × Action type)
 validated by a local council review (3 roles: scalability, maintainability, simplicity — 3 critical
 bugs caught in the plan and fixed before implementation, plus 1 BLOCK in the post-implementation
-review, fixed the same day). Not version-bumped yet (explicit standing rule: no bump without the
-user's go-ahead). Verified by 340+ backend tests (migration, e2e, sequences) and the existing
+review, fixed the same day). Bumped to `v221` at delivery (user go-ahead, 2026-08-04).
+Verified by 340+ backend tests (migration, e2e, sequences) and the existing
 frontend suite (317 passed in the broken-jsdom environment; 222 pre-existing failures untouched).
 
 ### Added
@@ -115,8 +115,8 @@ snap gesture).
 ## v217 — 2026-08-01
 
 Restyle 6 (2026-08-01, same day as v216): a punch list of HUD polish and one Tkinter-parity gap,
-reported directly by the user against the running app. Not version-bumped yet (explicit standing
-rule: no bump without the user's go-ahead). No manual recette on real data this session either —
+reported directly by the user against the running app. Version assigned during the 2026-08-04
+numbering re-alignment. No manual recette on real data this session either —
 verified by `npm test`/`npm run typecheck` (583/583, clean) and a live DOM/console check on a
 throwaway Vite instance (port 5283, no Electron/bridge), not a screenshot: the Browser pane could
 not compose frames in this session (headless, user AFK), so no pixel-level "before/after" proof
