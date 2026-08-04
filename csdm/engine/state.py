@@ -25,6 +25,7 @@ ENGINE_STATE_DEFAULTS = {
     "_db_conn": lambda: None,
     "_dp2_cache": dict,
     "_dp2_cache_lock": threading.Lock,
+    "_player_positions_cache": dict,
     "_dp2_verbose": lambda: False,
     "_player_names": dict,
     "_tags_list": list,

@@ -38,19 +38,39 @@ class FilterDef(NamedTuple):
     hide_ui:      bool           = False # True → no standalone row (rendered by another)
     extra_config: Optional[dict] = None  # extra DEFAULT_CONFIG entries for this filter
     camera_fn:    Optional[str]  = None  # App method: (demo_path, event, cfg) → override camera SID or None
+    # Event categories this modifier can be evaluated on. Used by the shared
+    # modifier layer to decide whether a kill modifier also applies to
+    # non-kill events (damage / shot / round). Categories:
+    #   "kill"  → kill / death events
+    #   "damage"→ non-lethal damage events
+    #   "shot"  → raw shot events
+    #   "round" → round events
+    # Default ("kill",) preserves the historical kill-only behaviour for any
+    # future entry that omits this field.
+    applicable_to: tuple = ("kill",)
+
+# ── Event-category shortcuts for applicable_to ─────────────────────────────────
+# Categories: "kill" | "damage" | "shot" | "round".
+_ALL_EVENTS     = ("kill", "damage", "shot", "round")
+# Round-context modifiers (entry frag, ace, multi-kill, bully, eco) only make
+# sense where a full round context exists — kills and round events.
+_KILL_ROUND     = ("kill", "round")
 
 
 KILL_FILTER_REGISTRY: _List[FilterDef] = [
     # ── SQL-backed Mods ──────────────────────────────────────────────────
     FilterDef("kill_mod_through_smoke",  "💨 SMOKE:",         "💨 SMOKE",      "mods",
         "Kill through a smoke grenade (DB column — fast, no demoparser2 needed).",
-        sql_cols=["is_through_smoke", "through_smoke"]),
+        sql_cols=["is_through_smoke", "through_smoke"],
+        applicable_to=_ALL_EVENTS),
     FilterDef("kill_mod_no_scope",       "🔭 NO-SCOPE:",      "🔭 NOSCOPE",    "mods",
         "No-scope kill — sniper only (DB column).",
-        sql_cols=["is_no_scope", "no_scope"]),
+        sql_cols=["is_no_scope", "no_scope"],
+        applicable_to=_ALL_EVENTS),
     FilterDef("kill_mod_assisted_flash", "⚡ VICTIM FLASHED:","⚡ VIC.FLASH",  "mods",
         "Victim was blinded by a flashbang (DB column).",
-        sql_cols=["is_assisted_flash", "assisted_flash"]),
+        sql_cols=["is_assisted_flash", "assisted_flash"],
+        applicable_to=_ALL_EVENTS),
     # ── DB-backed mods (CSDM stores these columns in the kills table) ────
     FilterDef("kill_mod_wall_bang",      "🧱 WALLBANG:",      "🧱 WALLBANG",   "mods",
         ("Kill where the bullet penetrated at least one obstacle.\n"
@@ -58,7 +78,8 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
          "Falls back to demoparser2 if no matching column is found in the DB."),
         sql_cols=["penetrated_objects", "has_penetrated", "penetrated"],
         dp2_filter="_wall_bang_dp2_filter",     dp2_apply="_apply_wall_bang_dp2_to_events",
-        dp2_log="🧱 WALLBANG",  dp2_result="wallbang",    dp2_skip="0 WALLBANG"),
+        dp2_log="🧱 WALLBANG",  dp2_result="wallbang",    dp2_skip="0 WALLBANG",
+        applicable_to=_ALL_EVENTS),
     FilterDef("kill_mod_attacker_blind", "😵 BLIND FIRE:",    "😵 BLIND",      "mods",
         ("Bullet fired while the killer was blinded by a flashbang.\n"
          "Uses kills.attacker_blinded / kills.is_attacker_blinded / kills.attacker_blind.\n"
@@ -66,18 +87,21 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
         sql_cols=["attacker_blinded", "is_attacker_blinded", "attacker_blind",
                   "is_blinded", "attackerblind"],
         dp2_filter="_attacker_blind_dp2_filter",dp2_apply="_apply_attacker_blind_dp2_to_events",
-        dp2_log="😵 BLIND FIRE",dp2_result="blind fire",  dp2_skip="0 BLIND FIRE"),
+        dp2_log="😵 BLIND FIRE",dp2_result="blind fire",  dp2_skip="0 BLIND FIRE",
+        applicable_to=_ALL_EVENTS),
     # ── dp2-only — no DB equivalent ──────────────────────────────────────
     FilterDef("kill_mod_airborne",       "🪂 AIRBORNE:",      "🪂 AIR",        "dp2",
         ("Bullet fired while the killer was in the air (not on ground).\n"
          "Uses player_death.attackerinair — demoparser2 required, not stored in CSDM DB."),
         dp2_filter="_airborne_dp2_filter",      dp2_apply="_apply_airborne_dp2_to_events",
-        dp2_log="🪂 AIRBORNE",  dp2_result="airborne",    dp2_skip="0 AIRBORNE"),
+        dp2_log="🪂 AIRBORNE",  dp2_result="airborne",    dp2_skip="0 AIRBORNE",
+        applicable_to=_ALL_EVENTS),
     FilterDef("kill_mod_collateral",     "🎯 COLLATERAL:",    "🎯 COLLAT.",    "dp2",
         ("Single bullet penetrated and killed multiple players in the same shot chain.\n"
          "Uses player_death.penetrated + shot grouping via demoparser2."),
         dp2_filter="_collateral_dp2_filter",    dp2_apply="_apply_collateral_dp2_to_events",
-        dp2_log="🎯 COLLATERAL",dp2_result="collateral",  dp2_skip="0 COLLATERAL"),
+        dp2_log="🎯 COLLATERAL",dp2_result="collateral",  dp2_skip="0 COLLATERAL",
+        applicable_to=_ALL_EVENTS),
     # ── dp2 — weapon_fire-based filters ─────────────────────────────────
     FilterDef("kill_mod_trois_shot",     "🎲 TROIS SHOT:",    "🎲 TROIS SHOT", "dp2",
         ("Lucky kills on precision weapons — detected via demoparser2.\n\n"
@@ -89,26 +113,30 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
          "⚠ Enable and Exclude are mutually exclusive."),
         dp2_filter="_trois_shot_filter",        dp2_apply="_apply_trois_shot_to_events",
         dp2_log="🎲 TROIS SHOT",dp2_result="TROIS SHOT",  dp2_skip="0 TROIS SHOT",
-        special="trois_shot"),
+        special="trois_shot",
+        applicable_to=_ALL_EVENTS),
     FilterDef("kill_mod_trois_tap",      "🎯🎲 TROIS TAP:",   "🎯🎲 TROIS TAP","dp2",
         ("TROIS SHOT + ONE TAP: lucky isolated headshot.\n"
          "Must be a headshot, qualify as lucky, and have no other shot within 2s.\n"
          "HS is auto-forced only when active logic guarantees HS-only output."),
         dp2_filter=None, dp2_apply=None,   # always exclusive, handled separately
         dp2_log="🎯🎲 TROIS TAP",dp2_result="TROIS TAP",  dp2_skip="0 TROIS TAP",
-        special="trois_tap"),
+        special="trois_tap",
+        applicable_to=_ALL_EVENTS),
     FilterDef("kill_mod_one_tap",        "🎯 ONE TAP:",       "🎯 ONE TAP",    "dp2",
         ("Isolated single-shot headshot — no other shot within N seconds before or after.\n"
          "HS is auto-forced only when active logic guarantees HS-only output."),
         dp2_filter="_one_tap_filter",           dp2_apply="_apply_one_tap_to_events",
         dp2_log="🎯 ONE TAP",   dp2_result="one tap",     dp2_skip="0 ONE TAP",
         special="one_tap",
-        extra_config={"kill_mod_one_tap_s": 2}),
+        extra_config={"kill_mod_one_tap_s": 2},
+        applicable_to=_ALL_EVENTS),
     FilterDef("kill_mod_spray_transfer", "🔫 SPRAY TRANSFER:","🔫 SPRAY",      "dp2",
         ("≥2 enemies killed in one continuous spray (no trigger release).\n"
          "Auto weapons only: AK-47, M4A4/M4A1-S, Galil AR, FAMAS, SG 553, AUG, SMGs, M249, Negev, CZ75."),
         dp2_filter="_spray_transfer_filter",    dp2_apply="_apply_spray_transfer_to_events",
-        dp2_log="🔫 SPRAY",     dp2_result="spray transfer",dp2_skip="0 SPRAY"),
+        dp2_log="🔫 SPRAY",     dp2_result="spray transfer",dp2_skip="0 SPRAY",
+        applicable_to=_ALL_EVENTS),
     FilterDef("kill_mod_high_velocity",  "🏎 FERRARI PEEK:",  "🏎 FERRARI",    "dp2",
         ("Moving peek that kills on a single shot then immediately resumes.\n"
          "Approach speed ≥ threshold, one shot, resumes movement within 2s.\n"
@@ -116,33 +144,41 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
         dp2_filter="_high_velocity_filter",     dp2_apply="_apply_high_velocity_to_events",
         dp2_log="🏎 FERRARI PEEK",dp2_result="counter-strafe",dp2_skip="0 FERRARI PEEK",
         special="high_velocity",
-        extra_config={"kill_mod_hv_one_shot": True, "kill_mod_high_vel_thr": 100}),
+        extra_config={"kill_mod_hv_one_shot": True, "kill_mod_high_vel_thr": 100},
+        applicable_to=_ALL_EVENTS),
     FilterDef("kill_mod_flick",          "↩ FLICK:",          "↩ FLICK",       "dp2",
         ("Kill preceded by a large view-angle change (~0.5s before kill tick).\n"
          "Default: 50°. Lower = catch smaller corrections, raise = extreme flicks only."),
         dp2_filter="_flick_filter",             dp2_apply="_apply_flick_to_events",
         dp2_log="↩ FLICK",      dp2_result="flick",       dp2_skip="0 FLICK",
-        extra_config={"kill_mod_flick_deg": 50}),
+        extra_config={"kill_mod_flick_deg": 50},
+        applicable_to=_ALL_EVENTS),
     FilterDef("kill_mod_savior",        "🛡 SAVIOR:",        "🛡 SAVIOR",     "dp2",
         ("Kill an enemy who was actively damaging a teammate in the ~2s prior.\n"
          "Captures last-second rescues."),
         dp2_filter="_savior_filter",           dp2_apply="_apply_savior_to_events",
-        dp2_log="🛡 SAVIOR",    dp2_result="savior",      dp2_skip="0 SAVIOR"),
+        dp2_log="🛡 SAVIOR",    dp2_result="savior",      dp2_skip="0 SAVIOR",
+        applicable_to=_ALL_EVENTS),
     # ── DB post-filters ──────────────────────────────────────────────────
     FilterDef("kill_mod_entry_frag",     "🚀 ENTRY FRAG:",    "🚀 ENTRY",      "db",
-        "First kill of the round (earliest tick), regardless of side."),
+        "First kill of the round (earliest tick), regardless of side.",
+        applicable_to=_KILL_ROUND),
     FilterDef("kill_mod_ace",            "🃏 ACE:",           "🃏 ACE",         "db",
-        "Rounds where the player eliminated all 5 opponents alone."),
+        "Rounds where the player eliminated all 5 opponents alone.",
+        applicable_to=_KILL_ROUND),
     FilterDef("kill_mod_multi_kill",     "⚡ MULTI-KILL:",    "⚡ MULTI",       "db",
         "N or more kills in one round within the time window.",
-        extra_config={"kill_mod_multi_kill_n": 3, "kill_mod_multi_kill_s": 12}),
+        extra_config={"kill_mod_multi_kill_n": 3, "kill_mod_multi_kill_s": 12},
+        applicable_to=_KILL_ROUND),
     FilterDef("kill_mod_bully",       "💀 BULLY:",         "💀 BULLY",       "db",
         ("Kill the same opponent for the Nth time in the match.\n"
          "e.g. From kill #3 = captured from the 3rd time you kill the same player."),
-        extra_config={"kill_mod_bully_n": 3}),
+        extra_config={"kill_mod_bully_n": 3},
+        applicable_to=_KILL_ROUND),
     FilterDef("kill_mod_eco_frag",       "💰 ECO FRAG:",      "💰 ECO",         "db",
         ("Pistol kill against a full-buy opponent (rifle / sniper / LMG).\n"
-         "Falls back to all pistol kills if victim_weapon column is missing.")),
+         "Falls back to all pistol kills if victim_weapon column is missing."),
+         applicable_to=_KILL_ROUND),
     # ── Camera modifier — not a kill filter, rendered in Capture & Timing ────
     FilterDef("kill_mod_mate_pov",       "👥 MATE POV:",      "👥 MATE POV",   "dp2",
         ("Record from the victim's teammate who has the best angular view of the kill.\n"
@@ -154,7 +190,8 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
         dp2_apply=None,
         dp2_log="👥 MATE POV", dp2_result="mate pov", dp2_skip="0 mate POV",
         camera_fn="_mate_pov_camera_sid",
-        hide_ui=True),   # rendered in Capture & Timing, not in Kill Filters
+        hide_ui=True,
+        applicable_to=("kill",)),   # rendered in Capture & Timing, not in Kill Filters
 ]
 
 # ── Derived structures (auto-generated — DO NOT EDIT, edit KILL_FILTER_REGISTRY) ──

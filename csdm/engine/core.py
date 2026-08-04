@@ -1103,6 +1103,12 @@ class EngineMixin:
             # ── "Other" events (shots, jumps, etc.) ──
             self._query_shots(cfg, sids, conn, results)
 
+            # ── Shared modifier layer: tag non-kill events with _mf ──
+            # Evaluates active kill modifiers (headshot, no-scope, airborne, …)
+            # on the just-produced damage / shot / round events. Uses the
+            # lazily-loaded player_positions frames when a modifier needs them.
+            self._apply_shared_modifiers(cfg, results)
+
         finally:
             pass  # persistent connection — kept open for reuse
 
@@ -1274,6 +1280,162 @@ class EngineMixin:
                 if wc:
                     evt["weapon"] = str(row[3] or "")
                 results.setdefault(dp, []).append(evt)
+
+    # ── Shared modifier layer — evaluate kill modifiers on any event type ──
+
+    @staticmethod
+    def _event_category(etype):
+        """Map an event type string to its category bucket.
+
+        Categories match FilterDef.applicable_to:
+          "kill"   → kill / death events
+          "damage" → non-lethal damage events
+          "shot"   → raw shot events
+          "round"  → round events
+        Anything unknown falls back to "kill" (safest — preserves old behaviour).
+        """
+        etype = etype or ""
+        if etype.startswith("damage"):
+            return "damage"
+        if etype.startswith("shot"):
+            return "shot"
+        if etype.startswith("round"):
+            return "round"
+        return "kill"
+
+    @staticmethod
+    def _modifier_needs_positions(k):
+        """True when a modifier key can only be evaluated from player_positions.
+
+        Currently airborne (attacker in the air) and no-scope (unscoped sniper
+        shot) derive their signal from per-tick player position data rather than
+        a DB column on the event row.
+        """
+        return k in ("kill_mod_airborne", "kill_mod_no_scope")
+
+    def _check_modifier(self, f, event, player_positions_df=None):
+        """Evaluate a single FilterDef against one event dict.
+
+        Returns True when the modifier's condition is met, False otherwise.
+        Conservative: when the required data is missing the modifier does not
+        match. Prefers DB columns carried on the event itself, and falls back to
+        the optional player_positions frame for position-derived modifiers.
+        """
+        key = f.key
+
+        # Position-derived modifiers — need the per-demo player_positions frame.
+        if key == "kill_mod_airborne":
+            return self._event_airborne(event, player_positions_df)
+        if key == "kill_mod_no_scope":
+            for col in (f.sql_cols or []):
+                if event.get(col) is not None:
+                    return bool(event.get(col))
+            # No DB column carried on this non-kill event — no-scope can't be
+            # proven from positions alone; treat as not matched.
+            return False
+
+        # SQL-column modifiers: honour candidate columns present on the event.
+        for col in (f.sql_cols or []):
+            if col in event and event[col]:
+                return True
+        return False
+
+    def _event_airborne(self, event, positions_df):
+        """True when the event's actor was airborne at the event tick.
+
+        Reads the attacker's Z coordinate around the event tick from the
+        per-demo player_positions frame. Airborne is inferred from a net
+        vertical displacement across a short window (a grounded player keeps a
+        roughly constant Z; a jumping player's Z changes).
+        """
+        tick = event.get("tick")
+        sid = str(event.get("attacker_sid") or event.get("killer_sid") or "")
+        if tick is None or not sid or positions_df is None or len(positions_df) == 0:
+            return False
+
+        cols = list(positions_df.columns)
+        def _col(*names):
+            low = {c: c.lower() for c in cols}
+            for n in names:
+                if n in cols:
+                    return n
+                if n in low:
+                    return n
+            return None
+
+        col_sid = _col("player_steamid", "steamid", "player_steam_id")
+        col_z = _col("z", "pos_z", "position_z")
+        col_tick = _col("tick")
+        if not col_sid or not col_z or not col_tick:
+            return False
+
+        try:
+            sid_mask = positions_df[col_sid].astype(str) == sid
+            sub = positions_df[sid_mask]
+            if len(sub) == 0:
+                return False
+            idx = (sub[col_tick] - tick).abs().argsort()
+            window = sub.iloc[idx[:5]].sort_values(col_tick)
+            z = window[col_z].to_numpy(dtype=float)
+            if len(z) >= 2:
+                # Net vertical displacement across the window.
+                if abs(float(z[-1]) - float(z[0])) > 8.0:
+                    return True
+        except Exception:
+            return False
+        return False
+
+    def _evaluate_modifiers_for_event(self, cfg, event, player_positions_df=None):
+        """Compute the _mf set of active modifiers that match a single event.
+
+        Iterates KILL_FILTER_REGISTRY, skipping modifiers that are not active
+        in cfg or whose applicable_to does not include this event's category.
+        Returns a set of cfg_key strings (same _mf format used by kill events).
+        """
+        mf = set()
+        category = self._event_category(event.get("type"))
+        for f in KILL_FILTER_REGISTRY:
+            if category not in f.applicable_to:
+                continue
+            key = f.key
+            if not (cfg.get(key) or cfg.get(f"{key}_exclude")):
+                continue
+            if self._check_modifier(f, event, player_positions_df):
+                mf.add(key)
+        return mf
+
+    def _apply_shared_modifiers(self, cfg, results):
+        """Tag non-kill events with their _mf set using the shared modifier layer.
+
+        Called after _query_damages / _query_shots have produced events. For
+        each demo, the lazily-loaded player_positions frame is fetched from
+        _player_positions_cache when any active modifier needs it. Kill events
+        keep whatever _mf the main query already stamped on them.
+        """
+        active_needs_positions = any(
+            self._modifier_needs_positions(f.key)
+            for f in KILL_FILTER_REGISTRY
+            if (cfg.get(f.key) or cfg.get(f"{f.key}_exclude"))
+        )
+        if not active_needs_positions:
+            # No modifier needs positions — evaluate straight from event fields.
+            for dp, events in results.items():
+                for e in events:
+                    if self._event_category(e.get("type")) == "kill":
+                        continue
+                    mf = self._evaluate_modifiers_for_event(cfg, e, None)
+                    if mf:
+                        e["_mf"] = (e.get("_mf") or set()) | mf
+            return
+
+        for dp, events in results.items():
+            positions_df = self._player_positions_cache.get(dp)
+            for e in events:
+                if self._event_category(e.get("type")) == "kill":
+                    continue
+                mf = self._evaluate_modifiers_for_event(cfg, e, positions_df)
+                if mf:
+                    e["_mf"] = (e.get("_mf") or set()) | mf
 
     def _apply_db_postfilters(self, cfg, results, sids):
         """Apply DB-level post-query filters that require cross-round context.
@@ -2797,6 +2959,15 @@ class EngineMixin:
             sections.add("death")
         if cfg.get("kill_mod_savior") or cfg.get("kill_mod_savior_exclude"):
             sections.add("hurt")
+        # Lazy player_positions for the shared modifier layer: needed only when
+        # non-lethal / "other" events are enabled AND a position-derived modifier
+        # (airborne, no-scope) is active. Keeps the DP2 pre-parse lean otherwise.
+        if (cfg.get("_events_non_lethal") or cfg.get("_events_other")):
+            for f in KILL_FILTER_REGISTRY:
+                if self._modifier_needs_positions(f.key) and (
+                    cfg.get(f.key) or cfg.get(f"{f.key}_exclude")):
+                    sections.add("positions")
+                    break
         # Collect in-demo player names only when dp2 is already running for something else.
         # When no filter needs dp2, DB names serve as fallback — no extra parse triggered.
         if sections:
@@ -4341,6 +4512,24 @@ class EngineMixin:
                         ):
                             if sid and nm:
                                 demo_names[sid] = nm
+            except Exception:
+                pass
+
+        if "positions" in needed:
+            # Lazy player_positions for the shared modifier layer. Parsed once per
+            # demo and cached so airborne / no-scope checks on non-kill events do
+            # not re-parse on every event. Stored separately from _dp2_cache (the
+            # per-demo frame can be large and the LRU eviction is tuned for the
+            # fire/death structures).
+            try:
+                pos_df = parser.parse_event(
+                    "player_positions",
+                    player=["x", "y", "z"],
+                    other=[],
+                )
+                if pos_df is not None and len(pos_df) > 0:
+                    with self._dp2_cache_lock:
+                        self._player_positions_cache[demo_path] = pos_df
             except Exception:
                 pass
 
