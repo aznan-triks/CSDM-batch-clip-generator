@@ -33,9 +33,10 @@ saves a backup of the old ones first.
 
 ### Added
 
-**Humanised:** A "Configuration Folder" card in Settings with three buttons — Script folder, Local
-AppData, Choose… — and the current location shown. On the first launch of this version, the old files
-at the script root are copied into the new default subfolder automatically.
+**Humanised:** A "Configuration Folder" card in Settings with three buttons — App folder
+(portable), User Local AppData, Choose… — and the current location shown. On the first launch of
+this version, the old files at the script root are copied into the new default subfolder
+automatically.
 
 **Technical:** New `config_dir` DEFAULT_CONFIG key (`""` = script subfolder, `"appdata"` =
 `%LOCALAPPDATA%\CSDM Batch Clip Generator`, absolute path = subfolder created inside it).

@@ -131,15 +131,17 @@ describe("SettingsTab", () => {
   it("shows the configuration folder control with its three locations", async () => {
     const { container } = await renderTab();
     expect(container.querySelector('[data-config-key="config_dir"]')).not.toBeNull();
-    for (const label of ["Script folder", "Local AppData", "Choose…"]) {
-      expect(screen.getByRole("button", { name: new RegExp(`^${label}$`) })).toBeTruthy();
+    for (const label of ["App folder (portable)", "User Local AppData", "Choose…"]) {
+      expect(
+        screen.getByRole("button", { name: new RegExp(`^${label.replace(/[()]/g, "\\$&")}$`) }),
+      ).toBeTruthy();
     }
   });
 
   it("copies to Local AppData after the confirmation, never moving", async () => {
     await renderTab();
     await act(async () => {
-      screen.getByRole("button", { name: /^Local AppData$/ }).click();
+      screen.getByRole("button", { name: /^User Local AppData$/ }).click();
     });
     // Probe resolved with no conflicts, so a single copy confirmation shows.
     expect(screen.getByRole("alertdialog", { name: "Copy config folder" })).toBeTruthy();
@@ -152,7 +154,7 @@ describe("SettingsTab", () => {
   it("stays put when the copy confirmation is cancelled", async () => {
     await renderTab();
     await act(async () => {
-      screen.getByRole("button", { name: /^Local AppData$/ }).click();
+      screen.getByRole("button", { name: /^User Local AppData$/ }).click();
     });
     await act(async () => {
       screen.getByRole("button", { name: /^Cancel$/ }).click();

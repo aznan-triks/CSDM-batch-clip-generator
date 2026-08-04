@@ -70,8 +70,8 @@ interface PendingSwitch {
 
 /** The two fixed locations; the third (Choose…) resolves a path at click time. */
 const FOLDER_CHOICES: ReadonlyArray<{ value: string; label: string }> = [
-  { value: "", label: "Script folder" },
-  { value: "appdata", label: "Local AppData" },
+  { value: "", label: "App folder (portable)" },
+  { value: "appdata", label: "User Local AppData" },
 ];
 
 export default function SettingsTab() {
