@@ -20,6 +20,35 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.0.1 — 2026-08-04
+
+Where the settings files live is now your choice — and switching never deletes anything.
+
+**Humanised:** The four settings files no longer have to sit at the root of the script folder. They now
+live in a tidy "CSDM Batch Clip Generator" subfolder beside the script (the new default), and you can
+move them to your Local AppData or any folder you pick — the app creates its own subfolder there.
+Switching COPIES the files to the new place; the old ones are never removed, so nothing is ever lost.
+If the destination already holds settings files, the app asks you twice before replacing them, and
+saves a backup of the old ones first.
+
+### Added
+
+**Humanised:** A "Configuration Folder" card in Settings with three buttons — Script folder, Local
+AppData, Choose… — and the current location shown. On the first launch of this version, the old files
+at the script root are copied into the new default subfolder automatically.
+
+**Technical:** New `config_dir` DEFAULT_CONFIG key (`""` = script subfolder, `"appdata"` =
+`%LOCALAPPDATA%\CSDM Batch Clip Generator`, absolute path = subfolder created inside it).
+`csdm/config.py` resolves the four JSON paths dynamically (`resolve_config_dir`), bootstraps through
+the default-location config acting as pointer (`_bootstrap_dir`), migrates legacy root files once
+(`_migrate_legacy_root_files`), and adds `probe_config_dir` / `apply_config_dir` — copy never move,
+`backup-<timestamp>/` before any overwrite, pointer update so the next launch lands on the live copy.
+New bridge commands `probe_config_dir` / `apply_config_dir`; SettingsTab card with a two-step
+confirmation when the destination already has files; `tests/test_config_location.py` and renderer
+tests cover the flow.
+
+---
+
 ## 3.0 — 2026-08-04 (The Electron Era)
 
 The release that moves CSDM Batch Clips Generator from its Python-only past to its Electron

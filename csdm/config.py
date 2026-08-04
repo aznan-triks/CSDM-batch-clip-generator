@@ -8,6 +8,8 @@ csdm/ package directory.
 """
 import os
 import json
+import shutil
+import time
 from pathlib import Path
 
 from csdm.static_data import (
@@ -17,10 +19,23 @@ from csdm.static_data import (
 # The project root is the parent of the csdm/ package -- where the local data
 # files live (csdm_config.json, ...), beside the entry point.
 _ROOT = Path(__file__).resolve().parent.parent
-CONFIG_FILE    = str(_ROOT / "csdm_config.json")
-PRESETS_FILE   = str(_ROOT / "csdm_presets.json")
-PLAYERS_FILE   = str(_ROOT / "csdm_players.json")
-ASM_NAMES_FILE = str(_ROOT / "csdm_asm_names.json")
+
+# Where the four JSON files live, and how `config_dir` selects it:
+#   ""        -> <script root>/<CONFIG_SUBDIR>          (default)
+#   "appdata" -> %LOCALAPPDATA%/<CONFIG_SUBDIR>
+#   "<path>"  -> <path>/<CONFIG_SUBDIR>                 (subfolder created inside)
+# The same subfolder name is used everywhere so one constant drives all three.
+CONFIG_SUBDIR = "CSDM Batch Clip Generator"
+CONFIG_FILENAMES = ("csdm_config.json", "csdm_presets.json",
+                    "csdm_players.json", "csdm_asm_names.json")
+
+# Default-location paths, kept for the legacy Tkinter host import
+# (`csdm_batch_clips_generator.py`). Active-location reads/writes go through
+# the dynamic helpers below, never these constants.
+CONFIG_FILE    = str(_ROOT / CONFIG_SUBDIR / "csdm_config.json")
+PRESETS_FILE   = str(_ROOT / CONFIG_SUBDIR / "csdm_presets.json")
+PLAYERS_FILE   = str(_ROOT / CONFIG_SUBDIR / "csdm_players.json")
+ASM_NAMES_FILE = str(_ROOT / CONFIG_SUBDIR / "csdm_asm_names.json")
 
 DEFAULT_CONFIG = {
     "pg_host": "127.0.0.1", "pg_port": "5432",
@@ -31,6 +46,7 @@ DEFAULT_CONFIG = {
     "output_dir_concat":   "",   # concatenated clips (empty = same as raw)
     "output_dir_assembled": "",  # final assembled file (empty = same as raw)
     "cs2_cfg_dir": "",
+    "config_dir": "",  # "" = script subfolder | "appdata" = %LOCALAPPDATA% | absolute path (subfolder created inside)
     "ui_window_w": 1600,
     "ui_window_h": 900,
     "ui_split_pct": 60,
@@ -219,6 +235,97 @@ _PRESET_TAB_GROUPS = [
 _PRESET_ALL_CATS = [k for _, items in _PRESET_TAB_GROUPS for k, _ in items]
 
 # ═══════════════════════════════════════════════════════
+#  Config location (v3.0.1)
+# ═══════════════════════════════════════════════════════
+def _app_data_dir():
+    """The per-user Local AppData folder (Windows), with a portable fallback."""
+    local = os.environ.get("LOCALAPPDATA")
+    if local:
+        return Path(local)
+    return Path.home() / "AppData" / "Local"
+
+
+def resolve_config_dir(value):
+    """Resolve a `config_dir` setting to the directory holding the JSON files.
+
+    ``""`` keeps the default script subfolder, ``"appdata"`` moves to the
+    user's Local AppData, and any other string is a parent directory under
+    which the same subfolder is created.
+    """
+    if not value:
+        return _ROOT / CONFIG_SUBDIR
+    if value == "appdata":
+        return _app_data_dir() / CONFIG_SUBDIR
+    return Path(value) / CONFIG_SUBDIR
+
+
+def _default_dir():
+    """The default location: a subfolder of the script root."""
+    return _ROOT / CONFIG_SUBDIR
+
+
+def _migrate_legacy_root_files():
+    """Copy the pre-3.0.1 flat files (beside the entry point) into the default
+    subfolder, once, when the subfolder has no config yet.
+
+    Copy, never move: the legacy files stay where they were -- same rule as
+    the user-chosen switches.
+    """
+    default_dir = _default_dir()
+    if (default_dir / "csdm_config.json").exists():
+        return
+    try:
+        default_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        return
+    for name in CONFIG_FILENAMES:
+        src = _ROOT / name
+        if src.exists():
+            try:
+                shutil.copy2(src, default_dir / name)
+            except OSError:
+                pass
+
+
+def _pointer_config_dir():
+    """`config_dir` as recorded by the default-location config file.
+
+    That file is the bootstrap pointer: wherever the live configuration went,
+    the default copy keeps the location so the next launch can find it.
+    """
+    saved = _load_json(str(_default_dir() / "csdm_config.json"))
+    if isinstance(saved, dict) and "config_dir" in saved:
+        return saved["config_dir"]
+    return ""
+
+
+def _bootstrap_dir():
+    """The active directory, resolved from the pointer, with a safe fallback.
+
+    If the pointed-to location no longer has a config file (folder deleted,
+    drive unplugged), fall back to the default subfolder rather than handing
+    the app an empty configuration.
+    """
+    default_dir = _default_dir()
+    target = resolve_config_dir(_pointer_config_dir())
+    if target != default_dir and not (target / "csdm_config.json").exists():
+        return default_dir
+    return target
+
+
+_ACTIVE_DIR = None  # resolved once; loaders/savers below all agree on it
+
+
+def _file_dir():
+    """The active config directory, bootstrapped on first use."""
+    global _ACTIVE_DIR
+    if _ACTIVE_DIR is None:
+        _migrate_legacy_root_files()
+        _ACTIVE_DIR = _bootstrap_dir()
+    return _ACTIVE_DIR
+
+
+# ═══════════════════════════════════════════════════════
 #  Persistence
 # ═══════════════════════════════════════════════════════
 def _load_json(path, default_factory=dict):
@@ -238,10 +345,10 @@ def _save_json(path, data):
         pass
 
 def load_presets():
-    return _load_json(PRESETS_FILE)
+    return _load_json(str(_file_dir() / "csdm_presets.json"))
 
 def save_presets(presets):
-    _save_json(PRESETS_FILE, presets)
+    _save_json(str(_file_dir() / "csdm_presets.json"), presets)
 
 
 def preset_keys_for(cats):
@@ -317,16 +424,16 @@ def normalize_presets(presets):
     return result
 
 def load_saved_players():
-    return _load_json(PLAYERS_FILE, list)
+    return _load_json(str(_file_dir() / "csdm_players.json"), list)
 
 def save_saved_players(players):
-    _save_json(PLAYERS_FILE, players)
+    _save_json(str(_file_dir() / "csdm_players.json"), players)
 
 def load_asm_names():
-    return _load_json(ASM_NAMES_FILE, list)
+    return _load_json(str(_file_dir() / "csdm_asm_names.json"), list)
 
 def save_asm_names(names):
-    _save_json(ASM_NAMES_FILE, names)
+    _save_json(str(_file_dir() / "csdm_asm_names.json"), names)
 
 def _migrate_config(saved: dict, cfg: dict) -> None:
     """Apply all backward-compatibility migrations from a saved config dict into cfg.
@@ -417,7 +524,18 @@ def migrate_legacy_filter_keys(d: dict) -> None:
 
 
 def load_config():
-    saved = _load_json(CONFIG_FILE)
+    """Read the configuration from wherever `config_dir` points.
+
+    Bootstraps on every call: the default-location file records the live
+    location (the pointer), so a process started anywhere always lands on the
+    config the user last switched to. Legacy flat files beside the entry
+    point are migrated into the default subfolder on the first run.
+    """
+    _migrate_legacy_root_files()
+    active = _bootstrap_dir()
+    global _ACTIVE_DIR
+    _ACTIVE_DIR = active
+    saved = _load_json(str(active / "csdm_config.json"))
     if not saved:
         return DEFAULT_CONFIG.copy()
     cfg = DEFAULT_CONFIG.copy()
@@ -425,5 +543,88 @@ def load_config():
     _migrate_config(saved, cfg)
     return cfg
 
+
 def save_config(cfg):
-    _save_json(CONFIG_FILE, cfg)
+    """Write the configuration to the location `cfg["config_dir"]` selects."""
+    global _ACTIVE_DIR
+    target = resolve_config_dir(cfg.get("config_dir", ""))
+    _ACTIVE_DIR = target
+    try:
+        target.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        pass  # _save_json reports the real failure if the dir stays unwritable
+    _save_json(str(target / "csdm_config.json"), cfg)
+
+
+def probe_config_dir(target=None):
+    """Describe the current location and what copying to `target` would do.
+
+    With `target` omitted the call is a pure status read: `same` is True and
+    `conflicts` is empty. With a target, `conflicts` lists the files that
+    already exist there and would be overwritten by a switch.
+    """
+    current = _file_dir()
+    target_dir = resolve_config_dir(target) if target is not None else current
+    conflicts = [name for name in CONFIG_FILENAMES
+                 if target_dir != current and (target_dir / name).exists()]
+    return {
+        "current": str(current),
+        "target": str(target_dir),
+        "conflicts": conflicts,
+        "same": target_dir == current,
+    }
+
+
+def apply_config_dir(target):
+    """Copy the four JSON files to `target`'s folder, then switch to it.
+
+    COPY, never move: the source files stay in place as a snapshot. Any
+    same-named file at the target is first backed up into a
+    `backup-<YYYYMMDD-HHMMSS>` subfolder of the target. The copied config
+    records the new location, and the default-location copy is updated as the
+    bootstrap pointer for the next launch.
+    """
+    target_dir = resolve_config_dir(target)
+    current = _file_dir()
+    if target_dir == current:
+        return probe_config_dir(target)
+    try:
+        target_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise OSError(f"cannot create config folder {target_dir}: {exc}") from exc
+
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    backup_dir = target_dir / f"backup-{stamp}"
+    for name in CONFIG_FILENAMES:
+        dst = target_dir / name
+        if dst.exists():
+            try:
+                backup_dir.mkdir(exist_ok=True)
+                shutil.copy2(dst, backup_dir / name)
+            except OSError as exc:
+                raise OSError(f"cannot back up {dst}: {exc}") from exc
+    for name in CONFIG_FILENAMES:
+        src = current / name
+        if src.exists():
+            try:
+                shutil.copy2(src, target_dir / name)
+            except OSError as exc:
+                raise OSError(f"cannot copy {name} to {target_dir}: {exc}") from exc
+
+    cfg = _load_json(str(target_dir / "csdm_config.json"))
+    if not isinstance(cfg, dict) or not cfg:
+        cfg = DEFAULT_CONFIG.copy()
+    cfg["config_dir"] = target
+    save_config(cfg)  # writes to the target, updates the active dir
+
+    default_dir = _default_dir()
+    if default_dir != target_dir:
+        pointer = _load_json(str(default_dir / "csdm_config.json"))
+        if not isinstance(pointer, dict) or not pointer:
+            pointer = dict(cfg)
+        pointer["config_dir"] = target
+        try:
+            _save_json(str(default_dir / "csdm_config.json"), pointer)
+        except OSError:
+            pass  # pointer write is best-effort; the live copy still switched
+    return probe_config_dir(target)

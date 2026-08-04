@@ -63,3 +63,48 @@
   min-height: 4em;
 }
 
+.settings-folder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  width: 100%;
+}
+
+.settings-folder-current {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.settings-folder-path {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--txt-hi);
+  background: var(--raise);
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-2) var(--sp-3);
+  word-break: break-all;
+}
+
+.settings-folder-error {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--fire-t);
+}
+
+.settings-folder-confirm {
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--raise);
+  padding: var(--sp-3) var(--sp-4);
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}
+
+.settings-folder-danger {
+  border-color: var(--fire-t);
+}
+

@@ -10,7 +10,7 @@
  * `PresetSection` (chantier 4d tâche 4) ports the preset save/load/delete
  * block the window's PATHS tab also carried.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Card from "../components/Card";
 import { ICONS } from "../icons";
@@ -19,7 +19,7 @@ import Field from "../components/Field";
 import PathField from "../components/PathField";
 import Segmented from "../components/Segmented";
 import Slider from "../components/Slider";
-import { runCommand } from "../bridge";
+import { pickPath, runCommand } from "../bridge";
 import SectionList, { type SectionSpec } from "../shell/SectionList";
 import SettingControl from "../settings/SettingControl";
 import { useSetting, useSettingsBatch } from "../settings/store";
@@ -48,6 +48,31 @@ function asNumber(value: unknown, fallback: number): number {
  * about label/value pairs, which is a component change of its own.
  */
 const GROUND_OPTIONS: readonly string[] = Object.keys(GROUND_MODES);
+
+/** What `probe_config_dir` reports about the active folder and a switch. */
+interface FolderProbe {
+  current: string;
+  target: string;
+  conflicts: string[];
+  same: boolean;
+}
+
+/** A folder switch waiting on the user's confirmation(s). */
+interface PendingSwitch {
+  value: string;
+  label: string;
+  targetDir: string;
+  conflicts: string[];
+  /** 1 = files exist, first warning; 2 = confirm overwrite with backup. */
+  step: 1 | 2;
+  busy: boolean;
+}
+
+/** The two fixed locations; the third (Choose…) resolves a path at click time. */
+const FOLDER_CHOICES: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "", label: "Script folder" },
+  { value: "appdata", label: "Local AppData" },
+];
 
 export default function SettingsTab() {
   const setMany = useSettingsBatch();
@@ -82,6 +107,78 @@ export default function SettingsTab() {
   const [dbStatus, setDbStatus] = useState("");
 
   const [dp2Threads, setDp2Threads] = useSetting<number>("dp2_threads");
+
+  // Configuration folder (v3.0.1): the active location plus a pending switch.
+  const [, setConfigDir] = useSetting<string>("config_dir");
+  const [folderInfo, setFolderInfo] = useState<FolderProbe | null>(null);
+  const [folderError, setFolderError] = useState("");
+  const [pending, setPending] = useState<PendingSwitch | null>(null);
+
+  // Ask the engine where the settings files actually live. The engine is the
+  // only side that knows (it resolves config_dir, including the appdata
+  // sentinel and the custom subfolder), so the path shown is never guessed.
+  useEffect(() => {
+    let cancelled = false;
+    runCommand("probe_config_dir")
+      .then((result) => {
+        if (!cancelled) setFolderInfo(result.data as FolderProbe);
+      })
+      .catch((cause: Error) => {
+        if (!cancelled) setFolderError(cause.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function chooseFolder(value: string, label: string) {
+    setFolderError("");
+    try {
+      const result = await runCommand("probe_config_dir", { target: value });
+      const probe = result.data as FolderProbe;
+      if (probe.same) return; // already there; nothing to switch
+      setPending({
+        value,
+        label,
+        targetDir: probe.target,
+        conflicts: probe.conflicts,
+        step: 1,
+        busy: false,
+      });
+    } catch (cause) {
+      setFolderError((cause as Error).message);
+    }
+  }
+
+  async function chooseCustomFolder() {
+    const picked = await pickPath();
+    if (picked !== null) await chooseFolder(picked, "Custom folder");
+  }
+
+  function confirmOverwrite() {
+    setPending((previous) => (previous ? { ...previous, step: 2 } : previous));
+  }
+
+  function cancelSwitch() {
+    setPending(null);
+  }
+
+  async function applySwitch() {
+    if (!pending) return;
+    setPending({ ...pending, busy: true });
+    try {
+      const result = await runCommand("apply_config_dir", { target: pending.value });
+      // The engine now reads and writes from the new folder. Update the store
+      // so the debounced auto-save writes there too (and never reverts the
+      // pointer with the pre-switch config_dir).
+      setConfigDir(pending.value);
+      setFolderInfo(result.data as FolderProbe);
+      setPending(null);
+    } catch (cause) {
+      setFolderError((cause as Error).message);
+      setPending(null);
+    }
+  }
 
   const currentW = asNumber(windowW, 1600);
   const currentH = asNumber(windowH, 900);
@@ -225,6 +322,97 @@ export default function SettingsTab() {
               selected={!!subfolderPerDemo}
               onToggle={() => setSubfolderPerDemo(!subfolderPerDemo)}
             />
+          </SettingControl>
+        </Card>
+      ),
+    },
+    {
+      id: "config-folder",
+      element: (
+        <Card title="Configuration Folder" icon={<ICONS.paths />} className="wide">
+          <SettingControl settingKey="config_dir">
+            <div className="settings-folder">
+              <div className="settings-folder-current">
+                <span className="lab">Location</span>
+                <code className="settings-folder-path">{folderInfo ? folderInfo.current : "…"}</code>
+              </div>
+              <div className="row">
+                {FOLDER_CHOICES.map((choice) => (
+                  <button
+                    key={choice.value}
+                    type="button"
+                    className="chip"
+                    data-action={choice.value === "" ? "M13" : "M14"}
+                    disabled={!!pending}
+                    onClick={() => chooseFolder(choice.value, choice.label)}
+                  >
+                    {choice.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="chip"
+                  data-action="M15"
+                  disabled={!!pending}
+                  onClick={chooseCustomFolder}
+                >
+                  Choose…
+                </button>
+              </div>
+              <p className="settings-hint">
+                The four settings files (config, presets, players, assembly names) live in a
+                &quot;CSDM Batch Clip Generator&quot; subfolder of the selected location. Switching
+                COPIES them there — the current files always stay in place.
+              </p>
+              {folderError && <p className="settings-folder-error">{folderError}</p>}
+              {pending && pending.conflicts.length === 0 && (
+                <div className="settings-folder-confirm" role="alertdialog" aria-label="Copy config folder">
+                  <p>
+                    Copy the settings files to <b>{pending.targetDir}</b>?
+                  </p>
+                  <div className="row">
+                    <button type="button" className="chip" onClick={applySwitch} disabled={pending.busy}>
+                      Copy
+                    </button>
+                    <button type="button" className="chip" onClick={cancelSwitch} disabled={pending.busy}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+              {pending && pending.conflicts.length > 0 && pending.step === 1 && (
+                <div className="settings-folder-confirm" role="alertdialog" aria-label="Existing files">
+                  <p>
+                    These files already exist in <b>{pending.targetDir}</b>:{" "}
+                    {pending.conflicts.join(", ")}. Copying would overwrite them.
+                  </p>
+                  <div className="row">
+                    <button type="button" className="chip" onClick={confirmOverwrite}>
+                      Continue
+                    </button>
+                    <button type="button" className="chip" onClick={cancelSwitch}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+              {pending && pending.conflicts.length > 0 && pending.step === 2 && (
+                <div className="settings-folder-confirm settings-folder-danger" role="alertdialog" aria-label="Confirm overwrite">
+                  <p>
+                    <b>Really overwrite?</b> The existing files are first backed up in a
+                    &quot;backup-…&quot; subfolder, then replaced by the current ones.
+                  </p>
+                  <div className="row">
+                    <button type="button" className="chip" onClick={applySwitch} disabled={pending.busy}>
+                      Overwrite &amp; copy
+                    </button>
+                    <button type="button" className="chip" onClick={cancelSwitch} disabled={pending.busy}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </SettingControl>
         </Card>
       ),

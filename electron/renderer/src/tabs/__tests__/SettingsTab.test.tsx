@@ -7,7 +7,7 @@
  * once, then read the tree.
  */
 import { act, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SettingsProvider } from "../../settings/store";
 import SettingsTab from "../SettingsTab";
@@ -34,9 +34,40 @@ const CONFIG_FIXTURE = {
 };
 
 vi.mock("../../bridge", () => ({
-  runCommand: (command: string) => {
+  runCommand: (command: string, payload: Record<string, unknown> = {}) => {
     if (command === "load_config") {
       return Promise.resolve({ type: "result", id: "1", ok: true, data: CONFIG_FIXTURE });
+    }
+    if (command === "probe_config_dir") {
+      const target = (payload.target as string) ?? "";
+      return Promise.resolve({
+        type: "result",
+        id: "1",
+        ok: true,
+        data: {
+          current: "C:\\script\\CSDM Batch Clip Generator",
+          target:
+            target === "appdata"
+              ? "C:\\AppData\\Local\\CSDM Batch Clip Generator"
+              : "C:\\script\\CSDM Batch Clip Generator",
+          conflicts: [],
+          same: target === "",
+        },
+      });
+    }
+    if (command === "apply_config_dir") {
+      applyCalls.push(payload);
+      return Promise.resolve({
+        type: "result",
+        id: "1",
+        ok: true,
+        data: {
+          current: "C:\\AppData\\Local\\CSDM Batch Clip Generator",
+          target: "C:\\AppData\\Local\\CSDM Batch Clip Generator",
+          conflicts: [],
+          same: true,
+        },
+      });
     }
     return Promise.resolve({ type: "result", id: "1", ok: true, data: {} });
   },
@@ -45,6 +76,9 @@ vi.mock("../../bridge", () => ({
   sendCommand: () => "1",
   pickPath: () => Promise.resolve(null),
 }));
+
+/** Captures every `apply_config_dir` payload sent during a test. */
+let applyCalls: Array<Record<string, unknown>> = [];
 
 async function renderTab() {
   const rendered = render(
@@ -57,6 +91,10 @@ async function renderTab() {
 }
 
 describe("SettingsTab", () => {
+  beforeEach(() => {
+    applyCalls = [];
+  });
+
   it("shows every path the window had", async () => {
     const { container } = await renderTab();
     for (const key of [
@@ -88,5 +126,37 @@ describe("SettingsTab", () => {
     for (const label of ["Apply", "Auto", "Reset default"]) {
       expect(screen.getByRole("button", { name: new RegExp(`^${label}$`) })).toBeTruthy();
     }
+  });
+
+  it("shows the configuration folder control with its three locations", async () => {
+    const { container } = await renderTab();
+    expect(container.querySelector('[data-config-key="config_dir"]')).not.toBeNull();
+    for (const label of ["Script folder", "Local AppData", "Choose…"]) {
+      expect(screen.getByRole("button", { name: new RegExp(`^${label}$`) })).toBeTruthy();
+    }
+  });
+
+  it("copies to Local AppData after the confirmation, never moving", async () => {
+    await renderTab();
+    await act(async () => {
+      screen.getByRole("button", { name: /^Local AppData$/ }).click();
+    });
+    // Probe resolved with no conflicts, so a single copy confirmation shows.
+    expect(screen.getByRole("alertdialog", { name: "Copy config folder" })).toBeTruthy();
+    await act(async () => {
+      screen.getByRole("button", { name: /^Copy$/ }).click();
+    });
+    expect(applyCalls).toEqual([{ target: "appdata" }]);
+  });
+
+  it("stays put when the copy confirmation is cancelled", async () => {
+    await renderTab();
+    await act(async () => {
+      screen.getByRole("button", { name: /^Local AppData$/ }).click();
+    });
+    await act(async () => {
+      screen.getByRole("button", { name: /^Cancel$/ }).click();
+    });
+    expect(applyCalls).toEqual([]);
   });
 });

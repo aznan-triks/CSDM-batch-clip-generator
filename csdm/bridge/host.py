@@ -13,8 +13,9 @@ import traceback
 from csdm.bridge.ports import PipePorts
 from csdm.bridge.protocol import LineWriter, MSG_FATAL, MSG_LOG, MSG_RESULT, decode
 from csdm.bridge.tables import describe_filters
-from csdm.config import (build_preset, load_config, load_presets, normalize_presets,
-                         preset_payload, save_config, save_presets)
+from csdm.config import (apply_config_dir, build_preset, load_config, load_presets,
+                         normalize_presets, preset_payload, probe_config_dir,
+                         save_config, save_presets)
 from csdm.engine.core import EngineMixin
 from csdm.engine.state import EngineStateMixin
 from csdm.version import APP_VERSION
@@ -223,6 +224,30 @@ def _cmd_save_config(host, command):
     return {}
 
 
+def _cmd_probe_config_dir(host, command):
+    """Report the active config folder, and what a switch to `target` would do.
+
+    `target` is optional: omitted (or null) returns the current location with
+    `same: true` and an empty `conflicts` list -- a status read for the UI.
+    """
+    target = command.get("target")
+    if target is not None and not isinstance(target, str):
+        raise ValueError("probe_config_dir's `target` must be a string or null")
+    return {"data": probe_config_dir(target)}
+
+
+def _cmd_apply_config_dir(host, command):
+    """Copy the four JSON files to `target`'s folder and switch the app to it.
+
+    Never moves: the source files stay in place. Existing same-named files at
+    the target are backed up (backup-<timestamp>/) before being overwritten.
+    """
+    target = command.get("target")
+    if not isinstance(target, str):
+        raise ValueError("apply_config_dir needs a `target` string")
+    return {"data": apply_config_dir(target)}
+
+
 def _cmd_list_presets(host, command):
     return {"data": normalize_presets(load_presets())}
 
@@ -299,6 +324,8 @@ COMMANDS = {
     "start_preview": _cmd_start_preview,
     "load_config": _cmd_load_config,
     "save_config": _cmd_save_config,
+    "probe_config_dir": _cmd_probe_config_dir,
+    "apply_config_dir": _cmd_apply_config_dir,
     "list_presets": _cmd_list_presets,
     "save_preset": _cmd_save_preset,
     "load_preset": _cmd_load_preset,
