@@ -14,6 +14,58 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 > **Numbering re-aligned (2026-08-04):** the artificial `v299` delivery was renumbered to `v216`, and
 > the five post-`v216` deliveries are numbered sequentially `v217` → `v221`. Nothing between v215 and
 > v216 was skipped — the jump was a user choice at delivery time, undone here for a continuous sequence.
+>
+> **Semantic switch (2026-08-04):** the Electron-era release is numbered `3.0`, replacing the
+> sequential `v22x` series.
+
+---
+
+## 3.0 — 2026-08-04 (The Electron Era)
+
+The release that moves CSDM Batch Clips Generator from its Python-only past to its Electron
+present. The engine and the interface are now two separate layers: a modern, fluid window
+(Electron + React) in front, and the proven Python engine working quietly behind it. Bumped
+to `3.0` at delivery (user go-ahead, 2026-08-04).
+
+**Humanised:** This is the version where the application changed skin — and structure. Before,
+one classic desktop window drawn entirely by Python; now, a modern interface built around the
+same engine, which still does all the real work. The change took eight careful steps, and the
+application stayed usable through every one of them.
+
+### Added
+
+**Humanised:** A brand-new interface — a modern window with a holographic theme matching the
+approved design, readable contrasts, and smooth animations everywhere: cards rearrange by
+dragging, fold and unfold gently (no more abrupt jumps), and the tab indicators glide between
+tabs. Your layout is remembered between sessions: card order, folded cards and widths all
+survive a restart. Clip capture now goes beyond kills — non-lethal damage, friendly fire,
+shots into the void, jumps and near-misses, each clip tagged with a coloured badge. And an
+automated visual watch compares every change to the approved design, so a style regression is
+caught before it reaches you.
+
+**Technical:** Electron shell with a React 19 renderer and the Python engine spawned as a
+child process behind a JSON bridge (`csdm/bridge/`); the engine runs headless (`stage 1.5`),
+its events reach the UI through typed ports, and the window never needs the console. The
+interface is styled from an approved mock (`mock-v12.css` + `mock-bridge.css`, generated,
+never hand-edited) with FLIP drag-to-reorder, a persisted per-tab layout (`ui_sections`), the
+two-axis event capture model, and an e2e camera suite that diffs the real window against a
+pixel baseline.
+
+### Changed
+
+**Humanised:** Cards open and close smoothly instead of snapping, so nothing jumps under your
+cursor mid-click. The engine reports when CS2 is really dead, previews can be cancelled
+without a window, and log lines with accents or special characters no longer break anything.
+
+**Technical:** Card bodies stay mounted and fold through a `grid-template-rows: 1fr → 0fr`
+transition (mock-bridge.css) instead of the mock's `display:none`; process kill is verified
+by polling, not a timer; the bridge forces UTF-8 on Windows.
+
+### Fixed
+
+**Humanised:** The layout-shift when folding a card (the "everything jumps" effect) is gone.
+Resizing the window no longer crashes. The engine no longer fails silently after the move to
+its own package. Log lines with accented characters survive the trip to the console.
 
 ---
 
