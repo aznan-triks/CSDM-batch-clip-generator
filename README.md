@@ -12,7 +12,7 @@
 
 ---
 
-A Python GUI that plugs into [CS Demo Manager](https://cs-demo-manager.com/) and lets you batch-record highlights from your entire CS2 demo library — by player, event type, date range, weapon, and a comprehensive set of kill modifiers (lucky shots, one-taps, clutches, spray transfers, wallbangs, flicks, and more).
+A Python GUI that plugs into [CS Demo Manager](https://cs-demo-manager.com/) and lets you batch-record highlights from your entire CS2 demo library — by player, event type, date range, weapon, and a comprehensive set of kill modifiers (lucky shots, one-taps, clutches, spray transfers, wallbangs, flicks, and more). Beyond kills, the capture model also covers **non-lethal damage, friendly fire, shots, jumps and near-miss** events.
 
 Pick your filters → Preview → Run. CSDM handles the actual recording; this tool handles everything else.
 
@@ -110,6 +110,25 @@ Independent tri-state radios alongside kill modifiers — not part of kill-mod l
 | **Include** | Include suicide deaths (world/fall damage/etc) (default) |
 | **Exclude** | Remove all suicide deaths from clips |
 | **Only** | Keep only suicide deaths |
+
+---
+
+## Event capture model
+
+The **Capture** tab's event selection uses a two-axis model instead of a flat list of event types:
+
+- **Perspective** — who the clip is about:
+  - **Actor**: you are the one acting (your kills, your damage, your shots)
+  - **Target**: you are the one acted upon (deaths, damage taken)
+- **Action type** — what kind of event:
+  - **Lethal**: kills & deaths
+  - **Non-lethal**: damage that injures without killing (hitgroup, weapon, health/armor damage)
+  - **Other**: shots into the void, jumps, grenade misses (near-miss)
+- **Team** — which opponents count:
+  - **Ally**: friendly-fire / ally-on-ally events
+  - **Enemy**: events against enemies
+
+Lethal, Non-lethal and Other are independent toggles — you can capture non-lethal damage with lethal turned off. Kill modifiers (headshot, airborne, no-scope, …) are evaluated on non-kill events too. Old configs using a flat `events` list migrate transparently.
 
 ---
 
