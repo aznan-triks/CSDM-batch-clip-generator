@@ -18,6 +18,48 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Events beyond kill (2026-08-04)
+
+Clip capture is no longer kill-only: the engine now also selects non-lethal damage, friendly fire,
+shots, jumps and near-miss, through a new two-axis selection model (Perspective × Action type)
+validated by a local council review (3 roles: scalability, maintainability, simplicity — 3 critical
+bugs caught in the plan and fixed before implementation, plus 1 BLOCK in the post-implementation
+review, fixed the same day). Not version-bumped yet (explicit standing rule: no bump without the
+user's go-ahead). Verified by 340+ backend tests (migration, e2e, sequences) and the existing
+frontend suite (317 passed in the broken-jsdom environment; 222 pre-existing failures untouched).
+
+### Added
+
+**Humanised:** You can now capture clips for more than kills: non-lethal damage (shots that injure
+without killing), friendly fire, and "other" actions (shots into the void, jumps, near-miss). The
+Capture tab's event selection is a new two-axis control — choose who acts (you, or someone acting on
+you) and what counts (lethal, non-lethal, other) — plus a separate choice of ally/enemy events. You
+can even capture non-lethal and "other" actions with lethal turned off, and the editing tab labels
+every clip with its type (kill / damage / shot) with a coloured badge.
+
+**Technical:** `DEFAULT_CONFIG` gained the keys `event_actor`, `event_target`, `event_lethal`,
+`event_ally`, `event_enemy`, `event_non_lethal`, `event_other` replacing the flat `events` list;
+`_migrate_config` converts old configs transparently (including the three-way `teamkills_mode`
+mapping include/exclude/only). `derive_event_flags_v2` derives `_events_*` booleans consumed by the
+new queries `_query_damages` (non-lethal damage) and `_query_shots` (other actions). `FilterDef`
+gained `applicable_to` so kill modifiers (headshot, no-scope, airborne…) evaluate on damage/shot
+events through `_evaluate_modifiers_for_event`. `_build_team_filter_sql` replaces the deprecated
+`_qe_teamkill_sql` for ally/enemy filtering. `_build_sequences` now interleaves kill/damage/shot
+sequences in tick order and tags each clip with `event_type`. New UI: `EventTypeSection.tsx`
+(Perspective × Action type × Team chips) in `CaptureTab.tsx`; `EditingTab.tsx` shows typed badges.
+New tests: `test_config_migration.py` (20), `test_e2e_events_beyond_kill.py` (20 incl. Lethal
+toggle behaviour), +8 in `test_pure_logic.py`.
+
+### Fixed
+
+**Humanised:** The Lethal toggle actually controls kills now — before this fix it was computed but
+never wired to the kill query, so switching it off changed nothing.
+**Technical:** `derive_event_flags_v2` now emits `events_kills = actor AND event_lethal` and
+`events_deaths = target AND event_lethal` so the legacy query path respects the toggle; 2 behaviour
+tests prove Lethal off → no kill events while damage still appears.
+
+---
+
 Restyle 6 (2026-08-01, same day as v299): a punch list of HUD polish and one Tkinter-parity gap,
 reported directly by the user against the running app. Not version-bumped yet (explicit standing
 rule: no bump without the user's go-ahead). No manual recette on real data this session either —
