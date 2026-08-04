@@ -11,14 +11,13 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 > renumbered as sequential integers. `133.33` → `134`, `133.34` → `135`, …, `133.42` → `143`,
 > `143.0` → `144`, `143.1` → `145`, …, `143.8` → `152`. Each dot was always one real increment.
 >
-> **v216 → v299:** the jump is a deliberate user choice at delivery time, not a renumbering and not
-> skipped work — nothing shipped between v215 and v299 except what this entry documents.
+> **Numbering re-aligned (2026-08-04):** the artificial `v299` delivery was renumbered to `v216`, and
+> the five post-`v216` deliveries are numbered sequentially `v217` → `v221`. Nothing between v215 and
+> v216 was skipped — the jump was a user choice at delivery time, undone here for a continuous sequence.
 
 ---
 
-## [Unreleased]
-
-### Events beyond kill (2026-08-04)
+## v221 — 2026-08-04
 
 Clip capture is no longer kill-only: the engine now also selects non-lethal damage, friendly fire,
 shots, jumps and near-miss, through a new two-axis selection model (Perspective × Action type)
@@ -58,9 +57,64 @@ never wired to the kill query, so switching it off changed nothing.
 `events_deaths = target AND event_lethal` so the legacy query path respects the toggle; 2 behaviour
 tests prove Lethal off → no kill events while damage still appears.
 
----
+## v220 — 2026-08-03 (Weapon cascade proportions)
 
-Restyle 6 (2026-08-01, same day as v299): a punch list of HUD polish and one Tkinter-parity gap,
+### Changed
+
+**Humanised:** Weapon silhouettes in the Weapon Filter card keep their own proportions — a HE
+grenade no longer floats in empty space and a sniper rifle no longer dominates the row.
+**Technical:** `weapon/silhouettes.ts` exposes `silhouetteRatio()` (from each SVG viewBox);
+`tabs/WeaponFilterSection.tsx` renders every icon at a shared 44px height with a width that
+follows the weapon's own ratio, clamped to keep tiny grenades readable and stop long rifles from
+crowding the cascade. Silhouette fade-out mirrors the CSS transition duration instead of a
+hardcoded delay. CS2 weapon art refreshed from the community pack (`scripts/refetch_cs2_icons.mjs`).
+
+## v219 — 2026-08-03 (Must/Enable coupling fix)
+
+### Fixed
+
+**Humanised:** The ★ Must box now behaves like the Tkinter window: clicking it arms the filter
+and turns Enable on by itself — Enable is no longer required first. Switching Enable off still
+drops Must, so a required filter can never stay armed under a disabled one.
+**Technical:** `settings/FilterRow.tsx` and `tabs/CaptureTab.tsx` now mirror the engine's
+`_wire_enable_must` coupling (React previously refused to arm `*_req` unless the base key was
+on). Both toggles go through dedicated handlers; `FilterRow.test.tsx` and `CaptureTab.test.tsx`
+updated from "refuses to arm" to "arms Must on its own and auto-enables the filter".
+
+## v218 — 2026-08-02 (Priority fixes, from `IMPROVEMENT_SUGGESTIONS.md`)
+
+Five punch-list items reported against the running app, fixed and verified against the live
+renderer (Playwright + stubbed bridge, screenshots in `electron/e2e/output/`; 622/622 unit tests
+green, `npm run typecheck` unchanged — the two `restartEngine` mock errors are pre-existing on this
+branch, untouched by this change).
+
+### Fixed
+
+**Humanised:** Picking a weapon finally shows its icon in the cascade (before, most of them were
+invisible). Picking lots of weapons no longer hides the ones that don't fit in one row — they wrap
+to the next line instead. The crosshair no longer locks onto the navigation tabs (only real action
+buttons keep the "aim" treatment). Switching tabs no longer teleports the top bar while the bottom
+indicator slides. And the cursor stops feeling laggy/floaty outside the cards: the crosshair now
+tracks the mouse instantly, the way the approved mock always did.
+**Technical:** `tabs/WeaponFilterSection.css` gave `.casc .gun` the mock's own `height: 44px` (the
+mock's `.gun` is 44px; the port painted a `width: 96px` silhouette with no height, i.e. a 0-height
+mask nobody could see) and added `flex-wrap: wrap` to `.casc` (the mock shows two guns and never
+scrolls; the real database holds ~30 with art, so `nowrap` pushed every gun past the card edge).
+`cursor/Reticle.tsx` removed `.tab` from `SNAP_SELECTOR` (the restyle-6 widening to `.btn, .chip,
+.tab, .seg button` made the reticle fight the tab indicator animation and "aim at a menu";
+`Reticle.selectors.test.ts` now asserts `.tab` is NOT named). `components/Tab.css` added
+`transition: background .25s, transform .25s` to `.tab` and `transition: opacity .25s` to
+`.tab.active::after` — the mock animates `.ic`/`.tk`/`.ind` but never the tab box itself, so the top
+accent bar snapped while the bottom indicator slid; this is a documented addition beyond the mock
+(no pseudo-element transition exists there). `cursor/Reticle.css` dropped `left`/`top` from
+`.cursor-reticle`'s transition — the mock's `.tcursor` has no position transition either, so the
+port's `left/top var(--dur-fast)` tween is what made the crosshair drag behind the pointer over the
+background; it now follows `clientX/clientY` instantly (width/height/opacity still tween for the
+snap gesture).
+
+## v217 — 2026-08-01
+
+Restyle 6 (2026-08-01, same day as v216): a punch list of HUD polish and one Tkinter-parity gap,
 reported directly by the user against the running app. Not version-bumped yet (explicit standing
 rule: no bump without the user's go-ahead). No manual recette on real data this session either —
 verified by `npm test`/`npm run typecheck` (583/583, clean) and a live DOM/console check on a
@@ -165,64 +219,7 @@ findings beyond the tag-colour fix above:
   session (no screenshot tooling available to drive a real mouse-drag gesture) — please test for real
   before considering this closed. See `docs/audits/AUDIT_restyle6_polish_regressions.md` #8.
 
----
-
-## Priority fixes (2026-08-02, from `IMPROVEMENT_SUGGESTIONS.md`)
-
-Five punch-list items reported against the running app, fixed and verified against the live
-renderer (Playwright + stubbed bridge, screenshots in `electron/e2e/output/`; 622/622 unit tests
-green, `npm run typecheck` unchanged — the two `restartEngine` mock errors are pre-existing on this
-branch, untouched by this change).
-
-### Fixed
-
-**Humanised:** Picking a weapon finally shows its icon in the cascade (before, most of them were
-invisible). Picking lots of weapons no longer hides the ones that don't fit in one row — they wrap
-to the next line instead. The crosshair no longer locks onto the navigation tabs (only real action
-buttons keep the "aim" treatment). Switching tabs no longer teleports the top bar while the bottom
-indicator slides. And the cursor stops feeling laggy/floaty outside the cards: the crosshair now
-tracks the mouse instantly, the way the approved mock always did.
-**Technical:** `tabs/WeaponFilterSection.css` gave `.casc .gun` the mock's own `height: 44px` (the
-mock's `.gun` is 44px; the port painted a `width: 96px` silhouette with no height, i.e. a 0-height
-mask nobody could see) and added `flex-wrap: wrap` to `.casc` (the mock shows two guns and never
-scrolls; the real database holds ~30 with art, so `nowrap` pushed every gun past the card edge).
-`cursor/Reticle.tsx` removed `.tab` from `SNAP_SELECTOR` (the restyle-6 widening to `.btn, .chip,
-.tab, .seg button` made the reticle fight the tab indicator animation and "aim at a menu";
-`Reticle.selectors.test.ts` now asserts `.tab` is NOT named). `components/Tab.css` added
-`transition: background .25s, transform .25s` to `.tab` and `transition: opacity .25s` to
-`.tab.active::after` — the mock animates `.ic`/`.tk`/`.ind` but never the tab box itself, so the top
-accent bar snapped while the bottom indicator slid; this is a documented addition beyond the mock
-(no pseudo-element transition exists there). `cursor/Reticle.css` dropped `left`/`top` from
-`.cursor-reticle`'s transition — the mock's `.tcursor` has no position transition either, so the
-port's `left/top var(--dur-fast)` tween is what made the crosshair drag behind the pointer over the
-background; it now follows `clientX/clientY` instantly (width/height/opacity still tween for the
-snap gesture).
-
-## Must/Enable coupling fix (2026-08-03)
-
-### Fixed
-
-**Humanised:** The ★ Must box now behaves like the Tkinter window: clicking it arms the filter
-and turns Enable on by itself — Enable is no longer required first. Switching Enable off still
-drops Must, so a required filter can never stay armed under a disabled one.
-**Technical:** `settings/FilterRow.tsx` and `tabs/CaptureTab.tsx` now mirror the engine's
-`_wire_enable_must` coupling (React previously refused to arm `*_req` unless the base key was
-on). Both toggles go through dedicated handlers; `FilterRow.test.tsx` and `CaptureTab.test.tsx`
-updated from "refuses to arm" to "arms Must on its own and auto-enables the filter".
-
-## Weapon cascade proportions (2026-08-03)
-
-### Changed
-
-**Humanised:** Weapon silhouettes in the Weapon Filter card keep their own proportions — a HE
-grenade no longer floats in empty space and a sniper rifle no longer dominates the row.
-**Technical:** `weapon/silhouettes.ts` exposes `silhouetteRatio()` (from each SVG viewBox);
-`tabs/WeaponFilterSection.tsx` renders every icon at a shared 44px height with a width that
-follows the weapon's own ratio, clamped to keep tiny grenades readable and stop long rifles from
-crowding the cascade. Silhouette fade-out mirrors the CSS transition duration instead of a
-hardcoded delay. CS2 weapon art refreshed from the community pack (`scripts/refetch_cs2_icons.mjs`).
-
-## [v299] — 2026-08-01
+## v216 — 2026-08-01
 
 ### Fixed
 
