@@ -7,12 +7,21 @@ import { describe, expect, it, vi } from "vitest";
 import Card from "../Card";
 
 describe("Card's controlled fold state (menus-C)", () => {
+  /** The body stays mounted when closed (fold is animated via
+      grid-template-rows, mock-bridge.css); "closed" is the `.closed` class
+      on the card, not an unmounted body. */
+  function cardClosed(title: string): boolean {
+    const card = screen.getByText(title).closest(".sec");
+    return card !== null && card.classList.contains("closed");
+  }
+
   it("defaults to open and manages its own state when uncontrolled", () => {
     render(<Card title="Demo">body</Card>);
     expect(screen.getByText("body")).toBeTruthy();
+    expect(cardClosed("Demo")).toBe(false);
     const header = screen.getByRole("button", { name: /demo/i });
     fireEvent.click(header);
-    expect(screen.queryByText("body")).toBeNull();
+    expect(cardClosed("Demo")).toBe(true);
   });
 
   it("is controlled when open/onToggle are passed", () => {
@@ -22,7 +31,7 @@ describe("Card's controlled fold state (menus-C)", () => {
         body
       </Card>,
     );
-    expect(screen.queryByText("body")).toBeNull();
+    expect(cardClosed("Demo")).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: /demo/i }));
     expect(onToggle).toHaveBeenCalledTimes(1);
   });

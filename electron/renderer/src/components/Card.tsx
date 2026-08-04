@@ -120,8 +120,18 @@ const Card = forwardRef<HTMLElement, CardProps>(function Card(
       {/* User feedback 2026-08-01: no line ever separated the header from the
           body, or the mock never needed one on its own showcase cards. A
           dense settings card reads better with the boundary marked. */}
-      {open && <span className="sep" aria-hidden="true" />}
-      {open && <div className="sb">{children}</div>}
+      {/* The body stays in the DOM when closed (mock-bridge.css folds it
+          through grid-template-rows instead of the mock's `display:none`),
+          so the collapse interpolates instead of snapping shut. The header
+          button's `aria-expanded` keeps the state readable to assistive
+          tech; `inert` hides the folded body from tab order and screen
+          readers the same way unmounting used to. */}
+      <div className="fold">
+        <div className="fold-inner" inert={!open}>
+          <span className="sep" aria-hidden="true" />
+          <div className="sb">{children}</div>
+        </div>
+      </div>
     </section>
   );
 });

@@ -142,6 +142,34 @@
   mask-size: contain;
 }
 
+/* MEASURED (2026-08-04, card fold animation): mock-v12.css:123 folds the
+   card with `.sec.closed .sb{display:none}` -- instant, nothing to
+   interpolate, the card snaps shut and every card below it jumps. The
+   mock's static demo never closes a card, so it never needed an animated
+   one. The body now stays in the DOM (Card.tsx renders `.fold`/
+   `.fold-inner` unconditionally) and the fold is a one-row grid whose row
+   interpolates between `1fr` (open) and `0fr` (closed); `overflow:hidden`
+   on the inner wrapper clips what the shrinking row no longer fits.
+   `display:none` must be cancelled (with higher specificity than the
+   mock's `.sec.closed .sb`) or the grid has nothing to shrink. Duration
+   and easing reuse the header chevron's own `.25s var(--ease)`
+   (mock-v12.css:122) -- one motion vocabulary, no new number. */
+.sec .fold {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.25s var(--ease);
+}
+.sec.closed .fold {
+  grid-template-rows: 0fr;
+}
+.sec .fold-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+.sec.closed .fold-inner .sb {
+  display: block;
+}
+
 /* MEASURED (2026-08-02, improvement_suggestions.md P2): the cascade must wrap
    when more weapons are picked than fit in one row. The mock shows exactly two
    guns and never exercises this (mock-v12.css:153 has `display:flex` with no

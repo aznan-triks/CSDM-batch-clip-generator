@@ -41,11 +41,12 @@ describe("SectionList", () => {
     expect(screen.getByText("B")).toBeTruthy();
   });
 
-  it("collapsing a card through its header hides only its own body", () => {
+  it("collapses a card through its header hides only its own body", () => {
     delete state.ui_sections;
     render(<SectionList tabId="capture" sections={sections()} />);
     fireEvent.click(screen.getByText("A").closest("button") as HTMLElement);
-    expect(screen.queryByText("body-a")).toBeNull();
+    const cardA = screen.getByText("A").closest(".sec") as HTMLElement;
+    expect(cardA.classList.contains("closed")).toBe(true);
     expect(screen.getByText("body-b")).toBeTruthy();
   });
 

@@ -29,3 +29,22 @@ describe("bento rows do not stretch every card to the tallest one", () => {
     expect(CSS).not.toMatch(/^\.wide\s*\{/m);
   });
 });
+
+describe("the card fold animates instead of the mock's display:none snap (2026-08-04)", () => {
+  it("folds the body through a 1fr->0fr grid row transition", () => {
+    expect(block(CSS, ".sec .fold")).toMatch(/display:\s*grid;/);
+    expect(block(CSS, ".sec .fold")).toMatch(/grid-template-rows:\s*1fr;/);
+    expect(block(CSS, ".sec .fold")).toMatch(/transition:\s*grid-template-rows/);
+    expect(block(CSS, ".sec.closed .fold")).toMatch(/grid-template-rows:\s*0fr;/);
+  });
+
+  it("clips the shrinking row and cancels the mock's display:none on .sb", () => {
+    expect(block(CSS, ".sec .fold-inner")).toMatch(/overflow:\s*hidden;/);
+    expect(block(CSS, ".sec.closed .fold-inner .sb")).toMatch(/display:\s*block;/);
+  });
+
+  it("reuses the mock's own motion vocabulary -- no new duration number", () => {
+    expect(CSS).toMatch(/grid-template-rows 0\.25s var\(--ease\)/);
+    expect(CSS).not.toMatch(/grid-template-rows\s[^;]*\d+ms/);
+  });
+});
