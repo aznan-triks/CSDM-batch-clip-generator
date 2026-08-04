@@ -204,7 +204,7 @@ def _line_at(text: str, offset: int) -> int:
 
 
 def _extract_props(text: str, component_name: str) -> list[str]:
-    m = re.search(rf"interface\s+{re.escape(component_name)}Props\s*\{{(.*?)\n\}}", text, re.S)
+    m = re.search(rf"interface\s+{re.escape(component_name)}Props(?:\s+extends[^{{]*)?\s*\{{(.*?)\n\}}", text, re.S)
     if not m:
         return []
     return _PROP_NAME_RE.findall(m.group(1))

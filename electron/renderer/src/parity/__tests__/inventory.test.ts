@@ -1,3 +1,7 @@
+/**
+ * The action inventory is read from the document, never copied: ids are
+ * unique and family-numbered, removed actions stay marked instead of dropped.
+ */
 import { describe, expect, it } from "vitest";
 
 import { readActionInventory } from "../inventory";

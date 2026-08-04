@@ -1,3 +1,7 @@
+/**
+ * The engine-lost banner: it forbids showing a dead-engine UI while the
+ * engine is alive, and forbids hiding it once the child has exited.
+ */
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 

@@ -1,3 +1,7 @@
+/**
+ * Parity coverage: no Tkinter action may go unanswered — each one is mounted
+ * or ledgered with a reason; no stale ledger entry, no unknown mount.
+ */
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 

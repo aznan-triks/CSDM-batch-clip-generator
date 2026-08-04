@@ -1,3 +1,7 @@
+/**
+ * Window activity gate: an inactive window asks for no frame and fires no
+ * intensity notification, whatever intensity the user chose.
+ */
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
