@@ -73,12 +73,21 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
   // touched a card's order or size. Confirmed live: clicking a date preset
   // moved every single card, `dTop` in the tens/hundreds of pixels, nothing
   // to do with reorder/resize. The FLIP dance is scoped to genuine
-  // order/collapse/wide changes now; an unrelated content reflow still moves
+  // order/wide changes now; an unrelated content reflow still moves
   // cards (correctly), it just does so with the plain, instant browser
   // reflow instead of a system-wide slide.
+  //
+  // COLLAPSE is deliberately NOT in the signature (2026-08-04, user report:
+  // "the nav pane moves to reposition itself, it's epileptic"). The fold is
+  // animated by Card's grid-template-rows transition (mock-bridge.css), so a
+  // card below the folded one follows the shrinking height frame-by-frame
+  // naturally. Firing FLIP on collapse stacked a second, time-shifted motion
+  // (jump-back + 200ms glide) on top of that continuous reflow -- and the
+  // browser's scroll anchoring adjusts scrollTop on top of both. Three
+  // uncoordinated motions read as jerky, "everything jumps" movement. Without
+  // FLIP on collapse, one continuous motion remains.
   const layoutSignature = JSON.stringify([
     order,
-    order.map((id) => isCollapsed(id)),
     order.map((id) => wideOverride(id) ?? null),
   ]);
   const prevLayoutSignature = useRef<string | null>(null);

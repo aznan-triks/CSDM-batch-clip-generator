@@ -71,6 +71,22 @@
   align-items: start;
 }
 
+/* MEASURED (2026-08-04, card fold motion, user report: "the nav pane moves
+   to reposition itself, it's epileptic"): mock-v12.css's `.scrollwrap` scrolls
+   with the browser's default scroll anchoring (`overflow-anchor: auto`).
+   When a card mid-grid folds, only the content BELOW it changes height; the
+   anchoring nevertheless compensates by adjusting scrollTop --
+   instantaneously, on top of the card's own height transition -- so the
+   whole pane appears to jump to keep the folded card pinned. Nothing above
+   the clicked card moves, so there is no anchor to preserve: the plain
+   reflow already glides the cards below the shrinking card in one continuous
+   motion. `overflow-anchor: none` leaves that motion untouched. Verified
+   live with the e2e probe: with anchoring, scrollTop jumps 360 -> 942 in one
+   frame on fold; without, it stays put and the cards below slide. */
+.scrollwrap {
+  overflow-anchor: none;
+}
+
 /* MEASURED (2026-08-02, AUDIT_restyle6_polish_regressions.md #1): mock-v12.css's
    `.sec` transitions `transform`/`box-shadow` only (mock-v12.css:109) -- its
    static demo never resizes a card, so `width` never needed to be there.

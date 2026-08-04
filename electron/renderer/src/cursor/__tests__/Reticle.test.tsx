@@ -60,6 +60,24 @@ describe("Reticle", () => {
     button.remove();
   });
 
+  it("frames a giga-long button at full size -- no max cap (2026-08-04)", () => {
+    const button = document.createElement("button");
+    button.className = "btn btn-run";
+    document.body.appendChild(button);
+    Object.defineProperty(button, "getBoundingClientRect", {
+      value: () => ({ left: 0, top: 0, width: 640, height: 48, right: 640, bottom: 48, x: 0, y: 0, toJSON() {} }),
+    });
+
+    const { container } = render(<Reticle />);
+    const el = container.querySelector(".cursor-reticle") as HTMLElement;
+    fireEvent.mouseMove(button, { clientX: 320, clientY: 24 });
+
+    // 640 + 10 padding, not clamped to the old 220 max.
+    expect(el.style.getPropertyValue("--cw")).toBe("650px");
+    expect(el.style.getPropertyValue("--ch")).toBe("58px");
+    button.remove();
+  });
+
   it("hides the custom cursor over a real widget (an input)", () => {
     const input = document.createElement("input");
     document.body.appendChild(input);

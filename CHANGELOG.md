@@ -50,6 +50,29 @@ tests cover the flow.
 
 ---
 
+## 3.0.2 — 2026-08-04
+
+Card folds no longer jerk the whole pane, and the crosshair hugs long buttons completely. (User
+feedback 2026-08-04.)
+
+### Fixed
+
+**Humanised:** Folding or unfolding a card no longer makes the whole pane jump around — the scroll
+stays put and the cards below glide smoothly with the card's own height change. The crosshair that
+locks onto buttons now frames long buttons completely instead of stopping at a maximum size.
+
+**Technical:** Two causes of the "everything jumps" motion are removed: (1) `SectionList`'s FLIP no
+longer fires on collapse — the fold is already animated by the card's `grid-template-rows`
+transition (mock-bridge.css), so FLIP stacked a second, time-shifted motion on top; (2) the
+browser's scroll anchoring is disabled on `.scrollwrap` (`overflow-anchor: none`,
+mock-bridge.css) — it adjusted scrollTop instantly to keep the folded card pinned even though
+nothing above it moves. `Reticle` drops its 220×120 size cap so the crosshair frames the button's
+real corners (verified on a 571px chip: `--cw` 581px, `--ch` 42px). Evidence scripts:
+`e2e/fold-motion-diagnostic.mjs` (scrollTop stays put, cards slide continuously) and
+`e2e/reticle-proof.mjs`.
+
+---
+
 ## 3.0 — 2026-08-04 (The Electron Era)
 
 The release that moves CSDM Batch Clips Generator from its Python-only past to its Electron

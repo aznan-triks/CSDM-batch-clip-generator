@@ -2,8 +2,6 @@ import { useEffect, useRef } from "react";
 
 import "./Reticle.css";
 
-const SNAP_MAX_WIDTH = 220;
-const SNAP_MAX_HEIGHT = 120;
 const SNAP_PADDING = 10;
 const DEFAULT_SIZE = 26;
 
@@ -94,10 +92,17 @@ export default function Reticle() {
         // the button regardless of where inside it the mouse sits. The mock's
         // own JS never does this either (it also follows clientX/clientY) --
         // this is a deliberate addition beyond the mock, not a ported bug.
+        //
+        // No size cap (2026-08-04, user feedback: "it has a max size, that's
+        // bad; it works great except on giga-long buttons -- loosen it"). The
+        // brackets should hug the button's four corners; a long button
+        // (a wide action button, a long filter chip) just gets a long
+        // reticle. The old 220x120 caps made the brackets float mid-button
+        // instead of framing it.
         el!.style.setProperty("--cx", `${rect.left + rect.width / 2}px`);
         el!.style.setProperty("--cy", `${rect.top + rect.height / 2}px`);
-        el!.style.setProperty("--cw", `${Math.min(rect.width + SNAP_PADDING, SNAP_MAX_WIDTH)}px`);
-        el!.style.setProperty("--ch", `${Math.min(rect.height + SNAP_PADDING, SNAP_MAX_HEIGHT)}px`);
+        el!.style.setProperty("--cw", `${rect.width + SNAP_PADDING}px`);
+        el!.style.setProperty("--ch", `${rect.height + SNAP_PADDING}px`);
         reveal(true);
         return;
       }
