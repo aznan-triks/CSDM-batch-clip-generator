@@ -64,3 +64,24 @@ describe("AppShell.css states only what the mock cannot know", () => {
     }
   });
 });
+
+describe("the narrow window keeps the console reachable (regression 2026-08-07)", () => {
+  // Below 1000px the console must STACK below the workspace, never vanish:
+  // `display: none` on `.console` left the only record of a run unreachable
+  // between the 900px minimum and the 1000px breakpoint. The split handle
+  // still hides (nothing to drag when the columns are stacked).
+  const media = stripComments(APP_SHELL_CSS).match(/@media \(max-width: 1000px\) \{\s*([\s\S]*?)\n\}/)?.[1] ?? "";
+
+  it("stacks the console as a second row under the workspace", () => {
+    expect(media).toMatch(/grid-template-rows:\s*minmax\(0,\s*1fr\)\s*minmax\(160px,\s*38%\)/);
+  });
+
+  it("never hides the console itself", () => {
+    expect(media).not.toMatch(/\.console\s*\{[^}]*display:\s*none/);
+    expect(media).not.toMatch(/\.console,/);
+  });
+
+  it("hides only the split handle, which has nothing to drag stacked", () => {
+    expect(media).toMatch(/\.split-handle\s*\{[^}]*display:\s*none/);
+  });
+});

@@ -1,7 +1,7 @@
 /**
  * LogConsole's tools: auto-scroll, search, and the always-mounted requirement
- * the narrow layout depends on (`console` is hidden by CSS, never
- * unmounted -- see AppShell.css).
+ * the narrow layout depends on (`console` stacks below the workspace by CSS,
+ * never unmounted -- see AppShell.css).
  *
  * `../../bridge` is mocked the way `ActionBar.test.tsx` mocks it, so `emit`
  * can raise protocol messages exactly as the real pipe would.

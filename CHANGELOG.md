@@ -20,6 +20,20 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.0.9 — 2026-08-07
+
+The log console no longer disappears when the window is narrow.
+
+**Humanised:** When the window is too narrow to keep the console beside your workspace, the console now moves below it instead of vanishing — so during a run on a small window you can still watch the log. It goes back to the side as soon as the window is wide enough again.
+
+### Fixed
+
+**Humanised:** On windows between 900 and 1000 px wide, the console used to disappear completely with no way to bring it back. Now it stacks as a full-width band below the workspace, and returns to the right-hand column when the window widens.
+
+**Technical:** `AppShell.css`'s `@media (max-width: 1000px)` block used `display: none` on `.console` — a D24 decision that predated the resizable split, leaving the only record of a run unreachable in the 900–1000 px range. It now sets `grid-template-rows: minmax(0, 1fr) minmax(160px, 38%)` on `.shell` so the console stacks below the workspace as a bounded, scrolling second row; the `.split-handle` alone stays hidden (nothing to drag when stacked). The console is never hidden nor unmounted, so every line survives the narrow stretch. Guarded by three new assertions in `AppShell.css.test.ts` (console must never go `display: none` in the narrow block) and proven end-to-end by `electron/e2e/console-narrow-proof.mjs` (console right column at 1600 px, stacked at 900 px, back to the side at 1600 px, zero overflow from 1600 down to 800 px).
+
+---
+
 ## 3.0.8 — 2026-08-07
 
 The running version is now visible in the top bar.

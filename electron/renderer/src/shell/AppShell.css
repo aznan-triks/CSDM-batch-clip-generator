@@ -73,16 +73,20 @@ body {
 }
 
 /*
- * Narrow window (D24, minimum 900 x 640): the console gives its column back to
- * the workspace. It is HIDDEN, never unmounted -- an unmounted console loses
- * every line already written, and those lines are the only record of a run.
+ * Narrow window (D24, minimum 900 x 640): the console gives its column to the
+ * workspace and stacks BELOW it as a bounded second row instead of vanishing
+ * (D24 predates the resizable split; a hidden console left the only record of
+ * a run unreachable between 900 and 1000 px). Its own body scrolls (mock's
+ * `.console .body { overflow: auto }`), so a long run's log cannot eat the
+ * workspace. The split handle is a vertical separator; with the columns
+ * stacked there is nothing for it to drag.
  */
 @media (max-width: 1000px) {
   .shell {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(160px, 38%);
   }
 
-  .console,
   .split-handle {
     display: none;
   }

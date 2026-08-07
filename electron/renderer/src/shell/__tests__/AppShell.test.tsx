@@ -46,8 +46,9 @@ describe("AppShell", () => {
   });
 
   it("keeps the log console in the tree at every width", () => {
-    // The narrow layout hides the console with CSS, never by unmounting it:
-    // an unmounted console loses every line already written.
+    // The narrow layout stacks the console below the workspace with CSS,
+    // never by unmounting it: an unmounted console loses every line already
+    // written.
     renderShell();
     expect(document.querySelector(".console")).not.toBeNull();
   });
