@@ -27,7 +27,7 @@ import { ELECTRON_DIR, SHOT_DIR } from "./config.mjs";
 const EXE = path.join(ELECTRON_DIR, "dist-app", "CSDM-Batch-Clips-Generator.exe");
 const PORT = 9223;
 const CDP = `http://localhost:${PORT}`;
-const EXPECTED_VERSION = "3.1.0";
+const EXPECTED_VERSION = "3.1.1";
 
 mkdirSync(SHOT_DIR, { recursive: true });
 

@@ -18,14 +18,31 @@ from csdm.static_data import (
 
 # The project root is the parent of the csdm/ package -- where the local data
 # files live (csdm_config.json, ...), beside the entry point.
-_ROOT = Path(__file__).resolve().parent.parent
+def _repo_root():
+    """The project root the config files anchor on.
+
+    CSDM_REPO_ROOT wins -- the same override electron/main.js honours when the
+    portable exe is kept somewhere else entirely. The fallback is the package
+    location, which is the real project root in every supported launch mode
+    (the engine is never packaged inside the exe, so ``__file__`` never points
+    at a temp extraction).
+    """
+    override = os.environ.get("CSDM_REPO_ROOT")
+    if override:
+        return Path(override)
+    return Path(__file__).resolve().parent.parent
+
+
+_ROOT = _repo_root()
 
 # Where the four JSON files live, and how `config_dir` selects it:
 #   ""        -> <script root>/<CONFIG_SUBDIR>          (default)
 #   "appdata" -> %LOCALAPPDATA%/<CONFIG_SUBDIR>
 #   "<path>"  -> <path>/<CONFIG_SUBDIR>                 (subfolder created inside)
 # The same subfolder name is used everywhere so one constant drives all three.
-CONFIG_SUBDIR = "CSDM Batch Clip Generator"
+CONFIG_SUBDIR = "CSDM-batch-clip_config"
+# The pre-3.1.1 subfolder name, kept only to migrate existing installs.
+LEGACY_CONFIG_SUBDIR = "CSDM Batch Clip Generator"
 CONFIG_FILENAMES = ("csdm_config.json", "csdm_presets.json",
                     "csdm_players.json", "csdm_asm_names.json")
 
@@ -291,12 +308,47 @@ def _pointer_config_dir():
     """`config_dir` as recorded by the default-location config file.
 
     That file is the bootstrap pointer: wherever the live configuration went,
-    the default copy keeps the location so the next launch can find it.
+    the default copy keeps the location so the next launch can find it. The
+    pre-rename folder is consulted when the new-name copy does not exist yet,
+    so a location chosen before 3.1.1 survives the subfolder rename.
     """
-    saved = _load_json(str(_default_dir() / "csdm_config.json"))
-    if isinstance(saved, dict) and "config_dir" in saved:
-        return saved["config_dir"]
+    for base in (_default_dir(), _ROOT / LEGACY_CONFIG_SUBDIR):
+        saved = _load_json(str(base / "csdm_config.json"))
+        if isinstance(saved, dict) and "config_dir" in saved:
+            return saved["config_dir"]
     return ""
+
+
+def _migrate_legacy_subdir_name():
+    """Copy the pre-3.1.1 subfolder into the new name, once, when the new
+    subfolder has no config yet.
+
+    Copy, never move: the old folder stays intact -- same rule as every
+    user-chosen switch. The default and AppData locations are always covered;
+    a custom location is covered through the recorded pointer.
+    """
+    parents = [_ROOT, _app_data_dir()]
+    pointer = _pointer_config_dir()
+    if pointer and pointer not in ("", "appdata"):
+        parents.append(Path(pointer))
+    for parent in parents:
+        new_dir = parent / CONFIG_SUBDIR
+        if (new_dir / "csdm_config.json").exists():
+            continue
+        old_dir = parent / LEGACY_CONFIG_SUBDIR
+        if not (old_dir / "csdm_config.json").exists():
+            continue
+        try:
+            new_dir.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            continue
+        for name in CONFIG_FILENAMES:
+            src = old_dir / name
+            if src.exists():
+                try:
+                    shutil.copy2(src, new_dir / name)
+                except OSError:
+                    pass
 
 
 def _bootstrap_dir():
@@ -306,6 +358,7 @@ def _bootstrap_dir():
     drive unplugged), fall back to the default subfolder rather than handing
     the app an empty configuration.
     """
+    _migrate_legacy_subdir_name()
     default_dir = _default_dir()
     target = resolve_config_dir(_pointer_config_dir())
     if target != default_dir and not (target / "csdm_config.json").exists():

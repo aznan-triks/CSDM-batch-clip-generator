@@ -89,6 +89,69 @@ def test_no_legacy_files_yields_defaults(isolated):
     assert cfg["pg_host"] == "127.0.0.1"
 
 
+# ── subfolder rename migration (3.1.1) ──────────────────────────────────────
+
+def test_legacy_subfolder_name_is_copied_into_renamed_folder(isolated):
+    old = isolated["project"] / c.LEGACY_CONFIG_SUBDIR
+    _write(old / "csdm_config.json", {"pg_host": "old-name", "config_dir": ""})
+    _write(old / "csdm_presets.json", {"seeded": True})
+    cfg = c.load_config()
+    assert cfg["pg_host"] == "old-name"
+    new = isolated["project"] / c.CONFIG_SUBDIR
+    assert (new / "csdm_config.json").exists()
+    assert (new / "csdm_presets.json").exists()
+    # The old folder stays intact: copy, never move.
+    assert (old / "csdm_config.json").exists()
+
+
+def test_subfolder_rename_migration_is_idempotent(isolated):
+    old = isolated["project"] / c.LEGACY_CONFIG_SUBDIR
+    _write(old / "csdm_config.json", {"pg_host": "old-name", "config_dir": ""})
+    c.load_config()
+    first = _read(isolated["project"] / c.CONFIG_SUBDIR / "csdm_config.json")
+    c.load_config()
+    second = _read(isolated["project"] / c.CONFIG_SUBDIR / "csdm_config.json")
+    assert first == second
+    assert first["pg_host"] == "old-name"
+
+
+def test_appdata_legacy_subfolder_is_copied_into_renamed_folder(isolated):
+    old_default = isolated["project"] / c.LEGACY_CONFIG_SUBDIR
+    _write(old_default / "csdm_config.json", {"config_dir": "appdata"})
+    old_app = isolated["appdata"] / c.LEGACY_CONFIG_SUBDIR
+    _write(old_app / "csdm_config.json", {"pg_host": "appdata-old", "config_dir": "appdata"})
+    cfg = c.load_config()
+    assert cfg["pg_host"] == "appdata-old"
+    new_app = isolated["appdata"] / c.CONFIG_SUBDIR
+    assert (new_app / "csdm_config.json").exists()
+    assert (old_app / "csdm_config.json").exists()
+
+
+def test_custom_legacy_subfolder_is_copied_into_renamed_folder(isolated):
+    custom = isolated["project"] / "custom-home"
+    old_default = isolated["project"] / c.LEGACY_CONFIG_SUBDIR
+    _write(old_default / "csdm_config.json", {"config_dir": str(custom)})
+    old_custom = custom / c.LEGACY_CONFIG_SUBDIR
+    _write(old_custom / "csdm_config.json", {"pg_host": "custom-old", "config_dir": str(custom)})
+    cfg = c.load_config()
+    assert cfg["pg_host"] == "custom-old"
+    new_custom = custom / c.CONFIG_SUBDIR
+    assert (new_custom / "csdm_config.json").exists()
+    assert (old_custom / "csdm_config.json").exists()
+
+
+def test_repo_root_honours_csdm_repo_root_override(isolated, monkeypatch):
+    override = isolated["project"] / "elsewhere"
+    monkeypatch.setenv("CSDM_REPO_ROOT", str(override))
+    assert c._repo_root() == override
+
+
+def test_repo_root_falls_back_to_package_location(isolated, monkeypatch):
+    monkeypatch.delenv("CSDM_REPO_ROOT", raising=False)
+    root = c._repo_root()
+    assert (root / "csdm" / "config.py").exists()
+
+
 # ── bootstrap pointer ───────────────────────────────────────────────────────
 
 def test_load_follows_pointer_to_appdata(isolated):

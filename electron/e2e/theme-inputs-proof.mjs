@@ -31,8 +31,8 @@ const STUB = `(() => {
       video_container: "mp4",
     },
     probe_config_dir: {
-      current: "C:\\\\Users\\\\Probe\\\\AppData\\\\Local\\\\CSDM Batch Clip Generator",
-      target: "C:\\\\Users\\\\Probe\\\\AppData\\\\Local\\\\CSDM Batch Clip Generator",
+      current: "C:\\\\Users\\\\Probe\\\\AppData\\\\Local\\\\CSDM-batch-clip_config",
+      target: "C:\\\\Users\\\\Probe\\\\AppData\\\\Local\\\\CSDM-batch-clip_config",
       conflicts: [], same: true, kind: "appdata",
     },
     connect_db: { ok: true, weapons: [], maps: [], players: [], tags: [] },

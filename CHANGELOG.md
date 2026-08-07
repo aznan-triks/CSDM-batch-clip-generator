@@ -20,6 +20,26 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.1.1 — 2026-08-07
+
+The config folder now carries a clean, space-free name and is found reliably from the portable exe.
+
+**Humanised:** The settings folder is renamed to `CSDM-batch-clip_config` (no spaces — friendlier for scripts, backups and paths in general). If you already had settings, they are copied automatically into the new folder; nothing is lost and the old folder is left untouched. When you launch the portable exe from anywhere, the settings are now always found and written next to the real app — never in a temporary folder.
+
+### Changed
+
+**Humanised:** Settings now live in a folder called `CSDM-batch-clip_config` instead of `CSDM Batch Clip Generator`. Existing settings are copied into the new folder on first launch (the old one is kept as-is).
+
+**Technical:** `CONFIG_SUBDIR` (`csdm/config.py`) renamed to `"CSDM-batch-clip_config"`. A new `_migrate_legacy_subdir_name()` copies the pre-3.1.1 folder into the new name, once, when the new subfolder has no config yet — for the default, AppData and custom locations alike (custom resolved through the recorded pointer). `_pointer_config_dir()` now reads the old-name default folder too, so a location chosen before 3.1.1 survives the rename.
+
+### Fixed
+
+**Humanised:** When the app runs from the portable exe, the settings location is now detected the same way the engine is: via the project root override (`CSDM_REPO_ROOT`) first, then the real package location. The settings never land in a temporary extraction folder.
+
+**Technical:** `_ROOT` (`csdm/config.py`) was pinned to `Path(__file__).resolve().parent.parent` at import. It now goes through `_repo_root()`, which honours `CSDM_REPO_ROOT` (the same override `electron/main.js::resolveRepoRoot()` uses) before falling back to the package location. Covered by six new tests in `tests/test_config_location.py` (rename migration default/AppData/custom, idempotence, root override, package fallback).
+
+---
+
 ## 3.1.0 — 2026-08-07
 
 The portable exe now actually runs the engine.
