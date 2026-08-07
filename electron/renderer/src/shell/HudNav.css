@@ -25,3 +25,18 @@
 .mark {
   color: var(--on-gold);
 }
+
+/* MEASURED (2026-08-07): `.app` (mock-v12.css) declares only
+   `grid-template-rows`, so its single implicit column is sized `auto` and
+   cannot shrink below the band's min-content -- brand + five tabs + navtools
+   added up to 1032px, clipping the whole window at 900px (the real minimum,
+   main.js) with VIDEO/SETTINGS unreachable. The tabs strip is the only part
+   that can give: `min-width: 0` lets it shrink, `overflow-x: auto` keeps
+   every tab reachable when the window is too narrow for all five. The sliding
+   indicators live INSIDE `.tabs`, so they follow the strip's scroll
+   correctly. A fixed-width picture (the mock) never had to answer this; the
+   narrow-window precedent is AppShell.css's own `@media` block. */
+.hud-inner .tabs {
+  min-width: 0;
+  overflow-x: auto;
+}

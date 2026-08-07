@@ -55,6 +55,15 @@ interface FolderProbe {
   target: string;
   conflicts: string[];
   same: boolean;
+  /** Which location is active: "app" (script subfolder), "appdata" or "custom". */
+  kind?: "app" | "appdata" | "custom";
+}
+
+/** The `kind` a `config_dir` value resolves to -- mirrors the engine's answer. */
+function choiceKind(value: string): FolderProbe["kind"] {
+  if (value === "") return "app";
+  if (value === "appdata") return "appdata";
+  return "custom";
 }
 
 /** A folder switch waiting on the user's confirmation(s). */
@@ -337,21 +346,26 @@ export default function SettingsTab() {
                 <code className="settings-folder-path">{folderInfo ? folderInfo.current : "…"}</code>
               </div>
               <div className="row">
-                {FOLDER_CHOICES.map((choice) => (
-                  <button
-                    key={choice.value}
-                    type="button"
-                    className="chip"
-                    data-action={choice.value === "" ? "M13" : "M14"}
-                    disabled={!!pending}
-                    onClick={() => chooseFolder(choice.value, choice.label)}
-                  >
-                    {choice.label}
-                  </button>
-                ))}
+                {FOLDER_CHOICES.map((choice) => {
+                  const active = folderInfo?.kind === choiceKind(choice.value);
+                  return (
+                    <button
+                      key={choice.value}
+                      type="button"
+                      className={active ? "chip on" : "chip"}
+                      aria-pressed={active}
+                      data-action={choice.value === "" ? "M13" : "M14"}
+                      disabled={!!pending}
+                      onClick={() => chooseFolder(choice.value, choice.label)}
+                    >
+                      {choice.label}
+                    </button>
+                  );
+                })}
                 <button
                   type="button"
-                  className="chip"
+                  className={folderInfo?.kind === "custom" ? "chip on" : "chip"}
+                  aria-pressed={folderInfo?.kind === "custom"}
                   data-action="M15"
                   disabled={!!pending}
                   onClick={chooseCustomFolder}

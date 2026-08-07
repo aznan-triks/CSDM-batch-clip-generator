@@ -52,6 +52,7 @@ vi.mock("../../bridge", () => ({
               : "C:\\script\\CSDM Batch Clip Generator",
           conflicts: [],
           same: target === "",
+          kind: "app",
         },
       });
     }
@@ -66,6 +67,7 @@ vi.mock("../../bridge", () => ({
           target: "C:\\AppData\\Local\\CSDM Batch Clip Generator",
           conflicts: [],
           same: true,
+          kind: "appdata",
         },
       });
     }
@@ -160,5 +162,22 @@ describe("SettingsTab", () => {
       screen.getByRole("button", { name: /^Cancel$/ }).click();
     });
     expect(applyCalls).toEqual([]);
+  });
+
+  it("keeps the active location highlighted after a switch", async () => {
+    await renderTab();
+    // The probe reports the script subfolder as active (kind "app").
+    expect(screen.getByRole("button", { name: /^App folder \(portable\)$/ }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: /^User Local AppData$/ }).getAttribute("aria-pressed")).toBe("false");
+    // Switch to AppData and confirm: the apply response reports kind "appdata",
+    // so the highlight must move -- this is the "constantly selected" report.
+    await act(async () => {
+      screen.getByRole("button", { name: /^User Local AppData$/ }).click();
+    });
+    await act(async () => {
+      screen.getByRole("button", { name: /^Copy$/ }).click();
+    });
+    expect(screen.getByRole("button", { name: /^App folder \(portable\)$/ }).getAttribute("aria-pressed")).toBe("false");
+    expect(screen.getByRole("button", { name: /^User Local AppData$/ }).getAttribute("aria-pressed")).toBe("true");
   });
 });

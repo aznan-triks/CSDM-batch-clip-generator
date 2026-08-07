@@ -134,6 +134,17 @@ def test_probe_lists_conflicts_at_target(isolated):
     assert "csdm_presets.json" not in p["conflicts"]
 
 
+def test_probe_reports_kind_of_current_location(isolated):
+    """The active chip in Settings needs to know WHICH location is current."""
+    _seed_legacy(isolated["project"])
+    c.load_config()
+    assert c.probe_config_dir()["kind"] == "app"
+    c.apply_config_dir("appdata")
+    assert c.probe_config_dir()["kind"] == "appdata"
+    c.apply_config_dir(str(isolated["project"] / "custom-home"))
+    assert c.probe_config_dir()["kind"] == "custom"
+
+
 # ── apply: copy never move, backup, pointer ─────────────────────────────────
 
 def test_apply_copies_and_keeps_source(isolated):

@@ -141,6 +141,13 @@
   --raise: #f8fbfd; /* raised control: field, chip, segment */
   --raise-hi: #ffffff; /* the same control, hovered */
 
+  /* Native controls (select popups, date picker, autofill palette, spinners,
+     scrollbars) are drawn by the browser's UA, not by these tokens. Without a
+     declared scheme Chromium renders them with the LIGHT look even under a
+     dark ground -- the select dropdown opened white over a night interface.
+     `color-scheme` is the only lever CSS has on that UA chrome. */
+  color-scheme: light;
+
   /* -- lines -- */
   --line: rgba(30, 45, 70, 0.09);
   --line-hi: rgba(30, 45, 70, 0.18);
@@ -236,6 +243,10 @@
   --panel: #0e1728;
   --raise: #182238;
   --raise-hi: #1e2a44;
+
+  /* The dark twin of the light-mode `color-scheme`: native UA chrome follows
+     the night ground instead of staying light-on-dark. */
+  color-scheme: dark;
 
   --line: rgba(150, 200, 240, 0.12);
   --line-hi: rgba(150, 200, 240, 0.22);

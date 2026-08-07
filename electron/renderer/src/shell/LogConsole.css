@@ -34,6 +34,53 @@
   flex: none;
 }
 
+/*
+ * ...except the search, which is the ONE elastic part. `.console .tools > *`
+ * above (specificity 0,2,0) was silently outgunning `.log-search { flex: 1 1
+ * auto }` (0,1,0), so the row never shrank and the Export button crossed the
+ * window edge from 1600px down (measured 2026-08-07). This rule is the
+ * elastic part winning: higher specificity, same intent the comment above
+ * already promised.
+ */
+.console .tools .log-search {
+  flex: 1 1 auto;
+}
+
+/*
+ * When the console column itself gets narrow (a case the fixed 288px mock
+ * never had to answer), the tools adapt instead of pushing the Export button
+ * off the window. `container-type` makes the CONSOLE the unit of measurement
+ * -- the tools' width follows the split %, not the window width, so a
+ * viewport media query would fire at the wrong moments.
+ *
+ * Two steps, measured on the real row (2026-08-07): six chips + label need
+ * ~425px with the search at zero, ~600px natural. Below 660px the "Search"
+ * label is given up -- the input's placeholder says the same thing, and
+ * font-size: 0 hides the glyphs without dropping the accessible name. Below
+ * 520px even a zero-width search cannot hold one row of buttons, so the
+ * tools wrap to a second row: the 46px header grows to ~86px and the log
+ * gives back that one strip.
+ */
+.console {
+  container-type: inline-size;
+}
+
+@container (max-width: 660px) {
+  .console .tools .log-search {
+    font-size: 0;
+  }
+}
+
+@container (max-width: 520px) {
+  .console .tools {
+    flex-wrap: wrap;
+  }
+
+  .console .ch .chip {
+    padding: var(--sp-1) var(--sp-2);
+  }
+}
+
 #ask-panel {
   padding: var(--sp-4);
   border-bottom: var(--bw) solid var(--line);
@@ -65,6 +112,23 @@
   border: var(--bw) solid var(--line);
   border-radius: 8px;
   padding: var(--sp-2) var(--sp-4);
+}
+
+/* The UA's default placeholder is a fixed grey that stays mid-dark on a
+   night ground; state it from the tokens so the hint follows the mode. */
+.log-search input::placeholder {
+  color: var(--dim);
+  opacity: 1;
+}
+
+/* Same autofill repaint as Field.css: Chromium's light-blue fill must not
+   survive on a dark console. */
+.log-search input:-webkit-autofill,
+.log-search input:-webkit-autofill:hover,
+.log-search input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--txt);
+  -webkit-box-shadow: 0 0 0 1000px var(--solid) inset;
+  caret-color: var(--txt);
 }
 
 /*

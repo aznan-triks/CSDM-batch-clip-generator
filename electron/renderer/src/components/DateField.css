@@ -25,9 +25,9 @@
 
 /*
  * The real native picker: never painted, only driven by the button above via
- * `showPicker()`. `color-scheme: dark` keeps the OS-drawn calendar popup off
- * the platform's light-and-blue default when it does open -- CSS cannot reach
- * inside that popup any other way.
+ * `showPicker()`. Its UA chrome -- the calendar popup -- follows the mode's
+ * `color-scheme` (tokens.css), so a night ground gets a dark calendar and a
+ * light ground a light one; CSS cannot reach inside that popup any other way.
  */
 .date-field-native {
   position: absolute;
@@ -37,5 +37,4 @@
   border: 0;
   opacity: 0;
   pointer-events: none;
-  color-scheme: dark;
 }

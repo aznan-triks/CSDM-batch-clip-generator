@@ -28,3 +28,18 @@
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 1px;
 }
+
+/*
+ * Chromium paints an autofilled field light-blue with black ink regardless of
+ * the theme -- a bright pill over a night ground on the PostgreSQL fields.
+ * The UA override is the only thing that reaches the autofill face, so it is
+ * repainted here from the same tokens the field itself uses: `--solid` face,
+ * `--muted` ink (the mock's `.fld` colour), caret to match.
+ */
+.fld:-webkit-autofill,
+.fld:-webkit-autofill:hover,
+.fld:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--muted);
+  -webkit-box-shadow: 0 0 0 1000px var(--solid) inset;
+  caret-color: var(--muted);
+}

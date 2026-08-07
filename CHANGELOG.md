@@ -20,6 +20,32 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.0.6 — 2026-08-07
+
+Three UI polish fixes and a full overflow sweep. (User feedback 2026-08-07.)
+
+**Humanised:** The Configuration Folder card now keeps the active location visibly selected — App folder, User Local AppData or Choose… stays highlighted after you switch. Text fields, dropdowns, the calendar popup and the search hint now follow the light and dark themes all the way down to the browser's own controls (including autofill), instead of leaving light native bits on a night ground. On narrow windows the console's buttons no longer run off the window edge: the search field gives way first, and the toolbar wraps to a second row when the console is really tight. The whole window was swept for horizontal overflow from 1600px down to the 900px minimum — nothing sticks out anymore.
+
+### Fixed
+
+**Humanised:** The Location row under Configuration Folder shows which of the three buttons is active at all times.
+
+**Technical:** `probe_config_dir` (`csdm/config.py`) now reports `kind` — `"app"`, `"appdata"` or `"custom"` — so the UI can know WHICH location is active without re-deriving script-root/AppData paths. `SettingsTab` marks the matching chip with the mock's `.chip.on` and `aria-pressed`; the highlight moves after a confirmed switch. Covered by `tests/test_config_location.py` (kind after each switch) and `SettingsTab.test.tsx` (chip state before/after the copy flow).
+
+**Humanised:** Every input, dropdown, calendar and search hint now matches the chosen light or dark theme, including the browser-drawn parts that used to stay light.
+
+**Technical:** `tokens.css` sets `color-scheme: light` / `:root[data-mode="dark"] { color-scheme: dark }` — Chromium draws native select popups, the date picker, spinners, autofill palette and scrollbars per mode. `DateField.css` drops its unconditional `color-scheme: dark` (inherited now, so light mode gets a light calendar). `.fld` and `.log-search input` repaint autofill from `--solid`/`--muted`/`--txt` and the search placeholder is themed (`var(--dim)`), where the UA grey `#757575` used to stay fixed.
+
+**Humanised:** When the window is narrow, the console buttons stay on screen — they wrap instead of falling off the edge.
+
+**Technical:** Root cause: `.console .tools > * { flex: none }` (0,2,0) was outgunning `.log-search { flex: 1 1 auto }` (0,1,0), so the "elastic" search never shrank and the Export button crossed the window edge from 1600px down. `LogConsole.css` restores elasticity with higher specificity and makes `.console` a container: below 640px the tools wrap to a second row (header ~86px) instead of overflowing.
+
+**Humanised:** At the minimum window size (900×640) nothing is cut off anymore; the tab strip scrolls instead of clipping VIDEO and SETTINGS.
+
+**Technical:** `.app` (mock-v12.css) declares only `grid-template-rows`, so its single implicit column was floored at the band's min-content (1032px). `AppShell.css` pins it with `minmax(0, 1fr)` in its narrow-window media block (≤1040px) and `HudNav.css` lets `.tabs` shrink (`min-width: 0; overflow-x: auto`). Sweep evidence: `electron/e2e/theme-inputs-proof.mjs` reports zero viewport overflows at 1600/1280/1000/900/800.
+
+---
+
 ## 3.0.1 — 2026-08-04
 
 Where the settings files live is now your choice — and switching never deletes anything.

@@ -87,3 +87,19 @@ body {
     display: none;
   }
 }
+
+/*
+ * MEASURED (2026-08-07, AUDIT_ui_theme_overflow.md #4): mock-v12.css's `.app`
+ * declares only `grid-template-rows`, so its single implicit column is sized
+ * `auto` and cannot shrink below the band's min-content -- brand + five tabs
+ * + navtools measured 1032px, clipping the whole window at 900px (the real
+ * minimum, main.js) with VIDEO/SETTINGS unreachable. Pinning the column with
+ * `minmax(0, 1fr)` lets the tabs strip's own `overflow-x: auto` (HudNav.css)
+ * absorb the excess instead of the whole window. Below 1040px the band's
+ * min-content exceeds the window, so the pin is only needed there.
+ */
+@media (max-width: 1040px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -562,6 +562,11 @@ def probe_config_dir(target=None):
     With `target` omitted the call is a pure status read: `same` is True and
     `conflicts` is empty. With a target, `conflicts` lists the files that
     already exist there and would be overwritten by a switch.
+
+    `kind` names WHICH location is active so the UI can highlight the matching
+    choice: ``"app"`` (the script subfolder), ``"appdata"`` (Local AppData) or
+    ``"custom"`` (any other path). The renderer cannot derive this itself --
+    the script root and %LOCALAPPDATA% are engine knowledge.
     """
     current = _file_dir()
     target_dir = resolve_config_dir(target) if target is not None else current
@@ -572,7 +577,21 @@ def probe_config_dir(target=None):
         "target": str(target_dir),
         "conflicts": conflicts,
         "same": target_dir == current,
+        "kind": _location_kind(current),
     }
+
+
+def _location_kind(directory):
+    """Which of the three locations `directory` is: ``"app"``, ``"appdata"`` or ``"custom"``.
+
+    Windows paths are case-insensitive, so the comparison is normalised before
+    it happens; the resolved targets use the same subfolder name everywhere.
+    """
+    current = os.path.normcase(os.path.abspath(str(directory)))
+    for value, kind in (("", "app"), ("appdata", "appdata")):
+        if current == os.path.normcase(os.path.abspath(str(resolve_config_dir(value)))):
+            return kind
+    return "custom"
 
 
 def apply_config_dir(target):
