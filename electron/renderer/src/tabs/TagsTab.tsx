@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 
 import Card from "../components/Card";
+import Chip from "../components/Chip";
 import { ICONS } from "../icons";
 import Field from "../components/Field";
 import { pickPath, pickSavePath, runCommand } from "../bridge";
@@ -380,14 +381,11 @@ export default function TagsTab() {
         </p>
 
         <SettingControl settingKey="tag_enabled">
-          <label className="row">
-            <input
-              type="checkbox"
-              checked={!!tagEnabled}
-              onChange={(event) => setTagEnabled(event.target.checked)}
-            />
-            Auto-tag on export
-          </label>
+          <Chip
+            label="Auto-tag on export"
+            selected={!!tagEnabled}
+            onToggle={() => setTagEnabled(!tagEnabled)}
+          />
         </SettingControl>
       </Card>
 
@@ -468,6 +466,7 @@ export default function TagsTab() {
             <li key={demo.path} className="tags-found-row">
               <input
                 type="checkbox"
+                className="tags-found-check"
                 checked={selectedPaths.has(demo.path)}
                 onChange={() => toggleDemo(demo.path)}
               />

@@ -8,6 +8,7 @@
  * never hides, unlike `HlaeOptionsSection`.
  */
 import Field from "../components/Field";
+import Chip from "../components/Chip";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
 import "./Cs2EffectsSection.css";
@@ -74,10 +75,7 @@ function ToggleField({ settingKey, label }: { settingKey: string; label: string 
   const [value, setValue] = useSetting<boolean>(settingKey);
   return (
     <SettingControl settingKey={settingKey}>
-      <label className="cs2-toggle">
-        <input type="checkbox" checked={!!value} onChange={() => setValue(!value)} />
-        <span>{label}</span>
-      </label>
+      <Chip label={label} selected={!!value} onToggle={() => setValue(!value)} />
     </SettingControl>
   );
 }

@@ -22,13 +22,3 @@
   font-size: var(--fs-xs);
   color: var(--dim);
 }
-
-.hlae-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  font-family: var(--font-body);
-  font-size: var(--fs-sm);
-  color: var(--txt);
-  cursor: pointer;
-}

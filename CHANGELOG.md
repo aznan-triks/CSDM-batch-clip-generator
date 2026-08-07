@@ -20,6 +20,20 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Unreleased
+
+The toggles and selectors follow the window's own design language.
+
+**Humanised:** A few switches were drawn by the operating system instead of by the window: "Auto-tag on export" and the CS2/HLAE effect toggles were plain checkboxes, and the demo selector in Tags used the browser's square. They are now styled like the rest of the interface (the same toggle chips as every other option), and the demo selector uses a themed check box.
+
+### Fixed
+
+**Humanised:** "Auto-tag on export" and the CS2 EFFECTS / HLAE OPTIONS toggles are now proper toggle chips matching every other boolean option, and the found-demo selector in Tags is a themed check box instead of the raw browser control.
+
+**Technical:** `TagsTab`, `Cs2EffectsSection` and `HlaeOptionsSection` rendered bare `<input type="checkbox">` (OS-drawn controls). The three boolean toggles now use the shared `<Chip>` component (`.chip`/`.on`, `aria-pressed`) like `EventTypeSection`; the found-demo rows use a restyled native checkbox (`.tags-found-check` in `TagsTab.css`: `appearance: none`, 18px, token borders/background, ✓ face via `:checked::before`). Dead `.cs2-toggle`/`.hlae-toggle` rules removed. `TagsTab.test.tsx` operation-name lookup anchored (`^Export$`) since the new chip also contains "export". Verified programmatically and by screenshot (`electron/e2e/checkbox-proof.mjs`).
+
+---
+
 ## 3.1.2 — 2026-08-07
 
 The settings migration now keeps the most recent configuration when both legacy sources exist.

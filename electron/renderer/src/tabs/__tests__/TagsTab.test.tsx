@@ -70,7 +70,8 @@ describe("TagsTab", () => {
     await renderTab();
     for (const label of ["By tag", "By config", "Tag sel.", "Tag ALL",
                          "Remove sel.", "Export", "Import"]) {
-      expect(screen.getByRole("button", { name: new RegExp(label, "i") })).toBeTruthy();
+      // Anchored: "Export" must not also match the "Auto-tag on export" chip.
+      expect(screen.getByRole("button", { name: new RegExp(`^${label}$`, "i") })).toBeTruthy();
     }
   });
 

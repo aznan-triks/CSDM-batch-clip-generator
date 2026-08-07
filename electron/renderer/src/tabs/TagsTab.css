@@ -50,6 +50,42 @@
   color: var(--txt);
 }
 
+/*
+ * The found-demos selector: a native checkbox restyled from the tokens, the
+ * same language as the rest of the window. No `appearance: none` could be
+ * skipped here -- the UA's square would otherwise survive on a dark ground.
+ */
+.tags-found-check {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  display: grid;
+  place-content: center;
+  border: var(--bw) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--raise);
+  cursor: pointer;
+}
+
+.tags-found-check:hover {
+  border-color: var(--line-hi);
+  background: var(--raise-hi);
+}
+
+.tags-found-check:checked {
+  border-color: var(--gold);
+  background: var(--raise-hi);
+}
+
+.tags-found-check:checked::before {
+  content: "✓";
+  font-size: var(--fs-xs);
+  color: var(--gold);
+}
+
 .tags-op-status {
   font-family: var(--font-display);
   font-size: var(--fs-sm);
