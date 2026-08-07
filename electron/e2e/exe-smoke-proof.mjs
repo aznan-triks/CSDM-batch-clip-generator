@@ -16,7 +16,7 @@
  *
  * Run: node electron/e2e/exe-smoke-proof.mjs
  */
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
 
@@ -31,11 +31,29 @@ const EXPECTED_VERSION = "3.1.0";
 
 mkdirSync(SHOT_DIR, { recursive: true });
 
+/** Rebuild the Windows PATH the way Explorer builds it: System, then User. */
+function windowsPathFromRegistry() {
+  const read = (key) => {
+    try {
+      const out = execFileSync("reg", ["query", key, "/v", "Path"], { encoding: "utf8" });
+      const line = out.split(/\r?\n/).find((l) => /REG_(EXPAND_)?SZ/.test(l));
+      return line ? line.replace(/^.*REG_(EXPAND_)?SZ\s+/, "").trim() : "";
+    } catch {
+      return "";
+    }
+  };
+  const sys = read("HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment");
+  const usr = read("HKCU\\Environment");
+  return [sys, usr].filter(Boolean).join(";");
+}
+
 // 1. Launch the portable exe with a debugging port (the NSIS stub forwards args).
-// Strip the agent's own PYTHONPATH/VIRTUAL_ENV: a double-click never has them,
-// and they would let the engine borrow packages from a foreign venv and mask
-// the real interpreter resolution the user gets.
+// Faithful double-click simulation: PATH exactly as Explorer would build it
+// (System + User from the registry), and no agent env -- PYTHONPATH/VIRTUAL_ENV
+// would let the engine borrow packages from a foreign venv and mask the real
+// interpreter resolution the user gets.
 const cleanEnv = { ...process.env };
+cleanEnv.PATH = windowsPathFromRegistry() || cleanEnv.PATH;
 delete cleanEnv.PYTHONPATH;
 delete cleanEnv.VIRTUAL_ENV;
 const child = spawn(EXE, [`--remote-debugging-port=${PORT}`], {
