@@ -358,7 +358,6 @@ def _bootstrap_dir():
     drive unplugged), fall back to the default subfolder rather than handing
     the app an empty configuration.
     """
-    _migrate_legacy_subdir_name()
     default_dir = _default_dir()
     target = resolve_config_dir(_pointer_config_dir())
     if target != default_dir and not (target / "csdm_config.json").exists():
@@ -373,6 +372,7 @@ def _file_dir():
     """The active config directory, bootstrapped on first use."""
     global _ACTIVE_DIR
     if _ACTIVE_DIR is None:
+        _migrate_legacy_subdir_name()
         _migrate_legacy_root_files()
         _ACTIVE_DIR = _bootstrap_dir()
     return _ACTIVE_DIR
@@ -581,9 +581,11 @@ def load_config():
 
     Bootstraps on every call: the default-location file records the live
     location (the pointer), so a process started anywhere always lands on the
-    config the user last switched to. Legacy flat files beside the entry
-    point are migrated into the default subfolder on the first run.
+    config the user last switched to. The old-name subfolder migrates BEFORE
+    the flat legacy files: when both exist, the subfolder is the more recent
+    state, and the flat copy must not shadow it.
     """
+    _migrate_legacy_subdir_name()
     _migrate_legacy_root_files()
     active = _bootstrap_dir()
     global _ACTIVE_DIR

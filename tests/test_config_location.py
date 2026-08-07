@@ -152,6 +152,26 @@ def test_repo_root_falls_back_to_package_location(isolated, monkeypatch):
     assert (root / "csdm" / "config.py").exists()
 
 
+def test_rename_migration_wins_over_flat_legacy_files(isolated):
+    """The recent old-name subfolder must beat the flat legacy files.
+
+    Both can exist on a machine that ran pre-3.0.1 (flat files) and 3.0.1+
+    (subfolder). The subfolder is the more recent state: copying the flat
+    files into the renamed folder first would leave the app on stale settings.
+    """
+    _write(isolated["project"] / "csdm_config.json",
+           {"pg_host": "flat-old", "config_dir": ""})
+    old = isolated["project"] / c.LEGACY_CONFIG_SUBDIR
+    _write(old / "csdm_config.json",
+           {"pg_host": "subfolder-recent", "config_dir": "", "event_actor": True})
+    cfg = c.load_config()
+    assert cfg["pg_host"] == "subfolder-recent"
+    assert cfg["event_actor"] is True
+    new = isolated["project"] / c.CONFIG_SUBDIR
+    assert (new / "csdm_config.json").exists()
+    assert _read(new / "csdm_config.json")["pg_host"] == "subfolder-recent"
+
+
 # ── bootstrap pointer ───────────────────────────────────────────────────────
 
 def test_load_follows_pointer_to_appdata(isolated):

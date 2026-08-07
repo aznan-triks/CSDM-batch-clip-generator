@@ -20,6 +20,20 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.1.2 — 2026-08-07
+
+The settings migration now keeps the most recent configuration when both legacy sources exist.
+
+**Humanised:** If you had settings both in the old flat files (pre-3.0.1) and in the previous settings folder, the renamed folder could end up with the older flat-file settings instead of the recent ones. The migration now prefers the recent folder and only falls back to the flat files when there is no folder to copy — your latest settings are always the ones that survive.
+
+### Fixed
+
+**Humanised:** Settings copied during the folder rename could come from the outdated flat files instead of the recent settings folder, losing recent options (event filters, UI font, folder pointer). The folder copy now wins.
+
+**Technical:** `load_config` (`csdm/config.py`) ran `_migrate_legacy_root_files()` (flat files → renamed folder) before `_migrate_legacy_subdir_name()` (old-name subfolder → renamed folder); the flat copy created the folder first, so the rename guard ("folder already has a config") skipped the richer subfolder copy. Both entry points (`load_config`, `_file_dir`) now run the subfolder migration first, and `_bootstrap_dir()` no longer triggers it — the flat copy only fills the renamed folder when no old-name subfolder exists. Regression test: `test_rename_migration_wins_over_flat_legacy_files` (`tests/test_config_location.py`), verified live by re-running the packaged exe and comparing the four JSON files byte-for-byte between the old and new folders.
+
+---
+
 ## 3.1.1 — 2026-08-07
 
 The config folder now carries a clean, space-free name and is found reliably from the portable exe.
