@@ -26,6 +26,21 @@
   color: var(--on-gold);
 }
 
+/* MEASURED (2026-08-07): the mock has no version chip -- its brand is
+   `.brand b` + `.brand span` only. The running build now sits beside the
+   brand (user request); the chip borrows `.navtools .p`'s hairline-pill
+   language without reusing that class, which the mock owns and whose rules
+   (padding, `--surface` fill) would fight this element. */
+.brand-version {
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--faint);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-pill);
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+
 /* MEASURED (2026-08-07): `.app` (mock-v12.css) declares only
    `grid-template-rows`, so its single implicit column is sized `auto` and
    cannot shrink below the band's min-content -- brand + five tabs + navtools

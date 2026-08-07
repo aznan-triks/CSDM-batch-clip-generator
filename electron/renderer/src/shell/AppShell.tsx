@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
-import { sendCommand } from "../bridge";
+import { runCommand, sendCommand } from "../bridge";
 import Reticle from "../cursor/Reticle";
 import ClickSpark from "../effects/ClickSpark";
 import { ICONS } from "../icons";
@@ -37,6 +37,9 @@ import "./AppShell.css";
 export default function AppShell() {
   const [active, setActive] = useState<TabSpec["id"]>(TABS[0].id);
   const engine = useEngineState();
+  // The running build, named by the engine's `hello` reply and shown beside
+  // the brand in the top bar (HudNav). Undefined until the reply arrives.
+  const [version, setVersion] = useState<string | undefined>(undefined);
 
   // The backdrop and every sequence read the motion gate; this is what closes
   // it when CS2 takes the front during a run.
@@ -120,14 +123,24 @@ export default function AppShell() {
   // without this the console holds a single bare `[result]` line and reads as
   // a window talking to a dead engine.
   //
-  // `sendCommand`, not `runCommand`: the answer that matters is the banner on
-  // the log socket, which the console already renders. There is nothing here
-  // to await and nothing to do if it fails -- a dead engine reports itself
-  // through `child_exit`.
+  // `runCommand`, not a bare `sendCommand`: the banner on the log socket is
+  // still the answer the console renders, and the result also names the build
+  // (`data.app_version`), which feeds the version chip in the top bar. A dead
+  // engine reports itself through `child_exit`, so the lost-engine banner is
+  // the only answer the failure needs -- nothing to do here on rejection.
   //
   // Effects run child-first, so LogConsole has subscribed before this fires.
   useEffect(() => {
-    sendCommand("hello");
+    runCommand("hello")
+      .then((result) => {
+        const data = result.data as { app_version?: string } | undefined;
+        if (typeof data?.app_version === "string") {
+          setVersion(data.app_version);
+        }
+      })
+      .catch(() => {
+        // Engine death surfaces via `child_exit`; the banner is enough.
+      });
   }, []);
 
   const hudTabs = TABS.map((tab) => {
@@ -168,6 +181,7 @@ export default function AppShell() {
           onSelect={setActive}
           database={database}
           preset={preset}
+          version={version}
         />
         <div
           className="shell shell-resizable"

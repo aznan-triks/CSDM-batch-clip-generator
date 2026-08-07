@@ -19,6 +19,9 @@ interface HudNavProps<T extends string> {
    *  one already inside the settings provider -- this stays presentational. */
   database?: string;
   preset?: string;
+  /** The running build, from the engine's `hello` reply (`data.app_version`).
+   *  Rendered beside the brand so the version in use is always on screen. */
+  version?: string;
 }
 
 /**
@@ -35,6 +38,7 @@ export default function HudNav<T extends string>({
   onSelect,
   database,
   preset,
+  version,
 }: HudNavProps<T>) {
   return (
     <div className="hud-nav">
@@ -47,6 +51,11 @@ export default function HudNav<T extends string>({
             <b>CSDM</b>
             <span>BATCH CLIPS</span>
           </div>
+          {version ? (
+            <span className="brand-version" title={`Version ${version}`}>
+              {version}
+            </span>
+          ) : null}
         </div>
         <TabBar>
           {tabs.map((tab) => (

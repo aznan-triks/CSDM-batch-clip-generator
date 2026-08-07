@@ -48,4 +48,19 @@ describe("HudNav", () => {
       expect(container.querySelector(selector), `missing ${selector}`).not.toBeNull();
     }
   });
+
+  it("shows the running build beside the brand when given a version", () => {
+    const { container } = render(
+      <HudNav tabs={TABS} active="capture" onSelect={() => {}} version="3.0.8" />,
+    );
+    const chip = container.querySelector(".brand-version");
+    expect(chip).not.toBeNull();
+    expect(chip?.textContent).toBe("3.0.8");
+    expect(chip?.getAttribute("title")).toBe("Version 3.0.8");
+  });
+
+  it("renders no version chip before the engine names itself", () => {
+    const { container } = render(<HudNav tabs={TABS} active="capture" onSelect={() => {}} />);
+    expect(container.querySelector(".brand-version")).toBeNull();
+  });
 });

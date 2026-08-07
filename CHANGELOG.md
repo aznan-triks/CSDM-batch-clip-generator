@@ -20,6 +20,20 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.0.8 — 2026-08-07
+
+The running version is now visible in the top bar.
+
+**Humanised:** The top-left brand — "CSDM / BATCH CLIPS" — now carries a small badge with the build's version right beside the title, so you always see which version of the app is in front of you.
+
+### Added
+
+**Humanised:** A version badge sits next to the CSDM / BATCH CLIPS title in the top bar, showing the exact build running (e.g. 3.0.8).
+
+**Technical:** `HudNav` (`electron/renderer/src/shell/HudNav.tsx`) takes a `version` prop and renders a `.brand-version` hairline pill beside the brand. `AppShell` now runs the engine's existing `hello` command through `runCommand` and reads `data.app_version` (`csdm/bridge/host.py::_cmd_hello` already reported it — the renderer simply never read it), feeding the chip. The badge appears only once the engine has named itself, so a dead engine shows no stale version. Covered by `HudNav.test.tsx` (chip shown with a version, absent without).
+
+---
+
 ## 3.0.7 — 2026-08-07
 
 The window now typechecks clean again.
