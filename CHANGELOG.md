@@ -20,6 +20,20 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.1.0 — 2026-08-07
+
+The portable exe now actually runs the engine.
+
+**Humanised:** Launching the app from the portable .exe used to open a window that could not start its own engine — no version badge, a console that stayed empty, nothing you asked it to do would work. The exe now finds the program folder it lives in and starts the engine properly: the version badge appears, the console fills, and everything works exactly as when you launch from the .bat. (If you keep the exe somewhere else entirely, you can still point it at the project with the `CSDM_REPO_ROOT` environment variable.)
+
+### Fixed
+
+**Humanised:** The portable executable was running from a temporary unpack folder, so it could never locate the engine it needs to drive; launching the .exe gave a window that looked like an old, frozen build. Now the exe starts its engine and behaves like the development launcher.
+
+**Technical:** `resolveRepoRoot()` (`electron/main.js`) walked up from `process.execPath` looking for `csdm/bridge`. The NSIS portable stub unpacks the app to `%TEMP%` and runs it from there, so the walk could never reach the project — the engine spawned with a wrong `cwd` and died instantly, leaving the console at a bare `csdm>` prompt and the version chip absent. The walk now anchors on `PORTABLE_EXECUTABLE_DIR` (electron-builder records the launcher the user actually double-clicked there), falling back to `process.execPath` when the variable is absent, and `CSDM_REPO_ROOT` still overrides everything. Verified end-to-end by launching the packaged exe itself (CDP) and asserting the engine banner and the version chip appear.
+
+---
+
 ## 3.0.9 — 2026-08-07
 
 The log console no longer disappears when the window is narrow.

@@ -22,8 +22,15 @@ const {
  * is inside the app archive, so the same join would point at the archive's own
  * parent and `-m csdm.bridge` would resolve nothing: the window would open and
  * the engine would never start. So the packaged build walks up from the
- * executable looking for the `csdm/bridge` package, which is what keeps a
- * portable build working as long as it sits somewhere under the project.
+ * launcher's folder looking for the `csdm/bridge` package, which is what keeps
+ * a portable build working as long as it sits somewhere under the project.
+ *
+ * One twist: the portable target is an NSIS stub that unpacks the app to a
+ * temp directory and runs it from there, so `process.execPath` points inside
+ * the extraction, not at the exe the user double-clicked. electron-builder
+ * records the launcher's real folder in `PORTABLE_EXECUTABLE_DIR`; the walk
+ * starts there, and falls back to `process.execPath` only when the variable is
+ * absent (non-portable packaged builds).
  *
  * CSDM_REPO_ROOT overrides both, for a build kept anywhere else.
  */
@@ -35,7 +42,8 @@ function resolveRepoRoot() {
   if (!app.isPackaged) {
     return beside;
   }
-  let dir = path.dirname(process.execPath);
+  const anchor = process.env.PORTABLE_EXECUTABLE_DIR || path.dirname(process.execPath);
+  let dir = anchor;
   for (let depth = 0; depth < 6; depth += 1) {
     if (fs.existsSync(path.join(dir, "csdm", "bridge"))) {
       return dir;
@@ -70,9 +78,16 @@ let quitting = false; // true once before-quit has taken over the shutdown
  *
  * Priority: an explicit override (CSDM_PYTHON_PATH), then the interpreters
  * most likely to be on a Windows dev machine, then the generic names on
- * PATH. Each candidate is probed with `--version` so a name that doesn't
- * resolve to a real interpreter is skipped instead of failing later inside
- * spawn().
+ * PATH. Each candidate is probed with `-c "import psycopg2"` -- the engine's
+ * hard dependency -- so a name that resolves to an interpreter without the
+ * app's packages is skipped instead of failing later inside the engine.
+ *
+ * A `--version` probe is not enough: on this machine the Windows launcher's
+ * default (`py` -> Python 3.14) answers it while missing psycopg2, and the
+ * engine would then crash on its first database command with a bare
+ * `'NoneType' object has no attribute 'OperationalError'` (core.py guards
+ * the import with `psycopg2 = None`). Probing the real capability accepts
+ * only an interpreter that can actually run the engine.
  */
 function resolvePythonPath() {
   const candidates = [];
@@ -85,7 +100,7 @@ function resolvePythonPath() {
   candidates.push("python", "python3");
 
   for (const candidate of candidates) {
-    const probe = spawnSync(candidate, ["--version"], { windowsHide: true });
+    const probe = spawnSync(candidate, ["-c", "import psycopg2"], { windowsHide: true });
     if (!probe.error && probe.status === 0) {
       return candidate;
     }
