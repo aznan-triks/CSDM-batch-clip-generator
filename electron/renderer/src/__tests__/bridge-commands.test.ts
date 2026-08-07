@@ -30,6 +30,9 @@ function installFakeBridge() {
     pickSavePath() {
       return Promise.resolve(null);
     },
+    restartEngine() {
+      return Promise.resolve();
+    },
   };
   return {
     sent,

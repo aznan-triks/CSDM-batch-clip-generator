@@ -20,6 +20,18 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.0.7 — 2026-08-07
+
+The window now typechecks clean again.
+
+**Humanised:** Nothing visible changes in this release — it fixes the build's own hygiene so the code stays safe to maintain.
+
+### Fixed
+
+**Technical:** Three pre-existing TypeScript errors, none affecting runtime behaviour: the two test bridges (`bridge-commands.test.ts`, `AppShell.test.tsx`) lacked the `restartEngine` member of the `BridgeApi` contract; and `Tab.tsx`'s indicator-mover referenced `bar` inside a hoisted function declaration where TypeScript does not carry the null-narrowing (aliased to a narrowed const). `npm run typecheck` is green.
+
+---
+
 ## 3.0.6 — 2026-08-07
 
 Three UI polish fixes and a full overflow sweep. (User feedback 2026-08-07.)

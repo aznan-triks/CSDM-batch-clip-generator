@@ -62,11 +62,15 @@ export function TabBar({ children }: TabBarProps) {
   useEffect(() => {
     const bar = barRef.current;
     if (!bar) return;
+    // Function declarations are hoisted, so TypeScript does not carry the
+    // `bar` narrowing above into `moveIndicators`; the alias is narrowed at
+    // this point and stays `HTMLDivElement` forever (a const, never rebound).
+    const tabBar: HTMLDivElement = bar;
     const ind = bar.querySelector<HTMLElement>(".ind");
     const top = bar.querySelector<HTMLElement>(".top-ind");
 
     function moveIndicators() {
-      const activeTab = bar.querySelector<HTMLElement>(".tab.active");
+      const activeTab = tabBar.querySelector<HTMLElement>(".tab.active");
       if (!activeTab || !ind || !top) return;
       const scale = (activeTab.offsetWidth - TAB_SLANT) / IND_BASE_WIDTH;
       const tx = `translateX(${activeTab.offsetLeft}px) scaleX(${scale})`;
