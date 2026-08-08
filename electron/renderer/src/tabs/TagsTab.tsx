@@ -329,7 +329,7 @@ export default function TagsTab() {
 
         <div className="tags-toolbar">
           <Field id="tag-search" value={tagSearch} onChange={setTagSearch} placeholder="Filter tags…" />
-          <Segmented options={TAG_SORTS} value={tagSort} onChange={setTagSort} label="Sort tags" />
+          <Segmented options={TAG_SORTS} value={tagSort} onChange={(next) => setTagSort(next as TagSort)} label="Sort tags" />
         </div>
 
         <div className="chips">
