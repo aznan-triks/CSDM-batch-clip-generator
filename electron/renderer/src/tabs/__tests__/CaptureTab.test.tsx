@@ -9,6 +9,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { SettingsProvider } from "../../settings/store";
 import CaptureTab from "../CaptureTab";
+import { DatabaseProvider } from "../../settings/useDatabase";
 
 // `vi.hoisted` because `vi.mock` factories run before this file's own
 // top-level code, so a plain module-scope object declared below would not
@@ -64,7 +65,12 @@ vi.mock("../../bridge", () => ({
 async function renderTab() {
   const rendered = render(
     <SettingsProvider>
-      <CaptureTab />
+      {/* The real tree mounts DatabaseProvider above the panels in AppShell
+          (keep-alive: every tab shares one connect_db). Mirror that here so
+          the dedup the test asserts is the one production actually has. */}
+      <DatabaseProvider>
+        <CaptureTab />
+      </DatabaseProvider>
     </SettingsProvider>,
   );
   await act(async () => {});

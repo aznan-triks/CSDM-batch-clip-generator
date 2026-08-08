@@ -60,8 +60,7 @@ export interface SectionLayout {
   place(id: string, col: number, row: number): void;
   /** Change a card's span. */
   resize(id: string, colSpan: number, rowSpan: number): void;
-  /** How many columns the grid currently has (computed from the container). */
-  /** Re-read column count from the DOM. Used by the drag to compute target. */
+  /** The block size in px, read from the `--block` CSS custom property. */
   blockSize(): number;
 }
 
@@ -69,7 +68,7 @@ export interface SectionLayout {
  * Build an occupancy grid from explicit slots, returning the first free cell
  * for a card of the given span dimensions.  Scans row-by-row, left-to-right.
  */
-function autoPlace(
+export function autoPlace(
   existing: Record<string, CardSlot>,
   colSpan: number,
   rowSpan: number,
@@ -84,6 +83,9 @@ function autoPlace(
       }
     }
   }
+  // Scan a generous row budget (100): the grid has no fixed height, and
+  // this only bounds the search when the first free cell sits absurdly far
+  // down -- beyond it the fallback stacks at the bottom anyway.
   for (let row = 1; row <= 100; row++) {
     for (let col = 1; col + colSpan - 1 <= cols; col++) {
       let fits = true;
@@ -100,12 +102,15 @@ function autoPlace(
     (m, s) => Math.max(m, s.row + s.rowSpan - 1),
     0,
   );
-  return { col: 1, row: maxRow + 1, colSpan: rowSpan === 0 ? 1 : colSpan, rowSpan: rowSpan || 1 };
+  return { col: 1, row: maxRow + 1, colSpan: colSpan === 0 ? 1 : colSpan, rowSpan: rowSpan || 1 };
 }
 
 /** Migrate a pre-3.2.3 layout to the card-slot format, once. */
 function migrateLayout(layout: TabLayout | undefined, _defaultOrder: readonly string[]): TabLayout {
-  if (layout?.cards && layout.v === LAYOUT_VERSION) return layout; // already migrated
+  // Already current, or a card map exists but only the version is stale: keep
+  // the user's placement and just stamp the new version (an all-or-nothing
+  // reset would wipe every card position on the next schema bump).
+  if (layout?.cards) return layout.v === LAYOUT_VERSION ? layout : { ...layout, v: LAYOUT_VERSION };
   const cards: Record<string, CardSlot> = {};
   const oldLayout = layout as { order?: string[]; wide?: Record<string, boolean>; collapsed?: string[] } | undefined;
   const order = oldLayout?.order ?? [];
@@ -130,7 +135,12 @@ function migrateLayout(layout: TabLayout | undefined, _defaultOrder: readonly st
   return { v: LAYOUT_VERSION, cards, collapsed };
 }
 
-export function useSectionLayout(tabId: string, defaultOrder: readonly string[]): SectionLayout {
+export function useSectionLayout(
+  tabId: string,
+  defaultOrder: readonly string[],
+  /** Cards declared `.wide` by their tab; their auto-place default spans every column. */
+  wideIds?: ReadonlySet<string>,
+): SectionLayout {
   const [stored, setStored] = useSetting<UiSections>("ui_sections");
   const raw = stored?.[tabId];
   const layout = migrateLayout(raw ? { ...raw } : undefined, defaultOrder);
@@ -186,9 +196,10 @@ export function useSectionLayout(tabId: string, defaultOrder: readonly string[])
       lastColsRef.current = cols;
       const cached = autoPlaced.current[id];
       if (cached) return cached;
+      const span = wideIds?.has(id) ? cols : DEFAULT_COL_SPAN;
       const placed = autoPlace(
         knownSlots(),
-        DEFAULT_COL_SPAN,
+        span,
         DEFAULT_ROW_SPAN,
         cols || 2,
       );

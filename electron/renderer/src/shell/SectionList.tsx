@@ -51,26 +51,30 @@ function readColumnCount(): number {
   return getComputedStyle(el).gridTemplateColumns.split(" ").length;
 }
 
-/** The grid gap, kept in sync with `--block-gap` in mock-bridge.css. */
-const GRID_GAP = 10;
-
 /** Pointer → grid cell (1-indexed), clamping to the visible column count. */
 function cellFromPointer(
   moveEvent: { clientX: number; clientY: number },
   blockSize: number,
 ): { col: number; row: number } {
-  const bento = document.querySelector(".bento");
+  const bento = document.querySelector('[role="tabpanel"] .bento');
   if (!bento) return { col: 1, row: 1 };
   const rect = bento.getBoundingClientRect();
   const x = moveEvent.clientX - rect.left;
   const y = moveEvent.clientY - rect.top;
-  const col = Math.max(1, Math.min(readColumnCount(), Math.floor(x / (blockSize + GRID_GAP)) + 1));
-  const row = Math.max(1, Math.floor(y / (blockSize + GRID_GAP)) + 1);
+  // Read the real grid gap from CSS (--block-gap) instead of a second literal:
+  // one source, so changing it cannot drift from the stylesheet.
+  const gapVar = getComputedStyle(document.documentElement).getPropertyValue("--block-gap");
+  const gap = parseInt(gapVar, 10) || 0;
+  const col = Math.max(1, Math.min(readColumnCount(), Math.floor(x / (blockSize + gap)) + 1));
+  const row = Math.max(1, Math.floor(y / (blockSize + gap)) + 1);
   return { col, row };
 }
 
 export default function SectionList({ tabId, sections }: SectionListProps) {
-  const layout = useSectionLayout(tabId, sections.map((s) => s.id));
+  const wideIds = new Set(
+    sections.filter((s) => (s.element.props.className ?? "").split(/\s+/).includes("wide")).map((s) => s.id),
+  );
+  const layout = useSectionLayout(tabId, sections.map((s) => s.id), wideIds);
   const byId = new Map(sections.map((s) => [s.id, s]));
 
   // On first render the `.bento` does not exist in the DOM yet, so the

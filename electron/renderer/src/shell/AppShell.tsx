@@ -7,6 +7,7 @@ import { ICONS } from "../icons";
 import { useEngineState } from "../motion/useEngineState";
 import { useWindowActivity } from "../motion/useWindowActivity";
 import { useSetting } from "../settings/store";
+import { DatabaseProvider } from "../settings/useDatabase";
 import CaptureTab from "../tabs/CaptureTab";
 import { EditingTab } from "../tabs/EditingTab";
 import SettingsTab from "../tabs/SettingsTab";
@@ -212,6 +213,10 @@ export default function AppShell() {
               `tabpanel` role sits on the visible panel only. The `data-tab`
               backdrop attribute is driven by `active` above, unchanged. */}
           <div className="scrollwrap">
+            {/* One connect_db for every tab: keep-alive mounts all of them, so
+                the provider must sit above the panels (CaptureTab's own
+                provider would leave TagsTab fetching a second time). */}
+            <DatabaseProvider>
             {TABS.map((tab) => (
               <div
                 key={tab.id}
@@ -227,6 +232,7 @@ export default function AppShell() {
                 {tab.id === "settings" && <SettingsTab />}
               </div>
             ))}
+            </DatabaseProvider>
           </div>
           <div
             className="split-handle"

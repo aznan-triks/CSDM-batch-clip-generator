@@ -1,83 +1,45 @@
 /**
- * Block-grid section layout (3.2.3): explicit per-card column/row placement.
- *
- * The hook wraps `useSetting` so these tests verify the pure functions
- * (autoPlace, data model) rather than the React lifecycle.
+ * autoPlace (block grid): the real exported algorithm -- free-placement of a
+ * card into the first grid cell its span fits, row-major left-to-right.
  */
 import { describe, expect, it } from "vitest";
 
-/**
- * Minimal re-creation of the autoPlace algorithm for testing.
- * Copied from sectionLayout.ts to keep the test pure (no import side-effects).
- */
-interface CardSlot {
-  col: number;
-  row: number;
-  colSpan: number;
-  rowSpan: number;
-}
-
-function autoPlace(
-  existing: Record<string, CardSlot>,
-  colSpan: number,
-  rowSpan: number,
-  cols: number,
-): CardSlot {
-  const grid = new Map<string, boolean>();
-  for (const slot of Object.values(existing)) {
-    for (let r = slot.row; r < slot.row + slot.rowSpan; r++) {
-      for (let c = slot.col; c < slot.col + slot.colSpan; c++) {
-        grid.set(`${c},${r}`, true);
-      }
-    }
-  }
-  for (let row = 1; row <= 100; row++) {
-    for (let col = 1; col + colSpan - 1 <= cols; col++) {
-      let fits = true;
-      for (let dr = 0; dr < rowSpan && fits; dr++) {
-        for (let dc = 0; dc < colSpan && fits; dc++) {
-          if (grid.has(`${col + dc},${row + dr}`)) fits = false;
-        }
-      }
-      if (fits) return { col, row, colSpan, rowSpan };
-    }
-  }
-  const maxRow = Object.values(existing).reduce((m, s) => Math.max(m, s.row + s.rowSpan - 1), 0);
-  return { col: 1, row: maxRow + 1, colSpan, rowSpan };
-}
+import type { CardSlot } from "../sectionLayout";
+import { autoPlace } from "../sectionLayout";
 
 describe("autoPlace (block grid)", () => {
   it("places the first card at (1, 1)", () => {
-    const slot = autoPlace({}, 1, 1, 3);
-    expect(slot).toEqual({ col: 1, row: 1, colSpan: 1, rowSpan: 1 });
+    const slot = autoPlace({}, 3, 1, 10);
+    expect(slot).toEqual({ col: 1, row: 1, colSpan: 3, rowSpan: 1 });
   });
 
   it("places the second card beside the first", () => {
-    const a: CardSlot = { col: 1, row: 1, colSpan: 1, rowSpan: 1 };
-    const slot = autoPlace({ a }, 1, 1, 3);
-    expect(slot.col).toBe(2);
+    const a: CardSlot = { col: 1, row: 1, colSpan: 3, rowSpan: 1 };
+    const slot = autoPlace({ a }, 3, 1, 10);
+    expect(slot.col).toBe(4);
     expect(slot.row).toBe(1);
   });
 
   it("respects colSpan when auto-placing", () => {
-    const a: CardSlot = { col: 1, row: 1, colSpan: 2, rowSpan: 1 };
-    const slot = autoPlace({ a }, 1, 1, 3);
-    // a takes cols 1-2, so next free is col 3.
-    expect(slot.col).toBe(3);
+    const a: CardSlot = { col: 1, row: 1, colSpan: 3, rowSpan: 1 };
+    const b: CardSlot = { col: 4, row: 1, colSpan: 3, rowSpan: 1 };
+    const slot = autoPlace({ a, b }, 3, 1, 10);
+    // a takes 1-3, b takes 4-6 -> next 3-wide slot starts at 7.
+    expect(slot.col).toBe(7);
   });
 
   it("wraps to the next row when the current row is full", () => {
     const existing: Record<string, CardSlot> = {};
     for (let i = 0; i < 3; i++) {
-      existing[`c${i}`] = { col: i + 1, row: 1, colSpan: 1, rowSpan: 1 };
+      existing[`c${i}`] = { col: 1 + i * 3, row: 1, colSpan: 3, rowSpan: 1 };
     }
-    const slot = autoPlace(existing, 1, 1, 3);
+    const slot = autoPlace(existing, 3, 1, 10);
     expect(slot.row).toBe(2);
   });
 
-  it("fills the current row before moving to the next", () => {
-    // Card A spans rows 1-2 in col 1. Card B is row 1 col 2.
-    // Row 1 still has col 3 free, so a new card goes there first.
+  it("fills a gap left beside a short card before moving down", () => {
+    // A tall card spans rows 1-2 in col 1; a short card sits row 1 col 2.
+    // Row 1 still has free space right of the short card.
     const existing: Record<string, CardSlot> = {
       tall: { col: 1, row: 1, colSpan: 1, rowSpan: 2 },
       short: { col: 2, row: 1, colSpan: 1, rowSpan: 1 },
@@ -87,14 +49,13 @@ describe("autoPlace (block grid)", () => {
     expect(slot.row).toBe(1);
   });
 
-  it("goes to the next row once the current row is exhausted", () => {
-    // Row 1 is full; the algorithm picks row 2.
-    const existing: Record<string, CardSlot> = {
-      a: { col: 1, row: 1, colSpan: 1, rowSpan: 2 },
-      b: { col: 2, row: 1, colSpan: 1, rowSpan: 1 },
-      c: { col: 3, row: 1, colSpan: 1, rowSpan: 1 },
-    };
-    const slot = autoPlace(existing, 1, 1, 3);
-    expect(slot.row).toBe(2);
+  it("keeps a card spanning past the row inside the column budget", () => {
+    // 3-wide card on a 3-column grid fits exactly in column 1.
+    const slot = autoPlace({}, 3, 1, 3);
+    expect(slot.col).toBe(1);
+    // A 4-wide card cannot fit on a 3-column grid: falls back to stacking.
+    const slot4 = autoPlace({}, 4, 1, 3);
+    expect(slot4.col).toBe(1);
+    expect(slot4.colSpan).toBe(4);
   });
 });

@@ -58,8 +58,8 @@ function paintSpotlight(event: MouseEvent<HTMLElement>) {
  * still walk the tab by its card titles while the button becomes the row the
  * mock's rules address.
  *
- * Forwards a ref to the `<section>` itself -- SectionList's own doing
- * (menus-C's FLIP reorder animation), never read by anything decorative.
+ * Forwards a ref to the `<section>` itself -- SectionList's own doing for
+ * the block-grid placement, never read by anything decorative.
  */
 const Card = forwardRef<HTMLElement, CardProps>(function Card(
   {

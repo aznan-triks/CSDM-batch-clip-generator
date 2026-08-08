@@ -48,9 +48,9 @@ describe("drag handle", () => {
   });
 });
 
-describe("card fold", () => {
-  it("hides the body with display:none when open=false", () => {
-    expect(CSS).toMatch(/sec\[open="false"\] .sec-body/);
-    expect(CSS).toMatch(/display:\s*none/);
+describe("gesture guard", () => {
+  it("covers the workspace during a move/resize gesture", () => {
+    expect(CSS).toMatch(/\.grid-gesture-guard\s*\{/);
+    expect(CSS).toMatch(/position:\s*fixed/);
   });
 });

@@ -20,7 +20,6 @@ import Slider from "../components/Slider";
 import SectionList, { type SectionSpec } from "../shell/SectionList";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
-import { DatabaseProvider } from "../settings/useDatabase";
 import { TablesProvider } from "../settings/useTables";
 import DemoSelectionSection from "./DemoSelectionSection";
 import EventTypeSection from "./EventTypeSection";
@@ -325,11 +324,9 @@ export default function CaptureTab() {
     // section below reads the SAME fetch through `useTables`/`useDatabase`
     // instead of each triggering its own bridge command and Python thread.
     <TablesProvider>
-      <DatabaseProvider>
-        <div className="bento capture-tab">
-          <SectionList tabId="capture" sections={SECTIONS} />
-        </div>
-      </DatabaseProvider>
+      <div className="bento capture-tab">
+        <SectionList tabId="capture" sections={SECTIONS} />
+      </div>
     </TablesProvider>
   );
 }

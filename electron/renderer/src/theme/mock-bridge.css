@@ -2,7 +2,8 @@
 
 /* The card grid uses explicit per-card grid-column / grid-row set inline
    by SectionList.  The block size lives in a config key (`ui_card_block_size`)
-   and is forwarded to the CSS via a custom property on <html> by main.tsx. */
+   and is forwarded to the CSS via a custom property on <html> by
+   AppShell.tsx (useSetting("ui_card_block_size") -> --block). */
 
 html {
   --block: 96px;                /* fallback; overridden by settings store */
@@ -44,6 +45,9 @@ html {
   background: transparent;
   border: 2px dashed var(--gold);
   border-radius: var(--r-card);
+  /* Min height mirrors the shortest real card (a folded card's header +
+     a couple of controls), so a ghost dropped in an empty row reads as the
+     card it would become instead of a thin sliver. */
   min-height: 120px;
   pointer-events: none;
   z-index: 10;
@@ -77,9 +81,4 @@ html {
 }
 .drag-handle:hover {
   color: var(--gold);
-}
-
-/* ── Collapse / fold ── */
-.sec[open="false"] .sec-body {
-  display: none;
 }
