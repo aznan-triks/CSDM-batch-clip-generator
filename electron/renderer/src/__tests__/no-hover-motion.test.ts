@@ -238,7 +238,6 @@ describe("no hover rule in the SHIPPED stylesheet moves anything", () => {
 const CURSOR_DRIVEN_ALLOWLIST: readonly string[] = [
   "shell/AppShell.tsx",
   "shell/Backdrop.tsx",
-  "shell/useCardDrag.ts",
   "shell/SectionList.tsx",
   "components/Card.tsx",
   "cursor/Reticle.tsx",

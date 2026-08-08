@@ -99,7 +99,7 @@ DEFAULT_CONFIG = {
     "concatenate_sequences": False, "true_view": True,
     "tag_on_export": "", "tag_enabled": False,
     "ui_active_tags": [],
-    "ui_card_block_size": 280,
+    "ui_card_block_size": 96,
     "retry_count": 2, "retry_delay": 15, "delay_between_demos": 3,
     "recording_timeout": 0,   # minutes; 0 = disabled (kill CS2 + retry if exceeded)
     # Final assembly of all clips after batch

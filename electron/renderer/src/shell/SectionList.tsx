@@ -1,12 +1,16 @@
 /**
  * Renders one tab's cards on a block grid: every card occupies explicit
  * grid-column / grid-row cells persisted in `ui_sections`.  No auto-flow,
- * no reordering of neighbours -- drag snaps a card to a free cell, resize
- * cycles column span 1→2→3→1, row span 1→2→3→1.
+ * no reordering of neighbours.
+ *
+ *  - Drag (⠿ handle) moves a card to a free cell, snapped to the grid; a
+ *    dashed `.card-ghost` shows the target while nothing moves.
+ *  - Resize (bottom-right corner) drags the card's span: the corner follows
+ *    the pointer cell by cell, and the new col/row span is committed on
+ *    mouseup.
  */
 import {
   cloneElement,
-  useCallback,
   useRef,
   useState,
   type CSSProperties,
@@ -29,7 +33,8 @@ export interface SectionSpec {
     open?: boolean;
     onToggle?: () => void;
     dragHandle?: ReactNode;
-    onResizeToggle?: () => void;
+    /** Wired to the card's corner bracket; starts a resize drag. */
+    onResizeToggle?: (event: MouseEvent) => void;
   }>;
 }
 
@@ -45,14 +50,39 @@ function readColumnCount(): number {
   return getComputedStyle(el).gridTemplateColumns.split(" ").length;
 }
 
+/** The grid gap, kept in sync with `--block-gap` in mock-bridge.css. */
+const GRID_GAP = 10;
+
+/** Pointer → grid cell (1-indexed), clamping to the visible column count. */
+function cellFromPointer(
+  moveEvent: { clientX: number; clientY: number },
+  blockSize: number,
+): { col: number; row: number } {
+  const bento = document.querySelector(".bento");
+  if (!bento) return { col: 1, row: 1 };
+  const rect = bento.getBoundingClientRect();
+  const x = moveEvent.clientX - rect.left;
+  const y = moveEvent.clientY - rect.top;
+  const col = Math.max(1, Math.min(readColumnCount(), Math.floor(x / (blockSize + GRID_GAP)) + 1));
+  const row = Math.max(1, Math.floor(y / (blockSize + GRID_GAP)) + 1);
+  return { col, row };
+}
+
 export default function SectionList({ tabId, sections }: SectionListProps) {
   const layout = useSectionLayout(tabId, sections.map((s) => s.id));
   const byId = new Map(sections.map((s) => [s.id, s]));
 
-  // --- Drag state (targetCell is a ref so onUp always reads the latest) ---
+  // --- Drag (move) state ---
   const [dragging, setDragging] = useState<string | null>(null);
   const targetCellRef = useRef<{ col: number; row: number } | null>(null);
   const [targetCellDisplay, setTargetCellDisplay] = useState<{ col: number; row: number } | null>(null);
+
+  // --- Resize state ---
+  const [resizing, setResizing] = useState<string | null>(null);
+  const resizeOriginRef = useRef<{ col: number; row: number } | null>(null);
+  const resizePreviewRef = useRef<{ colSpan: number; rowSpan: number } | null>(null);
+  const [resizePreview, setResizePreview] = useState<{ colSpan: number; rowSpan: number } | null>(null);
+
   const nodeRefs = useRef(new Map<string, HTMLElement>());
 
   function startDrag(id: string) {
@@ -64,17 +94,9 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
       setTargetCellDisplay(initial);
 
       function onMove(moveEvent: globalThis.MouseEvent) {
-        const bento = document.querySelector(".bento");
-        if (!bento) return;
-        const rect = bento.getBoundingClientRect();
-        const bs = layout.blockSize();
-        const gap = 10;
-        const x = moveEvent.clientX - rect.left;
-        const y = moveEvent.clientY - rect.top;
-        const col = Math.max(1, Math.min(readColumnCount(), Math.floor(x / (bs + gap)) + 1));
-        const row = Math.max(1, Math.floor(y / (bs + gap)) + 1);
-        targetCellRef.current = { col, row };
-        setTargetCellDisplay({ col, row });
+        const cell = cellFromPointer(moveEvent, layout.blockSize());
+        targetCellRef.current = cell;
+        setTargetCellDisplay(cell);
       }
       function onUp() {
         window.removeEventListener("mousemove", onMove);
@@ -91,17 +113,44 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
     };
   }
 
-  const resizeCard = useCallback(
-    (id: string) => {
+  function startResize(id: string) {
+    return (event: MouseEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setResizing(id);
       const slot = layout.slot(id);
-      const nextCol = slot.colSpan >= 3 ? 1 : slot.colSpan + 1;
-      const nextRow = slot.rowSpan >= 3 ? 1 : slot.rowSpan + 1;
-      layout.resize(id, nextCol, nextRow);
-    },
-    [layout],
-  );
+      resizeOriginRef.current = { col: slot.col, row: slot.row };
+      const initial = { colSpan: slot.colSpan, rowSpan: slot.rowSpan };
+      resizePreviewRef.current = initial;
+      setResizePreview(initial);
+
+      function onMove(moveEvent: globalThis.MouseEvent) {
+        const origin = resizeOriginRef.current;
+        if (!origin) return;
+        const cell = cellFromPointer(moveEvent, layout.blockSize());
+        const colSpan = Math.max(1, cell.col - origin.col + 1);
+        const rowSpan = Math.max(1, cell.row - origin.row + 1);
+        resizePreviewRef.current = { colSpan, rowSpan };
+        setResizePreview({ colSpan, rowSpan });
+      }
+      function onUp() {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+        if (resizePreviewRef.current) {
+          layout.resize(id, resizePreviewRef.current.colSpan, resizePreviewRef.current.rowSpan);
+        }
+        setResizing(null);
+        setResizePreview(null);
+        resizeOriginRef.current = null;
+        resizePreviewRef.current = null;
+      }
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    };
+  }
 
   const allIds = sections.map((s) => s.id);
+  const anyGesture = dragging !== null || resizing !== null;
 
   return (
     <>
@@ -127,7 +176,7 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
           } as CSSProperties,
           open: !layout.isCollapsed(id),
           onToggle: () => layout.toggleCollapsed(id),
-          onResizeToggle: () => resizeCard(id),
+          onResizeToggle: startResize(id),
           dragHandle: (
             <span
               className="drag-handle"
@@ -152,6 +201,21 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
           }
         />
       )}
+      {resizing && resizePreview && (
+        <div
+          className="card-ghost card-ghost-resize"
+          aria-hidden="true"
+          style={
+            {
+              gridColumn: `${resizeOriginRef.current?.col ?? 1} / span ${resizePreview.colSpan}`,
+              gridRow: `${resizeOriginRef.current?.row ?? 1} / span ${resizePreview.rowSpan}`,
+            } as CSSProperties
+          }
+        />
+      )}
+      {/* During any gesture the grid is inert, so pointer events cannot hit
+          the ghost previews (they are also pointer-events: none). */}
+      {anyGesture && <div className="grid-gesture-guard" aria-hidden="true" />}
     </>
   );
 }

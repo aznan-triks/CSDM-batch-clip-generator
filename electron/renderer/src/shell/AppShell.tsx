@@ -101,6 +101,17 @@ export default function AppShell() {
     if (themeBg) applyMode(themeBg);
   }, [themeBg]);
 
+  // Block-grid cell size (3.2.3): the layout lives in CSS as `--block`, fed
+  // from the config key so changing `ui_card_block_size` re-tiles the grid
+  // without a rebuild. Applied on the document root like the accent/ground.
+  const [blockSize] = useSetting<number>("ui_card_block_size");
+  useEffect(() => {
+    const size = typeof blockSize === "number" && Number.isFinite(blockSize) && blockSize > 0
+      ? blockSize
+      : 96;
+    document.documentElement.style.setProperty("--block", `${size}px`);
+  }, [blockSize]);
+
   // The open tab, on the document, so the backdrop can draw a different field
   // per screen (`BACKDROP_BY_TAB` in shell/backdropField.ts). An attribute
   // rather than a prop: the canvas is a sibling of `.app`, not a child of the

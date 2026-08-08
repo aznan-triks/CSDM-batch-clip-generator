@@ -13,12 +13,25 @@ html {
 
 .bento {
   display: grid;
-  /* Column track: repeat as many blocks as fit, each at least the block size.
-     The min() prevents overflow when the pane is narrower than one block. */
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--block)), 1fr));
-  grid-auto-rows: auto;        /* rows shrink-wrap card content height */
+  /* Fixed tracks: each column is EXACTLY one block wide (--block, fed from
+     ui_card_block_size). The drag snap in SectionList computes cells from the
+     same size + gap, so the pointer lands on the rendered cells -- with fluid
+     fractional tracks the two drifted on narrow panes (council 2026-08-08).
+     Rows shrink-wrap card content; more cells than fit scroll horizontally. */
+  grid-template-columns: repeat(auto-fill, var(--block));
+  grid-auto-rows: auto;
   gap: var(--block-gap);
   align-content: start;
+  /* Cards must never stretch to the row's tallest sibling: the block grid is
+     for free placement, not equal-height columns. */
+  align-items: start;
+  /* Visible placement grid: translucent cells, like graph paper, at block
+     size. `--line` is already a muted token; the 1px strokes stay subtle. */
+  background-image:
+    repeating-linear-gradient(to right, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--block)),
+    repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--block));
+  background-size: calc(var(--block) + var(--block-gap)) calc(var(--block) + var(--block-gap));
+  background-position: 0 0;
 }
 
 /* A card with explicit grid-column/grid-row obeys those values;
@@ -35,6 +48,22 @@ html {
   pointer-events: none;
   z-index: 10;
   /* Placed in the grid by its own inline grid-column/grid-row */
+}
+
+/* The resize ghost is the same dashed outline, tinted to signal "growing the
+   card" rather than "moving it". */
+.card-ghost-resize {
+  border-color: var(--holo);
+  opacity: 0.8;
+}
+
+/* During a move/resize gesture the whole workspace is inert: it stops stray
+   pointer events from hitting cards under the ghost. */
+.grid-gesture-guard {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  cursor: grabbing;
 }
 
 /* Drag handle */

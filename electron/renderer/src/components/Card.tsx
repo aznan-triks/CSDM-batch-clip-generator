@@ -102,7 +102,8 @@ const Card = forwardRef<HTMLElement, CardProps>(function Card(
           type="button"
           className="resize-br"
           aria-label={`resize-${title}`}
-          data-action="O4" onClick={onResizeToggle}
+          data-action="O4"
+          onMouseDown={onResizeToggle}
         />
       )}
       <span className="spot" aria-hidden="true" />

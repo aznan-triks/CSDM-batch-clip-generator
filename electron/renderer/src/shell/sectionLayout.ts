@@ -14,7 +14,15 @@
 import { useSetting } from "../settings/store";
 
 /** One block = `ui_card_block_size` px (config key). */
-const DEFAULT_BLOCK = 280;
+const DEFAULT_BLOCK = 96;
+
+/**
+ * How many blocks a NEW card spans by default. Chosen so a card reads at a
+ * comfortable width for the smallest common content (a handful of controls):
+ * 3 × 96px + gaps ≈ 300px. The user then resizes from the corner.
+ */
+const DEFAULT_COL_SPAN = 3;
+const DEFAULT_ROW_SPAN = 1;
 
 export interface CardSlot {
   col: number;     // 1-indexed grid column
@@ -42,7 +50,6 @@ export interface SectionLayout {
   /** Change a card's span. */
   resize(id: string, colSpan: number, rowSpan: number): void;
   /** How many columns the grid currently has (computed from the container). */
-  columnCount(): number;
   /** Re-read column count from the DOM. Used by the drag to compute target. */
   blockSize(): number;
 }
@@ -86,7 +93,7 @@ function autoPlace(
 }
 
 /** Migrate a pre-3.2.3 layout to the card-slot format, once. */
-function migrateLayout(layout: TabLayout | undefined, defaultOrder: readonly string[]): TabLayout {
+function migrateLayout(layout: TabLayout | undefined, _defaultOrder: readonly string[]): TabLayout {
   if (layout?.cards) return layout; // already migrated
   const cards: Record<string, CardSlot> = {};
   const oldLayout = layout as { order?: string[]; wide?: Record<string, boolean>; collapsed?: string[] } | undefined;
@@ -97,7 +104,6 @@ function migrateLayout(layout: TabLayout | undefined, defaultOrder: readonly str
     cards[id] = { col: 1, row: 1, colSpan: wide[id] ? 2 : 1, rowSpan: 1 };
   }
   // Recompute positions row-by-row in declared order.
-  let row = 1;
   const cols = 3; // generous default; autoPlace ignores out-of-bounds
   for (const id of order) {
     const slot = autoPlace(
@@ -122,7 +128,7 @@ export function useSectionLayout(tabId: string, defaultOrder: readonly string[])
   function currentCards(): Record<string, CardSlot> {
     const result: Record<string, CardSlot> = {};
     for (const id of known) {
-      result[id] = layout.cards?.[id] ?? { col: 1, row: 1, colSpan: 1, rowSpan: 1 };
+      result[id] = layout.cards?.[id] ?? { col: 1, row: 1, colSpan: DEFAULT_COL_SPAN, rowSpan: DEFAULT_ROW_SPAN };
     }
     return result;
   }
@@ -135,7 +141,7 @@ export function useSectionLayout(tabId: string, defaultOrder: readonly string[])
   }
 
   // Look up the block size from the CSS custom property on <html>.
-  function blockSize(): number {
+  function readBlockSize(): number {
     if (typeof document === "undefined") return DEFAULT_BLOCK;
     const v = getComputedStyle(document.documentElement).getPropertyValue("--block");
     const n = parseInt(v, 10);
@@ -152,7 +158,7 @@ export function useSectionLayout(tabId: string, defaultOrder: readonly string[])
             return style.gridTemplateColumns.split(" ").length;
           })()
         : (stored?.[tabId]?.cards ? Math.max(...Object.values(stored[tabId].cards!).map(s => s.col + s.colSpan - 1)) : 2);
-      const slot = autoPlace(cards, 1, 1, cols || 2);
+      const slot = autoPlace(cards, DEFAULT_COL_SPAN, DEFAULT_ROW_SPAN, cols || 2);
       cards[id] = slot;
       return slot;
     },
@@ -170,20 +176,20 @@ export function useSectionLayout(tabId: string, defaultOrder: readonly string[])
 
     place(id: string, col: number, row: number): void {
       const cards = currentCards();
-      const existing = cards[id] ?? { col: 1, row: 1, colSpan: 1, rowSpan: 1 };
+      const existing = cards[id] ?? { col: 1, row: 1, colSpan: DEFAULT_COL_SPAN, rowSpan: DEFAULT_ROW_SPAN };
       cards[id] = { ...existing, col, row };
       persist(cards, layout.collapsed ?? []);
     },
 
     resize(id: string, colSpan: number, rowSpan: number): void {
       const cards = currentCards();
-      const existing = cards[id] ?? { col: 1, row: 1, colSpan: 1, rowSpan: 1 };
+      const existing = cards[id] ?? { col: 1, row: 1, colSpan: DEFAULT_COL_SPAN, rowSpan: DEFAULT_ROW_SPAN };
       cards[id] = { ...existing, colSpan: Math.max(1, colSpan), rowSpan: Math.max(1, rowSpan) };
       persist(cards, layout.collapsed ?? []);
     },
 
-    columnCount(): number {
-      return blockSize() > 0 ? Math.max(1, Math.floor((window.innerWidth * 0.7) / blockSize())) : 3;
+    blockSize(): number {
+      return readBlockSize();
     },
   };
 

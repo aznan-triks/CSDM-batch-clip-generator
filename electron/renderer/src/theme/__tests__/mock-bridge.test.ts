@@ -7,9 +7,18 @@ import { describe, expect, it } from "vitest";
 
 const CSS = readFileSync(path.join(__dirname, "..", "mock-bridge.css"), "utf-8");
 
+function block(css: string, selector: string): string {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = css.match(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`));
+  if (!match) throw new Error(`selector not found in mock-bridge.css: ${selector}`);
+  return match[1];
+}
+
 describe("block grid", () => {
-  it("uses auto-fill with the configurable --block variable, not hardcoded px", () => {
-    expect(CSS).toMatch(/grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(min\(100%,\s*var\(--block\)\),\s*1fr\)\)/);
+  it("uses auto-fill with fixed --block tracks, not fluid 1fr", () => {
+    const bentoBlock = block(CSS, ".bento");
+    expect(bentoBlock).toMatch(/grid-template-columns:\s*repeat\(auto-fill,\s*var\(--block\)\)/);
+    expect(bentoBlock).not.toMatch(/1fr/);
   });
 
   it("sets grid-auto-rows to auto so cards size to their content", () => {
