@@ -11,7 +11,7 @@
  * mocked so the component renders without its providers.
  */
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import TagsTab from "../TagsTab";
 
@@ -25,12 +25,27 @@ const DISCOVERY_FIXTURE = {
   ],
 };
 
+// Stateful store stand-in, so picking a chip actually flips `aria-pressed`/
+// `.on` (see TagsTab.test.tsx for the reasoning).
+const tagStore = vi.hoisted(() => ({ map: {} as Record<string, unknown> }));
+const lastSet = vi.hoisted(() => ({ key: null as string | null, value: null as unknown }));
+
 vi.mock("../../settings/store", () => ({
   useSetting: (key: string) => {
-    const values: Record<string, unknown> = { tag_enabled: false, date_from: "", date_to: "" };
-    return [values[key], () => {}];
+    const set = (value: unknown) => {
+      tagStore.map[key] = value;
+      lastSet.key = key;
+      lastSet.value = value;
+    };
+    return [tagStore.map[key], set];
   },
 }));
+
+beforeEach(() => {
+  tagStore.map = {};
+  lastSet.key = null;
+  lastSet.value = null;
+});
 
 vi.mock("../../bridge", () => ({
   runCommand: (command: string) => {
@@ -76,10 +91,11 @@ describe("a tag shows its colour before anyone clicks it", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "tag-Mammouth" }));
     });
+    // Toggle called the useSetting setter for ui_active_tags.
+    expect(lastSet.key).toBe("ui_active_tags");
+    expect(Array.isArray(lastSet.value)).toBe(true);
+    // The dot colour is preserved — inline style outranks any stylesheet.
     const chip = screen.getByRole("button", { name: "tag-Mammouth" });
-    expect(chip.classList.contains("on")).toBe(true);
-    // An inline style outranks any stylesheet, including the mock's
-    // `.chip.on .d { background: var(--lime-ink) }`.
     expect((chip.querySelector(".d") as HTMLElement).style.background).toBe("rgb(0, 30, 255)");
   });
 });

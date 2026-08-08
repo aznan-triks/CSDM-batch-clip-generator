@@ -97,3 +97,84 @@
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------------------------------------------------------------------------
+ * ★ Registered Accounts (Section D)
+ * A section above the search, separated from the list below by a rule. The
+ * chips themselves are the mock's `.chip` (pill, `.on` = active); only the
+ * container, the empty state and the per-chip extras are stated here.
+ * ------------------------------------------------------------------------- */
+
+.ps-registered {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding-bottom: var(--sp-3);
+  border-bottom: var(--bw) solid var(--line);
+  margin-bottom: var(--sp-3);
+}
+
+.ps-registered-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.ps-registered-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.ps-registered-empty {
+  font-style: italic;
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}
+
+/*
+ * The × inside each chip. The mock chip is a flex row with its own padding, so
+ * this is pinned to the chip's right edge and the name gets a little extra
+ * right padding to clear it. Colour change only on hover -- no motion (D13).
+ */
+.ps-registered .chip {
+  position: relative;
+  padding-right: calc(var(--sp-4) + var(--sp-2));
+}
+
+.ps-chip-del {
+  position: absolute;
+  right: var(--sp-2);
+  top: 50%;
+  transform: translateY(-50%);
+  line-height: 1;
+  font-size: var(--fs-lg);
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.ps-chip-del:hover {
+  color: var(--blood);
+}
+
+/*
+ * The ★ register button at the right end of each player row. Filled once the
+ * player is registered, gold to match the count's accent; outline otherwise.
+ * No border and no background -- it is a glyph, not a box.
+ */
+.ps-star {
+  appearance: none;
+  border: none;
+  background: transparent;
+  margin-left: auto;
+  padding: 0;
+  font-size: var(--fs-lg);
+  line-height: 1;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.ps-star:hover,
+.ps-star[aria-pressed="true"] {
+  color: var(--gold);
+}

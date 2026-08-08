@@ -1,5 +1,8 @@
 /**
- * The reorder drag hook must not fire on the wrong pointer target, or miss the drop.
+ * The reorder drag hook must not fire on the wrong pointer target, or miss
+ * the drop -- and since 2026-08-08 (workspace-vivant §A2) it must NOT reorder
+ * while the pointer moves at all: it tracks the target for the placeholder,
+ * and commits `reorder` exactly once, on mouseup (or never, on Escape).
  */
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -19,7 +22,7 @@ describe("useCardDrag", () => {
     document.elementFromPoint = originalElementFromPoint;
   });
 
-  it("reorders on the first mousemove that resolves a different target", () => {
+  it("does NOT reorder on mousemove, only on mouseup", () => {
     const reorder = vi.fn();
     const { result } = renderHook(() => useCardDrag(reorder));
     const resolveTargetId = () => "b";
@@ -29,11 +32,20 @@ describe("useCardDrag", () => {
       window.dispatchEvent(new MouseEvent("mousemove", { clientX: 1, clientY: 1 }));
     });
 
+    // Preview: no commit while moving.
+    expect(reorder).not.toHaveBeenCalled();
+    // ...but the target is tracked so the placeholder can follow.
+    expect(result.current.currentTargetId).toBe("b");
+
+    act(() => {
+      window.dispatchEvent(new MouseEvent("mouseup"));
+    });
+
     expect(reorder).toHaveBeenCalledTimes(1);
     expect(reorder).toHaveBeenCalledWith("a", "b");
   });
 
-  it("does not reorder again while the pointer stays over the same target", () => {
+  it("commits exactly once even over many moves and repeats on the same target", () => {
     const reorder = vi.fn();
     const { result } = renderHook(() => useCardDrag(reorder));
     const resolveTargetId = () => "b";
@@ -42,12 +54,21 @@ describe("useCardDrag", () => {
       result.current.startDrag("a", resolveTargetId)({ preventDefault: () => {} } as never);
       window.dispatchEvent(new MouseEvent("mousemove", { clientX: 1, clientY: 1 }));
       window.dispatchEvent(new MouseEvent("mousemove", { clientX: 2, clientY: 2 }));
+      window.dispatchEvent(new MouseEvent("mousemove", { clientX: 3, clientY: 3 }));
+    });
+
+    expect(reorder).not.toHaveBeenCalled();
+    expect(result.current.currentTargetId).toBe("b");
+
+    act(() => {
+      window.dispatchEvent(new MouseEvent("mouseup"));
     });
 
     expect(reorder).toHaveBeenCalledTimes(1);
+    expect(reorder).toHaveBeenCalledWith("a", "b");
   });
 
-  it("reorders again once the pointer moves onto a new target", () => {
+  it("commits the FINAL target the pointer settled on, not an intermediate one", () => {
     const reorder = vi.fn();
     const { result } = renderHook(() => useCardDrag(reorder));
     let target = "b";
@@ -58,14 +79,48 @@ describe("useCardDrag", () => {
       window.dispatchEvent(new MouseEvent("mousemove"));
       target = "c";
       window.dispatchEvent(new MouseEvent("mousemove"));
+      window.dispatchEvent(new MouseEvent("mousemove"));
     });
 
-    expect(reorder).toHaveBeenCalledTimes(2);
-    expect(reorder).toHaveBeenNthCalledWith(1, "a", "b");
-    expect(reorder).toHaveBeenNthCalledWith(2, "a", "c");
+    expect(reorder).not.toHaveBeenCalled();
+    expect(result.current.currentTargetId).toBe("c");
+
+    act(() => {
+      window.dispatchEvent(new MouseEvent("mouseup"));
+    });
+
+    expect(reorder).toHaveBeenCalledTimes(1);
+    expect(reorder).toHaveBeenCalledWith("a", "c");
   });
 
-  it("stops listening after mouseup", () => {
+  it("Escape cancels the gesture without reordering", () => {
+    const reorder = vi.fn();
+    const { result } = renderHook(() => useCardDrag(reorder));
+    const resolveTargetId = () => "b";
+
+    act(() => {
+      result.current.startDrag("a", resolveTargetId)({ preventDefault: () => {} } as never);
+      window.dispatchEvent(new MouseEvent("mousemove", { clientX: 1, clientY: 1 }));
+    });
+
+    expect(result.current.currentTargetId).toBe("b");
+
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    });
+
+    expect(reorder).not.toHaveBeenCalled();
+    expect(result.current.draggedId).toBeNull();
+    expect(result.current.currentTargetId).toBeNull();
+
+    // After cancel, listeners are removed: a later mouseup must not commit.
+    act(() => {
+      window.dispatchEvent(new MouseEvent("mouseup"));
+    });
+    expect(reorder).not.toHaveBeenCalled();
+  });
+
+  it("stops listening after mouseup -- a later mousemove does not re-commit", () => {
     const reorder = vi.fn();
     const { result } = renderHook(() => useCardDrag(reorder));
     const resolveTargetId = () => "b";
@@ -77,9 +132,10 @@ describe("useCardDrag", () => {
     });
 
     expect(reorder).not.toHaveBeenCalled();
+    expect(result.current.draggedId).toBeNull();
   });
 
-  it("never resolves a target when the hit element is null", () => {
+  it("never commits when the hit element never resolves a target", () => {
     const reorder = vi.fn();
     const { result } = renderHook(() => useCardDrag(reorder));
     const resolveTargetId = () => null;
@@ -87,6 +143,23 @@ describe("useCardDrag", () => {
     act(() => {
       result.current.startDrag("a", resolveTargetId)({ preventDefault: () => {} } as never);
       window.dispatchEvent(new MouseEvent("mousemove"));
+      window.dispatchEvent(new MouseEvent("mouseup"));
+    });
+
+    expect(reorder).not.toHaveBeenCalled();
+  });
+
+  it("does not commit when dropped back on the dragged card itself", () => {
+    const reorder = vi.fn();
+    const { result } = renderHook(() => useCardDrag(reorder));
+    // The gesture starts with the target = the dragged id; if it never leaves
+    // that card, mouseup is a no-op drop.
+    const resolveTargetId = () => "a";
+
+    act(() => {
+      result.current.startDrag("a", resolveTargetId)({ preventDefault: () => {} } as never);
+      window.dispatchEvent(new MouseEvent("mousemove"));
+      window.dispatchEvent(new MouseEvent("mouseup"));
     });
 
     expect(reorder).not.toHaveBeenCalled();

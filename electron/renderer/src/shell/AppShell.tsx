@@ -193,12 +193,29 @@ export default function AppShell() {
             } as CSSProperties
           }
         >
-          <div className="scrollwrap" role="tabpanel" aria-label={active}>
-            {active === "capture" && <CaptureTab />}
-            {active === "editing" && <EditingTab />}
-            {active === "tags" && <TagsTab />}
-            {active === "video" && <VideoTab />}
-            {active === "settings" && <SettingsTab />}
+          {/* Keep-alive (workspace-vivant §B.1, AUDIT_tabs-state.md #2): every
+              tab stays MOUNTED so its local state (tags selected, search, page,
+              sort, results) survives a switch; the inactive ones are hidden,
+              not unmounted. `hidden` = display:none, `inert` removes the
+              hidden panel from tab order and the accessibility tree, and the
+              `tabpanel` role sits on the visible panel only. The `data-tab`
+              backdrop attribute is driven by `active` above, unchanged. */}
+          <div className="scrollwrap">
+            {TABS.map((tab) => (
+              <div
+                key={tab.id}
+                hidden={active !== tab.id}
+                inert={active !== tab.id}
+                role={active === tab.id ? "tabpanel" : undefined}
+                aria-label={active === tab.id ? tab.label : undefined}
+              >
+                {tab.id === "capture" && <CaptureTab />}
+                {tab.id === "editing" && <EditingTab />}
+                {tab.id === "tags" && <TagsTab />}
+                {tab.id === "video" && <VideoTab />}
+                {tab.id === "settings" && <SettingsTab />}
+              </div>
+            ))}
           </div>
           <div
             className="split-handle"

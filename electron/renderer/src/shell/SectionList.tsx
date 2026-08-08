@@ -12,7 +12,15 @@
  * delivery once the element under the cursor moves out from under it, and
  * that is exactly what a live reorder needs to do on every card it passes.
  */
-import { cloneElement, useLayoutEffect, useRef, type MouseEvent, type ReactElement, type ReactNode } from "react";
+import {
+  cloneElement,
+  Fragment,
+  useLayoutEffect,
+  useRef,
+  type MouseEvent,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 
 import { useSectionLayout } from "./sectionLayout";
 import { useCardDrag } from "./useCardDrag";
@@ -120,7 +128,8 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
     prevRects.current = rects;
   });
 
-  const { startDrag } = useCardDrag(reorder);
+  const { startDrag, draggedId, currentTargetId } = useCardDrag(reorder);
+  const isDragging = draggedId !== null;
 
   /** No `.style.*` write here -- a plain lookup in the FLIP effect's own ref map. */
   function resolveTargetId(element: Element): string | null {
@@ -137,13 +146,25 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
         if (!spec) return null;
         const defaultWide = declaredWide(spec.element.props.className);
         const wide = wideOverride(id) ?? defaultWide;
-        return cloneElement(spec.element, {
+        const ghost = id === draggedId;
+        // The drop slot: `reorder` inserts the dragged card immediately
+        // BEFORE its target, so the placeholder sits right ahead of the
+        // current target's own card. Nothing while the pointer hovers the
+        // dragged card itself (target === dragged means "drop here" = no-op).
+        const showPlaceholderBefore =
+          isDragging && currentTargetId === id && currentTargetId !== draggedId;
+        const className = withWideClass(spec.element.props.className, wide);
+        const card = cloneElement(spec.element, {
           key: id,
           ref: (el: HTMLElement | null) => {
             if (el) nodeRefs.current.set(id, el);
             else nodeRefs.current.delete(id);
           },
-          className: withWideClass(spec.element.props.className, wide),
+          // The ghost (dragged card, still at its ORIGINAL grid slot) is
+          // dimmed and click-through so the placeholder reads as the real
+          // target. `.is-dragging` is a static rule (mock-bridge.css), not a
+          // `:hover` one, so no-hover-motion.test.ts is untouched.
+          className: ghost ? `${className} is-dragging` : className,
           open: !isCollapsed(id),
           onToggle: () => toggleCollapsed(id),
           onResizeToggle: () => toggleWide(id, wide),
@@ -158,6 +179,12 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
             </span>
           ),
         });
+        return (
+          <Fragment key={id}>
+            {showPlaceholderBefore && <div className="card-placeholder" />}
+            {card}
+          </Fragment>
+        );
       })}
     </>
   );

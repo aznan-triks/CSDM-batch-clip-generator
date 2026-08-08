@@ -57,6 +57,9 @@ interface RawDiscovery {
 interface DatabaseValue {
   database: DatabaseInfo | null;
   error: string | null;
+  /** Re-runs `connect_db` and updates the shared state, so every `useDatabase()`
+   *  caller under the same provider sees the fresh payload. */
+  reload: () => void;
 }
 
 const DatabaseContext = createContext<DatabaseValue | null>(null);
@@ -73,6 +76,9 @@ const DatabaseContext = createContext<DatabaseValue | null>(null);
 function useDatabaseFetch(skip: boolean): DatabaseValue {
   const [database, setDatabase] = useState<DatabaseInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Bumped by `reload()` so the effect below re-runs `connect_db` on demand,
+  // the whole reason `DatabaseProvider` fetches exactly once on mount.
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     if (skip) return;
@@ -97,9 +103,14 @@ function useDatabaseFetch(skip: boolean): DatabaseValue {
     return () => {
       cancelled = true;
     };
-  }, [skip]);
+  }, [skip, revision]);
 
-  return { database, error };
+  function reload() {
+    setError(null);
+    setRevision((n) => n + 1);
+  }
+
+  return { database, error, reload };
 }
 
 /** Fetches `connect_db` once and shares it with every `useDatabase()` call underneath. */

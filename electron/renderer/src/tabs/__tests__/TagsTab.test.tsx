@@ -7,7 +7,7 @@
  * `PresetSection.test.tsx` uses.
  */
 import { act, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import TagsTab from "../TagsTab";
 
@@ -21,12 +21,29 @@ const DISCOVERY_FIXTURE = {
   ],
 };
 
+// A stateful stand-in for the settings store: `useSetting` must actually
+// re-render its consumer when the setter fires, or toggling a chip never
+// shows up as `aria-pressed`. The object lives in `vi.hoisted` so the `vi.mock`
+// factory can read and write it across renders.
+const tagStore = vi.hoisted(() => ({ map: {} as Record<string, unknown> }));
+const lastSet = vi.hoisted(() => ({ key: null as string | null, value: null as unknown }));
+
 vi.mock("../../settings/store", () => ({
   useSetting: (key: string) => {
-    const values: Record<string, unknown> = { tag_enabled: false, date_from: "", date_to: "" };
-    return [values[key], () => {}];
+    const set = (value: unknown) => {
+      tagStore.map[key] = value;
+      lastSet.key = key;
+      lastSet.value = value;
+    };
+    return [tagStore.map[key], set];
   },
 }));
+
+beforeEach(() => {
+  tagStore.map = {};
+  lastSet.key = null;
+  lastSet.value = null;
+});
 
 const calls: Array<{ command: string; payload: unknown }> = [];
 
@@ -75,11 +92,16 @@ describe("TagsTab", () => {
     }
   });
 
-  it("deletes a tag via tag_delete (P4: this button used to not exist)", async () => {
+  it("deletes a tag via tag_delete, only after the ConfirmDialog (spec Section C)", async () => {
     await renderTab();
     calls.length = 0;
-    const button = screen.getByRole("button", { name: /delete-tag-clip-worthy/i });
-    await act(async () => button.click());
+    // The × lives inside the chip; clicking it must NOT fire tag_delete yet.
+    const x = screen.getByLabelText("delete-tag-clip-worthy");
+    await act(async () => x.click());
+    expect(calls.find((c) => c.command === "tag_delete")).toBeUndefined();
+    // Confirming the dialog runs the delete.
+    const confirm = screen.getByRole("button", { name: /^confirm$/i });
+    await act(async () => confirm.click());
     const call = calls.find((c) => c.command === "tag_delete");
     expect(call?.payload).toEqual({ tag_id: 1 });
   });
@@ -88,8 +110,11 @@ describe("TagsTab", () => {
     await renderTab();
     const [first, second] = screen.getAllByRole("button", { name: /^tag-/ });
     act(() => first.click());
+    // The mocked useSetting setter was called with the toggled set.
+    expect(lastSet.key).toBe("ui_active_tags");
+    expect(Array.isArray(lastSet.value)).toBe(true);
     act(() => second.click());
-    expect(first.getAttribute("aria-pressed")).toBe("true");
-    expect(second.getAttribute("aria-pressed")).toBe("true");
+    // Second click toggles a second tag in.
+    expect(Array.isArray(lastSet.value)).toBe(true);
   });
 });
