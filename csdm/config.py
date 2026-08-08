@@ -73,6 +73,7 @@ DEFAULT_CONFIG = {
     "theme_accent": "green", # accent preset or custom hex: green | blue | orange | purple | red | cyan | pink | yellow | #rrggbb
     "ui_font_family": "auto", # "auto" = first available of UI_FONT_STACK; or a forced name (e.g. "JetBrains Mono")
     "steam_id": "", "player_name": "", "player_name_override": "",
+    "saved_players": [],
     # Event model (2-axis: Actor/Target × Lethal/Non-lethal/Other)
     "event_actor": True,      # Actor perspective — I am the one acting
     "event_target": False,    # Target perspective — I am the one acted upon
@@ -97,6 +98,7 @@ DEFAULT_CONFIG = {
     "death_notices_duration": 5, "show_only_death_notices": True,
     "concatenate_sequences": False, "true_view": True,
     "tag_on_export": "", "tag_enabled": False,
+    "ui_active_tags": [],
     "retry_count": 2, "retry_delay": 15, "delay_between_demos": 3,
     "recording_timeout": 0,   # minutes; 0 = disabled (kill CS2 + retry if exceeded)
     # Final assembly of all clips after batch
