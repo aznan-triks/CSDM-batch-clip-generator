@@ -5,10 +5,11 @@
  * database's player list, multi-selection by click, active players tracked as
  * a set. The window's own widget also manages a separate "registered
  * accounts" file (`load_saved_players`/`save_saved_players`) with its own
- * ordering and a dedicated search-then-★-to-register flow; that persistence
- * layer is not ported here (see the task report's Écarts) -- this section
- * keeps the multi-select core (`get_steam_ids`/`get_steam_id`/`get_name`)
- * without it, which is enough to drive a run.
+ * ordering and a dedicated search-then-★-to-register flow. That flow is ported
+ * here as the ★ Registered Accounts section (Section D), persisted under the
+ * `saved_players` config key instead of a sidecar JSON file -- one store, one
+ * place, migrated by `_migrate_config`. Each DB row below also carries its own
+ * ★ to register/unregister the player.
  *
  * `steam_ids` is the real source of truth (core.py line 1804: `cfg.get(
  * "steam_ids") or ([cfg["steam_id"]] if cfg.get("steam_id") else [])`), the
@@ -18,7 +19,7 @@
  * 401-403) does -- `steam_id` is not itself a separate control (the window
  * never drew one either): the active-player readout below IS its display.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import Field from "../components/Field";
 import Segmented from "../components/Segmented";
@@ -48,6 +49,21 @@ export const PLAYER_LIST = {
 } as const;
 
 type Order = (typeof PLAYER_LIST.orders)[number];
+
+/** One registered account, persisted under the `saved_players` config key. */
+export type SavedPlayer = { steam_id: string; name: string };
+
+/**
+ * Move the element at `from` so it sits at `to` (Section D drag reorder).
+ * The chips are a plain inline-flex row, so reordering is an index swap in
+ * the same array -- no layout animation, no ghost layer.
+ */
+function reorder(list: SavedPlayer[], from: number, to: number): SavedPlayer[] {
+  const next = [...list];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
 
 function matches(row: PlayerRow, query: string): boolean {
   const [, steamId, name] = row;
@@ -80,7 +96,27 @@ export default function PlayerSection() {
   const { database } = useDatabase();
   const [search, setSearch] = useState("");
   const [steamIds] = useSetting<string[]>("steam_ids");
+  const [savedRaw, setSavedPlayers] = useSetting<SavedPlayer[]>("saved_players");
   const setMany = useSettingsBatch();
+
+  // `saved_players` is a fresh key with an empty default; a config written by
+  // an older build simply has no entry, so treat anything non-array as empty.
+  const savedPlayers = Array.isArray(savedRaw) ? savedRaw : [];
+
+  // Section D drag reorder: the chips are a plain inline-flex row, so the
+  // whole drag lives in two indices -- where the pointer grabbed and where it
+  // currently hovers. While dragging, the array is rendered pre-committed to
+  // the hover slot (a live preview, no ghost layer); on mouse-up the swap is
+  // persisted. `suppressClick` swallows the toggle that a finished drag would
+  // otherwise fire (a drag is a mousedown+mouseup, and the chip also toggles
+  // on click).
+  const [dragFrom, setDragFrom] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
+  const suppressClick = useRef(false);
+  const dragPreview =
+    dragFrom !== null && dragOver !== null && dragFrom !== dragOver
+      ? reorder(savedPlayers, dragFrom, dragOver)
+      : savedPlayers;
 
   const [sortBy, setSortBy] = useState<Order>("name");
   const [page, setPage] = useState(0);
@@ -123,6 +159,30 @@ export default function PlayerSection() {
     activate(active.includes(steamId) ? active.filter((s) => s !== steamId) : [...active, steamId]);
   }
 
+  /** ★ per DB row: add the player to (or remove them from) the saved accounts. */
+  function toggleRegister(steamId: string, name: string) {
+    setSavedPlayers(
+      savedPlayers.some((p) => p.steam_id === steamId)
+        ? savedPlayers.filter((p) => p.steam_id !== steamId)
+        : [...savedPlayers, { steam_id: steamId, name }],
+    );
+  }
+
+  /** × on a registered chip: forget the account (reversible, no confirmation). */
+  function removeSaved(steamId: string) {
+    setSavedPlayers(savedPlayers.filter((p) => p.steam_id !== steamId));
+  }
+
+  /** End a drag: persist the hover preview order, or do nothing if it never moved. */
+  function commitDrag() {
+    if (dragFrom === null) return;
+    if (dragOver !== null && dragFrom !== dragOver) {
+      setSavedPlayers(reorder(savedPlayers, dragFrom, dragOver));
+    }
+    setDragFrom(null);
+    setDragOver(null);
+  }
+
   const activeRow = rows.find((row) => row[1] === active[0]);
   const activeLabel =
     active.length === 0
@@ -133,6 +193,79 @@ export default function PlayerSection() {
 
   return (
     <div className="player-section">
+      {/* ★ Registered Accounts -- the saved-player chips. Wrapped in
+          SettingControl so the coverage guard sees `saved_players` reach the
+          screen; it is a marker only, no visual box. */}
+      <SettingControl settingKey="saved_players">
+        <div className="ps-registered">
+          <div className="ps-registered-header">
+            <span className="lab">★ Registered Accounts</span>
+            <span className="lab ps-count">{savedPlayers.length} registered</span>
+          </div>
+          <div className="ps-registered-chips">
+            {savedPlayers.length === 0 && (
+              <span className="ps-registered-empty">
+                None. Select a player below and click ★ to register.
+              </span>
+            )}
+            {dragPreview.map((p, i) => {
+              const isActive = active.includes(p.steam_id);
+              return (
+                <button
+                  key={p.steam_id}
+                  type="button"
+                  className={isActive ? "chip on" : "chip"}
+                  aria-pressed={isActive}
+                  onMouseDown={(e) => {
+                    if (e.button !== 0) return;
+                    e.preventDefault();
+                    setDragFrom(i);
+                    setDragOver(i);
+                  }}
+                  onMouseMove={(e) => {
+                    if (dragFrom === null) return;
+                    e.preventDefault();
+                    suppressClick.current = true;
+                    if (i !== dragOver) setDragOver(i);
+                  }}
+                  onMouseUp={(e) => {
+                    if (dragFrom === null) return;
+                    e.preventDefault();
+                    commitDrag();
+                  }}
+                  onClick={() => {
+                    // A finished drag is also a click; swallow it so it does
+                    // not toggle the account it just moved.
+                    if (suppressClick.current) {
+                      suppressClick.current = false;
+                      return;
+                    }
+                    const next = isActive
+                      ? active.filter((s) => s !== p.steam_id)
+                      : [...active, p.steam_id];
+                    activate(next);
+                  }}
+                >
+                  <span className="d" aria-hidden="true" />
+                  {p.name}
+                  <span
+                    className="ps-chip-del"
+                    aria-label={`Unregister ${p.name}`}
+                    role="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeSaved(p.steam_id);
+                    }}
+                  >
+                    ×
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </SettingControl>
+
       {/* One row: who is active, and the box that narrows the list. The mock
           keeps its own "+ add player" field on the row beside the player
           pills, capped rather than spanning the card -- a search box as wide
@@ -198,19 +331,38 @@ export default function PlayerSection() {
             {visible.length === 0 && <p className="capture-hint">No player matches.</p>}
             {visible.map((row) => {
               const [label, steamId] = row;
+              const name = row[2];
               const isActive = active.includes(steamId);
+              const isRegistered = savedPlayers.some((p) => p.steam_id === steamId);
               return (
-                <button
+                // A div, not a button: the row carries its own register ★
+                // button, and HTML forbids a button inside a button. The row's
+                // checkbox role keeps the active-toggle semantics intact; the
+                // ★ is a sibling that stopPropagation's away from it.
+                <div
                   key={steamId}
-                  type="button"
                   role="checkbox"
                   aria-checked={isActive}
                   className={isActive ? "ps-row ps-row-active" : "ps-row"}
-                  data-action="N10" onClick={() => toggle(steamId)}
+                  data-action="N10"
+                  onClick={() => toggle(steamId)}
                 >
                   <span className="ps-dot" aria-hidden="true" />
                   <span className="ps-label">{label}</span>
-                </button>
+                  <button
+                    type="button"
+                    className="ps-star"
+                    aria-label={isRegistered ? "Remove from accounts" : "Add to accounts"}
+                    aria-pressed={isRegistered}
+                    data-action="N11"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleRegister(steamId, name);
+                    }}
+                  >
+                    {isRegistered ? "★" : "☆"}
+                  </button>
+                </div>
               );
             })}
           </div>

@@ -1,8 +1,5 @@
 /* Same reasoning as `.capture-tab` (CaptureTab.css): backfill short rows
    instead of leaving a gap beside them. */
-.settings-tab {
-  grid-auto-flow: dense;
-}
 
 .settings-hint {
   font-family: var(--font-display);

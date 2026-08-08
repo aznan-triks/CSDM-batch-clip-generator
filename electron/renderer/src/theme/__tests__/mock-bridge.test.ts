@@ -24,8 +24,16 @@ describe("bento rows do not stretch every card to the tallest one", () => {
     expect(block(CSS, ".bento")).toMatch(/align-items:\s*start;/);
   });
 
-  it("does not touch grid-template-columns or .wide -- those stay the mock's", () => {
-    expect(CSS).not.toMatch(/grid-template-columns/);
+  it("replaces the mock's fixed columns with the adaptive track, but never .wide", () => {
+    // The adaptive grid (workspace-vivant §A1, 2026-08-08) is the one
+    // approved exception to "the mock owns grid-template-columns": the bridge
+    // swaps the mock's frozen `1fr 1fr` for `repeat(auto-fit, …)`. Everything
+    // else about the grid stays the mock's -- notably `.wide` is never
+    // redefined here (there are two `.bento` blocks, so the adaptive track is
+    // matched against the whole file, not the first block).
+    expect(CSS).toMatch(
+      /grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(min\(100%,\s*400px\),\s*1fr\)\)/,
+    );
     expect(CSS).not.toMatch(/^\.wide\s*\{/m);
   });
 });

@@ -71,6 +71,43 @@
   align-items: start;
 }
 
+/* MEASURED (2026-08-08, workspace-vivant design §A1, user feedback: "a fixed
+   2-column grid leaves an empty gap under short cards; I want a space to fill
+   freely"): mock-v12.css's `.bento` is a hard `grid-template-columns:1fr 1fr`
+   (mock-v12.css:104) -- the mock's static demo never resizes, so it never
+   needed to. `repeat(auto-fit, minmax(min(100%, 400px), 1fr))` makes the
+   grid adaptive: a narrow pane gets 1 column, a normal one 2, a very wide
+   one 3 or more. `min(100%, 400px)` is the "named constant" floor (the same
+   layout-parameter category as BEFORE_RANGE in CaptureTab.tsx) expressed
+   inline because CSS has no arithmetic constants; 400px is the minimum track
+   a card needs to stay usable. `.wide` keeps its own meaning (`grid-column:
+   1/-1`) untouched -- it still spans every track. */
+.bento {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
+}
+
+/* MEASURED (2026-08-08, workspace-vivant design §A2): the holographic drag
+   preview. During a drag SectionList keeps the dragged card in its ORIGINAL
+   grid slot and dims it, and paints a dashed `.card-placeholder` at the slot
+   the card would land in (before the current pointer target). Both are static
+   rules -- no `:hover`, no `:active` -- so no-hover-motion.test.ts's
+   pointer-driven carve-out is untouched; the drag is a mousemove listener in
+   useCardDrag, exactly like the console-resize handle. */
+.bento .sec.is-dragging {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.card-placeholder {
+  border: 1px dashed var(--line-hi);
+  border-radius: var(--radius);
+  /* Tall enough to read as a card slot in the grid (cards vary in height;
+     a closed card is roughly this tall). The grid's `align-items:start`
+     (above) lets the slot keep its box. */
+  min-height: 6.5em;
+  opacity: 0.5;
+}
+
 /* MEASURED (2026-08-04, card fold motion, user report: "the nav pane moves
    to reposition itself, it's epileptic"): mock-v12.css's `.scrollwrap` scrolls
    with the browser's default scroll anchoring (`overflow-anchor: auto`).

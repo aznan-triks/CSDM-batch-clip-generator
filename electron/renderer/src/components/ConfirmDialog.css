@@ -1,0 +1,54 @@
+/*
+ * The confirmation overlay -- the console's `#ask-panel` (LogConsole.css)
+ * lifted out of the console column and up over the whole window.
+ *
+ * The backdrop is the one thing the ask panel never needed: it was one row
+ * inside the console, so it had nothing to dim. As a modal it covers the
+ * window, so the ground behind it must drop away or the reader's eye stays on
+ * the card the dialog is protecting.
+ */
+.confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/*
+ * The dialog box wears the mock's glass surface -- `--surface` fill, `--border`
+ * hairline, `--r-card` radius and `--shadow` lift -- the same tokens the
+ * console's ask panel reads, so a confirm reads as the window talking, not a
+ * stranger's alert.
+ */
+.confirm-dialog {
+  width: min(420px, 90vw);
+  padding: var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+
+.confirm-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--txt);
+  margin: 0 0 var(--sp-2);
+}
+
+.confirm-message {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+  margin: 0 0 var(--sp-4);
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+}

@@ -6,17 +6,26 @@
  * (`csdm/bridge/host.py`'s `_cmd_tags_*`/`_cmd_tag_*`, backed by the engine
  * methods in `csdm/engine/core.py`) -- no tag logic is reimplemented here.
  *
- * The tag list itself comes from `useDatabase()` (`connect_db`'s `tags`
- * field), the same source `discover_database` already fills for the Capture
- * tab's other sections -- not a dedicated fetch, so Reload is just another
- * `connect_db` round trip.
+ * The tag list comes from `useDatabase()` (`connect_db`'s `tags` field), the
+ * same source `discover_database` already fills for the Capture tab's other
+ * sections. Reload, and the refresh after create/delete/import, go through
+ * `useDatabase().reload()` so the shared state actually updates -- the naked
+ * `connect_db` the old code fired did nothing visible, which is the bug
+ * AUDIT_tabs-state.md pinned.
+ *
+ * The active-tag selection is persisted under `ui_active_tags` (spec
+ * Section C): the chips write it through the settings store, which saves it to
+ * disk, instead of a `useState` that dies with the tab. The search text and
+ * sort are view state, kept alive by tab keep-alive but never written to disk.
  */
 import { useEffect, useState } from "react";
 
 import Card from "../components/Card";
 import Chip from "../components/Chip";
-import { ICONS } from "../icons";
+import ConfirmDialog from "../components/ConfirmDialog";
 import Field from "../components/Field";
+import Segmented from "../components/Segmented";
+import { ICONS } from "../icons";
 import { pickPath, pickSavePath, runCommand } from "../bridge";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
@@ -45,6 +54,11 @@ const TAG_COLOR_PRESETS = [
   "#6b7280", "#a855f7", "#e11d48", "#0891b2", "#65a30d",
 ] as const;
 
+/** Sort orders for the tag grid (view state, never persisted). */
+type TagSort = "name" | "color" | "active-first";
+
+const TAG_SORTS: readonly TagSort[] = ["name", "color", "active-first"];
+
 interface RangeResult {
   date_start: string | null;
   date_end: string | null;
@@ -52,18 +66,34 @@ interface RangeResult {
   demo_count: number;
 }
 
+/** A tag whose × was clicked, waiting on the ConfirmDialog. */
+interface PendingTagDelete {
+  tagId: number | string;
+  tagName: string;
+}
+
 export default function TagsTab() {
-  const { database, error: dbError } = useDatabase();
+  const { database, error: dbError, reload } = useDatabase();
   const tags = database?.tags ?? [];
 
   const [tagEnabled, setTagEnabled] = useSetting<boolean>("tag_enabled");
   const [, setDateFrom] = useSetting<string>("date_from");
   const [, setDateTo] = useSetting<string>("date_to");
 
-  const [activeTagIds, setActiveTagIds] = useState<Set<number | string>>(new Set());
+  // Persisted selection. The store holds arrays, so the `Set` the old state
+  // kept is replaced by `includes`/`filter` over the array instead.
+  const [activeTagIdsSetting, setActiveTagIds] = useSetting<Array<number | string>>("ui_active_tags");
+  const activeTagIds: Array<number | string> = activeTagIdsSetting ?? [];
+
   const [creating, setCreating] = useState(false);
   const [newTagName, setNewTagName] = useState("");
   const [newTagColor, setNewTagColor] = useState<string>(TAG_COLOR_PRESETS[0]);
+
+  const [tagSearch, setTagSearch] = useState("");
+  const [tagSort, setTagSort] = useState<TagSort>("name");
+
+  const [pendingDelete, setPendingDelete] = useState<PendingTagDelete | null>(null);
+  const [pendingRemove, setPendingRemove] = useState(false);
 
   const [range, setRange] = useState<RangeResult | null>(null);
   const [rangeStatus, setRangeStatus] = useState("");
@@ -72,49 +102,49 @@ export default function TagsTab() {
   const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
   const [opStatus, setOpStatus] = useState("");
 
-  const activeTagNames = tags.filter((t) => activeTagIds.has(t[0])).map((t) => t[1]);
+  const activeTagNames = tags.filter((t) => activeTagIds.includes(t[0])).map((t) => t[1]);
 
   useEffect(() => {
-    runCommand("tags_set_active", { tag_ids: [...activeTagIds] }).catch(() => {});
+    runCommand("tags_set_active", { tag_ids: activeTagIdsSetting ?? [] }).catch(() => {});
     // The engine's active-tag set only ever needs to mirror this tab's own
     // selection -- nothing else reads or drives it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTagIds]);
+  }, [activeTagIdsSetting]);
+
+  /** Search by name, case-insensitive; then order by the chosen sort. */
+  const visibleTags = [...tags]
+    .filter(([, name]) => name.toLowerCase().includes(tagSearch.toLowerCase()))
+    .sort((a, b) => {
+      if (tagSort === "name") return a[1].localeCompare(b[1]);
+      if (tagSort === "color") return a[2].localeCompare(b[2]);
+      const aActive = activeTagIds.includes(a[0]) ? 0 : 1;
+      const bActive = activeTagIds.includes(b[0]) ? 0 : 1;
+      return aActive - bActive || a[1].localeCompare(b[1]);
+    });
 
   function toggleTag(tagId: number | string) {
-    setActiveTagIds((previous) => {
-      const next = new Set(previous);
-      if (next.has(tagId)) next.delete(tagId);
-      else next.add(tagId);
-      return next;
-    });
+    const next = activeTagIds.includes(tagId)
+      ? activeTagIds.filter((id) => id !== tagId)
+      : [...activeTagIds, tagId];
+    setActiveTagIds(next);
   }
 
   function deselectAll() {
-    setActiveTagIds(new Set());
+    setActiveTagIds([]);
   }
 
-  async function reload() {
-    setOpStatus("Reloading…");
-    try {
-      await runCommand("connect_db");
-      setOpStatus("Reloaded.");
-    } catch (cause) {
-      setOpStatus((cause as Error).message);
-    }
+  function reloadTags() {
+    reload();
+    setOpStatus("Reloaded.");
   }
 
-  async function deleteTag(tagId: number | string, tagName: string) {
+  /** The real delete, reached only through ConfirmDialog (spec Section C). */
+  async function deleteTagDirect(tagId: number | string, tagName: string) {
     try {
       await runCommand("tag_delete", { tag_id: tagId });
-      setActiveTagIds((previous) => {
-        if (!previous.has(tagId)) return previous;
-        const next = new Set(previous);
-        next.delete(tagId);
-        return next;
-      });
+      setActiveTagIds(activeTagIds.filter((id) => id !== tagId));
       setOpStatus(`Deleted "${tagName}".`);
-      await runCommand("connect_db");
+      reload();
     } catch (cause) {
       setOpStatus((cause as Error).message);
     }
@@ -128,20 +158,20 @@ export default function TagsTab() {
       setNewTagName("");
       setNewTagColor(TAG_COLOR_PRESETS[0]);
       setCreating(false);
-      await runCommand("connect_db");
+      reload();
     } catch (cause) {
       setOpStatus((cause as Error).message);
     }
   }
 
   async function calcRange() {
-    if (activeTagIds.size === 0) {
+    if (activeTagIds.length === 0) {
       setRangeStatus("Select at least one tag.");
       return;
     }
     setRangeStatus("Computing…");
     try {
-      const result = await runCommand("tags_calc_range", { tag_ids: [...activeTagIds] });
+      const result = await runCommand("tags_calc_range", { tag_ids: activeTagIds });
       const data = result.data as RangeResult;
       setRange(data);
       setRangeStatus(
@@ -177,12 +207,12 @@ export default function TagsTab() {
   }
 
   async function searchByTag() {
-    if (activeTagIds.size === 0) {
+    if (activeTagIds.length === 0) {
       setOpStatus("Select at least one tag.");
       return;
     }
     try {
-      const result = await runCommand("tags_search", { tag_ids: [...activeTagIds], cfg: null });
+      const result = await runCommand("tags_search", { tag_ids: activeTagIds, cfg: null });
       const data = result.data as { demos: FoundDemo[] };
       setFoundDemos(data.demos ?? []);
       setSelectedPaths(new Set());
@@ -194,7 +224,7 @@ export default function TagsTab() {
 
   async function searchByConfig() {
     try {
-      const result = await runCommand("tags_search", { tag_ids: [...activeTagIds], cfg: {} });
+      const result = await runCommand("tags_search", { tag_ids: activeTagIds, cfg: {} });
       const data = result.data as { demos: FoundDemo[] };
       setFoundDemos(data.demos ?? []);
       setSelectedPaths(new Set());
@@ -235,6 +265,7 @@ export default function TagsTab() {
     }
   }
 
+  /** The real removal, reached only through ConfirmDialog. */
   async function removeSelected() {
     const demoPaths = [...selectedPaths];
     if (activeTagNames.length === 0) {
@@ -264,7 +295,7 @@ export default function TagsTab() {
     try {
       const result = await runCommand("tags_export", {
         path,
-        tag_ids: activeTagIds.size > 0 ? [...activeTagIds] : null,
+        tag_ids: activeTagIds.length > 0 ? activeTagIds : null,
       });
       const data = result.data as { tag_count: number; demo_count: number };
       setOpStatus(`Exported ${data.tag_count} tag(s), ${data.demo_count} demo(s).`);
@@ -285,7 +316,7 @@ export default function TagsTab() {
       });
       const data = result.data as { ok_count: number; skip_count: number; fail_count: number };
       setOpStatus(`Imported: ${data.ok_count} OK, ${data.skip_count} skipped, ${data.fail_count} failed.`);
-      await runCommand("connect_db");
+      reload();
     } catch (cause) {
       setOpStatus((cause as Error).message);
     }
@@ -296,43 +327,47 @@ export default function TagsTab() {
       <Card title="Tags" icon={<ICONS.tags />} className="wide">
         {dbError && <p className="tags-error">{dbError}</p>}
 
+        <div className="tags-toolbar">
+          <Field id="tag-search" value={tagSearch} onChange={setTagSearch} placeholder="Filter tags…" />
+          <Segmented options={TAG_SORTS} value={tagSort} onChange={setTagSort} label="Sort tags" />
+        </div>
+
         <div className="chips">
-          {tags.map(([tagId, tagName, color]) => {
-            const active = activeTagIds.has(tagId);
+          {visibleTags.map(([tagId, tagName, color]) => {
+            const active = activeTagIds.includes(tagId);
             return (
-              <span key={String(tagId)} className="tag-pair">
-                <button
-                  type="button"
-                  className={active ? "chip on" : "chip"}
-                  aria-pressed={active}
-                  aria-label={`tag-${tagName}`}
-                  data-action="I3"
-                  onClick={() => toggleTag(tagId)}
-                >
-                  {/* The mock's own `.d` dot, which exists for exactly this and
-                      was never used here. The tag's colour rides on the dot in
-                      BOTH states: painting the border and the text instead meant
-                      a tag showed nothing at rest -- the state it is in when the
-                      tab opens -- and once picked, `.chip.on` kept its lime fill
-                      on top, so a blue tag read as green either way. */}
-                  <span className="d" style={{ background: color }} aria-hidden="true" />
-                  {tagName}
-                </button>
-                {/* Deletion used to be a whole second row repeating every tag
-                    name ("Delete: RAGE ×  ACE ×  ..."). Same information as
-                    the selection chip right above it, so it read as a
-                    duplicate list rather than a control. One icon-only button
-                    riding the same pair now. */}
-                <button
-                  type="button"
-                  className="chip danger tag-del"
+              <button
+                key={String(tagId)}
+                type="button"
+                className={active ? "chip on tag-chip" : "chip tag-chip"}
+                aria-pressed={active}
+                aria-label={`tag-${tagName}`}
+                data-action="I3"
+                onClick={() => toggleTag(tagId)}
+              >
+                {/* The mock's own `.d` dot, which exists for exactly this and
+                    was never used here. The tag's colour rides on the dot in
+                    BOTH states: painting the border and the text instead meant
+                    a tag showed nothing at rest -- the state it is in when the
+                    tab opens -- and once picked, `.chip.on` kept its lime fill
+                    on top, so a blue tag read as green either way. */}
+                <span className="d" style={{ background: color }} aria-hidden="true" />
+                {tagName}
+                {/* The × lives INSIDE the chip (spec Section C): one button per
+                    tag. Its click stops propagation so it opens the
+                    ConfirmDialog instead of toggling the chip. */}
+                <span
+                  className="tag-x"
+                  role="button"
                   aria-label={`delete-tag-${tagName}`}
-                  data-action="I2"
-                  onClick={() => deleteTag(tagId, tagName)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setPendingDelete({ tagId, tagName });
+                  }}
                 >
                   ×
-                </button>
-              </span>
+                </span>
+              </button>
             );
           })}
         </div>
@@ -341,7 +376,7 @@ export default function TagsTab() {
           <button type="button" className="chip" data-action="I1" onClick={() => setCreating((v) => !v)}>
             + New tag
           </button>
-          <button type="button" className="chip" data-action="I17" onClick={reload}>
+          <button type="button" className="chip" data-action="I17" onClick={reloadTags}>
             Reload
           </button>
           <button type="button" className="chip push-right" data-action="I4" onClick={deselectAll}>
@@ -447,7 +482,12 @@ export default function TagsTab() {
           >
             Tag ALL
           </button>
-          <button type="button" className="chip danger" data-action="I14" onClick={removeSelected}>
+          <button
+            type="button"
+            className="chip danger"
+            data-action="I14"
+            onClick={() => setPendingRemove(true)}
+          >
             Remove sel.
           </button>
         </div>
@@ -477,6 +517,32 @@ export default function TagsTab() {
 
         {opStatus && <p className="tags-op-status">{opStatus}</p>}
       </Card>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Delete tag"
+          message={`Delete tag "${pendingDelete.tagName}"? This cannot be undone.`}
+          onCancel={() => setPendingDelete(null)}
+          onConfirm={() => {
+            deleteTagDirect(pendingDelete.tagId, pendingDelete.tagName);
+            setPendingDelete(null);
+          }}
+          danger
+        />
+      )}
+
+      {pendingRemove && (
+        <ConfirmDialog
+          title="Remove tags"
+          message={`Remove ${activeTagNames.length} tag(s) from ${selectedPaths.size} selected demo(s)? This cannot be undone.`}
+          onCancel={() => setPendingRemove(false)}
+          onConfirm={() => {
+            setPendingRemove(false);
+            removeSelected();
+          }}
+          danger
+        />
+      )}
     </div>
   );
 }

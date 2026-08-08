@@ -21,6 +21,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 import Card from "../components/Card";
+import ConfirmDialog from "../components/ConfirmDialog";
 import { ICONS } from "../icons";
 import Field from "../components/Field";
 import Chip from "../components/Chip";
@@ -68,6 +69,7 @@ export default function PresetSection({
   const [presets, setPresets] = useState<PresetsMap>({});
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
+  const [pendingDeletePreset, setPendingDeletePreset] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -190,13 +192,26 @@ export default function PresetSection({
             <button
               type="button"
               className="chip danger"
-              data-action="C5" onClick={() => remove(presetName)}
+              data-action="C5" onClick={() => setPendingDeletePreset(presetName)}
             >
               Delete
             </button>
           </li>
         ))}
       </ul>
+
+      {pendingDeletePreset !== null && (
+        <ConfirmDialog
+          title="Delete preset"
+          message={`Delete preset "${pendingDeletePreset}"? This cannot be undone.`}
+          onCancel={() => setPendingDeletePreset(null)}
+          onConfirm={() => {
+            remove(pendingDeletePreset);
+            setPendingDeletePreset(null);
+          }}
+          danger
+        />
+      )}
     </Card>
   );
 }

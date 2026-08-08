@@ -30,16 +30,3 @@
 .capture-tab .sb {
   min-width: 0;
 }
-
-/*
- * User feedback 2026-08-01: cards of different heights next to each other
- * left the shorter one's row half-empty until the next `.wide` card reset
- * the row -- `.bento`'s implicit auto-placement (mock-v12.css) never fills a
- * gap once it has moved on. `dense` lets a later, shorter card backfill that
- * hole instead of only ever appending. `grid-auto-flow` is not
- * `grid-template-columns`, so this stays inside what the mock's grid test
- * (bento-layout.test.ts) allows a tab to add.
- */
-.capture-tab {
-  grid-auto-flow: dense;
-}

@@ -1,8 +1,7 @@
-/* Same reasoning as `.capture-tab` (CaptureTab.css): backfill short rows
-   instead of leaving a gap beside them. */
-.tags-tab {
-  grid-auto-flow: dense;
-}
+/* grid-auto-flow: dense removed 2026-08-08 (workspace-vivant §A1): dense
+   auto-fills holes, moving cards without an explicit gesture. The user wants
+   manual placement only; the adaptive `.bento` grid (mock-bridge.css) handles
+   the gap under short cards. */
 
 .tags-error {
   font-family: var(--font-display);
@@ -101,18 +100,47 @@
   opacity: 1;
 }
 
-/* A tag's select-chip and its delete-icon, riding together as one unit in
-   the `.chips` flex row instead of a whole second "Delete:" row. */
-.tag-pair {
-  display: inline-flex;
+/* The tag grid above the search and sort controls. The Field the search uses
+   is the elastic part; the Segmented control keeps its natural width. */
+.tags-toolbar {
+  display: flex;
   align-items: center;
-  gap: var(--sp-1);
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
 }
 
-/* Icon-only: the mock's `.chip.danger` padding (7px 13px) is sized for a
-   word, not a glyph -- a lone "×" in it reads as an oversized pill. */
-.tag-del {
-  padding: 7px 10px;
+.tags-toolbar .fld {
+  flex: 1;
+  min-width: 160px;
+}
+
+/*
+ * The unified tag chip (spec Section C): ONE button per tag, carrying its dot,
+ * its name and its × in the same pill. The chip keeps the mock's `.chip` face;
+ * `.tag-chip` only lays the three pieces out and positions the ×.
+ */
+.tag-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* The × rides at the right edge of the chip. It is a span, not a nested
+   button -- interactive markup cannot nest in a button -- so its click stops
+   propagation to open the ConfirmDialog instead of toggling the chip. */
+.tag-chip .tag-x {
+  margin-left: var(--sp-1);
+  line-height: 1;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+/* On hover the × takes the danger tint, so the destructive affordance is
+   announced without the whole chip wearing red at rest. */
+.tag-chip:hover .tag-x {
+  color: var(--blood-t);
 }
 
 .tag-create {

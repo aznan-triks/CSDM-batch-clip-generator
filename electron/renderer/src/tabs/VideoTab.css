@@ -1,8 +1,5 @@
 /* Same reasoning as `.capture-tab` (CaptureTab.css): backfill short rows
    instead of leaving a gap beside them. */
-.video-tab {
-  grid-auto-flow: dense;
-}
 
 .video-hint {
   font-family: var(--font-body);

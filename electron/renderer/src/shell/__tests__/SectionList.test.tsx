@@ -101,11 +101,11 @@ describe("SectionList", () => {
     rectSpy.mockRestore();
   });
 
-  it("reorders live on mousemove, before mouseup (2026-08-02)", () => {
-    // Native HTML5 drag-and-drop is gone (AUDIT_restyle6_polish_regressions.md
-    // #8: it loses target tracking once the DOM reorders mid-drag). This is a
-    // plain mouse gesture now -- jsdom has no elementFromPoint, so it is
-    // stubbed to report whatever DOM node the test wants "under the cursor".
+  it("does not reorder during the drag, only on mouseup (2026-08-08, workspace-vivant §A2)", () => {
+    // Holographic preview: the cards stay put while the pointer moves; the
+    // reorder commits exactly once, on mouseup. jsdom has no elementFromPoint,
+    // so it is stubbed to report whatever DOM node the test wants
+    // "under the cursor".
     delete state.ui_sections;
     const { container } = render(<SectionList tabId="capture" sections={sections()} />);
     const sectionA = screen.getByText("A").closest("section") as HTMLElement;
@@ -113,18 +113,22 @@ describe("SectionList", () => {
     const originalElementFromPoint = document.elementFromPoint;
     document.elementFromPoint = () => sectionA;
 
+    // mousedown on B's handle, move over A: no reorder yet.
     fireEvent.mouseDown(screen.getByLabelText("drag-b"));
     fireEvent.mouseMove(window);
+    let titles = [...container.querySelectorAll(".t")].map((el) => el.textContent);
+    expect(titles).toEqual(["A", "B"]);
 
-    const titlesAfterMove = [...container.querySelectorAll(".t")].map((el) => el.textContent);
-    expect(titlesAfterMove).toEqual(["B", "A"]);
-
-    // A second mousemove over the same target must not reorder again.
+    // A second mousemove over the same target still does not reorder.
     fireEvent.mouseMove(window);
-    const titlesAfterSecondMove = [...container.querySelectorAll(".t")].map((el) => el.textContent);
-    expect(titlesAfterSecondMove).toEqual(["B", "A"]);
+    titles = [...container.querySelectorAll(".t")].map((el) => el.textContent);
+    expect(titles).toEqual(["A", "B"]);
 
+    // Release over A: the single commit lands B before A.
     fireEvent.mouseUp(window);
+    titles = [...container.querySelectorAll(".t")].map((el) => el.textContent);
+    expect(titles).toEqual(["B", "A"]);
+
     document.elementFromPoint = originalElementFromPoint;
   });
 });

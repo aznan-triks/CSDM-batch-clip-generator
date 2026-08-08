@@ -241,6 +241,11 @@ const CURSOR_DRIVEN_ALLOWLIST: readonly string[] = [
   "shell/useCardDrag.ts",
   "components/Card.tsx",
   "cursor/Reticle.tsx",
+  // Section D (2026-08-08, workspace-vivant): the ★ Registered Accounts chips
+  // reorder by a pointer drag -- `mousedown` then per-chip `mousemove`/`mouseup`
+  // swapping array indices. Same contract as useCardDrag: it only calls state
+  // setters (`setDragOver`/`setSavedPlayers`), never `.style.*` or a tween.
+  "tabs/PlayerSection.tsx",
 ];
 
 describe("pointer handlers in the source paint, they never move anything", () => {

@@ -20,6 +20,26 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.0 — 2026-08-08
+
+The window adapts to its space and remembers everything.
+
+**Humanised:** The workspace now fills the available width instead of locking to two columns: a card never leaves an empty hole below it unless you leave one on purpose. When you put it somewhere else, you drag it without disturbing anything — a holographic preview shows where it would land, and it only moves when you let go. Switching tabs keeps every filter, tag selection, search text, page, and result exactly where you left them; the tag list actually refreshes when you tell it to. Tags show a natural one-piece pill with a colour dot and a cross that clearly belongs to it, and deleting anything important (a tag, a preset, a batch of demos) now asks first. The player section regains the old star-registered accounts — the players you actually want at your fingertips sit in their own row, turn on or off with a click, and remember exactly which were active last time you launched.
+
+### Added
+
+**Humanised:** The cards now fill any free space — narrow window = one column, wide = up to three columns. Re-ordering cards shows a holographic shadow first. The tag list has a search box and sorting (name, colour, or active first). Registered players are back: star them from the database, they show up as chips you can toggle on and off, and unlike the old window the selection is faithfully restored on restart. A confirmation dialog now guards every irreversible action — deleting tags, removing tags from whole folder scans, deleting presets — so you cannot dust a preset by mistake.
+
+**Technical:** `mock-bridge.css` overrides the bento grid to `repeat(auto-fit, minmax(min(100%, 400px), 1fr))`; `grid-auto-flow: dense` removed on all four tab CSS files. `useCardDrag.ts` rewritten to preview-only mode (mousemove updates a target ref without reordering; commit on mouseup; Escape cancels; returned `currentTargetId` feeds a ghost + dashed placeholder in `SectionList.tsx`). `TagsTab.tsx` gained `<Field>` search + `<Segmented>` sort over the chip list; `useDatabase.tsx` exposes `reload()` (incremented revision triggers refetch — fixes the old silent-no-op `reload()` which fired connect_db without touching React state). New `ConfirmDialog.tsx` (portal, glass-skin, danger variant) guards `tag_delete`, `tags_remove`, `delete_preset`. `PlayerSection.tsx` adds a ★ Registered Accounts section above the search (chips with toggle active + unregister ×, persisted as `saved_players` config key), and each DB row carries a ★/☆ toggle. `AppShell.tsx` keeps all tabs mounted (`hidden` on inactive, plus `inert` for a11y); `TagsTab.tsx` persists `activeTagIds` through `useSetting("ui_active_tags")` so selection survives app restart.
+
+### Fixed
+
+**Humanised:** The Reload button in Tags actually refreshes the tag list now — no more quitting and re-entering the tab to see a new or deleted tag. The tag selection, search text, sort, page, range results, and found demos all stay put when you switch tabs, and the tag selection even survives closing and reopening the app.
+
+**Technical:** `useDatabase.tsx::useDatabaseFetch` now watches a `revision` state; `reload()` from TagsTab bumps it, forcing the effect to re-run `connect_db` and update the shared context — create/delete/import/Reload all benefit. `AppShell.tsx` renders all tab panels unconditionally inside `hidden` div wrappers instead of conditional JSX, so component state (useState local state) is preserved across tab switches. `TagsTab.tsx`'s `activeTagIds` moved from local `useState` to `useSetting<number[]>("ui_active_tags")` (debounce-persisted via the existing settings store, 400 ms), restoring the old Python behaviour.
+
+---
+
 ## 3.1.3 — 2026-08-07
 
 The toggles and selectors follow the window's own design language.
