@@ -20,7 +20,7 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## Unreleased
+## 3.1.3 — 2026-08-07
 
 The toggles and selectors follow the window's own design language.
 

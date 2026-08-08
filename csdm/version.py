@@ -6,4 +6,4 @@ Copying the constant into the bridge would let the two copies drift, so it
 lives here instead: no imports, no side effects, safe for anything to read.
 """
 
-APP_VERSION = "3.1.2"
+APP_VERSION = "3.1.3"
