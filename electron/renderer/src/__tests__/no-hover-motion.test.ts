@@ -239,6 +239,7 @@ const CURSOR_DRIVEN_ALLOWLIST: readonly string[] = [
   "shell/AppShell.tsx",
   "shell/Backdrop.tsx",
   "shell/useCardDrag.ts",
+  "shell/SectionList.tsx",
   "components/Card.tsx",
   "cursor/Reticle.tsx",
   // Section D (2026-08-08, workspace-vivant): the ★ Registered Accounts chips

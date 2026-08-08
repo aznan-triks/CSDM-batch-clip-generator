@@ -336,38 +336,28 @@ export default function TagsTab() {
           {visibleTags.map(([tagId, tagName, color]) => {
             const active = activeTagIds.includes(tagId);
             return (
-              <button
-                key={String(tagId)}
-                type="button"
-                className={active ? "chip on tag-chip" : "chip tag-chip"}
-                aria-pressed={active}
-                aria-label={`tag-${tagName}`}
-                data-action="I3"
-                onClick={() => toggleTag(tagId)}
-              >
-                {/* The mock's own `.d` dot, which exists for exactly this and
-                    was never used here. The tag's colour rides on the dot in
-                    BOTH states: painting the border and the text instead meant
-                    a tag showed nothing at rest -- the state it is in when the
-                    tab opens -- and once picked, `.chip.on` kept its lime fill
-                    on top, so a blue tag read as green either way. */}
-                <span className="d" style={{ background: color }} aria-hidden="true" />
-                {tagName}
-                {/* The × lives INSIDE the chip (spec Section C): one button per
-                    tag. Its click stops propagation so it opens the
-                    ConfirmDialog instead of toggling the chip. */}
-                <span
-                  className="tag-x"
-                  role="button"
+              <span key={String(tagId)} className="tag-pair">
+                <button
+                  type="button"
+                  className={active ? "chip on" : "chip"}
+                  aria-pressed={active}
+                  aria-label={`tag-${tagName}`}
+                  data-action="I3"
+                  onClick={() => toggleTag(tagId)}
+                >
+                  <span className="d" style={{ background: color }} aria-hidden="true" />
+                  {tagName}
+                </button>
+                <button
+                  type="button"
+                  className="chip tag-del"
                   aria-label={`delete-tag-${tagName}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setPendingDelete({ tagId, tagName });
-                  }}
+                  data-action="I2"
+                  onClick={() => setPendingDelete({ tagId, tagName })}
                 >
                   ×
-                </span>
-              </button>
+                </button>
+              </span>
             );
           })}
         </div>

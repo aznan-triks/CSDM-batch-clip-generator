@@ -1,83 +1,191 @@
 /**
- * Persisted per-tab section order and fold state (ui_sections, one new
- * settings key -- an app preference, never a preset: presets are run
- * configuration, this is display state, decided in conversation 2026-08-01).
+ * Per-tab card placement on a block grid (Section A redesign: every card
+ * occupies a contiguous rectangle of cells, with explicit column/row start
+ * and span -- never reordered by auto-flow, never bumped by neighbours).
  *
- * Reconciliation runs on every read, never on write: a stored id that is no
- * longer declared is dropped, a declared id missing from storage is appended
- * at the end, in declaration order. A card can never disappear because of
- * stale state left by a previous version of a tab.
+ * Reconciliation: a stored id that is no longer declared is dropped; a
+ * declared id missing from the stored map is auto-placed at the first free
+ * cell. A card can never disappear because of stale state.
+ *
+ * The old `order`/`wide` schema (3.2.0) is migrated on read: cards with no
+ * explicit slot get colSpan=2 if they were wide, or colSpan=1 otherwise,
+ * and are appended row by row in their old order.
  */
 import { useSetting } from "../settings/store";
 
+/** One block = `ui_card_block_size` px (config key). */
+const DEFAULT_BLOCK = 280;
+
+export interface CardSlot {
+  col: number;     // 1-indexed grid column
+  row: number;     // 1-indexed grid row
+  colSpan: number; // ≥ 1, always fits in the current column count
+  rowSpan: number; // ≥ 1, clamped below auto-fit minimum
+}
+
 interface TabLayout {
-  order: string[];
-  collapsed: string[];
-  /**
-   * A card's width, only once the user has actually touched its corner
-   * bracket -- absent means "whatever the tab declared" (`SectionSpec`'s own
-   * `wide` className), never a stored default. Keyed the same as `order`/
-   * `collapsed`; reconciled the same way (a stale id is dropped, never read).
-   */
-  wide?: Record<string, boolean>;
+  /** Per-card explicit slot. Absent = auto-place. */
+  cards?: Record<string, CardSlot>;
+  /** Ids currently folded. */
+  collapsed?: string[];
 }
 
 type UiSections = Record<string, TabLayout>;
 
 export interface SectionLayout {
-  order: string[];
+  /** Resolved slot -- persisted value or a freshly auto-placed one. */
+  slot(id: string): CardSlot;
   isCollapsed(id: string): boolean;
   toggleCollapsed(id: string): void;
-  reorder(draggedId: string, targetId: string): void;
-  /** `undefined` when the user has never toggled this card -- the caller's own default applies. */
-  wideOverride(id: string): boolean | undefined;
-  toggleWide(id: string, currentlyWide: boolean): void;
+  /** Move a card to an explicit cell. */
+  place(id: string, col: number, row: number): void;
+  /** Change a card's span. */
+  resize(id: string, colSpan: number, rowSpan: number): void;
+  /** How many columns the grid currently has (computed from the container). */
+  columnCount(): number;
+  /** Re-read column count from the DOM. Used by the drag to compute target. */
+  blockSize(): number;
+}
+
+/**
+ * Build an occupancy grid from explicit slots, returning the first free cell
+ * for a card of the given span dimensions.  Scans row-by-row, left-to-right.
+ */
+function autoPlace(
+  existing: Record<string, CardSlot>,
+  colSpan: number,
+  rowSpan: number,
+  cols: number,
+): CardSlot {
+  // Build a bitmap of occupied cells.
+  const grid = new Map<string, boolean>();
+  for (const slot of Object.values(existing)) {
+    for (let r = slot.row; r < slot.row + slot.rowSpan; r++) {
+      for (let c = slot.col; c < slot.col + slot.colSpan; c++) {
+        grid.set(`${c},${r}`, true);
+      }
+    }
+  }
+  for (let row = 1; row <= 100; row++) {
+    for (let col = 1; col + colSpan - 1 <= cols; col++) {
+      let fits = true;
+      for (let dr = 0; dr < rowSpan && fits; dr++) {
+        for (let dc = 0; dc < colSpan && fits; dc++) {
+          if (grid.has(`${col + dc},${row + dr}`)) fits = false;
+        }
+      }
+      if (fits) return { col, row, colSpan, rowSpan };
+    }
+  }
+  // Fallback: stack at the bottom in the first column.
+  const maxRow = Object.values(existing).reduce(
+    (m, s) => Math.max(m, s.row + s.rowSpan - 1),
+    0,
+  );
+  return { col: 1, row: maxRow + 1, colSpan: rowSpan === 0 ? 1 : colSpan, rowSpan: rowSpan || 1 };
+}
+
+/** Migrate a pre-3.2.3 layout to the card-slot format, once. */
+function migrateLayout(layout: TabLayout | undefined, defaultOrder: readonly string[]): TabLayout {
+  if (layout?.cards) return layout; // already migrated
+  const cards: Record<string, CardSlot> = {};
+  const oldLayout = layout as { order?: string[]; wide?: Record<string, boolean>; collapsed?: string[] } | undefined;
+  const order = oldLayout?.order ?? [];
+  const wide = oldLayout?.wide ?? {};
+  const collapsed = oldLayout?.collapsed ?? [];
+  for (const id of order) {
+    cards[id] = { col: 1, row: 1, colSpan: wide[id] ? 2 : 1, rowSpan: 1 };
+  }
+  // Recompute positions row-by-row in declared order.
+  let row = 1;
+  const cols = 3; // generous default; autoPlace ignores out-of-bounds
+  for (const id of order) {
+    const slot = autoPlace(
+      Object.fromEntries(
+        order.slice(0, order.indexOf(id)).map((i) => [i, cards[i]]),
+      ),
+      cards[id].colSpan,
+      cards[id].rowSpan,
+      cols,
+    );
+    cards[id] = slot;
+  }
+  return { cards, collapsed };
 }
 
 export function useSectionLayout(tabId: string, defaultOrder: readonly string[]): SectionLayout {
   const [stored, setStored] = useSetting<UiSections>("ui_sections");
-  const layout = stored?.[tabId];
-
+  const raw = stored?.[tabId];
+  const layout = migrateLayout(raw ? { ...raw } : undefined, defaultOrder);
   const known = new Set(defaultOrder);
-  const storedOrder = (layout?.order ?? []).filter((id) => known.has(id));
-  const missing = defaultOrder.filter((id) => !storedOrder.includes(id));
-  const order = [...storedOrder, ...missing];
-  const collapsed = new Set((layout?.collapsed ?? []).filter((id) => known.has(id)));
-  const wide = Object.fromEntries(
-    Object.entries(layout?.wide ?? {}).filter(([id]) => known.has(id)),
-  );
 
-  function persist(nextOrder: string[], nextCollapsed: Set<string>, nextWide: Record<string, boolean>): void {
+  function currentCards(): Record<string, CardSlot> {
+    const result: Record<string, CardSlot> = {};
+    for (const id of known) {
+      result[id] = layout.cards?.[id] ?? { col: 1, row: 1, colSpan: 1, rowSpan: 1 };
+    }
+    return result;
+  }
+
+  function persist(next: Record<string, CardSlot>, nextCollapsed: string[]): void {
     setStored({
       ...(stored ?? {}),
-      [tabId]: { order: nextOrder, collapsed: [...nextCollapsed], wide: nextWide },
+      [tabId]: { cards: next, collapsed: nextCollapsed },
     });
   }
 
-  return {
-    order,
-    isCollapsed(id) {
-      return collapsed.has(id);
+  // Look up the block size from the CSS custom property on <html>.
+  function blockSize(): number {
+    if (typeof document === "undefined") return DEFAULT_BLOCK;
+    const v = getComputedStyle(document.documentElement).getPropertyValue("--block");
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) && n > 0 ? n : DEFAULT_BLOCK;
+  }
+
+  const wrapper = {
+    slot(id: string): CardSlot {
+      const cards = currentCards();
+      if (cards[id]) return cards[id];
+      const cols = (typeof document !== "undefined" && document.querySelector(".bento"))
+        ? (() => {
+            const style = getComputedStyle(document.querySelector(".bento")!);
+            return style.gridTemplateColumns.split(" ").length;
+          })()
+        : (stored?.[tabId]?.cards ? Math.max(...Object.values(stored[tabId].cards!).map(s => s.col + s.colSpan - 1)) : 2);
+      const slot = autoPlace(cards, 1, 1, cols || 2);
+      cards[id] = slot;
+      return slot;
     },
-    toggleCollapsed(id) {
-      const next = new Set(collapsed);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      persist(order, next, wide);
+
+    isCollapsed(id: string): boolean {
+      return (layout.collapsed ?? []).includes(id);
     },
-    reorder(draggedId, targetId) {
-      if (draggedId === targetId) return;
-      const without = order.filter((id) => id !== draggedId);
-      const targetIndex = without.indexOf(targetId);
-      if (targetIndex === -1) return;
-      const next = [...without.slice(0, targetIndex), draggedId, ...without.slice(targetIndex)];
-      persist(next, collapsed, wide);
+
+    toggleCollapsed(id: string): void {
+      const set = new Set(layout.collapsed ?? []);
+      if (set.has(id)) set.delete(id);
+      else set.add(id);
+      persist(currentCards(), [...set]);
     },
-    wideOverride(id) {
-      return wide[id];
+
+    place(id: string, col: number, row: number): void {
+      const cards = currentCards();
+      const existing = cards[id] ?? { col: 1, row: 1, colSpan: 1, rowSpan: 1 };
+      cards[id] = { ...existing, col, row };
+      persist(cards, layout.collapsed ?? []);
     },
-    toggleWide(id, currentlyWide) {
-      persist(order, collapsed, { ...wide, [id]: !currentlyWide });
+
+    resize(id: string, colSpan: number, rowSpan: number): void {
+      const cards = currentCards();
+      const existing = cards[id] ?? { col: 1, row: 1, colSpan: 1, rowSpan: 1 };
+      cards[id] = { ...existing, colSpan: Math.max(1, colSpan), rowSpan: Math.max(1, rowSpan) };
+      persist(cards, layout.collapsed ?? []);
+    },
+
+    columnCount(): number {
+      return blockSize() > 0 ? Math.max(1, Math.floor((window.innerWidth * 0.7) / blockSize())) : 3;
     },
   };
+
+  return wrapper;
 }

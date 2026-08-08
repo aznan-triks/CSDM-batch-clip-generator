@@ -1,51 +1,37 @@
 /**
- * Renders one tab's cards in persisted order, with drag-to-reorder.
- *
- * No wrapper element around a Card: `.bento` is `display:grid` and `.wide`
- * spans it via `grid-column:1/-1` on the .sec element itself (mock-v12.css)
- * -- wrapping it for drag handlers would put a non-.sec element where the
- * grid expects one.
- *
- * Reordering is pointer-driven (`useCardDrag`), not HTML5 native
- * drag-and-drop (2026-08-02, AUDIT_restyle6_polish_regressions.md #8):
- * reordering the DOM mid-drag is a known way to lose native dragenter/drop
- * delivery once the element under the cursor moves out from under it, and
- * that is exactly what a live reorder needs to do on every card it passes.
+ * Renders one tab's cards on a block grid: every card occupies explicit
+ * grid-column / grid-row cells persisted in `ui_sections`.  No auto-flow,
+ * no reordering of neighbours -- drag snaps a card to a free cell, resize
+ * changes its column/row span.
  */
 import {
   cloneElement,
-  Fragment,
-  useLayoutEffect,
   useRef,
+  useState,
+  type CSSProperties,
   type MouseEvent,
   type ReactElement,
   type ReactNode,
 } from "react";
 
 import { useSectionLayout } from "./sectionLayout";
-import { useCardDrag } from "./useCardDrag";
+import type { CardSlot } from "./sectionLayout";
+
+/** Re-export so consumers don't need to know the internal path. */
+export type { CardSlot };
 
 export interface SectionSpec {
   id: string;
   element: ReactElement<{
     ref?: (element: HTMLElement | null) => void;
     className?: string;
+    style?: CSSProperties;
     open?: boolean;
     onToggle?: () => void;
     dragHandle?: ReactNode;
-    onResizeToggle?: () => void;
+    /** Called when the user drags the resize handle. */
+    onResize?: (dx: number, dy: number) => void;
   }>;
-}
-
-/** Whether a card's OWN declared className already spans both bento columns. */
-function declaredWide(className: string | undefined): boolean {
-  return (className ?? "").split(/\s+/).includes("wide");
-}
-
-/** `className`, with "wide" added or removed to match `wide`, everything else kept as-is. */
-function withWideClass(className: string | undefined, wide: boolean): string {
-  const rest = (className ?? "").split(/\s+/).filter((token) => token && token !== "wide");
-  return wide ? [...rest, "wide"].join(" ") : rest.join(" ");
 }
 
 interface SectionListProps {
@@ -53,139 +39,108 @@ interface SectionListProps {
   sections: readonly SectionSpec[];
 }
 
+/** Return the CSS grid track count for the bento container, or 3 as fallback. */
+function readColumnCount(): number {
+  if (typeof document === "undefined") return 3;
+  const el = document.querySelector(".bento");
+  if (!el) return 3;
+  return getComputedStyle(el).gridTemplateColumns.split(" ").length;
+}
+
 export default function SectionList({ tabId, sections }: SectionListProps) {
-  const { order, isCollapsed, toggleCollapsed, reorder, wideOverride, toggleWide } = useSectionLayout(
-    tabId,
-    sections.map((section) => section.id),
-  );
-  const byId = new Map(sections.map((section) => [section.id, section]));
+  const layout = useSectionLayout(tabId, sections.map((s) => s.id));
+  const byId = new Map(sections.map((s) => [s.id, s]));
 
-  // FLIP reorder (user feedback 2026-08-01: "not fluid, not live"). When a
-  // reorder/fold/resize actually happened since the last render, compare
-  // each card's freshly measured position (and width, for resize) against
-  // the one recorded last render, jump it back to where it was with no
-  // transition, force one layout, then release the transition -- `.sec`
-  // carries `transition: transform .2s ease-out, ...` (mock-v12.css +
-  // mock-bridge.css) for its own hover lift, and that same rule is what
-  // animates the release. Nothing here is a `:hover` rule, and this file has
-  // no mousemove/pointermove listener, so neither no-hover-motion.test.ts
-  // guard applies -- this is a state-driven reflow, not pointer-driven
-  // painting.
+  // --- Drag state ---
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [targetCell, setTargetCell] = useState<{ col: number; row: number } | null>(null);
   const nodeRefs = useRef(new Map<string, HTMLElement>());
-  const prevRects = useRef(new Map<string, DOMRect>());
-  // User feedback 2026-08-02: "selecting weapons makes everything move
-  // everywhere". Root cause -- this effect ran on EVERY render, so a card
-  // higher up growing/shrinking for an unrelated reason (a filter selection,
-  // a date preset) cascades a real position shift to every card below it in
-  // the grid, and all of them got FLIP-animated even though the user never
-  // touched a card's order or size. Confirmed live: clicking a date preset
-  // moved every single card, `dTop` in the tens/hundreds of pixels, nothing
-  // to do with reorder/resize. The FLIP dance is scoped to genuine
-  // order/wide changes now; an unrelated content reflow still moves
-  // cards (correctly), it just does so with the plain, instant browser
-  // reflow instead of a system-wide slide.
-  //
-  // COLLAPSE is deliberately NOT in the signature (2026-08-04, user report:
-  // "the nav pane moves to reposition itself, it's epileptic"). The fold is
-  // animated by Card's grid-template-rows transition (mock-bridge.css), so a
-  // card below the folded one follows the shrinking height frame-by-frame
-  // naturally. Firing FLIP on collapse stacked a second, time-shifted motion
-  // (jump-back + 200ms glide) on top of that continuous reflow -- and the
-  // browser's scroll anchoring adjusts scrollTop on top of both. Three
-  // uncoordinated motions read as jerky, "everything jumps" movement. Without
-  // FLIP on collapse, one continuous motion remains.
-  const layoutSignature = JSON.stringify([
-    order,
-    order.map((id) => wideOverride(id) ?? null),
-  ]);
-  const prevLayoutSignature = useRef<string | null>(null);
 
-  useLayoutEffect(() => {
-    const layoutChanged =
-      prevLayoutSignature.current !== null && prevLayoutSignature.current !== layoutSignature;
-    prevLayoutSignature.current = layoutSignature;
+  // --- Drag handlers ---
+  function startDrag(id: string) {
+    return (event: MouseEvent) => {
+      event.preventDefault();
+      setDragging(id);
+      setTargetCell({ col: layout.slot(id).col, row: layout.slot(id).row });
 
-    if (layoutChanged) {
-      for (const [id, el] of nodeRefs.current) {
-        const prev = prevRects.current.get(id);
-        if (!prev) continue;
-        const next = el.getBoundingClientRect();
-        const dx = prev.left - next.left;
-        const dy = prev.top - next.top;
-        const dw = prev.width - next.width;
-        if (!dx && !dy && !dw) continue;
-        el.style.transition = "none";
-        el.style.transform = `translate(${dx}px, ${dy}px)`;
-        if (dw) el.style.width = `${prev.width}px`;
-        el.getBoundingClientRect(); // forces the browser to commit the jump before releasing it
-        el.style.transition = "";
-        el.style.transform = "";
-        if (dw) el.style.width = "";
+      function onMove(moveEvent: globalThis.MouseEvent) {
+        const bento = document.querySelector(".bento");
+        if (!bento) return;
+        const rect = bento.getBoundingClientRect();
+        const bs = layout.blockSize();
+        const gap = 10; // matches the grid gap
+        const x = moveEvent.clientX - rect.left;
+        const y = moveEvent.clientY - rect.top;
+        const col = Math.max(1, Math.min(readColumnCount(), Math.floor(x / (bs + gap)) + 1));
+        const row = Math.max(1, Math.floor(y / (bs + gap)) + 1);
+        setTargetCell({ col, row });
       }
-    }
-    const rects = new Map<string, DOMRect>();
-    for (const [id, el] of nodeRefs.current) rects.set(id, el.getBoundingClientRect());
-    prevRects.current = rects;
-  });
-
-  const { startDrag, draggedId, currentTargetId } = useCardDrag(reorder);
-  const isDragging = draggedId !== null;
-
-  /** No `.style.*` write here -- a plain lookup in the FLIP effect's own ref map. */
-  function resolveTargetId(element: Element): string | null {
-    const sectionEl = element.closest(".sec");
-    if (!sectionEl) return null;
-    for (const [cardId, el] of nodeRefs.current) if (el === sectionEl) return cardId;
-    return null;
+      function onUp() {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+        if (targetCell) {
+          layout.place(id, targetCell.col, targetCell.row);
+        }
+        setDragging(null);
+        setTargetCell(null);
+      }
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    };
   }
+
+  // --- Compute ordered ids for rendering ---
+  const allIds = sections.map((s) => s.id);
 
   return (
     <>
-      {order.map((id) => {
+      {allIds.map((id) => {
         const spec = byId.get(id);
         if (!spec) return null;
-        const defaultWide = declaredWide(spec.element.props.className);
-        const wide = wideOverride(id) ?? defaultWide;
-        const ghost = id === draggedId;
-        // The drop slot: `reorder` inserts the dragged card immediately
-        // BEFORE its target, so the placeholder sits right ahead of the
-        // current target's own card. Nothing while the pointer hovers the
-        // dragged card itself (target === dragged means "drop here" = no-op).
-        const showPlaceholderBefore =
-          isDragging && currentTargetId === id && currentTargetId !== draggedId;
-        const className = withWideClass(spec.element.props.className, wide);
-        const card = cloneElement(spec.element, {
+        const slot = layout.slot(id);
+        const ghost = id === dragging;
+
+        return cloneElement(spec.element, {
           key: id,
           ref: (el: HTMLElement | null) => {
             if (el) nodeRefs.current.set(id, el);
             else nodeRefs.current.delete(id);
           },
-          // The ghost (dragged card, still at its ORIGINAL grid slot) is
-          // dimmed and click-through so the placeholder reads as the real
-          // target. `.is-dragging` is a static rule (mock-bridge.css), not a
-          // `:hover` one, so no-hover-motion.test.ts is untouched.
-          className: ghost ? `${className} is-dragging` : className,
-          open: !isCollapsed(id),
-          onToggle: () => toggleCollapsed(id),
-          onResizeToggle: () => toggleWide(id, wide),
+          className: spec.element.props.className,
+          style: {
+            ...spec.element.props.style,
+            gridColumn: `${slot.col} / span ${slot.colSpan}`,
+            gridRow: `${slot.row} / span ${slot.rowSpan}`,
+            opacity: ghost ? 0.35 : undefined,
+            pointerEvents: ghost ? "none" : undefined,
+          } as CSSProperties,
+          open: !layout.isCollapsed(id),
+          onToggle: () => layout.toggleCollapsed(id),
           dragHandle: (
             <span
               className="drag-handle"
               aria-label={`drag-${id}`}
-              onClick={(event: MouseEvent) => event.stopPropagation()}
-              onMouseDown={startDrag(id, resolveTargetId)}
+              onClick={(e: MouseEvent) => e.stopPropagation()}
+              onMouseDown={startDrag(id)}
             >
               ⠿
             </span>
           ),
         });
-        return (
-          <Fragment key={id}>
-            {showPlaceholderBefore && <div className="card-placeholder" />}
-            {card}
-          </Fragment>
-        );
       })}
+      {/* Holographic target preview */}
+      {dragging && targetCell && (
+        <div
+          className="card-ghost"
+          aria-hidden="true"
+          style={
+            {
+              gridColumn: `${targetCell.col} / span ${layout.slot(dragging).colSpan}`,
+              gridRow: `${targetCell.row} / span ${layout.slot(dragging).rowSpan}`,
+            } as CSSProperties
+          }
+        />
+      )}
     </>
   );
 }

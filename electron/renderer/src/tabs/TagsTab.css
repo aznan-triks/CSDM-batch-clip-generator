@@ -116,31 +116,32 @@
 }
 
 /*
- * The unified tag chip (spec Section C): ONE button per tag, carrying its dot,
- * its name and its × in the same pill. The chip keeps the mock's `.chip` face;
- * `.tag-chip` only lays the three pieces out and positions the ×.
+ * Tag chip pair (3.2.3): the tag name chip and the delete pill are two
+ * buttons attached side-by-side with no gap, forming one visual unit.
+ * The delete pill keeps its own hitbox and hovers to danger.
  */
-.tag-chip {
-  position: relative;
+.tag-pair {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-2);
 }
 
-/* The × rides at the right edge of the chip. It is a span, not a nested
-   button -- interactive markup cannot nest in a button -- so its click stops
-   propagation to open the ConfirmDialog instead of toggling the chip. */
-.tag-chip .tag-x {
-  margin-left: var(--sp-1);
-  line-height: 1;
-  color: var(--dim);
-  cursor: pointer;
+/* First button: tag name — rounded on the left only. */
+.tag-pair > .chip:first-child {
+  border-radius: var(--radius) 0 0 var(--radius);
+  border-right: none;
 }
 
-/* On hover the × takes the danger tint, so the destructive affordance is
-   announced without the whole chip wearing red at rest. */
-.tag-chip:hover .tag-x {
+/* Second button: delete pill — rounded on the right, padded for a readable ×. */
+.tag-pair > .chip:last-child {
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding-left: 8px;
+  padding-right: 10px;
+  font-weight: 700;
+}
+
+.tag-pair > .chip:last-child:hover {
   color: var(--blood-t);
+  border-color: var(--blood-t);
 }
 
 .tag-create {

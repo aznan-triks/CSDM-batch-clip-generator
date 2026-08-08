@@ -1,232 +1,56 @@
-/*
- * The bridge between the approved mock's token names and this window's.
- *
- * mock-v12.css is the design, verbatim and never edited. This file is the only
- * place allowed to disagree with it, and every line below states the MEASURED
- * reason. Anything not listed here means the mock wins. Most disagreements
- * are token remaps; a few (2026-08-02) are full rules the mock's own static
- * demo could never have exercised (it never resizes or half-collapses a
- * card) -- same discipline applies: one measured entry, one comment.
- *
- * Loaded AFTER mock-v12.css and BEFORE the component stylesheets.
- *
- * This file is token mappings only. The mock's hover motion (D13/D16 forbids
- * it) is handled separately, at build time, by
- * electron/postcss-strip-mock-hover-motion.mjs -- see that file for why a
- * CSS override belongs there and not here.
- */
+/* ── Block grid for the free-placement workspace (3.2.3) ── */
 
-:root {
-  /* -- the accent, and everything derived from it. `applyAccent()` writes
-        --gold on the root element (theme/accent.ts); routing the mock's name
-        through it means a user-chosen colour reaches the mock's rules without
-        this file or the mock ever being touched. -- */
-  --accent: var(--gold);
-  --blue: var(--gold);
-  --blue-2: var(--gold-hi);
-  --holo-color: var(--holo);
+/* The card grid uses explicit per-card grid-column / grid-row set inline
+   by SectionList.  The block size lives in a config key (`ui_card_block_size`)
+   and is forwarded to the CSS via a custom property on <html> by main.tsx. */
 
-  /* -- semantic hues: same colours, the app's names -- */
-  --emerald: var(--ok);
-  --amber: var(--fire);
-  --rose: var(--blood);
-
-  /* -- type: one stack, defined once (tokens.css) -- */
-  --font: var(--font-display);
-  --mono: var(--font-mono);
-
-  /* -- lines and grounds -- */
-  --hair: var(--line);
-  --border: var(--edge-hi);
-  --page-0: var(--base);
-  --page-1: var(--void);
-  --shadow-sm: var(--elev-sm);
-
-  /* == DELIBERATE DISAGREEMENTS =============================================
-     Each one is a measurement or a decision already paid for once. */
-
-  /* MEASURED: the mock's #5b6b83 scores 4.25:1 on the light ground and fails
-     the 4.5:1 AA floor. --dim is #55647a (4.74:1) for that reason alone.
-     Proven by theme/__tests__/contrast.test.ts. */
-  --muted: var(--dim);
-
-  /* --faint (#93a1b5) is the mock's other under-AA label colour, same defect
-     as --muted, never mapped. AUDIT_huit_pistes_post_v299.md P1. */
-  --faint: var(--dim);
-
-  /* The mock's --spring overshoots. The one time an overshoot reached the
-     screen the C4 plant read as a toy and was reverted in v214 (CONTEXT_GUIDE
-     §10). One easing, and it decelerates. */
-  --spring: var(--ease);
+html {
+  --block: 280px;               /* fallback; overridden by settings store */
+  --block-gap: 10px;
+  --font: var(--font-display);  /* bridge mock's token to the shell */
+  --faint: var(--dim);         /* contrast bridge */
 }
 
-/* MEASURED (2026-08-02, AUDIT_restyle6_polish_regressions.md #2): mock-v12.css's
-   `.bento` sets no `align-items`, so CSS Grid's default `stretch` applies --
-   two cards sharing a row are stretched to the taller one's height. A closed
-   card next to an open one then keeps a full-height empty box: its content
-   is gone (`.sec.closed .sb{display:none}`) but the box never shrinks. The
-   mock's own static demo never closes a card next to an open one, so it
-   could never have shown this. */
 .bento {
-  align-items: start;
-}
-
-/* MEASURED (2026-08-08, workspace-vivant design §A1, user feedback: "a fixed
-   2-column grid leaves an empty gap under short cards; I want a space to fill
-   freely"): mock-v12.css's `.bento` is a hard `grid-template-columns:1fr 1fr`
-   (mock-v12.css:104) -- the mock's static demo never resizes, so it never
-   needed to. `repeat(auto-fit, minmax(min(100%, 400px), 1fr))` makes the
-   grid adaptive: a narrow pane gets 1 column, a normal one 2, a very wide
-   one 3 or more. `min(100%, 400px)` is the "named constant" floor (the same
-   layout-parameter category as BEFORE_RANGE in CaptureTab.tsx) expressed
-   inline because CSS has no arithmetic constants; 400px is the minimum track
-   a card needs to stay usable. `.wide` keeps its own meaning (`grid-column:
-   1/-1`) untouched -- it still spans every track. */
-.bento {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr));
-}
-
-/* MEASURED (2026-08-08, workspace-vivant design §A2): the holographic drag
-   preview. During a drag SectionList keeps the dragged card in its ORIGINAL
-   grid slot and dims it, and paints a dashed `.card-placeholder` at the slot
-   the card would land in (before the current pointer target). Both are static
-   rules -- no `:hover`, no `:active` -- so no-hover-motion.test.ts's
-   pointer-driven carve-out is untouched; the drag is a mousemove listener in
-   useCardDrag, exactly like the console-resize handle. */
-.bento .sec.is-dragging {
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-.card-placeholder {
-  border: 1px dashed var(--line-hi);
-  border-radius: var(--radius);
-  /* Tall enough to read as a card slot in the grid (cards vary in height;
-     a closed card is roughly this tall). The grid's `align-items:start`
-     (above) lets the slot keep its box. */
-  min-height: 6.5em;
-  opacity: 0.5;
-}
-
-/* MEASURED (2026-08-04, card fold motion, user report: "the nav pane moves
-   to reposition itself, it's epileptic"): mock-v12.css's `.scrollwrap` scrolls
-   with the browser's default scroll anchoring (`overflow-anchor: auto`).
-   When a card mid-grid folds, only the content BELOW it changes height; the
-   anchoring nevertheless compensates by adjusting scrollTop --
-   instantaneously, on top of the card's own height transition -- so the
-   whole pane appears to jump to keep the folded card pinned. Nothing above
-   the clicked card moves, so there is no anchor to preserve: the plain
-   reflow already glides the cards below the shrinking card in one continuous
-   motion. `overflow-anchor: none` leaves that motion untouched. Verified
-   live with the e2e probe: with anchoring, scrollTop jumps 360 -> 942 in one
-   frame on fold; without, it stays put and the cards below slide. */
-.scrollwrap {
-  overflow-anchor: none;
-}
-
-/* MEASURED (2026-08-02, AUDIT_restyle6_polish_regressions.md #1): mock-v12.css's
-   `.sec` transitions `transform`/`box-shadow` only (mock-v12.css:109) -- its
-   static demo never resizes a card, so `width` never needed to be there.
-   SectionList.tsx's FLIP now also inverts a card's width when `.wide` is
-   toggled; without this the card's own box would still snap to its new width
-   instantly while the FLIP glides everything else into position, which read
-   as the whole grid "breaking" rather than one continuous reflow.
-   `transition` is a shorthand: restating it here must repeat the mock's own
-   `transform`/`box-shadow` values verbatim (mock-v12.css:109) or they would
-   be silently dropped, not just extended -- `width` uses the same duration
-   and easing as `transform`, not a new number. */
-.sec {
-  transition:
-    transform 0.2s ease-out,
-    box-shadow 0.25s,
-    width 0.2s ease-out;
-}
-
-/* MEASURED (2026-08-03, improvement_suggestions.md P4): the tab strip's
-   bottom indicator (`.ind`) slides fluidly between tabs, but the top accent
-   bar (`.tab.active::after`, a 2px gradient) teleports because it is a
-   per-tab pseudo-element — destroyed on the old active tab and created on
-   the new one, with nothing to interpolate.
-
-   Replace with a single `.top-ind` element (same pattern as `.ind`): one
-   absolute-positioned bar that the TabBar's JS moves via `translateX()`
-   whenever the active tab changes, with the same `.4s` transition the bottom
-   indicator already uses. The mock's own `.tab.active::after` is hidden
-   because the sliding element draws the same gradient at the same position.
-
-   `z-index: 7` is NOT decoration: `.tab.active` carries `z-index: 6`
-   (mock-v12.css:89) and `transform: translateY(-2px)` — the active tab lifts
-   2px and, with its opaque background, would otherwise paint OVER the bar at
-   `top: 0`. The bottom `.ind` is visible only because the lifted tab leaves a
-   2px gap at the bottom; the top bar gets an explicit layer instead.
-   `pointer-events: none` keeps the bar from swallowing clicks meant for the
-   tabs beneath it. */
-.top-ind {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 2px;
-  width: 100px;
-  transform-origin: left;
-  background: linear-gradient(90deg, var(--lime-glow), var(--accent));
-  transition: transform .4s var(--ease);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent);
-  z-index: 7;
-  pointer-events: none;
-}
-
-.tab.active::after {
-  display: none;
-}
-
-/* MEASURED (2026-08-02, improvement_suggestions.md P1): the weapon silhouette
-   cascade (`.casc .gun`) draws 96px-wide icons through a CSS mask. The mock's
-   generic `.gun{width:100%;height:44px}` is a catch-all for inline SVG; our
-   mask-based silhouettes need a different width.
-
-   `mask-size: contain` is stated explicitly because the shorthand `mask: ...
-   / contain` can lose the sizing keyword when the mask source is a data URI
-   (several vendored SVGs have intrinsic dimensions far outside 96×44,
-   producing giant truncated fragments instead of recognisable silhouettes). */
-.casc .gun {
-  width: 96px;
-  height: 44px;
-  -webkit-mask-size: contain;
-  mask-size: contain;
-}
-
-/* MEASURED (2026-08-04, card fold animation): mock-v12.css:123 folds the
-   card with `.sec.closed .sb{display:none}` -- instant, nothing to
-   interpolate, the card snaps shut and every card below it jumps. The
-   mock's static demo never closes a card, so it never needed an animated
-   one. The body now stays in the DOM (Card.tsx renders `.fold`/
-   `.fold-inner` unconditionally) and the fold is a one-row grid whose row
-   interpolates between `1fr` (open) and `0fr` (closed); `overflow:hidden`
-   on the inner wrapper clips what the shrinking row no longer fits.
-   `display:none` must be cancelled (with higher specificity than the
-   mock's `.sec.closed .sb`) or the grid has nothing to shrink. Duration
-   and easing reuse the header chevron's own `.25s var(--ease)`
-   (mock-v12.css:122) -- one motion vocabulary, no new number. */
-.sec .fold {
   display: grid;
-  grid-template-rows: 1fr;
-  transition: grid-template-rows 0.25s var(--ease);
-}
-.sec.closed .fold {
-  grid-template-rows: 0fr;
-}
-.sec .fold-inner {
-  min-height: 0;
-  overflow: hidden;
-}
-.sec.closed .fold-inner .sb {
-  display: block;
+  /* Column track: repeat as many blocks as fit, each at least the block size.
+     The min() prevents overflow when the pane is narrower than one block. */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--block)), 1fr));
+  grid-auto-rows: auto;        /* rows shrink-wrap card content height */
+  gap: var(--block-gap);
+  align-content: start;
 }
 
-/* MEASURED (2026-08-02, improvement_suggestions.md P2): the cascade must wrap
-   when more weapons are picked than fit in one row. The mock shows exactly two
-   guns and never exercises this (mock-v12.css:153 has `display:flex` with no
-   `flex-wrap`). */
-.casc {
-  flex-wrap: wrap;
+/* A card with explicit grid-column/grid-row obeys those values;
+   cards without explicit placement still auto-flow (not used post-3.2.3). */
+
+/* Explicit column/row override — set inline, not in CSS */
+
+/* ── Drag hologram ── */
+.card-ghost {
+  background: transparent;
+  border: 2px dashed var(--gold);
+  border-radius: var(--r-card);
+  min-height: 120px;
+  pointer-events: none;
+  z-index: 10;
+  /* Placed in the grid by its own inline grid-column/grid-row */
+}
+
+/* Drag handle */
+.drag-handle {
+  display: inline-block;
+  cursor: grab;
+  color: var(--dim);
+  font-size: var(--fs-lg);
+  user-select: none;
+  margin-right: var(--sp-2);
+}
+.drag-handle:hover {
+  color: var(--gold);
+}
+
+/* ── Collapse / fold ── */
+.sec[open="false"] .sec-body {
+  display: none;
 }

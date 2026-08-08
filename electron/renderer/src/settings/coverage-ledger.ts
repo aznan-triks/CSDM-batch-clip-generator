@@ -35,6 +35,7 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   cs2_process_name: "engine-only: the image name the exit watcher looks for",
   ui_sections: "driven by drag-and-drop and the card header toggle, not a form field",
   ui_active_tags: "driven by the tag-chip grid's selection, not a form field",
+  ui_card_block_size: "block-grid cell size; changed via config, never a widget",
 };
 
 /** Has a control in Tkinter, not ported yet. MUST shrink at every chantier. */
