@@ -5,7 +5,7 @@
    and is forwarded to the CSS via a custom property on <html> by main.tsx. */
 
 html {
-  --block: 280px;               /* fallback; overridden by settings store */
+  --block: 96px;                /* fallback; overridden by settings store */
   --block-gap: 10px;
   --font: var(--font-display);  /* bridge mock's token to the shell */
   --faint: var(--dim);         /* contrast bridge */

@@ -11,6 +11,7 @@
  */
 import {
   cloneElement,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -45,7 +46,7 @@ interface SectionListProps {
 
 function readColumnCount(): number {
   if (typeof document === "undefined") return 3;
-  const el = document.querySelector(".bento");
+  const el = document.querySelector('[role="tabpanel"] .bento');
   if (!el) return 3;
   return getComputedStyle(el).gridTemplateColumns.split(" ").length;
 }
@@ -71,6 +72,20 @@ function cellFromPointer(
 export default function SectionList({ tabId, sections }: SectionListProps) {
   const layout = useSectionLayout(tabId, sections.map((s) => s.id));
   const byId = new Map(sections.map((s) => [s.id, s]));
+
+  // On first render the `.bento` does not exist in the DOM yet, so the
+  // column count reads as the 2-column fallback and auto-placement stacks
+  // every card. Re-render once the layout is committed so slot() re-places
+  // on the real grid; re-run whenever the pane resizes (column count changes).
+  const [, forceRender] = useState(0);
+  useLayoutEffect(() => {
+    forceRender((n) => n + 1);
+    const bento = document.querySelector('[role="tabpanel"] .bento');
+    if (!bento || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => forceRender((n) => n + 1));
+    observer.observe(bento);
+    return () => observer.disconnect();
+  }, []);
 
   // --- Drag (move) state ---
   const [dragging, setDragging] = useState<string | null>(null);

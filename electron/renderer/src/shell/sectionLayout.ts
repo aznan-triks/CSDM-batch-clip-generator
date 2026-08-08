@@ -11,6 +11,8 @@
  * explicit slot get colSpan=2 if they were wide, or colSpan=1 otherwise,
  * and are appended row by row in their old order.
  */
+import { useRef } from "react";
+
 import { useSetting } from "../settings/store";
 
 /** One block = `ui_card_block_size` px (config key). */
@@ -32,6 +34,12 @@ export interface CardSlot {
 }
 
 interface TabLayout {
+  /**
+   * Schema version. Bump when the meaning of stored slots changes so stale
+   * cards (e.g. written by an older default-span bug) are dropped instead of
+   * overriding new defaults.
+   */
+  v?: number;
   /** Per-card explicit slot. Absent = auto-place. */
   cards?: Record<string, CardSlot>;
   /** Ids currently folded. */
@@ -39,6 +47,9 @@ interface TabLayout {
 }
 
 type UiSections = Record<string, TabLayout>;
+
+/** Current layout schema. Bump on any breaking change to `CardSlot`. */
+const LAYOUT_VERSION = 2;
 
 export interface SectionLayout {
   /** Resolved slot -- persisted value or a freshly auto-placed one. */
@@ -94,7 +105,7 @@ function autoPlace(
 
 /** Migrate a pre-3.2.3 layout to the card-slot format, once. */
 function migrateLayout(layout: TabLayout | undefined, _defaultOrder: readonly string[]): TabLayout {
-  if (layout?.cards) return layout; // already migrated
+  if (layout?.cards && layout.v === LAYOUT_VERSION) return layout; // already migrated
   const cards: Record<string, CardSlot> = {};
   const oldLayout = layout as { order?: string[]; wide?: Record<string, boolean>; collapsed?: string[] } | undefined;
   const order = oldLayout?.order ?? [];
@@ -116,27 +127,34 @@ function migrateLayout(layout: TabLayout | undefined, _defaultOrder: readonly st
     );
     cards[id] = slot;
   }
-  return { cards, collapsed };
+  return { v: LAYOUT_VERSION, cards, collapsed };
 }
 
 export function useSectionLayout(tabId: string, defaultOrder: readonly string[]): SectionLayout {
   const [stored, setStored] = useSetting<UiSections>("ui_sections");
   const raw = stored?.[tabId];
   const layout = migrateLayout(raw ? { ...raw } : undefined, defaultOrder);
-  const known = new Set(defaultOrder);
 
-  function currentCards(): Record<string, CardSlot> {
-    const result: Record<string, CardSlot> = {};
-    for (const id of known) {
-      result[id] = layout.cards?.[id] ?? { col: 1, row: 1, colSpan: DEFAULT_COL_SPAN, rowSpan: DEFAULT_ROW_SPAN };
-    }
-    return result;
+  /**
+   * Auto-placed slots that were never explicitly stored. Kept in a ref so
+   * successive `slot()` calls within the same session see each other's
+   * placements -- without this, every call started from an empty map and
+   * autoPlace put every card at (1,1).
+   */
+  const autoPlaced = useRef<Record<string, CardSlot>>({});
+  /** The column count used for the last auto-placement (0 = never). */
+  const lastColsRef = useRef(0);
+
+  /** Explicit slots + session auto-placed slots, in one occupancy map. */
+  function knownSlots(): Record<string, CardSlot> {
+    return { ...(layout.cards ?? {}), ...autoPlaced.current };
   }
 
   function persist(next: Record<string, CardSlot>, nextCollapsed: string[]): void {
+    autoPlaced.current = {};
     setStored({
       ...(stored ?? {}),
-      [tabId]: { cards: next, collapsed: nextCollapsed },
+      [tabId]: { v: LAYOUT_VERSION, cards: next, collapsed: nextCollapsed },
     });
   }
 
@@ -150,17 +168,32 @@ export function useSectionLayout(tabId: string, defaultOrder: readonly string[])
 
   const wrapper = {
     slot(id: string): CardSlot {
-      const cards = currentCards();
-      if (cards[id]) return cards[id];
-      const cols = (typeof document !== "undefined" && document.querySelector(".bento"))
+      const explicit = layout.cards?.[id];
+      if (explicit) return explicit;
+      const cols = (typeof document !== "undefined" && document.querySelector('[role="tabpanel"] .bento'))
         ? (() => {
-            const style = getComputedStyle(document.querySelector(".bento")!);
+            const style = getComputedStyle(document.querySelector('[role="tabpanel"] .bento')!);
             return style.gridTemplateColumns.split(" ").length;
           })()
-        : (stored?.[tabId]?.cards ? Math.max(...Object.values(stored[tabId].cards!).map(s => s.col + s.colSpan - 1)) : 2);
-      const slot = autoPlace(cards, DEFAULT_COL_SPAN, DEFAULT_ROW_SPAN, cols || 2);
-      cards[id] = slot;
-      return slot;
+        : 2;
+      // If the grid's real column count differs from the count used for the
+      // last auto-placement, the cached layout is stale (e.g. the very first
+      // render ran before the bento existed and saw 2 columns). Drop it and
+      // re-place on the real grid.
+      if (lastColsRef.current !== 0 && lastColsRef.current !== cols) {
+        autoPlaced.current = {};
+      }
+      lastColsRef.current = cols;
+      const cached = autoPlaced.current[id];
+      if (cached) return cached;
+      const placed = autoPlace(
+        knownSlots(),
+        DEFAULT_COL_SPAN,
+        DEFAULT_ROW_SPAN,
+        cols || 2,
+      );
+      autoPlaced.current[id] = placed;
+      return placed;
     },
 
     isCollapsed(id: string): boolean {
@@ -171,18 +204,18 @@ export function useSectionLayout(tabId: string, defaultOrder: readonly string[])
       const set = new Set(layout.collapsed ?? []);
       if (set.has(id)) set.delete(id);
       else set.add(id);
-      persist(currentCards(), [...set]);
+      persist(knownSlots(), [...set]);
     },
 
     place(id: string, col: number, row: number): void {
-      const cards = currentCards();
+      const cards = knownSlots();
       const existing = cards[id] ?? { col: 1, row: 1, colSpan: DEFAULT_COL_SPAN, rowSpan: DEFAULT_ROW_SPAN };
       cards[id] = { ...existing, col, row };
       persist(cards, layout.collapsed ?? []);
     },
 
     resize(id: string, colSpan: number, rowSpan: number): void {
-      const cards = currentCards();
+      const cards = knownSlots();
       const existing = cards[id] ?? { col: 1, row: 1, colSpan: DEFAULT_COL_SPAN, rowSpan: DEFAULT_ROW_SPAN };
       cards[id] = { ...existing, colSpan: Math.max(1, colSpan), rowSpan: Math.max(1, rowSpan) };
       persist(cards, layout.collapsed ?? []);

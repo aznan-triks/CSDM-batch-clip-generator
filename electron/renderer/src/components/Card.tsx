@@ -1,4 +1,4 @@
-import { forwardRef, type MouseEvent, type ReactNode, useState } from "react";
+import { forwardRef, type CSSProperties, type MouseEvent, type ReactNode, useState } from "react";
 
 import "./Card.css";
 
@@ -7,6 +7,12 @@ interface CardProps {
   icon?: ReactNode;
   children: ReactNode;
   className?: string;
+  /**
+   * Inline styles forwarded to the `<section>` itself. SectionList uses this
+   * for the block-grid placement (`gridColumn`/`gridRow`) -- the grid's cells
+   * are decided outside Card, never by a class here.
+   */
+  style?: CSSProperties;
   /**
    * The mock's `.sh .cnt`: the card's own summary, right-aligned in the
    * header -- "2 SELECTED", "4 RULES", "KILLER". Omitted when the card has
@@ -61,6 +67,7 @@ const Card = forwardRef<HTMLElement, CardProps>(function Card(
     icon,
     children,
     className,
+    style,
     count,
     open: openProp,
     onToggle,
@@ -86,6 +93,7 @@ const Card = forwardRef<HTMLElement, CardProps>(function Card(
     <section
       ref={ref}
       className={classes}
+      style={style}
       onMouseMove={paintSpotlight}
     >
       {/* The mock's four decorative layers. `.glx` and `.cbr` were drawn here
