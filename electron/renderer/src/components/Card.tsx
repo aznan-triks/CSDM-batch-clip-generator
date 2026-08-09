@@ -1,4 +1,4 @@
-import { forwardRef, type CSSProperties, type MouseEvent, type ReactNode, useState } from "react";
+import { forwardRef, type CSSProperties, type MouseEvent, type ReactNode, type TouchEvent, useState } from "react";
 
 import "./Card.css";
 
@@ -24,6 +24,18 @@ interface CardProps {
   onToggle?: () => void;
   /** A drag handle rendered in the header, before the icon. Only SectionList passes one. */
   dragHandle?: ReactNode;
+  /**
+   * Mouse/touch handlers react-grid-layout's DraggableCore injects via
+   * React.cloneElement to wire whole-card drag (see the chain in
+   * node_modules/react-draggable's DraggableCore.render() ->
+   * node_modules/react-resizable's Resizable.render()). Card doesn't spread
+   * arbitrary props onto its <section>, so without these named explicitly,
+   * RGL's drag handlers were silently dropped and the card never dragged
+   * (block-grid v3, Task 5 finding).
+   */
+  onMouseDown?: (event: MouseEvent<HTMLElement>) => void;
+  onMouseUp?: (event: MouseEvent<HTMLElement>) => void;
+  onTouchEnd?: (event: TouchEvent<HTMLElement>) => void;
 }
 
 /**
@@ -64,6 +76,9 @@ const Card = forwardRef<HTMLElement, CardProps>(function Card(
     open: openProp,
     onToggle,
     dragHandle,
+    onMouseDown,
+    onMouseUp,
+    onTouchEnd,
   },
   ref,
 ) {
@@ -86,6 +101,9 @@ const Card = forwardRef<HTMLElement, CardProps>(function Card(
       className={classes}
       style={style}
       onMouseMove={paintSpotlight}
+      onMouseDown={onMouseDown}
+      onMouseUp={onMouseUp}
+      onTouchEnd={onTouchEnd}
     >
       {/* The mock's four decorative layers. `.glx` and `.cbr` were drawn here
           as pseudo-elements on the card itself, which could carry the corners
