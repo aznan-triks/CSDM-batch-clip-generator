@@ -61,23 +61,37 @@ describe("AppShell", () => {
   // the weapon row's now (the mock's `.wband`), and the shell is what wires the
   // engine's own events into it -- so this is where that wiring is proved.
   it("feeds the engine's progress and summary lines into the weapon row", () => {
-    let deliver: ((message: unknown) => void) | null = null;
+    // The real preload bridge (`electron/preload.js`) is `ipcRenderer.on`,
+    // which keeps one listener per subscriber -- every independent
+    // `useEngineState()` call (AppShell, StatStrip, ActionBar, EditingTab)
+    // gets its own and all of them hear every message. A single `deliver`
+    // slot here would silently drop every subscriber but the last one,
+    // making the test's outcome depend on incidental effect-mount order
+    // instead of on the wiring this test means to prove.
+    const subscribers = new Set<(message: unknown) => void>();
     window.bridge = {
       send() {},
       onMessage(cb: (message: unknown) => void) {
-        deliver = cb;
-        return () => {};
+        subscribers.add(cb);
+        return () => subscribers.delete(cb);
       },
     } as unknown as typeof window.bridge;
+    const deliver = (message: unknown) => subscribers.forEach((cb) => cb(message));
 
-    renderShell();
+    const { container } = renderShell();
     act(() => {
-      deliver?.({ type: "state", name: "progress", payload: { text: "demo 2/7" } });
-      deliver?.({ type: "state", name: "summary", payload: { text: "12 clips" } });
+      deliver({ type: "state", name: "progress", payload: { text: "demo 2/7" } });
+      deliver({ type: "state", name: "summary", payload: { text: "12 clips" } });
     });
 
-    expect(screen.getByText("demo 2/7")).toBeTruthy();
-    expect(screen.getByText("12 clips")).toBeTruthy();
+    // Scoped to the weapon row itself: with every subscriber correctly wired
+    // (see above), LogConsole legitimately narrates the same progress line
+    // into the console, so a document-wide query would be ambiguous even
+    // though both readings are correct -- this test's own claim is about the
+    // weapon row specifically.
+    const band = container.querySelector(".wband");
+    expect(band?.querySelector(".band-status")?.textContent).toBe("demo 2/7");
+    expect(band?.querySelector(".band-counter")?.textContent).toBe("12 clips");
   });
 
   it("greets the engine on mount so the console is never blank", () => {

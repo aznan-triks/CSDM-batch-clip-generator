@@ -113,6 +113,15 @@ export default function AppShell() {
     document.documentElement.style.setProperty("--block", `${size}px`);
   }, [blockSize]);
 
+  // Fine row height of the card grid (3.2.4): same wiring as `--block`, so a
+  // config change re-tiles the grid without a restart.
+  const [rowHeight] = useSetting<number>("ui_card_row_height");
+  useEffect(() => {
+    const size =
+      typeof rowHeight === "number" && Number.isFinite(rowHeight) && rowHeight > 0 ? rowHeight : 24;
+    document.documentElement.style.setProperty("--block-row", `${size}px`);
+  }, [rowHeight]);
+
   // The open tab, on the document, so the backdrop can draw a different field
   // per screen (`BACKDROP_BY_TAB` in shell/backdropField.ts). An attribute
   // rather than a prop: the canvas is a sibling of `.app`, not a child of the

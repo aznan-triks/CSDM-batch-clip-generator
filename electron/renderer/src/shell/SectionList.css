@@ -1,0 +1,23 @@
+/* The grid's own pane: react-grid-layout positions its children absolutely
+   and sizes the container itself, so this only needs to fill the width and
+   let the scrollwrap above handle vertical overflow. */
+.grid-pane {
+  width: 100%;
+}
+
+/* react-grid-layout writes `transition: all 200ms ease` on every item. The
+   window bans hover-driven motion, not layout motion (`no-hover-motion`), but
+   a card must not glide when the pane is merely re-measured -- only when the
+   user is actually dragging or resizing it. */
+.react-grid-item {
+  transition-property: transform, width, height;
+}
+
+.react-grid-item.react-grid-placeholder {
+  /* The holographic drop preview: the same dashed gold outline the previous
+     `.card-ghost` used, so the vocabulary of the window does not change. */
+  background: transparent;
+  border: 2px dashed var(--gold);
+  border-radius: var(--r-card);
+  opacity: 1;
+}

@@ -8,31 +8,18 @@
 html {
   --block: 96px;                /* fallback; overridden by settings store */
   --block-gap: 10px;
+  --block-row: 24px;            /* fallback; overridden by settings store */
   --font: var(--font-display);  /* bridge mock's token to the shell */
   --faint: var(--dim);         /* contrast bridge */
 }
 
+/* The cards are laid out by react-grid-layout, not by CSS grid: `.bento` is
+   now only the pane that holds it. Two layout systems addressing the same
+   children is exactly how the 3.2.3 grid drifted. The placement backdrop is
+   handled in plan B. */
 .bento {
-  display: grid;
-  /* Fixed tracks: each column is EXACTLY one block wide (--block, fed from
-     ui_card_block_size). The drag snap in SectionList computes cells from the
-     same size + gap, so the pointer lands on the rendered cells -- with fluid
-     fractional tracks the two drifted on narrow panes (council 2026-08-08).
-     Rows shrink-wrap card content; more cells than fit scroll horizontally. */
-  grid-template-columns: repeat(auto-fill, var(--block));
-  grid-auto-rows: auto;
-  gap: var(--block-gap);
-  align-content: start;
-  /* Cards must never stretch to the row's tallest sibling: the block grid is
-     for free placement, not equal-height columns. */
-  align-items: start;
-  /* Visible placement grid: translucent cells, like graph paper, at block
-     size. `--line` is already a muted token; the 1px strokes stay subtle. */
-  background-image:
-    repeating-linear-gradient(to right, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--block)),
-    repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 1px, transparent 1px, transparent var(--block));
-  background-size: calc(var(--block) + var(--block-gap)) calc(var(--block) + var(--block-gap));
-  background-position: 0 0;
+  display: block;
+  width: 100%;
 }
 
 /* A card with explicit grid-column/grid-row obeys those values;
