@@ -1,61 +1,71 @@
 /**
- * autoPlace (block grid): the real exported algorithm -- free-placement of a
- * card into the first grid cell its span fits, row-major left-to-right.
+ * Guards the persisted card layout: a schema bump must never cost the user
+ * their placements, and a stored card that no longer exists must never keep
+ * a slot. Imports the REAL exported migration -- a hand-copied re-creation
+ * here would test itself, not the app (review 2026-08-09).
  */
 import { describe, expect, it } from "vitest";
 
-import type { CardSlot } from "../sectionLayout";
-import { autoPlace } from "../sectionLayout";
+import { LAYOUT_VERSION, ROWS_PER_BLOCK, migrateLayout } from "../sectionLayout";
 
-describe("autoPlace (block grid)", () => {
-  it("places the first card at (1, 1)", () => {
-    const slot = autoPlace({}, 3, 1, 10);
-    expect(slot).toEqual({ col: 1, row: 1, colSpan: 3, rowSpan: 1 });
-  });
+const IDS = ["player", "demo", "timing"] as const;
 
-  it("places the second card beside the first", () => {
-    const a: CardSlot = { col: 1, row: 1, colSpan: 3, rowSpan: 1 };
-    const slot = autoPlace({ a }, 3, 1, 10);
-    expect(slot.col).toBe(4);
-    expect(slot.row).toBe(1);
-  });
-
-  it("respects colSpan when auto-placing", () => {
-    const a: CardSlot = { col: 1, row: 1, colSpan: 3, rowSpan: 1 };
-    const b: CardSlot = { col: 4, row: 1, colSpan: 3, rowSpan: 1 };
-    const slot = autoPlace({ a, b }, 3, 1, 10);
-    // a takes 1-3, b takes 4-6 -> next 3-wide slot starts at 7.
-    expect(slot.col).toBe(7);
-  });
-
-  it("wraps to the next row when the current row is full", () => {
-    const existing: Record<string, CardSlot> = {};
-    for (let i = 0; i < 3; i++) {
-      existing[`c${i}`] = { col: 1 + i * 3, row: 1, colSpan: 3, rowSpan: 1 };
-    }
-    const slot = autoPlace(existing, 3, 1, 10);
-    expect(slot.row).toBe(2);
-  });
-
-  it("fills a gap left beside a short card before moving down", () => {
-    // A tall card spans rows 1-2 in col 1; a short card sits row 1 col 2.
-    // Row 1 still has free space right of the short card.
-    const existing: Record<string, CardSlot> = {
-      tall: { col: 1, row: 1, colSpan: 1, rowSpan: 2 },
-      short: { col: 2, row: 1, colSpan: 1, rowSpan: 1 },
+describe("migrateLayout", () => {
+  it("converts a v2 block slot into fine rows", () => {
+    const v2 = {
+      v: 2,
+      cards: { player: { col: 2, row: 3, colSpan: 4, rowSpan: 2 } },
+      collapsed: [],
     };
-    const slot = autoPlace(existing, 1, 1, 3);
-    expect(slot.col).toBe(3);
-    expect(slot.row).toBe(1);
+    const { cards } = migrateLayout(v2, IDS, 10);
+    // v2 was 1-indexed, RGL is 0-indexed; rows scale by ROWS_PER_BLOCK.
+    expect(cards.player).toEqual({
+      x: 1,
+      y: 2 * ROWS_PER_BLOCK,
+      w: 4,
+      h: 2 * ROWS_PER_BLOCK,
+    });
   });
 
-  it("keeps a card spanning past the row inside the column budget", () => {
-    // 3-wide card on a 3-column grid fits exactly in column 1.
-    const slot = autoPlace({}, 3, 1, 3);
-    expect(slot.col).toBe(1);
-    // A 4-wide card cannot fit on a 3-column grid: falls back to stacking.
-    const slot4 = autoPlace({}, 4, 1, 3);
-    expect(slot4.col).toBe(1);
-    expect(slot4.colSpan).toBe(4);
+  it("keeps a v3 layout untouched", () => {
+    const v3 = {
+      v: LAYOUT_VERSION,
+      cards: { player: { x: 0, y: 0, w: 6, h: 12 } },
+      collapsed: ["demo"],
+    };
+    const { cards, collapsed } = migrateLayout(v3, IDS, 10);
+    expect(cards.player).toEqual({ x: 0, y: 0, w: 6, h: 12 });
+    expect(collapsed).toEqual(["demo"]);
+  });
+
+  it("drops a stored card that is no longer declared", () => {
+    const stored = {
+      v: LAYOUT_VERSION,
+      cards: { player: { x: 0, y: 0, w: 6, h: 12 }, ghost: { x: 0, y: 20, w: 3, h: 4 } },
+      collapsed: [],
+    };
+    const { cards } = migrateLayout(stored, IDS, 10);
+    // The undeclared "ghost" card is dropped, but the migration never resets:
+    // every declared card (player, demo, timing) still gets an entry, even
+    // the ones with no stored slot (see the next test).
+    expect(Object.keys(cards).sort()).toEqual(["demo", "player", "timing"]);
+  });
+
+  it("gives a declared card with no stored slot a placement instead of dropping it", () => {
+    const stored = { v: LAYOUT_VERSION, cards: { player: { x: 0, y: 0, w: 6, h: 12 } }, collapsed: [] };
+    const { cards } = migrateLayout(stored, IDS, 10);
+    expect(cards.demo).toBeDefined();
+    expect(cards.timing).toBeDefined();
+  });
+
+  it("survives a corrupted stored value without throwing", () => {
+    const { cards } = migrateLayout("not an object", IDS, 10);
+    expect(Object.keys(cards).sort()).toEqual([...IDS].sort());
+  });
+
+  it("clamps a card wider than the grid", () => {
+    const stored = { v: LAYOUT_VERSION, cards: { player: { x: 8, y: 0, w: 40, h: 12 } }, collapsed: [] };
+    const { cards } = migrateLayout(stored, IDS, 10);
+    expect(cards.player.x + cards.player.w).toBeLessThanOrEqual(10);
   });
 });

@@ -100,6 +100,10 @@ DEFAULT_CONFIG = {
     "tag_on_export": "", "tag_enabled": False,
     "ui_active_tags": [],
     "ui_card_block_size": 96,
+    # Fine row height of the card grid, in pixels. Cards resize vertically by
+    # this step, so it decides how free the height feels: one quarter of a
+    # block (96 / 4) reads as free without losing alignment.
+    "ui_card_row_height": 24,
     "retry_count": 2, "retry_delay": 15, "delay_between_demos": 3,
     "recording_timeout": 0,   # minutes; 0 = disabled (kill CS2 + retry if exceeded)
     # Final assembly of all clips after batch
