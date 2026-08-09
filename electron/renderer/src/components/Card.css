@@ -128,35 +128,6 @@
 }
 
 /*
- * The resize corner (user feedback 2026-08-01). The mock's own `.cbr.br` is
- * `pointer-events:none` decoration and stays that way -- this is a bigger,
- * invisible hit target riding the same corner. `z-index: 5` because `.sb`
- * itself is a positioned box at z-index 4 (mock-v12.css) covering the card's
- * padding right up to that corner: anything sitting under it there is
- * unreachable, hover or not. `background`/`border` are in this file's own
- * PAINTS_NOTHING allowance (`transparent`, `0`), so nothing here repaints
- * what Card.css.test.ts reserves for the mock.
- */
-.resize-br {
-  position: absolute;
-  z-index: 5;
-  right: 0;
-  bottom: 0;
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  cursor: nwse-resize;
-  appearance: none;
-}
-
-.resize-br:focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring);
-  outline-offset: -2px;
-}
-
-/*
  * The header/body separator (user feedback 2026-08-01: cards had none). A
  * new element with no mock equivalent, so nothing here restates the mock's
  * own `.sec`/`.sh`/`.sb` -- `background-image` rather than the shorthand
@@ -174,4 +145,34 @@
     color-mix(in srgb, var(--accent) 55%, transparent) 85%,
     transparent
   );
+}
+
+/* The card fills the rectangle react-grid-layout gives it, and its body takes
+   whatever is left after the header -- so a card sized smaller than its
+   content scrolls instead of overflowing (the 3.2.3 grid cut three cards off
+   with no way to reach the rest). */
+.react-grid-item > .sec {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.react-grid-item > .sec > .fold {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.react-grid-item > .sec > .fold > .fold-inner {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sb-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }

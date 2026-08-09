@@ -24,14 +24,6 @@ interface CardProps {
   onToggle?: () => void;
   /** A drag handle rendered in the header, before the icon. Only SectionList passes one. */
   dragHandle?: ReactNode;
-  /**
-   * User feedback 2026-08-01: "can't even resize them by their own corner
-   * brackets" -- the mock's `.cbr.br` is `pointer-events:none` decoration
-   * (mock-v12.css). Only SectionList passes this, and only it decides what a
-   * card's two sizes are (one column vs `.wide`'s two); Card itself just
-   * exposes the corner as a real hit target when a caller wants that.
-   */
-  onResizeToggle?: () => void;
 }
 
 /**
@@ -72,7 +64,6 @@ const Card = forwardRef<HTMLElement, CardProps>(function Card(
     open: openProp,
     onToggle,
     dragHandle,
-    onResizeToggle,
   },
   ref,
 ) {
@@ -102,18 +93,6 @@ const Card = forwardRef<HTMLElement, CardProps>(function Card(
       <span className="glx" aria-hidden="true" />
       <span className="cbr tl" aria-hidden="true" />
       <span className="cbr br" aria-hidden="true" />
-      {/* The visual bracket stays the mock's inert 8x8 decoration; this is a
-          bigger, invisible hit target riding the same corner, only rendered
-          when a caller (SectionList) actually wants it clickable. */}
-      {onResizeToggle && (
-        <button
-          type="button"
-          className="resize-br"
-          aria-label={`resize-${title}`}
-          data-action="O4"
-          onMouseDown={onResizeToggle}
-        />
-      )}
       <span className="spot" aria-hidden="true" />
       <h5 className="panel-heading">
         <button type="button" className="sh" aria-expanded={open} data-action="O4" onClick={toggle}>
@@ -138,7 +117,9 @@ const Card = forwardRef<HTMLElement, CardProps>(function Card(
       <div className="fold">
         <div className="fold-inner" inert={!open}>
           <span className="sep" aria-hidden="true" />
-          <div className="sb">{children}</div>
+          {/* The grid decides this card's height; the body scrolls inside it
+              rather than spilling past the card's own rectangle. */}
+          <div className="sb sb-scroll">{children}</div>
         </div>
       </div>
     </section>

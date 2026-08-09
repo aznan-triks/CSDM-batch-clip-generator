@@ -21,3 +21,27 @@
   border-radius: var(--r-card);
   opacity: 1;
 }
+
+/* react-grid-layout ships a grey triangle drawn as a background image. The
+   window's own vocabulary is the mock's corner bracket (`.cbr.br`), so the
+   library's face is dropped and the corner is redrawn as two strokes. */
+.react-grid-item > .react-resizable-handle {
+  background: none;
+  width: 16px;
+  height: 16px;
+  right: 4px;
+  bottom: 4px;
+  padding: 0;
+}
+
+.react-grid-item > .react-resizable-handle::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid var(--gold);
+  border-bottom: 2px solid var(--gold);
+  opacity: 0.55;
+}
