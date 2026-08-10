@@ -58,7 +58,57 @@ if (MODE === "measure-search") {
   await close();
   process.exitCode = measured > 0 ? 0 : 1;
 } else {
-  console.log("Run with `measure-search` first (Task 1); `prove` is wired in Task 2.");
+  // A never-touched card: read its height exactly as SectionList's one-time
+  // measurement would have locked it in, BEFORE this proof does anything
+  // that could itself change it (§1 principle 8 -- read reality, don't
+  // assume Task 2's flex chain avoided the blow-up it was written to avoid).
+  const defaultBox = await page.evaluate((i) => {
+    const item = [...document.querySelectorAll('[role="tabpanel"]:not([hidden]) .react-grid-item')][i];
+    const b = item.getBoundingClientRect();
+    return { w: Math.round(b.width), h: Math.round(b.height) };
+  }, cardIndex);
+
+  const listHeight = () =>
+    page.evaluate((i) => {
+      const item = [...document.querySelectorAll('[role="tabpanel"]:not([hidden]) .react-grid-item')][i];
+      const list = item.querySelector(".ps-list");
+      return list ? Math.round(list.getBoundingClientRect().height) : null;
+    }, cardIndex);
+
+  const before = { box: defaultBox, listHeight: await listHeight() };
+  await shoot(page, "player-narrow");
+
+  const handle = page
+    .locator('[role="tabpanel"]:not([hidden]) .react-grid-item')
+    .nth(cardIndex)
+    .locator(".react-resizable-handle");
+  await handle.scrollIntoViewIfNeeded();
+  const hb = await handle.boundingBox();
+  if (!hb) throw new Error("resize handle has no box -- is the card off-screen?");
+  await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(hb.x + 100, hb.y + 400, { steps: 25 });
+  await page.mouse.up();
+  await page.waitForTimeout(700);
+
+  const after = {
+    box: await page.evaluate((i) => {
+      const item = [...document.querySelectorAll('[role="tabpanel"]:not([hidden]) .react-grid-item')][i];
+      const b = item.getBoundingClientRect();
+      return { w: Math.round(b.width), h: Math.round(b.height) };
+    }, cardIndex),
+    listHeight: await listHeight(),
+  };
+  const wideShot = await shoot(page, "player-wide");
+
+  console.log(JSON.stringify({ before, after }, null, 2));
+  // 900 = e2e/config.mjs's own viewport height: a never-touched card taller
+  // than the whole window it lives in is exactly the blow-up this task's
+  // flex chain exists to avoid, not a cosmetic detail.
+  const defaultSane = before.box.h < 900;
+  const listGrew = after.listHeight > before.listHeight;
+  console.log(`VERDICT: default height sane = ${defaultSane} (${before.box.h}px); list grew = ${listGrew} (${before.listHeight}px -> ${after.listHeight}px)`);
+  console.log(`shots: ${wideShot}`);
   await close();
-  process.exitCode = 1;
+  process.exitCode = defaultSane && listGrew ? 0 : 1;
 }

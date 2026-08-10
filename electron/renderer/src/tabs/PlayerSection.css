@@ -4,10 +4,18 @@
  * NO :hover rule in this file may translate or scale anything (D13/D16).
  */
 
+/*
+ * The sole child of `.sb.sb-scroll` (Card.tsx), which is itself
+ * `flex-grow:1; min-height:0` (Card.css) -- but a single flex child keeps
+ * its natural content size unless it also carries `flex-grow`. Without this,
+ * `.ps-list` below never sees the card's real height, resized or not.
+ */
 .player-section {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 /*
@@ -34,11 +42,21 @@
   width: 204px;
 }
 
+/*
+ * Grows into whatever `.player-section` has left after the registered chips,
+ * the search row and the sort/paging row -- instead of a flat 200px cap that
+ * left a dead gap under the list on a card resized taller than that. A fresh
+ * card still measures to a bounded default: `.react-grid-item` always starts
+ * at `DEFAULT_CARD_ROWS` (defaultLayout.ts) before SectionList's one-time
+ * measurement runs, so this never sees an unbounded height to grow into --
+ * verified in e2e/player-section-proof.mjs `prove` (Task 2 Step 6).
+ */
 .ps-list {
   display: flex;
   flex-direction: column;
   gap: var(--sp-2);
-  max-height: 200px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
 }
 
