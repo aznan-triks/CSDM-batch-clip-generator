@@ -17,7 +17,7 @@
  * Run: node electron/e2e/exe-smoke-proof.mjs
  */
 import { spawn, execFileSync } from "node:child_process";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { chromium } from "@playwright/test";
@@ -27,7 +27,10 @@ import { ELECTRON_DIR, SHOT_DIR } from "./config.mjs";
 const EXE = path.join(ELECTRON_DIR, "dist-app", "CSDM-Batch-Clips-Generator.exe");
 const PORT = 9223;
 const CDP = `http://localhost:${PORT}`;
-const EXPECTED_VERSION = "3.1.3";
+// Read, never hardcode (HC.1): a literal here drifts from the real release the
+// moment the next version ships, which is exactly what made this gate fail
+// silently-wrong (green engine, chip, layout -- red only on a stale literal).
+const EXPECTED_VERSION = JSON.parse(readFileSync(path.join(ELECTRON_DIR, "package.json"), "utf8")).version;
 
 mkdirSync(SHOT_DIR, { recursive: true });
 
