@@ -24,46 +24,10 @@ html {
 
 /* The cards are laid out by react-grid-layout, not by CSS grid: `.bento` is
    now only the pane that holds it. Two layout systems addressing the same
-   children is exactly how the 3.2.3 grid drifted. The placement backdrop is
-   handled in plan B. */
+   children is exactly how the 3.2.3 grid drifted. */
 .bento {
   display: block;
   width: 100%;
-}
-
-/* A card with explicit grid-column/grid-row obeys those values;
-   cards without explicit placement still auto-flow (not used post-3.2.3). */
-
-/* Explicit column/row override — set inline, not in CSS */
-
-/* ── Drag hologram ── */
-.card-ghost {
-  background: transparent;
-  border: 2px dashed var(--gold);
-  border-radius: var(--r-card);
-  /* Min height mirrors the shortest real card (a folded card's header +
-     a couple of controls), so a ghost dropped in an empty row reads as the
-     card it would become instead of a thin sliver. */
-  min-height: 120px;
-  pointer-events: none;
-  z-index: 10;
-  /* Placed in the grid by its own inline grid-column/grid-row */
-}
-
-/* The resize ghost is the same dashed outline, tinted to signal "growing the
-   card" rather than "moving it". */
-.card-ghost-resize {
-  border-color: var(--holo);
-  opacity: 0.8;
-}
-
-/* During a move/resize gesture the whole workspace is inert: it stops stray
-   pointer events from hitting cards under the ghost. */
-.grid-gesture-guard {
-  position: fixed;
-  inset: 0;
-  z-index: 5;
-  cursor: grabbing;
 }
 
 /* Drag handle */

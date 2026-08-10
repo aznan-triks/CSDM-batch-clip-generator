@@ -227,13 +227,9 @@ describe("no hover rule in the SHIPPED stylesheet moves anything", () => {
  * AppShell.css, reading those properties. Same rule as the paint-only
  * entries, applied to a real (not decorative) interaction.
  *
- * `shell/useCardDrag.ts` (2026-08-02, AUDIT_restyle6_polish_regressions.md
- * #8): the same `mousedown`-then-`window` `mousemove`/`mouseup` pattern as
- * AppShell's own drag, replacing HTML5 native drag-and-drop for card
- * reordering. It never touches `.style.*` at all -- it only calls the
- * `reorder` state setter passed in from SectionList.tsx, so it buys the
- * right to listen, same as every other entry here, never the right to move
- * something itself.
+ * `shell/SectionList.tsx` (block-grid v3): card drag/resize is delegated to
+ * react-grid-layout, which listens on its own draggable handle. This entry
+ * covers the adapter reading the pane's measured width via `ResizeObserver`.
  */
 const CURSOR_DRIVEN_ALLOWLIST: readonly string[] = [
   "shell/AppShell.tsx",
@@ -243,8 +239,8 @@ const CURSOR_DRIVEN_ALLOWLIST: readonly string[] = [
   "cursor/Reticle.tsx",
   // Section D (2026-08-08, workspace-vivant): the ★ Registered Accounts chips
   // reorder by a pointer drag -- `mousedown` then per-chip `mousemove`/`mouseup`
-  // swapping array indices. Same contract as useCardDrag: it only calls state
-  // setters (`setDragOver`/`setSavedPlayers`), never `.style.*` or a tween.
+  // swapping array indices. It only calls state setters (`setDragOver`/
+  // `setSavedPlayers`), never `.style.*` or a tween.
   "tabs/PlayerSection.tsx",
 ];
 
