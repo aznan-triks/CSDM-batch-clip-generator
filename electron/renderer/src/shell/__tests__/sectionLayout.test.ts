@@ -68,6 +68,18 @@ describe("migrateLayout", () => {
     const { cards } = migrateLayout(stored, IDS, 10);
     expect(cards.player.x + cards.player.w).toBeLessThanOrEqual(10);
   });
+
+  it("reports which cards had no stored rectangle", () => {
+    const stored = { cards: { known: { x: 0, y: 0, w: 3, h: 9 } } };
+    const { fresh } = migrateLayout(stored, ["known", "brand-new"], 6);
+    expect(fresh).toEqual(["brand-new"]);
+  });
+
+  it("reports nothing fresh once every card is stored", () => {
+    const stored = { cards: { a: { x: 0, y: 0, w: 3, h: 9 } } };
+    const { fresh } = migrateLayout(stored, ["a"], 6);
+    expect(fresh).toEqual([]);
+  });
 });
 
 describe("collapsing changes the card's height, not just its paint", () => {

@@ -59,6 +59,23 @@ const FALLBACK_BLOCK = 96;
 const FALLBACK_GAP = 10;
 const FALLBACK_ROW = 24;
 
+/**
+ * How many fine rows a card needs to show all of its content.
+ *
+ * `.sb-scroll` is the card's scroller (components/Card.tsx): its
+ * `scrollHeight` is the content's real height even while the grid clips it,
+ * so the card's natural height is its current height plus whatever the
+ * scroller is hiding. Rows are the grid's own unit -- one row plus one gap,
+ * except the last row, which carries no gap.
+ */
+function contentRows(node: Element, rowHeight: number, gap: number): number | null {
+  const scroller = node.querySelector(".sb-scroll");
+  if (!(scroller instanceof HTMLElement) || !(node instanceof HTMLElement)) return null;
+  const natural = node.offsetHeight + (scroller.scrollHeight - scroller.clientHeight);
+  if (!Number.isFinite(natural) || natural <= 0) return null;
+  return Math.max(1, Math.ceil((natural + gap) / (rowHeight + gap)));
+}
+
 export default function SectionList({ tabId, sections }: SectionListProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(0);
@@ -91,6 +108,32 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
   );
   const layout = useSectionLayout(tabId, declaredIds, cols, wideIds, collapsedRows);
   const slots = layout.slots();
+
+  // A card is measured exactly once: on the render where it has no stored
+  // rectangle (fresh install, or the Settings "reset cards" button, which
+  // clears `ui_sections`). The write itself stores a rectangle, so the next
+  // render reports nothing fresh and the effect goes quiet -- no loop, and
+  // no height the user chose is ever overwritten (his call, 2026-08-10).
+  const fresh = layout.freshIds();
+  const freshKey = fresh.join("|");
+  useEffect(() => {
+    if (!freshKey || !containerRef.current) return;
+    const next = { ...slots };
+    let changed = false;
+    for (const id of freshKey.split("|")) {
+      if (layout.isCollapsed(id)) continue;
+      const node = containerRef.current.querySelector(`[data-card-id="${id}"]`);
+      if (!node) continue;
+      const rows = contentRows(node, rowHeight, gap);
+      if (rows === null || rows === next[id]?.h) continue;
+      next[id] = { ...next[id], h: rows };
+      changed = true;
+    }
+    if (changed) layout.save(next);
+    // `slots`/`layout` are rebuilt every render; the measurement is keyed on
+    // WHICH cards are unmeasured, which is the only thing that may re-trigger it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [freshKey, rowHeight, gap]);
 
   const rglLayout: Layout = declaredIds.map((id) => ({
     i: id,
@@ -134,7 +177,7 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
                scrolling away with the content and out of reach of every
                `.react-grid-item > ...` rule (audit 2026-08-10). With a <div>,
                the handle arrives as the card's sibling, on the frame. */
-            <div key={spec.id} className={spec.element.props.className ?? undefined}>
+            <div key={spec.id} data-card-id={spec.id} className={spec.element.props.className ?? undefined}>
               {cloneElement(spec.element, {
                 open: !layout.isCollapsed(spec.id),
                 onToggle: () => layout.toggleCollapsed(spec.id),

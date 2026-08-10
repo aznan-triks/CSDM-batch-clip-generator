@@ -28,6 +28,7 @@ vi.mock("../sectionLayout", async () => {
     ...actual,
     useSectionLayout: () => ({
       slots: () => ({ alpha: { x: 0, y: 0, w: 4, h: 8 } }),
+      freshIds: () => [],
       isCollapsed: () => false,
       toggleCollapsed: vi.fn(),
       save: vi.fn(),

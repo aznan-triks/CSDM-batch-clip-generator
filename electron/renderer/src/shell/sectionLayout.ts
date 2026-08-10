@@ -58,6 +58,8 @@ export interface SectionLayout {
   toggleCollapsed(id: string): void;
   /** Persist a full set of rectangles (what react-grid-layout just produced). */
   save(next: Record<string, GridSlot>): void;
+  /** Cards that had no stored rectangle -- the only ones a measurement may resize. */
+  freshIds(): string[];
 }
 
 function isSlot(value: unknown): value is GridSlot {
@@ -87,7 +89,7 @@ export function migrateLayout(
   declaredIds: readonly string[],
   cols: number,
   wideIds?: ReadonlySet<string>,
-): { cards: Record<string, GridSlot>; collapsed: string[] } {
+): { cards: Record<string, GridSlot>; collapsed: string[]; fresh: string[] } {
   const layout = (typeof raw === "object" && raw !== null ? raw : {}) as TabLayout;
   const storedCards = (typeof layout.cards === "object" && layout.cards !== null ? layout.cards : {}) as Record<
     string,
@@ -96,6 +98,7 @@ export function migrateLayout(
   const collapsed = Array.isArray(layout.collapsed) ? layout.collapsed.filter((id) => typeof id === "string") : [];
 
   const cards: Record<string, GridSlot> = {};
+  const fresh: string[] = [];
   for (const id of declaredIds) {
     const stored = storedCards[id];
     let slot: GridSlot | null = null;
@@ -112,7 +115,10 @@ export function migrateLayout(
     if (!slot) {
       // A newly declared card lands on its reference placement rather than
       // an anonymous bottom-of-the-pile stack, so a fresh install and a
-      // freshly reset tab look the same.
+      // freshly reset tab look the same. It is also the ONLY moment its
+      // height may be re-measured: past this write, the rectangle is the
+      // user's (SectionList.tsx).
+      fresh.push(id);
       const reference = defaultSlots(
         declaredIds.map((cardId) => ({ id: cardId, wide: Boolean(wideIds?.has(cardId)) })),
         cols,
@@ -134,7 +140,7 @@ export function migrateLayout(
     }
     cards[id] = slot;
   }
-  return { cards, collapsed: collapsed.filter((id) => declaredIds.includes(id)) };
+  return { cards, collapsed: collapsed.filter((id) => declaredIds.includes(id)), fresh };
 }
 
 export function useSectionLayout(
@@ -145,7 +151,7 @@ export function useSectionLayout(
   collapsedRows: number = COLLAPSED_ROWS_FALLBACK,
 ): SectionLayout {
   const [stored, setStored] = useSetting<UiSections>("ui_sections");
-  const { cards, collapsed } = migrateLayout(stored?.[tabId], declaredIds, cols, wideIds);
+  const { cards, collapsed, fresh } = migrateLayout(stored?.[tabId], declaredIds, cols, wideIds);
 
   function persist(nextCards: Record<string, GridSlot>, nextCollapsed: string[]): void {
     setStored({
@@ -156,6 +162,7 @@ export function useSectionLayout(
 
   return {
     slots: () => cards,
+    freshIds: () => fresh,
     isCollapsed: (id) => collapsed.includes(id),
     toggleCollapsed(id) {
       const set = new Set(collapsed);

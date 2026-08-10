@@ -56,4 +56,30 @@ describe("defaultSlots", () => {
     const slots = defaultSlots([{ id: "pinned", wide: false, defaultSlot: { x: 2, y: 5, w: 4, h: 8 } }], 9);
     expect(slots.pinned).toEqual({ x: 2, y: 5, w: 4, h: 8 });
   });
+
+  it("uses a measured height when the caller supplies one", () => {
+    const slots = defaultSlots(
+      [
+        { id: "a", wide: false, rows: 8 },
+        { id: "b", wide: false },
+      ],
+      6,
+    );
+    expect(slots.a.h).toBe(8);
+    expect(slots.b.h).toBe(DEFAULT_CARD_ROWS);
+  });
+
+  it("wraps on the tallest card of the row, not on the default", () => {
+    // Two 3-column cards fill a 6-column row; the third drops below the
+    // TALLER of the two, or it would overlap the one that grew.
+    const slots = defaultSlots(
+      [
+        { id: "a", wide: false, rows: 8 },
+        { id: "b", wide: false, rows: 20 },
+        { id: "c", wide: false, rows: 5 },
+      ],
+      6,
+    );
+    expect(slots.c.y).toBe(20);
+  });
 });

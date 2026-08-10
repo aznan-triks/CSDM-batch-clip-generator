@@ -23,6 +23,13 @@ export interface DefaultLayoutInput {
   wide: boolean;
   /** An explicit placement that overrides the derived one. Nothing uses it yet. */
   defaultSlot?: Partial<GridSlot>;
+  /**
+   * Height in fine rows, measured from the card's own content. Absent means
+   * "not measured yet" and falls back to DEFAULT_CARD_ROWS -- a flat 24 rows
+   * (576px) made every card the same height as the tallest one, which is why
+   * a fresh window scrolled on its first paint.
+   */
+  rows?: number;
 }
 
 /**
@@ -44,7 +51,7 @@ export function defaultSlots(
 
   for (const section of sections) {
     const width = Math.max(1, Math.min(section.wide ? columns : DEFAULT_CARD_COLS, columns));
-    const height = Math.max(1, DEFAULT_CARD_ROWS);
+    const height = Math.max(1, Math.round(section.rows ?? DEFAULT_CARD_ROWS));
 
     if (cursorX + width > columns) {
       // No room left on this row: drop below the tallest card of the row.
