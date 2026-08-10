@@ -76,6 +76,18 @@ function contentRows(node: Element, rowHeight: number, gap: number): number | nu
   return Math.max(1, Math.ceil((natural + gap) / (rowHeight + gap)));
 }
 
+/**
+ * How long a fresh card's content must stop changing size before its
+ * measurement is trusted. Some cards fetch their content over the bridge
+ * (KillFiltersSection's `describe_filters`, live 2026-08-10): they mount
+ * showing "Loading filters..." and balloon once the reply arrives, well
+ * after a single point-in-time read would have already measured and locked
+ * in the tiny placeholder's height. Not a config value -- nothing about it
+ * is meant to be tuned per user, only long enough to outlast a bridge round
+ * trip without feeling laggy.
+ */
+const MEASURE_SETTLE_MS = 200;
+
 export default function SectionList({ tabId, sections }: SectionListProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(0);
@@ -111,29 +123,111 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
 
   // A card is measured exactly once: on the render where it has no stored
   // rectangle (fresh install, or the Settings "reset cards" button, which
-  // clears `ui_sections`). The write itself stores a rectangle, so the next
-  // render reports nothing fresh and the effect goes quiet -- no loop, and
-  // no height the user chose is ever overwritten (his call, 2026-08-10).
-  const fresh = layout.freshIds();
-  const freshKey = fresh.join("|");
+  // clears `ui_sections`). Past that one commit it is no longer fresh, so no
+  // height the user chose -- or the user's own manual resize, later -- is
+  // ever overwritten (his call, 2026-08-10). `slots`/`layout` are read
+  // through a ref inside the effect: the ResizeObserver callbacks below fire
+  // on their own schedule, long after the render that registered them, and
+  // closing over the render's own `slots`/`layout` would write back stale
+  // rectangles for cards other than the one that just changed.
+  const liveRef = useRef({ slots, layout });
+  liveRef.current = { slots, layout };
+
+  // The set of fresh cards is captured ONCE, the first render where the grid
+  // has actually mounted (`width > 0`) -- never read live off
+  // `layout.freshIds()` again. `freshIds()` SHRINKS as each card commits,
+  // and it fed the effect's own dependency array directly before this: the
+  // first (typically instant) commit changed that array, tearing down every
+  // OTHER card's still-pending observer along with it. KILL FILTERS (whose
+  // content arrives over the bridge, well after the others) was torn down,
+  // re-armed against its still-empty "Loading filters..." placeholder by a
+  // sibling's commit, and locked in there before its own content ever
+  // arrived -- measured live at the real 1100x900 default, unchanged across
+  // three different attempts at the timing before this snapshot was taken.
+  const [freshSnapshot, setFreshSnapshot] = useState<string[] | null>(null);
   useEffect(() => {
-    if (!freshKey || !containerRef.current) return;
-    const next = { ...slots };
-    let changed = false;
-    for (const id of freshKey.split("|")) {
-      if (layout.isCollapsed(id)) continue;
-      const node = containerRef.current.querySelector(`[data-card-id="${id}"]`);
-      if (!node) continue;
-      const rows = contentRows(node, rowHeight, gap);
-      if (rows === null || rows === next[id]?.h) continue;
-      next[id] = { ...next[id], h: rows };
-      changed = true;
-    }
-    if (changed) layout.save(next);
-    // `slots`/`layout` are rebuilt every render; the measurement is keyed on
-    // WHICH cards are unmeasured, which is the only thing that may re-trigger it.
+    if (freshSnapshot !== null || width <= 0) return;
+    const ids = layout.freshIds();
+    if (ids.length > 0) setFreshSnapshot(ids);
+    // Runs once per mount (tabId change remounts this component): checked by
+    // `freshSnapshot !== null` above, not by a dependency list that would
+    // have to include the ever-shrinking `layout.freshIds()` itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [freshKey, rowHeight, gap]);
+  }, [width, freshSnapshot]);
+
+  useEffect(() => {
+    if (!freshSnapshot || !containerRef.current) return;
+
+    // Commits within this one measurement pass must never lose each other.
+    // Seeding each write from `liveRef.current.slots` raced whenever two
+    // cards settled close together: React may not have re-rendered (and
+    // refreshed `liveRef`) between them, so the second commit's base
+    // excluded the first's just-saved height and silently reverted it
+    // (found live: PLAYER's measured 500 reverted to the 806 default the
+    // moment KILL FILTERS' later commit landed). `localCards` is one
+    // accumulator shared by every commit in THIS pass, mutated in place --
+    // JS has no threads, so even callbacks that fire a millisecond apart
+    // still touch it one at a time, in order.
+    const localCards = { ...slots };
+    const stops: Array<() => void> = [];
+
+    for (const id of freshSnapshot) {
+      if (liveRef.current.layout.isCollapsed(id)) continue;
+      const node = containerRef.current.querySelector(`[data-card-id="${id}"]`);
+      const scroller = node?.querySelector(".sb-scroll");
+      if (!node || !(scroller instanceof HTMLElement)) continue;
+
+      let settle: ReturnType<typeof setTimeout> | null = null;
+      let observer: MutationObserver | null = null;
+      let stopped = false;
+      const stop = () => {
+        stopped = true;
+        if (settle) clearTimeout(settle);
+        observer?.disconnect();
+      };
+      const schedule = () => {
+        if (stopped) return;
+        const rows = contentRows(node, rowHeight, gap);
+        if (rows === null) return;
+        // A card whose content is still arriving (KillFiltersSection's
+        // `describe_filters` reply, say) mutates more than once; each
+        // mutation restarts the wait so only the SETTLED height is ever
+        // committed.
+        if (settle) clearTimeout(settle);
+        settle = setTimeout(() => {
+          // One commit per card, ever, THEN the observer stops -- a later
+          // change to this same content (a filter's sub-panel opening, say)
+          // must never fight a height the user has since chosen by hand.
+          stop();
+          if (liveRef.current.layout.isCollapsed(id) || rows === localCards[id]?.h) return;
+          localCards[id] = { ...localCards[id], h: rows };
+          liveRef.current.layout.save({ ...localCards });
+        }, MEASURE_SETTLE_MS);
+      };
+
+      if (typeof MutationObserver !== "undefined") {
+        // A ResizeObserver on the scroller's content watches the WRONG
+        // event here: KillFiltersSection doesn't resize its placeholder, it
+        // REPLACES it -- `<p>Loading filters...</p>` unmounts and a whole
+        // new `<div class="kill-filters">` mounts in its place once
+        // `describe_filters` answers. A ResizeObserver bound to the old `<p>`
+        // node is watching an element that has already left the document;
+        // it never fires again (measured live: the scroller's box sat still
+        // at 728px while its content grew to 1954px, unnoticed). `.sb-scroll`
+        // itself never gets replaced, only its children do, so THAT is the
+        // stable node to watch -- for any mutation, not just a resize.
+        observer = new MutationObserver(schedule);
+        observer.observe(scroller, { childList: true, subtree: true, characterData: true });
+      }
+      schedule();
+      stops.push(stop);
+    }
+
+    return () => stops.forEach((stop) => stop());
+    // `layout`/`slots` are read live through `liveRef`; the effect itself
+    // only needs to (re)start when the frozen fresh-card list changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [freshSnapshot, rowHeight, gap]);
 
   const rglLayout: Layout = declaredIds.map((id) => ({
     i: id,
