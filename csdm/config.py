@@ -64,7 +64,7 @@ DEFAULT_CONFIG = {
     "output_dir_assembled": "",  # final assembled file (empty = same as raw)
     "cs2_cfg_dir": "",
     "config_dir": "",  # "" = script subfolder | "appdata" = %LOCALAPPDATA% | absolute path (subfolder created inside)
-    "ui_window_w": 1600,
+    "ui_window_w": 1100,
     "ui_window_h": 900,
     "ui_split_pct": 60,
     "ui_remember_layout": True,

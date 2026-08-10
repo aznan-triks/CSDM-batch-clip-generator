@@ -21,7 +21,7 @@ const CONFIG_FIXTURE = {
   output_dir_assembled: "",
   subfolder_per_demo: true,
   theme_accent: "#C8A24A",
-  ui_window_w: 1600,
+  ui_window_w: 1100,
   ui_window_h: 900,
   ui_split_pct: 60,
   ui_remember_layout: true,

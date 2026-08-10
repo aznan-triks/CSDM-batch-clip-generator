@@ -57,7 +57,7 @@ function resolveRepoRoot() {
 
 // Window geometry. Defaults mirror DEFAULT_CONFIG's ui_window_w / ui_window_h;
 // the minimum is D24 -- below it the two columns stop being usable.
-const WINDOW_DEFAULT_W = 1600;
+const WINDOW_DEFAULT_W = 1100;
 const WINDOW_DEFAULT_H = 900;
 const WINDOW_MIN_W = 900;
 const WINDOW_MIN_H = 640;

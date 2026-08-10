@@ -27,11 +27,12 @@ import { ACCENT_PRESETS, applyAccent, resolveAccent } from "../theme/accent";
 import { applyMode, DEFAULT_GROUND, GROUND_MODES } from "../theme/mode";
 import PresetSection from "./PresetSection";
 import { clampSplitPct } from "../shell/splitPane";
+import { WINDOW_DEFAULTS } from "../settings/windowDefaults";
 import "./SettingsTab.css";
 
 /** Mirrors `_clamp_layout_values` in csdm_batch_clips_generator.py. */
 function clampLayout(w: number, h: number, split: number): [number, number, number] {
-  const width = Math.max(1000, Math.min(3840, Math.round(w) || 1600));
+  const width = Math.max(1000, Math.min(3840, Math.round(w) || WINDOW_DEFAULTS.w));
   const height = Math.max(600, Math.min(2160, Math.round(h) || 900));
   return [width, height, clampSplitPct(split)];
 }
@@ -189,7 +190,7 @@ export default function SettingsTab() {
     }
   }
 
-  const currentW = asNumber(windowW, 1600);
+  const currentW = asNumber(windowW, WINDOW_DEFAULTS.w);
   const currentH = asNumber(windowH, 900);
   const currentSplit = asNumber(splitPct, 60);
   // themeAccent may be a legacy Tkinter preset name ("green"), not always
@@ -219,7 +220,11 @@ export default function SettingsTab() {
   }
 
   function resetLayoutDefaults() {
-    setMany({ ui_window_w: 1600, ui_window_h: 900, ui_split_pct: 60 });
+    setMany({
+      ui_window_w: WINDOW_DEFAULTS.w,
+      ui_window_h: WINDOW_DEFAULTS.h,
+      ui_split_pct: WINDOW_DEFAULTS.splitPct,
+    });
   }
 
   /**
