@@ -18,6 +18,7 @@ import SettingControl from "../settings/SettingControl";
 import { useSetting, useSettingsBatch } from "../settings/store";
 import { useTables } from "../settings/useTables";
 import type { FilterDef, Tables } from "../settings/useTables";
+import "../components/reflowColumns.css";
 import "./KillFiltersSection.css";
 
 /** Suicides / TK: the window's own three-way choice. */
@@ -323,8 +324,12 @@ export default function KillFiltersSection() {
         const defs = tables.filters.filter((f) => f.category === category && !f.hidden);
         if (defs.length === 0) return null;
         return (
-          <div key={category} className="kf-group">
-            <span className="lab">{CATEGORY_HEADING[category]}</span>
+          // `reflow-columns` spreads these rows over as many columns as the
+          // card's real width allows; the heading spans them all. Both names
+          // are defined in components/reflowColumns.css -- a class this file
+          // invents on its own would style nothing and fail silently (§10).
+          <div key={category} className="kf-group reflow-columns">
+            <span className="lab reflow-columns-header">{CATEGORY_HEADING[category]}</span>
             {defs.map((def) => (
               <FilterRow key={def.key} def={def} hasExclude={!NO_EXCLUDE_BOX.has(def.key)}>
                 <FilterExtras filterKey={def.key} />

@@ -96,15 +96,24 @@ if (MODE === "measure") {
 
   // Widen the card with its real resize corner -- the same gesture a user
   // makes. Anything else would prove a layout the app never actually enters.
+  //
+  // KILL FILTERS starts single-column (the bug this plan fixes) and taller
+  // than the 900px viewport, so centering the CARD (`cardBox()` above) still
+  // leaves its bottom-right handle off-screen -- the drag would land on
+  // nothing. Scroll the handle itself into view instead.
   const handle = page
     .locator('[role="tabpanel"]:not([hidden]) .react-grid-item')
     .nth(cardIndex)
     .locator(".react-resizable-handle");
+  await handle.scrollIntoViewIfNeeded();
   const hb = await handle.boundingBox();
   if (!hb) throw new Error("resize handle has no box -- is the card off-screen?");
   await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
   await page.mouse.down();
-  await page.mouse.move(hb.x + 520, hb.y + 40, { steps: 25 });
+  // 520px landed one grid step short of the ~880px content width two 419px
+  // columns + gap actually need (846px card, 816px content after the card's
+  // 15px side padding) -- widen further to clear it with margin.
+  await page.mouse.move(hb.x + 700, hb.y + 40, { steps: 25 });
   await page.mouse.up();
   await page.waitForTimeout(700);
 
