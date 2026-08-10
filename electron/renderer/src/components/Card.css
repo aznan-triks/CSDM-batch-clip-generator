@@ -183,9 +183,12 @@
   flex-direction: column;
 }
 
+/* No `overscroll-behavior` here on purpose. The default (`auto`) is what
+   lets the wheel pass to the pane once this body has reached its end;
+   `contain` trapped it inside the card the cursor happened to be over
+   (measured 2026-08-10: body exhausted, 20 more notches, pane unmoved). */
 .sb-scroll {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  overscroll-behavior: contain;
 }
