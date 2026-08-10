@@ -77,7 +77,12 @@ console.log("=== BEFORE ===");
 console.log(JSON.stringify(before, null, 2));
 
 // --- Real drag: grab the second card's handle and move it left ---
+// Scrolled into view first: a target even a few pixels below the fold
+// receives no real pointer event (audit 2026-08-10) -- `boundingBox()`
+// reports layout position regardless of on-screen visibility.
 const handle = page.locator('[role="tabpanel"]:not([hidden]) .drag-handle').nth(1);
+await handle.scrollIntoViewIfNeeded();
+await page.waitForTimeout(300);
 const box = await handle.boundingBox();
 await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
 await page.mouse.down();
@@ -88,6 +93,8 @@ await page.waitForTimeout(400);
 
 // --- Real resize: pull the first card's corner ---
 const corner = page.locator('[role="tabpanel"]:not([hidden]) .react-resizable-handle').first();
+await corner.scrollIntoViewIfNeeded();
+await page.waitForTimeout(300);
 const cbox = await corner.boundingBox();
 await page.mouse.move(cbox.x + cbox.width / 2, cbox.y + cbox.height / 2);
 await page.mouse.down();
