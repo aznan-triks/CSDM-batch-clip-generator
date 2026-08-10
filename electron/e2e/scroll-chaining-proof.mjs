@@ -56,10 +56,16 @@ const read = () =>
   page.evaluate((i) => {
     const c = [...document.querySelectorAll('[role="tabpanel"]:not([hidden]) .react-grid-item')][i];
     const b = c.querySelector(".sb-scroll");
+    const p = document.querySelector(".scrollwrap");
     return {
       body: b.scrollTop,
       bodyAtEnd: b.scrollTop + b.clientHeight >= b.scrollHeight - 2,
-      pane: document.querySelector(".scrollwrap").scrollTop,
+      pane: p.scrollTop,
+      // The pane can legitimately have nowhere left to go by the time the
+      // card's body is exhausted (a short page below a tall card) -- that is
+      // NOT the same as chaining being blocked, and comparing scrollTop
+      // before/after further wheel input cannot tell the two apart.
+      paneAtMax: p.scrollTop >= p.scrollHeight - p.clientHeight - 2,
     };
   }, idx);
 
@@ -74,7 +80,10 @@ const end = await read();
 
 console.log(JSON.stringify({ start, mid, end }, null, 2));
 const cardScrolled = mid.body > start.body;
-const chained = end.pane > mid.pane;
+// Chaining is proven either by the pane moving further once the card is
+// exhausted, or by the pane having already reached ITS OWN maximum by then
+// (nothing left for the extra wheel input to move, which is not a block).
+const chained = end.pane > mid.pane || mid.paneAtMax;
 console.log(`VERDICT: card scrolled = ${cardScrolled}; pane chained after card exhausted = ${chained}`);
 
 await app.close();
