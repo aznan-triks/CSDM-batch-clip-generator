@@ -14,12 +14,24 @@
  * The search box is capped, not elastic. `.fld { flex: 1 }` hands a lone field
  * the whole row -- 723px of empty white for a box that never holds more than a
  * name. The mock caps its own "+ add player" field at 150px, inline; this is
- * the same decision with a name, one notch wider because this box also takes a
+ * the same decision with a name, wider because this box also takes a
  * 17-digit Steam ID.
+ *
+ * `width`, not `max-width`: `flex: none` gives the box a `flex-basis: auto`,
+ * which resolves to the browser's own default intrinsic input size (measured
+ * live at 178px) -- a box that never needs to grow past its intrinsic size
+ * never reaches a max-width ceiling, so the old `max-width: 240px` never once
+ * applied (confirmed live: computed width was 178px, computed max-width was
+ * still 240px). An explicit `width` is what actually sizes the box.
+ *
+ * MEASURED 2026-08-11 on the real window: the width the placeholder itself
+ * needs, unclipped, in the field's own font, plus its padding/border and 4px
+ * of caret room. Reproduce with:
+ * node e2e/player-section-proof.mjs measure-search
  */
 .player-section #player-search {
   flex: none;
-  max-width: 240px;
+  width: 204px;
 }
 
 .ps-list {
