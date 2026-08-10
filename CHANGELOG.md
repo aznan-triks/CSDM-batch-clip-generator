@@ -20,6 +20,36 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.3 — 2026-08-10
+
+The window opens at the size it actually is, and cards are born the size their content needs.
+
+### Fixed
+
+**Humanised:** The app now opens at 1100×900 instead of claiming 1600×900 while
+actually running smaller — the "reset window" and "auto-size window" buttons in
+Settings agree with reality too. A card that has never been touched now sizes
+itself to fit what's inside it instead of always starting at the same flat
+height, so a short card doesn't waste space and a tall one (like KILL FILTERS,
+which loads its filter list a moment after the window opens) doesn't get cut
+off. Once you've resized a card by hand, it always keeps the size you gave it.
+
+**Technical:** `DEFAULT_CONFIG.ui_window_w` (`csdm/config.py`) and
+`WINDOW_DEFAULT_W` (`electron/main.js`) both read 1100 now, and a new
+`settings/windowDefaults.ts` mirror is checked against Python by a dedicated
+test so the three copies can't drift apart again. `defaultLayout.ts::defaultSlots`
+accepts a per-card `rows` instead of a flat `DEFAULT_CARD_ROWS`; `SectionList.tsx`
+measures each card that has no stored rectangle yet, once, via a
+`MutationObserver` on its scroller with a 200ms settle window (a plain
+point-in-time read locked in content that hadn't finished loading over the
+bridge). Because every tab's grid stays mounted at once and can measure
+concurrently, `settings/store.tsx`'s setter now also accepts a
+`setState(prev => ...)`-style updater, and `useSectionLayout`'s persist uses
+it — closes a lost-update race where one tab's card commit could silently
+erase another's.
+
+---
+
 ## 3.2.2 — 2026-08-10
 
 The board answers the way you expect it to.
