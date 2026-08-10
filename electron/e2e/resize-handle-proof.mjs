@@ -27,6 +27,30 @@ await page.setViewportSize({ width: 1600, height: 900 });
 await page.waitForLoadState("domcontentloaded");
 await page.waitForTimeout(1800);
 
+// Reset to the reference layout first: this proof (and its siblings) all
+// launch against the SAME real csdm_config.json, so whatever a previous
+// proof run left in `ui_sections` would otherwise leak in here and put the
+// first card at an arbitrary, possibly off-screen, height.
+const settingsTab = page.locator('[role="tab"]', { hasText: /settings/i });
+if ((await settingsTab.count()) > 0) {
+  await settingsTab.first().click();
+  await page.waitForTimeout(400);
+  await page.locator('button[data-action="M8"]').click();
+  await page.waitForTimeout(700);
+  await page.locator('[role="tab"]', { hasText: /capture/i }).first().click();
+  await page.waitForTimeout(500);
+}
+
+// Scroll the HANDLE itself into view, not just the card: the reference
+// layout's default card height (~807px) exceeds the scrollwrap's own visible
+// height (~759px) on a 900px window, so `scrollIntoViewIfNeeded()` on the
+// card is satisfied once its TOP is visible without the bottom-right corner
+// -- where the handle lives -- following. A handle even a few pixels below
+// the clipped edge receives no real pointer event (the exact mistake behind
+// two inconclusive audit passes on 2026-08-10).
+await page.locator('[role="tabpanel"]:not([hidden]) .react-resizable-handle').first().scrollIntoViewIfNeeded();
+await page.waitForTimeout(300);
+
 const audit = await page.evaluate(() => {
   const item = document.querySelector('[role="tabpanel"]:not([hidden]) .react-grid-item');
   const handle = item.querySelector(".react-resizable-handle");
