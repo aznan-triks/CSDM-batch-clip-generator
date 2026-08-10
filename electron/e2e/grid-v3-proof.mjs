@@ -32,21 +32,47 @@ await page.waitForTimeout(1500);
 
 await page.screenshot({ path: path.join(OUT, "grid-v3-before.png") });
 
-const before = await page.evaluate(() => {
+/**
+ * Snapshot every grid item's rectangle and whether it spills.
+ *
+ * A raw bounding-rect walk flags any element taller than its container as
+ * "spilling", even when an `overflow: auto` ancestor clips it cleanly on
+ * screen -- exactly what Card.tsx's `.sb-scroll` is for. So a descendant only
+ * counts as a real spill if NO ancestor between it and the card clips
+ * overflow; content past a scrollable ancestor is scrolled, not spilled.
+ */
+function takeSnapshot() {
   const items = [...document.querySelectorAll('[role="tabpanel"]:not([hidden]) .react-grid-item')];
   return items.map((el) => {
     const r = el.getBoundingClientRect();
+    let spills = false;
+    for (const c of el.querySelectorAll("*")) {
+      if (c.getBoundingClientRect().bottom <= r.bottom + 1) continue;
+      let clipped = false;
+      for (let a = c.parentElement; a && a !== el; a = a.parentElement) {
+        const oy = getComputedStyle(a).overflowY;
+        if (oy === "auto" || oy === "scroll" || oy === "hidden") {
+          clipped = true;
+          break;
+        }
+      }
+      if (!clipped) {
+        spills = true;
+        break;
+      }
+    }
     return {
       title: el.querySelector(".t")?.textContent ?? "(untitled)",
       x: Math.round(r.left),
       y: Math.round(r.top),
       w: Math.round(r.width),
       h: Math.round(r.height),
-      // Does anything inside spill past the card?
-      spills: [...el.querySelectorAll("*")].some((c) => c.getBoundingClientRect().bottom > r.bottom + 1),
+      spills,
     };
   });
-});
+}
+
+const before = await page.evaluate(takeSnapshot);
 console.log("=== BEFORE ===");
 console.log(JSON.stringify(before, null, 2));
 
@@ -69,20 +95,7 @@ await page.mouse.move(cbox.x + 200, cbox.y + 120, { steps: 20 });
 await page.mouse.up();
 await page.waitForTimeout(400);
 
-const after = await page.evaluate(() => {
-  const items = [...document.querySelectorAll('[role="tabpanel"]:not([hidden]) .react-grid-item')];
-  return items.map((el) => {
-    const r = el.getBoundingClientRect();
-    return {
-      title: el.querySelector(".t")?.textContent ?? "(untitled)",
-      x: Math.round(r.left),
-      y: Math.round(r.top),
-      w: Math.round(r.width),
-      h: Math.round(r.height),
-      spills: [...el.querySelectorAll("*")].some((c) => c.getBoundingClientRect().bottom > r.bottom + 1),
-    };
-  });
-});
+const after = await page.evaluate(takeSnapshot);
 console.log("=== AFTER (drag + resize) ===");
 console.log(JSON.stringify(after, null, 2));
 
