@@ -43,3 +43,43 @@ html {
 .drag-handle:hover {
   color: var(--gold);
 }
+
+/* MEASURED (2026-08-03, improvement_suggestions.md P4): the tab strip's
+   bottom indicator (`.ind`) slides fluidly between tabs, but the top accent
+   bar (`.tab.active::after`, a 2px gradient) teleports because it is a
+   per-tab pseudo-element -- destroyed on the old active tab and created on
+   the new one, with nothing to interpolate.
+
+   A single `.top-ind` element (same pattern as `.ind`): one
+   absolute-positioned bar that TabBar's JS (components/Tab.tsx) moves via
+   `translateX()` whenever the active tab changes, with the same `.4s`
+   transition the bottom indicator already uses. The mock's own
+   `.tab.active::after` is hidden below because the sliding element draws the
+   same gradient at the same position.
+
+   Lost once already: a large, unrelated block-grid rewrite of this file
+   (3.2.3) deleted this block as collateral damage while `Tab.tsx`'s JS half
+   survived untouched, so the top bar silently reverted to snapping with no
+   test catching it. `theme/__tests__/tab-top-indicator.test.ts` now asserts
+   on `.top-ind`'s computed style directly -- do not remove without checking
+   that test first. */
+.top-ind {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 100px;
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--lime-glow), var(--accent));
+  transition: transform 0.4s var(--ease);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 55%, transparent);
+  /* `.tab.active` carries `z-index: 6` (mock-v12.css) and
+     `transform: translateY(-2px)` -- the active tab lifts 2px and, with its
+     opaque background, would otherwise paint OVER the bar at `top: 0`. */
+  z-index: 7;
+  pointer-events: none;
+}
+
+.tab.active::after {
+  display: none;
+}
