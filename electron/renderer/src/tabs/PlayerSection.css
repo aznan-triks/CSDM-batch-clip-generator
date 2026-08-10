@@ -128,6 +128,24 @@
   font-variant-numeric: tabular-nums;
 }
 
+/*
+ * Active players, directly above the search row. Same shape as
+ * ★ Registered Accounts just above it (a label row, a wrapping chip row,
+ * the same empty-state string) -- one visual vocabulary for "a set of
+ * players shown as chips" instead of two.
+ */
+.ps-active {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.ps-active-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
 /* ---------------------------------------------------------------------------
  * ★ Registered Accounts (Section D)
  * A section above the search, separated from the list below by a rule. The

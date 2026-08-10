@@ -68,6 +68,16 @@ if (MODE === "measure-search") {
     return { w: Math.round(b.width), h: Math.round(b.height) };
   }, cardIndex);
 
+  // Activate two players so the screenshots also show the active-chips row
+  // (Task 3) -- after the default-height read above, since clicking a row
+  // cannot retroactively change SectionList's one-time measurement.
+  await page.evaluate((i) => {
+    const item = [...document.querySelectorAll('[role="tabpanel"]:not([hidden]) .react-grid-item')][i];
+    const rows = [...item.querySelectorAll(".ps-row")].slice(0, 2);
+    for (const row of rows) row.click();
+  }, cardIndex);
+  await page.waitForTimeout(200);
+
   const listHeight = () =>
     page.evaluate((i) => {
       const item = [...document.querySelectorAll('[role="tabpanel"]:not([hidden]) .react-grid-item')][i];

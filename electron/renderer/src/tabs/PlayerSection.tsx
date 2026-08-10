@@ -183,14 +183,6 @@ export default function PlayerSection() {
     setDragOver(null);
   }
 
-  const activeRow = rows.find((row) => row[1] === active[0]);
-  const activeLabel =
-    active.length === 0
-      ? "No active player -- pick one below"
-      : active.length === 1
-        ? `Active: ${activeRow?.[2] ?? active[0]}  (${active[0]})`
-        : `Active: ${activeRow?.[2] ?? active[0]}  (+${active.length - 1} more)`;
-
   return (
     <div className="player-section">
       {/* ★ Registered Accounts -- the saved-player chips. Wrapped in
@@ -270,11 +262,38 @@ export default function PlayerSection() {
           keeps its own "+ add player" field on the row beside the player
           pills, capped rather than spanning the card -- a search box as wide
           as the window is what made this card read as a banner. */}
-      <div className="row">
-        <SettingControl settingKey="player_name">
-          <span className="lab">{activeLabel}</span>
-        </SettingControl>
+      {/* Active players -- one removable chip each, same visual vocabulary
+          as the ★ Registered Accounts chips above. No separate ×: unlike a
+          registered account (activate vs. unregister are two different
+          things), an active chip has exactly one action -- click it, it
+          deactivates. */}
+      <SettingControl settingKey="player_name">
+        <div className="ps-active">
+          <span className="lab">Active</span>
+          <div className="ps-active-chips">
+            {active.length === 0 && (
+              <span className="ps-registered-empty">No active player -- pick one below</span>
+            )}
+            {active.map((steamId) => {
+              const name = rows.find((row) => row[1] === steamId)?.[2] ?? steamId;
+              return (
+                <button
+                  key={steamId}
+                  type="button"
+                  className="chip on"
+                  aria-pressed="true"
+                  onClick={() => toggle(steamId)}
+                >
+                  <span className="d" aria-hidden="true" />
+                  {name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </SettingControl>
 
+      <div className="row">
         <Field
           id="player-search"
           value={search}
