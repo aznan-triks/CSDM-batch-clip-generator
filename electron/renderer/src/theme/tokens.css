@@ -224,7 +224,16 @@
   --solid: #ffffff; /* opaque control face: chip, field, ghost button */
   --edge-hi: rgba(255, 255, 255, 0.75); /* the lit rim of a glass card */
   --hair-2: rgba(30, 45, 70, 0.06); /* the quietest divider */
-  /* Derived from the accent so a user-chosen colour carries through (D9). */
+  /* Derived from the accent so a user-chosen colour carries through (D9).
+     `--accent` itself was missing this: the mock (mock-v12.css) declares it
+     as a plain `#2563EB` literal, and only `--accent-soft` was ever bridged
+     back to `--gold` here -- so a chosen colour reached the soft tint but
+     never the raw token, and everything reading `--accent` directly
+     (AppShell.css's active tab underline, Card.css's hover border and
+     glitch gradient, StatStrip.css's coloured figure) stayed the mock's
+     blue regardless of the picker (found live, 2026-08-10: accent set to
+     green, those three stayed blue). */
+  --accent: var(--gold);
   --accent-soft: color-mix(in srgb, var(--gold) 12%, transparent);
   /* Soft floating shadows. `--shadow-tint` above is a COLOUR; these are
      complete box-shadow values, which is what makes a card look lifted off
