@@ -3,6 +3,11 @@
    let the scrollwrap above handle vertical overflow. */
 .grid-pane {
   width: 100%;
+  /* Graph-paper backdrop at the real cell pitch, so the user sees where a
+     card will land while dragging. One column = --block, one gap = --block-gap. */
+  background-image:
+    repeating-linear-gradient(to right, var(--grid-ink) 0, var(--grid-ink) 1px, transparent 1px, transparent calc(var(--block) + var(--block-gap))),
+    repeating-linear-gradient(to bottom, var(--grid-ink) 0, var(--grid-ink) 1px, transparent 1px, transparent calc(var(--block-row) + var(--block-gap)));
 }
 
 /* react-grid-layout writes `transition: all 200ms ease` on every item. The

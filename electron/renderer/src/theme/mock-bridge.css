@@ -11,6 +11,15 @@ html {
   --block-row: 24px;            /* fallback; overridden by settings store */
   --font: var(--font-display);  /* bridge mock's token to the shell */
   --faint: var(--dim);         /* contrast bridge */
+  /* The placement backdrop's ink. Deliberately NOT `--line`: each night
+     ground redefines that one for its own 1px separators (the terminal
+     ground's greenish ink turned the whole pane into a neon lattice in
+     3.2.3). This one is neutral and faint enough to cover a full pane. */
+  --grid-ink: rgba(255, 255, 255, 0.05);
+}
+
+:root[data-mode="light"] {
+  --grid-ink: rgba(30, 45, 70, 0.06);
 }
 
 /* The cards are laid out by react-grid-layout, not by CSS grid: `.bento` is
