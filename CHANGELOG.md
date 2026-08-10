@@ -20,6 +20,36 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.1 — 2026-08-09
+
+Cards go where you put them, at the size you give them.
+
+### Changed
+
+**Humanised:** The workspace is a real board now: drag a card anywhere, pull its
+corner to set both its width and its height, and the cards below move aside on
+their own instead of overlapping. A card you make smaller than its contents
+scrolls inside itself — nothing is ever cut off at the bottom of the window
+again. The faint grid behind the cards is back to being a whisper instead of a
+bright lattice.
+
+**Technical:** The hand-rolled placement engine (pointer-to-cell arithmetic,
+collision handling, drag ghost) is replaced by `react-grid-layout`.
+`shell/sectionLayout.ts` keeps only the stored shape and its migration;
+`shell/SectionList.tsx` is an adapter that translates slots to `Layout[]` and
+persists what the library returns. `ui_sections` moves to a v3 schema
+(`{x, y, w, h}`, columns × fine rows) with a migration that converts and keeps
+every placement instead of resetting. New config key `ui_card_row_height`
+(24px) sets the vertical resize step. `Card.tsx`'s body scrolls inside the
+rectangle the grid gives it. The placement backdrop is painted with a dedicated
+`--grid-ink` token rather than `--line`, which each night ground redefines for
+its own separators — the terminal ground's greenish ink was why the grid read
+as neon. Width is measured per pane with a `ResizeObserver` instead of the
+library's window-based `WidthProvider`, so dragging the console splitter
+re-tiles the grid too.
+
+---
+
 ## 3.2.0 — 2026-08-08
 
 The window adapts to its space and remembers everything.
