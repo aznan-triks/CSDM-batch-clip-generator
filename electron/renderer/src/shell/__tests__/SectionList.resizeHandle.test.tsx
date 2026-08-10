@@ -31,7 +31,6 @@ vi.mock("../sectionLayout", async () => {
       isCollapsed: () => false,
       toggleCollapsed: vi.fn(),
       save: vi.fn(),
-      resetToDefaults: vi.fn(),
     }),
   };
 });

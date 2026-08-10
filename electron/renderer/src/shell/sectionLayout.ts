@@ -11,6 +11,7 @@
  * height is free rather than quantised to whole blocks.
  */
 import { useSetting } from "../settings/store";
+import { defaultSlots } from "./defaultLayout";
 
 /** A card's rectangle, in react-grid-layout units (0-indexed). */
 export interface GridSlot {
@@ -47,8 +48,7 @@ export const LAYOUT_VERSION = 3;
  */
 export const ROWS_PER_BLOCK = 4;
 
-/** Default span of a card with no stored slot: readable for a few controls. */
-const DEFAULT_W = 3;
+/** Height a re-expanded card falls back to if it never had a remembered one. */
 const DEFAULT_H = 6 * ROWS_PER_BLOCK;
 
 export interface SectionLayout {
@@ -110,12 +110,14 @@ export function migrateLayout(
       };
     }
     if (!slot) {
-      slot = {
-        x: 0,
-        y: Number.POSITIVE_INFINITY,
-        w: wideIds?.has(id) ? cols : DEFAULT_W,
-        h: DEFAULT_H,
-      };
+      // A newly declared card lands on its reference placement rather than
+      // an anonymous bottom-of-the-pile stack, so a fresh install and a
+      // freshly reset tab look the same.
+      const reference = defaultSlots(
+        declaredIds.map((cardId) => ({ id: cardId, wide: Boolean(wideIds?.has(cardId)) })),
+        cols,
+      );
+      slot = { ...reference[id] };
     }
     // Clamp into the grid: a card wider than the pane would be unreachable.
     slot.w = Math.max(1, Math.min(slot.w, cols));

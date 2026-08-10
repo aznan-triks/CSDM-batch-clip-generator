@@ -222,6 +222,15 @@ export default function SettingsTab() {
     setMany({ ui_window_w: 1600, ui_window_h: 900, ui_split_pct: 60 });
   }
 
+  /**
+   * Put every tab's cards back on the reference layout. Clearing the key
+   * outright is what the layout module reads as "no stored placement", which
+   * is precisely the state a fresh install starts from.
+   */
+  function resetCardLayout() {
+    setMany({ ui_sections: {} });
+  }
+
   async function testAndReload() {
     setDbStatus("Connecting…");
     try {
@@ -523,6 +532,9 @@ export default function SettingsTab() {
             </button>
             <button type="button" className="chip" data-action="M7" onClick={resetLayoutDefaults}>
               Reset default
+            </button>
+            <button type="button" className="chip" data-action="M8" onClick={resetCardLayout}>
+              Reset card layout
             </button>
             <SettingControl settingKey="ui_remember_layout">
               <Chip
