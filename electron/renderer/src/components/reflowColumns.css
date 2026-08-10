@@ -1,0 +1,61 @@
+/*
+ * A card's repetitive rows spread over as many columns as its real width
+ * allows. CSS multi-column, no JavaScript: the engine derives the column
+ * count from the container's own width, so a card being dragged wider
+ * re-flows live without a single React render.
+ *
+ * Multi-column rather than CSS Grid on purpose. Grid aligns items into rows,
+ * and every cell in a row takes the height of the tallest one -- but these
+ * rows have uneven, CHANGING heights (`FilterExtras` reveals a sub-panel
+ * only while its filter is enabled, and `.filter-row` wraps). Chromium ships
+ * no masonry mode, so Grid would have left holes under short rows and made
+ * neighbours jump every time a filter was toggled. Multi-column fills one
+ * column before starting the next: a tall row pushes only what follows it in
+ * its own column.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.reflow-columns {
+  /*
+   * MEASURED 2026-08-10 on the real window: the width a KILL FILTERS row
+   * needs to keep its label and its three boxes on one line (rows carrying
+   * a `.kf-extra` sub-panel excluded -- they are wider by nature and wrap
+   * cleanly, and sizing on them would mean the card never splits at all).
+   * Reproduce with: node e2e/reflow-columns-proof.mjs measure
+   *
+   * A card whose rows are a different shape overrides it on its own class
+   * (`.some-group { --reflow-col-min: 260px }`) -- never by editing here.
+   */
+  --reflow-col-min: 419px;
+
+  /* `columns` is ignored on a flex container. The first consumer was one. */
+  display: block;
+  column-width: var(--reflow-col-min);
+  column-gap: var(--sp-5);
+}
+
+/*
+ * A row is one indivisible item: without this it can be cut in half at a
+ * column boundary, label at the bottom of one column and checkboxes at the
+ * top of the next.
+ */
+.reflow-columns > * {
+  break-inside: avoid;
+  /* The container is no longer a flex box, so `gap` no longer applies.
+     Bottom margin rather than top: a margin at the TOP of a column is
+     truncated by the multi-column spec, which would make the first row of
+     each column sit tighter than the others. */
+  margin-block-end: var(--sp-2);
+}
+
+/*
+ * The group heading belongs to the whole group, not to its first column.
+ * `column-span` has no effect on an inline box and every heading here is a
+ * `<span>`, so it is blockified -- dropping this line silently traps the
+ * title above a third of the rows.
+ */
+.reflow-columns-header {
+  display: block;
+  column-span: all;
+}
