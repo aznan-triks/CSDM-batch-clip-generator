@@ -20,6 +20,37 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.7 — 2026-08-11
+
+The window opens wider, the tab bar's top glow slides again, and the card
+layout starts where you last left it.
+
+### Fixed
+
+**Humanised:** The top accent bar above the active tab used to snap into
+place instead of sliding like the bar underneath it — it was silently broken
+by an unrelated change a while back. It slides again now.
+
+### Changed
+
+**Humanised:** The app now opens at 1600×900 instead of 1100×900, and a
+fresh install (or "reset layout") starts with the card arrangement already
+tuned on this machine instead of the flat auto-generated stack.
+
+**Technical:** `.top-ind`'s CSS (position/transition/z-index/box-shadow) was
+deleted as collateral damage by an unrelated block-grid rewrite (45b459a,
+v3.2.3) while `Tab.tsx`'s JS half kept moving the element — restored from
+git history (e53e6f1) and locked in with a real-cascade test
+(`theme/__tests__/tab-top-indicator.test.ts`) so it can't silently vanish
+again. `DEFAULT_CONFIG.ui_window_w` (1600) and its two mirrors
+(`WINDOW_DEFAULT_W`, `windowDefaults.ts`) stay in sync via the existing
+drift test. `DEFAULT_CONFIG.ui_sections` now ships the capture/video/settings
+card rectangles captured from the current live config instead of `{}`,
+consumed as-is by `sectionLayout.ts::migrateLayout`'s existing "use the
+stored rectangle" path — no new mechanism.
+
+---
+
 ## 3.2.6 — 2026-08-11
 
 The Player card finally uses the space it's given.
