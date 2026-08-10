@@ -20,6 +20,37 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.6 — 2026-08-11
+
+The Player card finally uses the space it's given.
+
+### Fixed
+
+**Humanised:** The player search box no longer clips its own placeholder
+text. Dragging the Player card taller now actually grows the player list
+underneath it instead of leaving a dead gap. And the old "Active: Alpha (+1
+more)" line — which hid every active player past the first — is now a row of
+small removable chips, one per active player, so you can see and drop any of
+them at a glance.
+
+### Added
+
+**Technical:** `#player-search` gets an explicit `width` measured against its
+own placeholder (`e2e/player-section-proof.mjs measure-search`) instead of a
+`max-width: 240px` that never actually applied -- `flex: none` gave the box a
+`flex-basis: auto`, which resolves to the browser's own intrinsic input size
+(178px measured live), a box that never grows past that and so never once
+reached the 240px ceiling. `.player-section` and `.ps-list` join `Card.css`'s
+existing `flex-grow:1; min-height:0` chain instead of a flat
+`max-height: 200px` -- a never-touched card still measures to a bounded
+default height (`defaultLayout.ts::DEFAULT_CARD_ROWS`, unchanged), since that
+chain only gives the list more room once the card itself has more room to
+give. `PlayerSection.tsx`'s old `activeLabel` string is replaced by one
+`.chip.on` per active player (same visual vocabulary as the ★ Registered
+Accounts chips), each clickable to deactivate.
+
+---
+
 ## 3.2.5 — 2026-08-10
 
 A wide card finally uses the width it was given.
