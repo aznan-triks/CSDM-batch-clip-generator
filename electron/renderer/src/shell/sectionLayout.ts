@@ -18,7 +18,16 @@ export interface GridSlot {
   y: number;
   w: number;
   h: number;
+  /**
+   * The height this card had before it was collapsed, so expanding gives
+   * back the exact rectangle the user chose instead of a default. Absent on
+   * an expanded card.
+   */
+  hPrev?: number;
 }
+
+/** Rows a collapsed card occupies when the config key is unreadable. */
+export const COLLAPSED_ROWS_FALLBACK = 2;
 
 interface TabLayout {
   v?: number;
@@ -112,6 +121,15 @@ export function migrateLayout(
     slot.w = Math.max(1, Math.min(slot.w, cols));
     slot.x = Math.max(0, Math.min(slot.x, cols - slot.w));
     slot.h = Math.max(1, slot.h);
+    // A stored `hPrev` is carried through, but only if it could actually be
+    // restored: a negative or non-finite one would expand the card into an
+    // invalid rectangle, so it is dropped and the default takes over.
+    const storedPrev = (stored as { hPrev?: unknown })?.hPrev;
+    if (typeof storedPrev === "number" && Number.isFinite(storedPrev) && storedPrev >= 1) {
+      slot.hPrev = storedPrev;
+    } else {
+      delete slot.hPrev;
+    }
     cards[id] = slot;
   }
   return { cards, collapsed: collapsed.filter((id) => declaredIds.includes(id)) };
@@ -122,6 +140,7 @@ export function useSectionLayout(
   declaredIds: readonly string[],
   cols: number,
   wideIds?: ReadonlySet<string>,
+  collapsedRows: number = COLLAPSED_ROWS_FALLBACK,
 ): SectionLayout {
   const [stored, setStored] = useSetting<UiSections>("ui_sections");
   const { cards, collapsed } = migrateLayout(stored?.[tabId], declaredIds, cols, wideIds);
@@ -138,12 +157,31 @@ export function useSectionLayout(
     isCollapsed: (id) => collapsed.includes(id),
     toggleCollapsed(id) {
       const set = new Set(collapsed);
-      if (set.has(id)) set.delete(id);
-      else set.add(id);
-      persist(cards, [...set]);
+      const slot = cards[id];
+      const nextCards = { ...cards };
+      if (set.has(id)) {
+        // Expanding: give back the exact height the card had, never a default.
+        set.delete(id);
+        nextCards[id] = { ...slot, h: slot.hPrev ?? DEFAULT_H };
+        delete nextCards[id].hPrev;
+      } else {
+        // Collapsing is a LAYOUT change, not a paint: the grid must be told
+        // the card shrank, or it keeps serving the stored height and leaves
+        // an empty rectangle under the header (measured 377px, 2026-08-10).
+        set.add(id);
+        nextCards[id] = { ...slot, h: collapsedRows, hPrev: slot.h };
+      }
+      persist(nextCards, [...set]);
     },
     save(next) {
-      persist(next, collapsed);
+      // Never let a write-back erase the remembered height: react-grid-layout
+      // knows nothing about `hPrev` and hands back rectangles without it.
+      const merged: Record<string, GridSlot> = {};
+      for (const [id, slot] of Object.entries(next)) {
+        const prev = cards[id]?.hPrev;
+        merged[id] = prev === undefined ? slot : { ...slot, hPrev: prev };
+      }
+      persist(merged, collapsed);
     },
   };
 }

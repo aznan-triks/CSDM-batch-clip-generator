@@ -104,6 +104,10 @@ DEFAULT_CONFIG = {
     # this step, so it decides how free the height feels: one quarter of a
     # block (96 / 4) reads as free without losing alignment.
     "ui_card_row_height": 24,
+    # Height of a COLLAPSED card, in fine grid rows. Two rows (2*24 + 10 gap
+    # = 58px) clears the 54px header without leaving a visible margin under
+    # it. Raise it if the header ever grows a second line.
+    "ui_card_collapsed_rows": 2,
     "retry_count": 2, "retry_delay": 15, "delay_between_demos": 3,
     "recording_timeout": 0,   # minutes; 0 = disabled (kill CS2 + retry if exceeded)
     # Final assembly of all clips after batch

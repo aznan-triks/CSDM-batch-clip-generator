@@ -69,3 +69,28 @@ describe("migrateLayout", () => {
     expect(cards.player.x + cards.player.w).toBeLessThanOrEqual(10);
   });
 });
+
+describe("collapsing changes the card's height, not just its paint", () => {
+  const IDS_C = ["player", "demo"] as const;
+
+  it("keeps a stored hPrev through migration", () => {
+    const stored = {
+      v: LAYOUT_VERSION,
+      cards: { player: { x: 0, y: 0, w: 6, h: 2, hPrev: 12 } },
+      collapsed: ["player"],
+    };
+    const { cards } = migrateLayout(stored, IDS_C, 10);
+    expect(cards.player.h).toBe(2);
+    expect(cards.player.hPrev).toBe(12);
+  });
+
+  it("drops a nonsensical hPrev rather than restoring a broken height", () => {
+    const stored = {
+      v: LAYOUT_VERSION,
+      cards: { player: { x: 0, y: 0, w: 6, h: 2, hPrev: -4 } },
+      collapsed: ["player"],
+    };
+    const { cards } = migrateLayout(stored, IDS_C, 10);
+    expect(cards.player.hPrev).toBeUndefined();
+  });
+});

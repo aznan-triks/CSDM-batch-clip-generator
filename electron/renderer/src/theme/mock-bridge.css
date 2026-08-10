@@ -9,6 +9,7 @@ html {
   --block: 96px;                /* fallback; overridden by settings store */
   --block-gap: 10px;
   --block-row: 24px;            /* fallback; overridden by settings store */
+  --block-collapsed-rows: 2;    /* fallback; overridden by settings store */
   --font: var(--font-display);  /* bridge mock's token to the shell */
   --faint: var(--dim);         /* contrast bridge */
   /* The placement backdrop's ink. Deliberately NOT `--line`: each night

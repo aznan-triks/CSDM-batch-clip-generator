@@ -19,7 +19,7 @@ import { cloneElement, useEffect, useRef, useState, type CSSProperties, type Mou
 // v1-shaped surface is what this adapter is written against.
 import GridLayout, { type Layout } from "react-grid-layout/legacy";
 
-import { useSectionLayout, type GridSlot } from "./sectionLayout";
+import { useSectionLayout, COLLAPSED_ROWS_FALLBACK, type GridSlot } from "./sectionLayout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./SectionList.css";
@@ -76,6 +76,9 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
   const block = readPx("--block", FALLBACK_BLOCK);
   const gap = readPx("--block-gap", FALLBACK_GAP);
   const rowHeight = readPx("--block-row", FALLBACK_ROW);
+  // A collapsed card is exactly this tall. Read from the same place as every
+  // other grid measurement so a config change re-tiles without a restart.
+  const collapsedRows = Math.max(1, Math.round(readPx("--block-collapsed-rows", COLLAPSED_ROWS_FALLBACK)));
   // One column is exactly one block wide, as before; how many fit is what the
   // pane's width decides.
   const cols = Math.max(1, Math.floor((width + gap) / (block + gap)));
@@ -86,10 +89,16 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
       .filter((s) => (s.element.props.className ?? "").split(/\s+/).includes("wide"))
       .map((s) => s.id),
   );
-  const layout = useSectionLayout(tabId, declaredIds, cols, wideIds);
+  const layout = useSectionLayout(tabId, declaredIds, cols, wideIds, collapsedRows);
   const slots = layout.slots();
 
-  const rglLayout: Layout = declaredIds.map((id) => ({ i: id, ...slots[id] }));
+  const rglLayout: Layout = declaredIds.map((id) => ({
+    i: id,
+    ...slots[id],
+    // A collapsed card has no height to give: leaving the corner live would
+    // let the user store a height that expanding immediately overwrites.
+    isResizable: !layout.isCollapsed(id),
+  }));
 
   function onLayoutChange(next: Layout): void {
     const cards: Record<string, GridSlot> = {};

@@ -37,6 +37,7 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   ui_active_tags: "driven by the tag-chip grid's selection, not a form field",
   ui_card_block_size: "block-grid cell size; changed via config, never a widget",
   ui_card_row_height: "card grid row step; changed via config, never a widget",
+  ui_card_collapsed_rows: "collapsed card height; changed via config, never a widget",
 };
 
 /** Has a control in Tkinter, not ported yet. MUST shrink at every chantier. */

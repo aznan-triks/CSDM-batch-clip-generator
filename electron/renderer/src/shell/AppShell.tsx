@@ -122,6 +122,17 @@ export default function AppShell() {
     document.documentElement.style.setProperty("--block-row", `${size}px`);
   }, [rowHeight]);
 
+  // Collapsed card height in fine rows (2026-08-10): same wiring as
+  // `--block-row`, so a config change applies without a restart.
+  const [collapsedRows] = useSetting<number>("ui_card_collapsed_rows");
+  useEffect(() => {
+    const rows =
+      typeof collapsedRows === "number" && Number.isFinite(collapsedRows) && collapsedRows > 0
+        ? collapsedRows
+        : 2;
+    document.documentElement.style.setProperty("--block-collapsed-rows", String(rows));
+  }, [collapsedRows]);
+
   // The open tab, on the document, so the backdrop can draw a different field
   // per screen (`BACKDROP_BY_TAB` in shell/backdropField.ts). An attribute
   // rather than a prop: the canvas is a sibling of `.app`, not a child of the
