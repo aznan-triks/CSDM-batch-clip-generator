@@ -117,22 +117,30 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
           onLayoutChange={onLayoutChange}
           resizeHandles={["se"]}
         >
-          {sections.map((spec) =>
-            cloneElement(spec.element, {
-              key: spec.id,
-              open: !layout.isCollapsed(spec.id),
-              onToggle: () => layout.toggleCollapsed(spec.id),
-              dragHandle: (
-                <span
-                  className="drag-handle"
-                  aria-label={`drag-${spec.id}`}
-                  onClick={(e: MouseEvent) => e.stopPropagation()}
-                >
-                  ⠿
-                </span>
-              ),
-            }),
-          )}
+          {sections.map((spec) => (
+            /* A real DOM element as the grid child, not <Card> itself.
+               react-resizable appends its handle to the children of what it
+               clones: with a component there, `cloneElement` overwrote Card's
+               `children` prop and the handle landed inside `.sb-scroll` --
+               scrolling away with the content and out of reach of every
+               `.react-grid-item > ...` rule (audit 2026-08-10). With a <div>,
+               the handle arrives as the card's sibling, on the frame. */
+            <div key={spec.id} className={spec.element.props.className ?? undefined}>
+              {cloneElement(spec.element, {
+                open: !layout.isCollapsed(spec.id),
+                onToggle: () => layout.toggleCollapsed(spec.id),
+                dragHandle: (
+                  <span
+                    className="drag-handle"
+                    aria-label={`drag-${spec.id}`}
+                    onClick={(e: MouseEvent) => e.stopPropagation()}
+                  >
+                    ⠿
+                  </span>
+                ),
+              })}
+            </div>
+          ))}
         </GridLayout>
       )}
     </div>

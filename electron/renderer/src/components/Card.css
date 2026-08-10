@@ -152,31 +152,26 @@
    content scrolls instead of overflowing (the 3.2.3 grid cut three cards off
    with no way to reach the rest).
 
-   `.react-grid-item` and `.sec` are the SAME element, not a wrapper/child
-   pair: GridItem clones the <Card> SectionList gives it with a new
-   className that appends "react-grid-item", and Card applies its own
-   className (which becomes "sec") to that identical <section> -- there is
-   no separate wrapper div. A child combinator (`.react-grid-item > .sec`)
-   therefore never matches anything, this flex-height chain never activates,
-   `.sb-scroll`'s `overflow-y: auto` has no bounded height to scroll within,
-   and tall cards render at full natural height, overlapping their
-   neighbours below (block-grid v3, Task 5 finding: 6/8 cards spilling).
-   The fix is a compound selector for the element itself, keeping the two
-   nested rules as real descendant selectors -- `.fold`/`.fold-inner`
-   genuinely are descendants of `.sec` inside Card's own JSX. */
-.react-grid-item.sec {
+   `.react-grid-item` is the WRAPPER div SectionList renders, and `.sec` is
+   the Card inside it. They were the same element until the resize handle was
+   moved back onto the frame (2026-08-10), which is why these were compound
+   selectors before. Same rule as ever -- write the selector the real
+   structure imposes -- applied to a structure that changed. Verified against
+   the live cascade by SectionList.resizeHandle.test.tsx, not by re-reading
+   this file. */
+.react-grid-item > .sec {
   height: 100%;
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
 
-.react-grid-item.sec > .fold {
+.react-grid-item > .sec > .fold {
   flex: 1 1 auto;
   min-height: 0;
 }
 
-.react-grid-item.sec > .fold > .fold-inner {
+.react-grid-item > .sec > .fold > .fold-inner {
   height: 100%;
   min-height: 0;
   display: flex;
