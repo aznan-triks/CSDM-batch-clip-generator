@@ -64,11 +64,56 @@ DEFAULT_CONFIG = {
     "output_dir_assembled": "",  # final assembled file (empty = same as raw)
     "cs2_cfg_dir": "",
     "config_dir": "",  # "" = script subfolder | "appdata" = %LOCALAPPDATA% | absolute path (subfolder created inside)
-    "ui_window_w": 1100,
+    "ui_window_w": 1600,
     "ui_window_h": 900,
     "ui_split_pct": 60,
     "ui_remember_layout": True,
-    "ui_sections": {},  # per-tab {order: [...], collapsed: [...]}; empty = declared order, nothing folded
+    # Reference card layout (LAYOUT_VERSION 3, sectionLayout.ts), captured
+    # 2026-08-11 from the user's own tuned arrangement so a fresh install or
+    # a layout reset starts from it instead of the auto-derived stack.
+    "ui_sections": {
+        "capture": {
+            "v": 3,
+            "cards": {
+                "player": {"x": 0, "y": 0, "w": 5, "h": 24},
+                "demo-selection": {"x": 0, "y": 24, "w": 3, "h": 24},
+                "weapon-filter": {"x": 0, "y": 48, "w": 5, "h": 24},
+                "capture-timing": {"x": 0, "y": 72, "w": 3, "h": 24},
+                "timing-retries": {"x": 0, "y": 96, "w": 3, "h": 24},
+                "kill-filters": {"x": 0, "y": 120, "w": 3, "h": 61},
+                "match-types": {"x": 0, "y": 181, "w": 3, "h": 24},
+                "map-filter": {"x": 0, "y": 205, "w": 3, "h": 24},
+            },
+            "collapsed": [],
+        },
+        "video": {
+            "v": 3,
+            "cards": {
+                "final-assembly": {"x": 0, "y": 0, "w": 3, "h": 24},
+                "resolution": {"x": 0, "y": 24, "w": 6, "h": 24},
+                "recording-system": {"x": 0, "y": 48, "w": 3, "h": 24},
+                "hlae-options": {"x": 3, "y": 48, "w": 3, "h": 24},
+                "in-game-options": {"x": 3, "y": 72, "w": 3, "h": 24},
+                "cs2-effects": {"x": 0, "y": 96, "w": 6, "h": 24},
+                "encoding": {"x": 0, "y": 120, "w": 6, "h": 24},
+            },
+            "collapsed": [],
+        },
+        "settings": {
+            "v": 3,
+            "cards": {
+                "postgresql": {"x": 0, "y": 0, "w": 6, "h": 24},
+                "paths": {"x": 0, "y": 24, "w": 6, "h": 24},
+                "config-folder": {"x": 0, "y": 48, "w": 6, "h": 24},
+                "presets": {"x": 0, "y": 72, "w": 3, "h": 24},
+                "ui-theme": {"x": 3, "y": 72, "w": 3, "h": 24},
+                "ui-layout": {"x": 3, "y": 96, "w": 3, "h": 24},
+                "performance": {"x": 0, "y": 96, "w": 3, "h": 24},
+                "injection-preview": {"x": 3, "y": 120, "w": 3, "h": 24},
+            },
+            "collapsed": [],
+        },
+    },
     "theme_bg": "dark",      # background preset: dark | amoled | deepblue | white
     "theme_accent": "green", # accent preset or custom hex: green | blue | orange | purple | red | cyan | pink | yellow | #rrggbb
     "ui_font_family": "auto", # "auto" = first available of UI_FONT_STACK; or a forced name (e.g. "JetBrains Mono")

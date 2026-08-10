@@ -50,6 +50,6 @@ describe("default window geometry", () => {
   });
 
   it("is the size the user actually gets", () => {
-    expect(pythonDefaults()).toMatchObject({ w: 1100, h: 900 });
+    expect(pythonDefaults()).toMatchObject({ w: 1600, h: 900 });
   });
 });
