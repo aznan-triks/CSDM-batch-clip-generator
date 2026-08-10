@@ -20,6 +20,41 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.2 — 2026-08-10
+
+The board answers the way you expect it to.
+
+### Fixed
+
+**Humanised:** Four things the workspace got wrong. The mouse wheel no longer
+gets stuck inside whichever card it happens to be over — scroll to the bottom
+of a card and the page keeps going. The corner you grab to resize a card is
+now on the card's edge where you can actually reach it, marked with a small
+gold bracket, instead of hiding inside the card's scrolling contents next to
+the scrollbar. Folding a card now shrinks it to its title bar rather than
+leaving a tall empty box, and unfolding gives back exactly the size you had.
+And there is a "Reset card layout" button in Settings that puts every card
+back where it started, so rearranging is no longer a one-way door.
+
+**Technical:** `.sb-scroll` no longer declares `overscroll-behavior: contain`,
+which by definition forbade the wheel from chaining to the pane. Grid children
+are now a wrapper `<div>` rather than `<Card>` itself: `react-resizable`
+appends its handle to the children of what it clones, and cloning a component
+overwrote `Card`'s `children` prop, so the handle rendered inside
+`.sb-scroll` — four levels below `.react-grid-item`, where every
+`.react-grid-item > …` rule silently missed it (hence the library's default
+grey triangle instead of the bracket). `Card.css`'s height chain returns to
+child combinators to match the new structure. Collapsing is now a layout
+change: `toggleCollapsed` writes `h = ui_card_collapsed_rows` (new key,
+default 2) and remembers the previous height in the slot's `hPrev`, which
+`save()` merges back since react-grid-layout hands back rectangles without
+it; a collapsed card is `isResizable: false`. New `shell/defaultLayout.ts`
+derives the reference layout from declaration order and the `wide` flag
+rather than a per-card table, and a Settings button clears `ui_sections` to
+restore it.
+
+---
+
 ## 3.2.1 — 2026-08-09
 
 Cards go where you put them, at the size you give them.
