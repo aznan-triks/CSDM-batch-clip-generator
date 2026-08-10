@@ -20,6 +20,26 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.4 — 2026-08-10
+
+Picking an accent colour now actually changes it everywhere.
+
+### Fixed
+
+**Humanised:** Choosing a different accent colour in Settings used to leave
+a few spots stuck on the default blue — the little dot on the active tab,
+one of the numbers in the bottom stats strip, and the glowing corner brackets
+that light up when you hover a card. They now follow whatever colour you pick.
+
+**Technical:** `tokens.css` derived `--accent-soft` from `--gold` but never
+`--accent` itself, so it fell through to `mock-v12.css`'s own `#2563EB`
+literal. `AppShell.css`'s split-handle, `Card.css`'s hover corner brackets
+and header separator, and `StatStrip.css`'s coloured figure all read
+`var(--accent)` directly and stayed blue regardless of the picker. Added
+`--accent: var(--gold)` next to `--accent-soft`, same mechanism.
+
+---
+
 ## 3.2.3 — 2026-08-10
 
 The window opens at the size it actually is, and cards are born the size their content needs.
