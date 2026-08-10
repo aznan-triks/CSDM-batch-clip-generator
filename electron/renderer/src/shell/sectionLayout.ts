@@ -154,10 +154,17 @@ export function useSectionLayout(
   const { cards, collapsed, fresh } = migrateLayout(stored?.[tabId], declaredIds, cols, wideIds);
 
   function persist(nextCards: Record<string, GridSlot>, nextCollapsed: string[]): void {
-    setStored({
-      ...(stored ?? {}),
+    // The functional form, not `{...(stored ?? {}), [tabId]: ...}`: every
+    // tab's SectionList stays mounted at once (AppShell.tsx) and each one
+    // calls this independently, so `stored` here can already be behind
+    // another tab's write that landed a moment ago. Merging against
+    // `previous` (supplied fresh by the store at write time, not this
+    // render's closure) is what keeps a fast-settling tab from erasing a
+    // slower one's just-saved rectangle.
+    setStored((previous) => ({
+      ...(previous ?? {}),
       [tabId]: { v: LAYOUT_VERSION, cards: nextCards, collapsed: nextCollapsed },
-    });
+    }));
   }
 
   return {

@@ -67,7 +67,22 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const setSetting = useCallback((key: string, value: unknown) => {
     dirty.current = true;
-    setSettings((previous) => ({ ...previous, [key]: value }));
+    // A function is accepted as an updater, `setState(prev => ...)`-style:
+    // no setting is ever legitimately a function, so this is unambiguous.
+    // `useSectionLayout` needs it -- every tab's SectionList stays mounted
+    // (`hidden`, never unmounted, AppShell.tsx) and each one measures its
+    // own fresh cards independently, so several tabs can call this for the
+    // SAME key (`ui_sections`) within milliseconds of each other. Merging
+    // against a `previous` closed over from that caller's last render (a
+    // plain-value write) loses whichever tab wrote second-to-last: found
+    // live as cards silently reverting to their default height, and as
+    // React's own "Maximum update depth exceeded" once the reverted height
+    // kept re-triggering a fresh measurement pass.
+    setSettings((previous) =>
+      typeof value === "function"
+        ? { ...previous, [key]: (value as (prev: unknown) => unknown)(previous[key]) }
+        : { ...previous, [key]: value },
+    );
   }, []);
 
   // Writes several keys as ONE state change, so ONE save follows -- without
@@ -105,10 +120,20 @@ function useSettingsContext(): SettingsContextValue {
   return context;
 }
 
-/** Read and write one configuration key. The key IS the DEFAULT_CONFIG key. */
-export function useSetting<T>(key: string): [T | undefined, (value: T) => void] {
+/**
+ * Read and write one configuration key. The key IS the DEFAULT_CONFIG key.
+ *
+ * The setter also accepts an updater, `setState(prev => ...)`-style: for a
+ * key several components may write concurrently (`ui_sections` -- every
+ * tab's SectionList stays mounted and measures its own cards independently,
+ * AppShell.tsx), merging against a plain VALUE closed over from that
+ * caller's last render silently drops whichever caller wrote second-to-last.
+ */
+export function useSetting<T>(
+  key: string,
+): [T | undefined, (value: T | ((previous: T | undefined) => T)) => void] {
   const { settings, setSetting } = useSettingsContext();
-  const set = useCallback((value: T) => setSetting(key, value), [key, setSetting]);
+  const set = useCallback((value: T | ((previous: T | undefined) => T)) => setSetting(key, value), [key, setSetting]);
   return [settings[key] as T | undefined, set];
 }
 
