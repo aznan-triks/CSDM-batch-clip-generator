@@ -20,6 +20,35 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.5 — 2026-08-10
+
+A wide card finally uses the width it was given.
+
+### Added
+
+**Humanised:** Drag a card wider and its list of filters now spreads over two
+or three columns instead of staying in one tall stack, so a wide card holds
+far more before you have to scroll it. The group titles ("Mods",
+"demoparser2 modifiers", "Situation (DB)") still run across the full width,
+and no filter ever gets cut in half between two columns. The card's own
+height still only changes when you drag it — that stays your call.
+
+**Technical:** New shared sheet `components/reflowColumns.css` exposing
+`.reflow-columns` (CSS multi-column, `column-width: var(--reflow-col-min)`)
+and `.reflow-columns-header` (`column-span: all`, blockified because
+`column-span` is ignored on the inline `<span>` the headings are).
+`--reflow-col-min` is measured on the real window rather than picked
+(`e2e/reflow-columns-proof.mjs measure`, ordinary rows only -- rows carrying
+a `.kf-extra` sub-panel are wider by nature and wrap inside a column).
+`KillFiltersSection.tsx` is the first consumer; `.kf-group` gives up its
+`display: flex`, which would have cancelled `columns` outright. Multi-column
+rather than CSS Grid because these rows have uneven, changing heights
+(`FilterExtras` reveals a sub-panel only while its filter is enabled) and
+Chromium ships no masonry mode. No JavaScript, no `ResizeObserver`, no config
+key, and `SectionList.tsx`'s once-only height measurement is untouched.
+
+---
+
 ## 3.2.4 — 2026-08-10
 
 Picking an accent colour now actually changes it everywhere.
