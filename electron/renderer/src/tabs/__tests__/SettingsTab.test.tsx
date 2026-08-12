@@ -77,10 +77,17 @@ vi.mock("../../bridge", () => ({
   send: () => {},
   sendCommand: () => "1",
   pickPath: () => Promise.resolve(null),
+  setWindowBounds: (width: number, height: number) => {
+    windowBoundsCalls.push([width, height]);
+    return Promise.resolve();
+  },
 }));
 
 /** Captures every `apply_config_dir` payload sent during a test. */
 let applyCalls: Array<Record<string, unknown>> = [];
+
+/** Captures every `setWindowBounds` call during a test. */
+let windowBoundsCalls: Array<[number, number]> = [];
 
 async function renderTab() {
   const rendered = render(
@@ -95,6 +102,7 @@ async function renderTab() {
 describe("SettingsTab", () => {
   beforeEach(() => {
     applyCalls = [];
+    windowBoundsCalls = [];
   });
 
   it("shows every path the window had", async () => {
@@ -128,6 +136,31 @@ describe("SettingsTab", () => {
     for (const label of ["Apply", "Auto", "Reset default"]) {
       expect(screen.getByRole("button", { name: new RegExp(`^${label}$`) })).toBeTruthy();
     }
+  });
+
+  it("resizes the live window when Apply is clicked", async () => {
+    await renderTab();
+    act(() => screen.getByRole("button", { name: /^Apply$/ }).click());
+    // CONFIG_FIXTURE has ui_window_w: 1100, ui_window_h: 900 -- inside
+    // clampLayout's 1000-3840 / 600-2160 bounds, so it passes through unchanged.
+    expect(windowBoundsCalls).toEqual([[1100, 900]]);
+  });
+
+  it("resizes the live window when Reset default is clicked", async () => {
+    await renderTab();
+    act(() => screen.getByRole("button", { name: /^Reset default$/ }).click());
+    expect(windowBoundsCalls).toEqual([[1600, 900]]);
+  });
+
+  it("resizes the live window when Auto is clicked", async () => {
+    const widthSpy = vi.spyOn(window.screen, "width", "get").mockReturnValue(1920);
+    const heightSpy = vi.spyOn(window.screen, "height", "get").mockReturnValue(1080);
+    await renderTab();
+    act(() => screen.getByRole("button", { name: /^Auto$/ }).click());
+    // clampLayout(round(1920*0.86), round(1080*0.84), 60) = (1651, 907, 60).
+    expect(windowBoundsCalls).toEqual([[1651, 907]]);
+    widthSpy.mockRestore();
+    heightSpy.mockRestore();
   });
 
   it("shows the configuration folder control with its three locations", async () => {

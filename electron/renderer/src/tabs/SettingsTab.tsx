@@ -19,7 +19,7 @@ import Field from "../components/Field";
 import PathField from "../components/PathField";
 import Segmented from "../components/Segmented";
 import Slider from "../components/Slider";
-import { pickPath, runCommand } from "../bridge";
+import { pickPath, runCommand, setWindowBounds } from "../bridge";
 import SectionList, { type SectionSpec } from "../shell/SectionList";
 import SettingControl from "../settings/SettingControl";
 import { useSetting, useSettingsBatch } from "../settings/store";
@@ -210,6 +210,7 @@ export default function SettingsTab() {
   function applyLayout() {
     const [w, h, split] = clampLayout(currentW, currentH, currentSplit);
     setMany({ ui_window_w: w, ui_window_h: h, ui_split_pct: split });
+    void setWindowBounds(w, h);
   }
 
   function autoLayout() {
@@ -217,6 +218,7 @@ export default function SettingsTab() {
     const sh = typeof window !== "undefined" ? window.screen.height : 1080;
     const [w, h, split] = clampLayout(Math.round(sw * 0.86), Math.round(sh * 0.84), 60);
     setMany({ ui_window_w: w, ui_window_h: h, ui_split_pct: split });
+    void setWindowBounds(w, h);
   }
 
   function resetLayoutDefaults() {
@@ -225,6 +227,7 @@ export default function SettingsTab() {
       ui_window_h: WINDOW_DEFAULTS.h,
       ui_split_pct: WINDOW_DEFAULTS.splitPct,
     });
+    void setWindowBounds(WINDOW_DEFAULTS.w, WINDOW_DEFAULTS.h);
   }
 
   /**
