@@ -26,7 +26,7 @@ export interface ActionEntry {
 }
 
 /** Rows look like: `| D3 | Cocher la sélection | \`_demo_picker_set_selected(True)\` |` */
-const ROW = /^\|\s*(\*\*)?([A-P]\d+)(\*\*)?\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/;
+const ROW = /^\|\s*(\*\*)?([A-Q]\d+)(\*\*)?\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/;
 
 export function readActionInventory(): ActionEntry[] {
   const text = readFileSync(INVENTORY, "utf8");
@@ -40,7 +40,7 @@ export function readActionInventory(): ActionEntry[] {
     // boundary moves.
     if (/^## Couverture/.test(line)) break;
 
-    const heading = /^##\s+([A-P])\s+—\s+(.+)$/.exec(line);
+    const heading = /^##\s+([A-Q])\s+—\s+(.+)$/.exec(line);
     if (heading) {
       family = heading[2];
       continue;

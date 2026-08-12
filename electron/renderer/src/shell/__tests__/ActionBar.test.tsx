@@ -140,6 +140,13 @@ describe("ActionBar", () => {
       expect(screen.queryByRole("button", { name: /KILL/ })).toBeNull();
     });
 
+    it("marks GENERATE/SAVE/CANCEL with their own ids, never the weapon-filter E1/E2/E3", async () => {
+      await renderBar("editing");
+      expect(screen.getByRole("button", { name: /GENERATE/ }).getAttribute("data-action")).toBe("Q1");
+      expect(screen.getByRole("button", { name: /SAVE/ }).getAttribute("data-action")).toBe("Q2");
+      expect(screen.getByRole("button", { name: /CANCEL/ }).getAttribute("data-action")).toBe("Q3");
+    });
+
     it("disables GENERATE when no clip is selected, SAVE when there is no preview", async () => {
       const { emit } = await renderBar("editing");
       // No preview yet: both GENERATE (nothing selected) and SAVE (no data) disabled.

@@ -119,7 +119,7 @@ export default function ActionBar({
             icon={<ICONS.run />}
             variant="run"
             disabled={!hasSelected || busy}
-            data-action="E1"
+            data-action="Q1"
             onClick={onGenerate}
           />
         </span>
@@ -129,7 +129,7 @@ export default function ActionBar({
             icon={<ICONS.presets />}
             variant="preview"
             disabled={!hasPreview || busy}
-            data-action="E2"
+            data-action="Q2"
             onClick={onSave}
           />
         </span>
@@ -138,7 +138,7 @@ export default function ActionBar({
             label="CANCEL"
             icon={<ICONS.editing />}
             variant="preview"
-            data-action="E3"
+            data-action="Q3"
             onClick={onCancel}
           />
         </span>

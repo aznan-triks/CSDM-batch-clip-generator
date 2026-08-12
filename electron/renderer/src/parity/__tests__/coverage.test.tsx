@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import App from "../../App";
 import { SettingsProvider } from "../../settings/store";
+import ActionBar from "../../shell/ActionBar";
 import CaptureTab from "../../tabs/CaptureTab";
 import SettingsTab from "../../tabs/SettingsTab";
 import TagsTab from "../../tabs/TagsTab";
@@ -63,6 +64,17 @@ function mountedActions(): Set<string> {
   // Always-visible frame: HudNav, ActionBar, LogConsole, WeaponBand.
   const { container: appContainer } = render(<App />);
   collectActions(appContainer, found);
+
+  // The editing tab swaps in GENERATE/SAVE/CANCEL (Q1/Q2/Q3). It is a real,
+  // clickable tab (HudNav's fifth entry, `tabs.ts`) but `<App />` above only
+  // mounts whichever tab is active by default -- never "editing" on its own.
+  // Render it standalone, same pattern as shell/__tests__/ActionBar.test.tsx.
+  const { container: editingContainer } = render(
+    <SettingsProvider>
+      <ActionBar active="editing" onSetTab={() => {}} />
+    </SettingsProvider>,
+  );
+  collectActions(editingContainer, found);
 
   // Each tab, wrapped in the same provider that App uses.
   const tabs = [

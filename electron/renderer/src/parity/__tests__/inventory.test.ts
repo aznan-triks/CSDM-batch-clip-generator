@@ -22,7 +22,7 @@ describe("the action inventory is read, never copied", () => {
   });
 
   it("reads ids in the family-then-number shape the document uses", () => {
-    expect(entries.every((entry) => /^[A-P]\d+$/.test(entry.id))).toBe(true);
+    expect(entries.every((entry) => /^[A-Q]\d+$/.test(entry.id))).toBe(true);
   });
 
   it("carries the origin, so a gap can be traced back to Tkinter code", () => {
