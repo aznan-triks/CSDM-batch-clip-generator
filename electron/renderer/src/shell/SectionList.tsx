@@ -237,7 +237,16 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
     isResizable: !layout.isCollapsed(id),
   }));
 
-  function onLayoutChange(next: Layout): void {
+  // Persisted only from `onDragStop`/`onResizeStop`, never from
+  // `onLayoutChange`: the library also fires `onLayoutChange` whenever `cols`
+  // changes (a window resize re-measures this pane -- readPx/`cols` above),
+  // recomputing every item's rectangle to fit the new column count. Wiring
+  // save() to that meant a transient narrow window permanently overwrote a
+  // card's rectangle with the clamped one, and widening back could never
+  // recover it -- nothing remembered the original (unlike height's `hPrev`).
+  // Drag/resize stop only fire from an actual user gesture, so this is the
+  // one place a rectangle change is truly the user's to keep.
+  function saveLayout(next: Layout): void {
     const cards: Record<string, GridSlot> = {};
     for (const item of next) {
       cards[item.i] = { x: item.x, y: item.y, w: item.w, h: item.h };
@@ -260,7 +269,8 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
           compactType="vertical"
           preventCollision={false}
           isBounded
-          onLayoutChange={onLayoutChange}
+          onDragStop={saveLayout}
+          onResizeStop={saveLayout}
           resizeHandles={["se"]}
         >
           {sections.map((spec) => (
