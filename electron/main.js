@@ -328,6 +328,15 @@ ipcMain.handle("bridge:restart-engine", async () => {
   startEngine();
 });
 
+// The window only reads its size once, at creation (createWindow above).
+// SettingsTab's Apply/Auto/Reset-default buttons write the new size to
+// config, but config alone never touches a live window -- this channel is
+// the missing other half, called right after the config write.
+ipcMain.handle("bridge:set-window-bounds", (_event, { width, height }) => {
+  if (!mainWindow) return;
+  mainWindow.setSize(Math.round(width), Math.round(height));
+});
+
 app.whenReady().then(() => {
   startEngine();
   createWindow();

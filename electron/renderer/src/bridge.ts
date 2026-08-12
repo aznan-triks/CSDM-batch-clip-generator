@@ -72,6 +72,7 @@ interface BridgeApi {
   pickPath(options?: { file?: boolean }): Promise<string | null>;
   pickSavePath(options?: { defaultName?: string }): Promise<string | null>;
   restartEngine(): Promise<void>;
+  setWindowBounds(width: number, height: number): Promise<void>;
 }
 
 declare global {
@@ -199,4 +200,9 @@ export function pickPath(options?: { file?: boolean }): Promise<string | null> {
 /** Open the native save-as picker. Resolves to null outside Electron, where there is none. */
 export function pickSavePath(options?: { defaultName?: string }): Promise<string | null> {
   return bridge()?.pickSavePath(options) ?? Promise.resolve(null);
+}
+
+/** Resize the live OS window. No-op outside Electron, where there is none to resize. */
+export function setWindowBounds(width: number, height: number): Promise<void> {
+  return bridge()?.setWindowBounds(width, height) ?? Promise.resolve();
 }

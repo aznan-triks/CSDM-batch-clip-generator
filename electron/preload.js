@@ -31,4 +31,10 @@ contextBridge.exposeInMainWorld("bridge", {
   restartEngine() {
     return ipcRenderer.invoke("bridge:restart-engine");
   },
+  // Resize the live OS window. SettingsTab calls this right after writing
+  // ui_window_w/ui_window_h, so Apply/Auto/Reset default take effect at once
+  // instead of only on the next launch.
+  setWindowBounds(width, height) {
+    return ipcRenderer.invoke("bridge:set-window-bounds", { width, height });
+  },
 });
