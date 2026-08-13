@@ -161,7 +161,12 @@ export default function PresetSection({
         />
       </div>
 
-      <div className="row" role="group" aria-label="Categories">
+      <div
+        className="row"
+        role="group"
+        aria-label="Categories"
+        title="Choose which settings groups this preset saves and can later overwrite"
+      >
         {categories.map((key) => (
           <Chip
             key={key}
@@ -186,7 +191,12 @@ export default function PresetSection({
           <li key={presetName} className="preset-row">
             <span className="preset-row-name">{presetName}</span>
             <span className="preset-row-cats">{(preset.cats ?? []).join(", ")}</span>
-            <button type="button" className="chip" data-action="C4" onClick={() => load(presetName)}>
+            <button
+              type="button"
+              className="chip"
+              title="Load this preset, overwriting only the settings it was saved with"
+              data-action="C4" onClick={() => load(presetName)}
+            >
               Load
             </button>
             <button

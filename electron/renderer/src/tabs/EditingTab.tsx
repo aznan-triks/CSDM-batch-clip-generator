@@ -89,11 +89,17 @@ export const EditingTab: React.FC = () => {
             <div
               key={`${clip.demoPath}:${clip.startTick}`}
               className={`editing-clip${clip.selected ? " selected" : ""}`}
+              title="Click to include or exclude this clip from the recording run"
               onClick={() => handleToggle(idx)}
             >
               <div className="clip-check" />
               <span className="clip-duration">{formatDuration(clip.durationS)}</span>
-              <span className={`clip-type clip-badge clip-badge--${meta.kind}`}>{meta.label}</span>
+              <span
+                className={`clip-type clip-badge clip-badge--${meta.kind}`}
+                title="Type of in-game event that triggered this clip"
+              >
+                {meta.label}
+              </span>
               <span className="clip-player">{clip.playerName}</span>
             </div>
           );

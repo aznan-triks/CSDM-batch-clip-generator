@@ -342,6 +342,7 @@ export default function TagsTab() {
                   className={active ? "chip on" : "chip"}
                   aria-pressed={active}
                   aria-label={`tag-${tagName}`}
+                  title="Toggle this tag as an active filter for search and tagging below"
                   data-action="I3"
                   onClick={() => toggleTag(tagId)}
                 >
@@ -352,6 +353,7 @@ export default function TagsTab() {
                   type="button"
                   className="chip tag-del"
                   aria-label={`delete-tag-${tagName}`}
+                  title="Permanently delete this tag from the database"
                   data-action="I2"
                   onClick={() => setPendingDelete({ tagId, tagName })}
                 >
@@ -387,6 +389,7 @@ export default function TagsTab() {
                   aria-label={`colour-${hex}`}
                   className={newTagColor === hex ? "tag-swatch tag-swatch-selected" : "tag-swatch"}
                   style={{ backgroundColor: hex }}
+                  title="Use this color for the new tag"
                   onClick={() => setNewTagColor(hex)}
                 />
               ))}
@@ -410,6 +413,7 @@ export default function TagsTab() {
             label="Auto-tag on export"
             selected={!!tagEnabled}
             onToggle={() => setTagEnabled(!tagEnabled)}
+            tip="Automatically apply the selected tag(s) to demos when clips are exported"
           />
         </SettingControl>
       </Card>
@@ -440,7 +444,13 @@ export default function TagsTab() {
           >
             Apply full range
           </button>
-          <button type="button" className="chip" disabled={!range?.date_after} data-action="I11" onClick={applyAfterRange}>
+          <button
+            type="button"
+            className="chip"
+            disabled={!range?.date_after}
+            title="Set the date filter to everything after this tag's most recent demo"
+            data-action="I11" onClick={applyAfterRange}
+          >
             After range
           </button>
         </div>
@@ -449,10 +459,20 @@ export default function TagsTab() {
       <Card title="Operations" icon={<ICONS.operations />} className="wide">
         <div className="row">
           <span className="lab">Search:</span>
-          <button type="button" className="chip" data-action="I5" onClick={searchByTag}>
+          <button
+            type="button"
+            className="chip"
+            title="Find demos that have all the selected tags applied"
+            data-action="I5" onClick={searchByTag}
+          >
             By tag
           </button>
-          <button type="button" className="chip" data-action="I6" onClick={searchByConfig}>
+          <button
+            type="button"
+            className="chip"
+            title="Find demos matching the selected tags plus the current filter settings"
+            data-action="I6" onClick={searchByConfig}
+          >
             By config
           </button>
         </div>
@@ -483,10 +503,20 @@ export default function TagsTab() {
         </div>
         <div className="row">
           <span className="lab">Transfer:</span>
-          <button type="button" className="chip" data-action="I15" onClick={exportTags}>
+          <button
+            type="button"
+            className="chip"
+            title="Export the selected tags, or all tags if none are selected"
+            data-action="I15" onClick={exportTags}
+          >
             Export
           </button>
-          <button type="button" className="chip" data-action="I16" onClick={importTags}>
+          <button
+            type="button"
+            className="chip"
+            title="Import tags from a file; missing tags are created automatically"
+            data-action="I16" onClick={importTags}
+          >
             Import
           </button>
         </div>
