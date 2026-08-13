@@ -17,9 +17,21 @@ const GAME_SPEED_QUICK_VALUES = ["50", "75", "100", "125", "150", "200", "500", 
 
 /** The three HLAE-only toggles, in the window's own order. */
 const TOGGLE_FIELDS = [
-  { key: "hlae_afx_stream", label: "AFX Stream" },
-  { key: "hlae_no_spectator_ui", label: "No spectator UI" },
-  { key: "hlae_fix_scope_fov", label: "Fix scope FOV" },
+  {
+    key: "hlae_afx_stream",
+    label: "AFX Stream",
+    tip: "Records separate color/depth/stencil passes for compositing (HLAE AFX)",
+  },
+  {
+    key: "hlae_no_spectator_ui",
+    label: "No spectator UI",
+    tip: "Hides the spectator HUD — injects +cl_draw_only_deathnotices 1",
+  },
+  {
+    key: "hlae_fix_scope_fov",
+    label: "Fix scope FOV",
+    tip: "Stops scoped weapons overriding your FOV setting. Recommended: ON",
+  },
 ] as const;
 
 export default function HlaeOptionsSection() {
@@ -56,6 +68,7 @@ export default function HlaeOptionsSection() {
             mono
             value={gameSpeed === undefined || gameSpeed === null ? "100" : String(gameSpeed)}
             onChange={setGameSpeed}
+            tip="Playback speed for recording: 100 = normal, below = slow motion, above = fast-forward"
           />
           <div className="row">
             {GAME_SPEED_QUICK_VALUES.map((quick) => (
@@ -73,8 +86,8 @@ export default function HlaeOptionsSection() {
       </SettingControl>
 
       <div className="row">
-        {TOGGLE_FIELDS.map(({ key, label }) => (
-          <ToggleField key={key} settingKey={key} label={label} />
+        {TOGGLE_FIELDS.map(({ key, label, tip }) => (
+          <ToggleField key={key} settingKey={key} label={label} tip={tip} />
         ))}
       </div>
 
@@ -84,17 +97,18 @@ export default function HlaeOptionsSection() {
           label="Additional HLAE args"
           value={extraArgs ?? ""}
           onChange={setExtraArgs}
+          tip="Extra command-line arguments passed directly to the HLAE launcher (advanced)"
         />
       </SettingControl>
     </div>
   );
 }
 
-function ToggleField({ settingKey, label }: { settingKey: string; label: string }) {
+function ToggleField({ settingKey, label, tip }: { settingKey: string; label: string; tip?: string }) {
   const [value, setValue] = useSetting<boolean>(settingKey);
   return (
     <SettingControl settingKey={settingKey}>
-      <Chip label={label} selected={!!value} onToggle={() => setValue(!value)} />
+      <Chip label={label} tip={tip} selected={!!value} onToggle={() => setValue(!value)} />
     </SettingControl>
   );
 }

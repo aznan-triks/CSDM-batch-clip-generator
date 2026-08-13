@@ -139,6 +139,7 @@ export default function VideoTab() {
           <SettingControl settingKey="delete_after_assemble">
             <Chip
               label="Delete source clips after assembly"
+              tip="Deletes the original per-clip files once the assembled video is created. Requires assembly enabled"
               selected={!!deleteAfterAssemble}
               onToggle={() => setDeleteAfterAssemble(!deleteAfterAssemble)}
             />
@@ -146,6 +147,7 @@ export default function VideoTab() {
           <SettingControl settingKey="concatenate_sequences">
             <Chip
               label="Concatenate sequences"
+              tip="Combines clips from the same play/sequence into one before final assembly"
               selected={!!concatenateSequences}
               onToggle={() => setConcatenateSequences(!concatenateSequences)}
             />
@@ -225,12 +227,14 @@ export default function VideoTab() {
                 value={windowMode ?? WINDOW_MODES[0]}
                 onChange={setWindowMode}
                 label="Window mode"
+                tip="CS2 window mode on launch: none=unchanged, fullscreen, windowed, or noborder (borderless)"
               />
             </div>
           </SettingControl>
           <SettingControl settingKey="cs2_send_to_back">
             <Chip
               label="Send to back on launch"
+              tip="Sends the CS2 window behind other windows right after launch, so it doesn't steal focus"
               selected={!!sendToBack}
               onToggle={() => setSendToBack(!sendToBack)}
             />
@@ -282,6 +286,7 @@ export default function VideoTab() {
           <SettingControl settingKey="true_view">
             <Chip
               label="TrueView"
+              tip="Enables CS2's TrueView free spectator camera (clean, HUD-free footage) for recording"
               selected={!!trueView}
               onToggle={() => setTrueView(!trueView)}
             />
@@ -289,6 +294,7 @@ export default function VideoTab() {
           <SettingControl settingKey="show_only_death_notices">
             <Chip
               label="Death notices only"
+              tip="Hides all HUD elements except the kill-feed (death notices) during recording"
               selected={!!showOnlyDeathNotices}
               onToggle={() => setShowOnlyDeathNotices(!showOnlyDeathNotices)}
             />
@@ -296,6 +302,7 @@ export default function VideoTab() {
           <SettingControl settingKey="show_xray">
             <Chip
               label="X-Ray"
+              tip="Highlights enemy players through walls/smoke with colored outlines (spectator X-ray)"
               selected={!!showXray}
               onToggle={() => setShowXray(!showXray)}
             />
@@ -312,6 +319,7 @@ export default function VideoTab() {
                     : String(deathNoticesDuration)
                 }
                 onChange={setDeathNoticesDuration}
+                tip="How long each kill-feed entry stays visible on screen, in seconds"
               />
             </SettingControl>
           </div>
@@ -351,6 +359,7 @@ export default function VideoTab() {
               <select
                 id="video-codec"
                 className="fld"
+                title="FFmpeg video encoder (e.g. libx264 = CPU H.264, h264_nvenc = NVIDIA GPU encoder)"
                 value={videoCodec ?? ""}
                 onChange={(event) => setVideoCodec(event.target.value)}
               >
@@ -369,6 +378,7 @@ export default function VideoTab() {
                 mono
                 value={String(asNumber(crf, 18))}
                 onChange={(v) => setCrf(asNumber(v, 18))}
+                tip="Constant Rate Factor: video quality 0-51, lower = better quality & larger file (18 ~ lossless)"
               />
             </SettingControl>
           </div>
@@ -381,6 +391,7 @@ export default function VideoTab() {
                 value={videoPreset ?? VIDEO_PRESETS[5]}
                 onChange={setVideoPreset}
                 label="Preset"
+                tip="FFmpeg encode speed vs. compression: faster presets encode quicker but yield larger files"
               />
             </SettingControl>
 
@@ -403,6 +414,7 @@ export default function VideoTab() {
               <select
                 id="audio-codec"
                 className="fld"
+                title="FFmpeg audio encoder used for the output track (e.g. aac, mp3, copy)"
                 value={audioCodec ?? ""}
                 onChange={(event) => setAudioCodec(event.target.value)}
               >
@@ -435,6 +447,7 @@ export default function VideoTab() {
                 label="FFmpeg input params"
                 value={ffmpegInput ?? ""}
                 onChange={setFfmpegInput}
+                tip="Raw FFmpeg flags inserted before the input (-i) file. Advanced/optional"
               />
             </SettingControl>
           </div>
@@ -445,6 +458,7 @@ export default function VideoTab() {
                 label="FFmpeg output params"
                 value={ffmpegOutput ?? ""}
                 onChange={setFfmpegOutput}
+                tip="Raw FFmpeg flags inserted before the output file. Advanced/optional"
               />
             </SettingControl>
           </div>

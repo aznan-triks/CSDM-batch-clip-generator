@@ -27,33 +27,54 @@ const QUICK_VALUES: Record<string, readonly string[]> = {
 
 /** The three free-form numeric fields, in the window's own order. */
 const NUMERIC_FIELDS = [
-  { key: "phys_ragdoll_gravity", label: "cl_ragdoll_gravity", fallback: "600" },
-  { key: "phys_ragdoll_scale", label: "ragdoll_gravity_scale", fallback: "1.0" },
-  { key: "phys_sv_gravity", label: "sv_gravity", fallback: "800" },
+  {
+    key: "phys_ragdoll_gravity",
+    label: "cl_ragdoll_gravity",
+    fallback: "600",
+    tip: "CS2 console command cl_ragdoll_gravity: gravity applied to ragdolls after death",
+  },
+  {
+    key: "phys_ragdoll_scale",
+    label: "ragdoll_gravity_scale",
+    fallback: "1.0",
+    tip: "Multiplier on ragdoll gravity: 1.0 = normal, 0 = weightless, negative = floats upward",
+  },
+  {
+    key: "phys_sv_gravity",
+    label: "sv_gravity",
+    fallback: "800",
+    tip: "Server-wide gravity affecting all physics: players, ragdolls, dropped weapons (default 800)",
+  },
 ] as const;
 
 /** The three toggles, in the window's own order. */
-const TOGGLE_FIELDS = [
-  { key: "phys_ragdoll_enable", label: "Ragdoll physics" },
+const TOGGLE_FIELDS: { key: string; label: string; tip?: string }[] = [
+  {
+    key: "phys_ragdoll_enable",
+    label: "Ragdoll physics",
+    tip: "Enables ragdoll death physics; required for the gravity/scale values above to have any effect",
+  },
   { key: "phys_blood", label: "Blood on walls" },
   { key: "phys_dynamic_lighting", label: "Dynamic lighting" },
-] as const;
+];
 
 function NumericField({
   settingKey,
   label,
   fallback,
+  tip,
 }: {
   settingKey: string;
   label: string;
   fallback: string;
+  tip?: string;
 }) {
   const [value, setValue] = useSetting<string | number>(settingKey);
   const stringValue = value === undefined || value === null ? fallback : String(value);
   return (
     <SettingControl settingKey={settingKey}>
       <div className="fld">
-        <Field id={`cs2-${settingKey}`} label={label} mono value={stringValue} onChange={setValue} />
+        <Field id={`cs2-${settingKey}`} label={label} mono value={stringValue} onChange={setValue} tip={tip} />
         <div className="row">
           {QUICK_VALUES[settingKey].map((quick) => (
             <button
@@ -71,11 +92,11 @@ function NumericField({
   );
 }
 
-function ToggleField({ settingKey, label }: { settingKey: string; label: string }) {
+function ToggleField({ settingKey, label, tip }: { settingKey: string; label: string; tip?: string }) {
   const [value, setValue] = useSetting<boolean>(settingKey);
   return (
     <SettingControl settingKey={settingKey}>
-      <Chip label={label} selected={!!value} onToggle={() => setValue(!value)} />
+      <Chip label={label} tip={tip} selected={!!value} onToggle={() => setValue(!value)} />
     </SettingControl>
   );
 }
@@ -96,12 +117,13 @@ export default function Cs2EffectsSection() {
               settingKey={field.key}
               label={field.label}
               fallback={field.fallback}
+              tip={field.tip}
             />
           ))}
         </div>
         <div className="cs2-col">
           {TOGGLE_FIELDS.map((field) => (
-            <ToggleField key={field.key} settingKey={field.key} label={field.label} />
+            <ToggleField key={field.key} settingKey={field.key} label={field.label} tip={field.tip} />
           ))}
         </div>
       </div>
