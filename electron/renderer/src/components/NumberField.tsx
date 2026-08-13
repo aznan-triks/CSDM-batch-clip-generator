@@ -9,6 +9,8 @@ interface NumberFieldProps {
   /** Reused as the accessible name, so the box says what it holds. */
   label: string;
   id?: string;
+  /** Hover explanation, e.g. unit or valid range not shown elsewhere. */
+  tip?: string;
 }
 
 /**
@@ -30,6 +32,7 @@ export default function NumberField({
   step,
   label,
   id,
+  tip,
 }: NumberFieldProps) {
   return (
     <input
@@ -37,6 +40,7 @@ export default function NumberField({
       type="number"
       className="slider-number"
       aria-label={label}
+      title={tip}
       min={min}
       max={max}
       step={step}
