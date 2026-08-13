@@ -9,6 +9,8 @@ interface FieldProps {
   label?: string;
   /** `"password"` masks the value, for `pg_pass`. Everything else stays `"text"`. */
   type?: "text" | "password";
+  /** Hover explanation for what this setting does. */
+  tip?: string;
 }
 
 /**
@@ -22,11 +24,11 @@ interface FieldProps {
  * -- which is what made this tab read as a stack of banners instead of a dense
  * panel.
  */
-export default function Field({ value, onChange, mono, placeholder, id, label, type }: FieldProps) {
+export default function Field({ value, onChange, mono, placeholder, id, label, type, tip }: FieldProps) {
   return (
     <>
       {label && (
-        <label className="lab" htmlFor={id}>
+        <label className="lab" htmlFor={id} title={tip}>
           {label}
         </label>
       )}
@@ -36,6 +38,7 @@ export default function Field({ value, onChange, mono, placeholder, id, label, t
         className={mono ? "fld fld-mono" : "fld"}
         value={value}
         placeholder={placeholder}
+        title={tip}
         onChange={(event) => onChange(event.target.value)}
       />
     </>
