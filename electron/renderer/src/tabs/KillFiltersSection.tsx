@@ -91,6 +91,7 @@ function FilterExtras({ filterKey }: { filterKey: string }) {
           <SettingControl settingKey="kill_mod_hv_one_shot">
             <Chip
               label="One-shot"
+              tip="Require exactly one shot for Ferrari Peek (movement-speed kill)"
               selected={!!hvOneShot}
               onToggle={() => setHvOneShot(!hvOneShot)}
             />
@@ -101,6 +102,7 @@ function FilterExtras({ filterKey }: { filterKey: string }) {
               value={asText(hvThreshold, 100)}
               onChange={setHvThreshold}
               mono
+              tip="Minimum approach speed to qualify, in game units/sec (AWP~200, AK~215)"
             />
           </SettingControl>
           <span className="kf-suffix">u/s</span>
@@ -117,6 +119,7 @@ function FilterExtras({ filterKey }: { filterKey: string }) {
               value={asText(flickDeg, 50)}
               onChange={setFlickDeg}
               mono
+              tip="Minimum view-angle change (degrees) right before the kill to count as a flick"
             />
           </SettingControl>
           <span className="kf-suffix">°</span>
@@ -133,6 +136,7 @@ function FilterExtras({ filterKey }: { filterKey: string }) {
               value={asText(oneTapS, 2)}
               onChange={setOneTapS}
               mono
+              tip="Seconds around the kill with no other shot, to count as an isolated one-tap"
             />
           </SettingControl>
           <span className="kf-suffix">s</span>
@@ -149,6 +153,7 @@ function FilterExtras({ filterKey }: { filterKey: string }) {
               value={asText(multiKillN, 3)}
               onChange={setMultiKillN}
               label="Min kills"
+              tip="Minimum kills in one round to qualify as a multi-kill"
             />
           </SettingControl>
           <span className="lab">within</span>
@@ -158,6 +163,7 @@ function FilterExtras({ filterKey }: { filterKey: string }) {
               value={asText(multiKillS, 12)}
               onChange={setMultiKillS}
               mono
+              tip="Time window (seconds) the multi-kill count must happen within"
             />
           </SettingControl>
           <span className="kf-suffix">s</span>
@@ -174,6 +180,7 @@ function FilterExtras({ filterKey }: { filterKey: string }) {
               value={asText(bullyN, 3)}
               onChange={setBullyN}
               label="From kill #"
+              tip="Captures the Nth+ kill against the same opponent this match"
             />
           </SettingControl>
         </div>
@@ -208,13 +215,19 @@ function ClutchBlock() {
   return (
     <div className="kf-clutch">
       <SettingControl settingKey="clutch_enabled">
-        <Chip label="🎯 CLUTCH" selected={!!enabled} onToggle={() => setEnabled(!enabled)} />
+        <Chip
+          label="🎯 CLUTCH"
+          tip="Detects clutch situations: player is the last alive on their team"
+          selected={!!enabled}
+          onToggle={() => setEnabled(!enabled)}
+        />
       </SettingControl>
       {enabled && (
         <div className="kf-clutch-options">
           <SettingControl settingKey="clutch_wins_only">
             <Chip
               label="Wins only"
+              tip="Only capture clutches the player's team went on to win"
               selected={!!winsOnly}
               onToggle={() => setWinsOnly(!winsOnly)}
             />
@@ -225,6 +238,7 @@ function ClutchBlock() {
               value={mode ?? CLUTCH_MODES[0]}
               onChange={setMode}
               label="Clutch mode"
+              tip="Kills only = just the frags; Full clutch = whole round from the 1vX moment"
             />
           </SettingControl>
           <div className="kf-clutch-sizes">
@@ -232,7 +246,12 @@ function ClutchBlock() {
               const [value, set] = sizeSettings[i];
               return (
                 <SettingControl key={n} settingKey={`clutch_1v${n}`}>
-                  <Chip label={`1v${n}`} selected={!!value} onToggle={() => set(!value)} />
+                  <Chip
+                    label={`1v${n}`}
+                    tip="Clutch size to capture: number of opponents alive when it started"
+                    selected={!!value}
+                    onToggle={() => set(!value)}
+                  />
                 </SettingControl>
               );
             })}
@@ -281,6 +300,7 @@ export default function KillFiltersSection() {
               value={suicidesMode ?? SUICIDE_TK_MODES[0]}
               onChange={setSuicidesMode}
               label="Suicides"
+              tip="Include, exclude, or capture only clips where a suicide occurred"
             />
           </div>
         </SettingControl>
@@ -292,6 +312,7 @@ export default function KillFiltersSection() {
               value={teamkillsMode ?? SUICIDE_TK_MODES[0]}
               onChange={setTeamkillsMode}
               label="Teamkills"
+              tip="Team kills: include, exclude, or capture only team-kill clips"
             />
           </div>
         </SettingControl>
@@ -304,6 +325,7 @@ export default function KillFiltersSection() {
               onChange={setHeadshotsMode}
               label="Headshots"
               disabled={headshotsDisabled}
+              tip="Headshot filter (all/only/exclude); disabled when One Tap or Trois Tap is on"
             />
           </div>
         </SettingControl>
@@ -314,6 +336,7 @@ export default function KillFiltersSection() {
         <button
           type="button"
           className="chip push-right"
+          title="Resets Enable/Must for every filter below, including Situation (DB), not just Mods/dp2"
           data-action="G3" onClick={() => setMany(buildClearChanges(tables))}
         >
           Clear

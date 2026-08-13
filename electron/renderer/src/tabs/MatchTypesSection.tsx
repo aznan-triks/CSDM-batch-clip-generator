@@ -61,6 +61,7 @@ export default function MatchTypesSection() {
         <SettingControl settingKey="match_type_filter_enabled">
           <Chip
             label="Filter by type"
+            tip="When off, all match types are included; the boxes below only apply while this is on"
             selected={!!enabled}
             onToggle={() => setEnabled(!enabled)}
           />
