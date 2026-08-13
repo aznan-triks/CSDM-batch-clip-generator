@@ -208,6 +208,7 @@ export default function PlayerSection() {
                   type="button"
                   className={isActive ? "chip on" : "chip"}
                   aria-pressed={isActive}
+                  title="Click to select for capture, or drag to reorder your registered accounts"
                   onMouseDown={(e) => {
                     if (e.button !== 0) return;
                     e.preventDefault();
@@ -244,6 +245,7 @@ export default function PlayerSection() {
                     className="ps-chip-del"
                     aria-label={`Unregister ${p.name}`}
                     role="button"
+                    title="Remove this player from your registered accounts (does not deselect them)"
                     onClick={(e) => {
                       e.stopPropagation();
                       removeSaved(p.steam_id);
@@ -373,6 +375,7 @@ export default function PlayerSection() {
                     className="ps-star"
                     aria-label={isRegistered ? "Remove from accounts" : "Add to accounts"}
                     aria-pressed={isRegistered}
+                    title="Save this player to your Registered Accounts for quick access later"
                     data-action="N11"
                     onClick={(e) => {
                       e.stopPropagation();

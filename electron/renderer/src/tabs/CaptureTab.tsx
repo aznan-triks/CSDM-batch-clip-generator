@@ -145,6 +145,7 @@ export default function CaptureTab() {
               <span className="lab">Rounds</span>
               <Chip
                 label="ROUNDS"
+                tip="Also capture full-round clips, separate from the kill/death event filters above"
                 selected={selectedEvents.includes("Rounds")}
                 onToggle={() => toggleEvent("Rounds")}
               />
@@ -159,6 +160,7 @@ export default function CaptureTab() {
                 value={perspective ?? PERSPECTIVES[0]}
                 onChange={setPerspective}
                 label="Perspective"
+                tip="Whose camera to record: the killer, the victim, or both with a camera switch"
               />
             </div>
           </SettingControl>
@@ -174,6 +176,7 @@ export default function CaptureTab() {
                 value={switchDelay}
                 onChange={setVictimPre}
                 readout={`${switchDelay}s · total before: ${beforeSeconds + switchDelay}s`}
+                tip="Delay before switching from killer POV to victim POV, in Both perspective"
               />
             </SettingControl>
           )}
@@ -183,11 +186,17 @@ export default function CaptureTab() {
             <div className="row">
               <span className="lab">Mate POV</span>
               <SettingControl settingKey="kill_mod_mate_pov">
-                <Chip label="Enable" selected={!!matePov} onToggle={toggleMatePov} />
+                <Chip
+                  label="Enable"
+                  tip="Also record a nearby teammate's point of view when available for this event"
+                  selected={!!matePov}
+                  onToggle={toggleMatePov}
+                />
               </SettingControl>
               <SettingControl settingKey="kill_mod_mate_pov_req">
                 <Chip
                   label="★ Must"
+                  tip="Require Mate POV footage to exist; skip the clip if none is available"
                   selected={!!matePovReq}
                   onToggle={toggleMatePovReq}
                 />
@@ -203,6 +212,7 @@ export default function CaptureTab() {
                 value={nameOverride ?? ""}
                 onChange={setNameOverride}
                 placeholder="name stored in the demo"
+                tip="Match this player by an alternate in-game name instead of the DB name"
               />
             </SettingControl>
           </div>
@@ -220,6 +230,7 @@ export default function CaptureTab() {
               value={beforeSeconds}
               onChange={setBefore}
               readout={`${beforeSeconds}s`}
+              tip="How many seconds of footage to capture before the detected event"
             />
           </SettingControl>
           <SettingControl settingKey="after">
@@ -231,6 +242,7 @@ export default function CaptureTab() {
               value={asNumber(after, AFTER_RANGE.min)}
               onChange={setAfter}
               readout={`${asNumber(after, AFTER_RANGE.min)}s`}
+              tip="How many seconds of footage to capture after the detected event"
             />
           </SettingControl>
         </Card>
@@ -248,6 +260,7 @@ export default function CaptureTab() {
                 mono
                 value={String(retryCount ?? "")}
                 onChange={setRetryCount}
+                tip="Number of times to retry a recording that fails before giving up"
               />
             </SettingControl>
             <SettingControl settingKey="retry_delay">
@@ -257,6 +270,7 @@ export default function CaptureTab() {
                 mono
                 value={String(retryDelay ?? "")}
                 onChange={setRetryDelay}
+                tip="Seconds to wait between retry attempts after a failed recording"
               />
             </SettingControl>
             <SettingControl settingKey="delay_between_demos">
@@ -266,6 +280,7 @@ export default function CaptureTab() {
                 mono
                 value={String(demoPause ?? "")}
                 onChange={setDemoPause}
+                tip="Seconds to pause between demos, giving the recorder time to reset"
               />
             </SettingControl>
             <SettingControl settingKey="recording_timeout">
@@ -275,6 +290,7 @@ export default function CaptureTab() {
                 mono
                 value={String(timeout ?? "")}
                 onChange={setTimeout}
+                tip="Maximum minutes to wait for a single recording before aborting it"
               />
             </SettingControl>
           </div>
@@ -287,6 +303,7 @@ export default function CaptureTab() {
                 value={clipOrder ?? CLIP_ORDERS[0]}
                 onChange={setClipOrder}
                 label="Order"
+                tip="Order in which demos are processed: chronological by date, or shuffled"
               />
             </div>
           </SettingControl>
