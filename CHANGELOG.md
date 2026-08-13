@@ -20,6 +20,35 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.8 — 2026-08-13
+
+Buttons that promised to do things now actually do them.
+
+### Fixed
+
+**Humanised:** The "Apply" button in Settings now resizes the window
+immediately — no need to close and reopen the app for the new size to take
+effect. Same for "Auto" and "Reset default".
+
+**Humanised:** Dragging a card to a new position no longer resets all card
+positions when the window width changes.
+
+**Technical:** `bridge:set-window-bounds` IPC channel added (`electron/main.js`,
+`electron/preload.js`, `electron/renderer/src/bridge.ts`) so `applyLayout()`
+(`SettingsTab.tsx`) can push bounds to the live window instead of only writing
+to the config store. `SectionList.tsx` now persists layout only from
+`onDragStop`/`onResizeStop` instead of `onLayoutChange`, which also fires on
+column-count reflows and was clamping card widths down on every resize.
+
+### Added
+
+**Technical:** `data-action` ids Q1/Q2/Q3 added to the editing-tab
+GENERATE/SAVE/CANCEL buttons (`ActionBar.tsx`) so the action-registry coverage
+guard no longer flags them as unclassified. New tests:
+`ActionBar.test.tsx`, `SettingsTab.test.tsx`, `SectionList.paneResize.test.tsx`.
+
+---
+
 ## 3.2.7 — 2026-08-11
 
 The window opens wider, the tab bar's top glow slides again, and the card
