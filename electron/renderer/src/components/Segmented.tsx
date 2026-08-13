@@ -14,6 +14,8 @@ interface SegmentedProps {
    * it disabled keeps the rule visible.
    */
   disabled?: boolean;
+  /** Hover explanation for the whole control (not per-option). */
+  tip?: string;
 }
 
 /**
@@ -25,9 +27,9 @@ interface SegmentedProps {
  * the screen reader keep working, and the mock's segment styling is not
  * copied out to reach a different element.
  */
-export default function Segmented({ options, value, onChange, label, disabled }: SegmentedProps) {
+export default function Segmented({ options, value, onChange, label, disabled, tip }: SegmentedProps) {
   return (
-    <div className="seg" role="radiogroup" aria-label={label}>
+    <div className="seg" role="radiogroup" aria-label={label} title={tip}>
       {options.map((option) => {
         const checked = option === value;
         return (
