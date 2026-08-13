@@ -1,3 +1,4 @@
+/** PathField's optional `tip`, and that it never overwrites Browse's own conditional title. */
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 

@@ -1,3 +1,4 @@
+/** Field's optional `tip`: a hover explanation on both the label and the input. */
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 

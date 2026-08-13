@@ -1,3 +1,4 @@
+/** Segmented's optional `tip`: a hover explanation for the whole control. */
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
