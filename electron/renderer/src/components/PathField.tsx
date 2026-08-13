@@ -42,7 +42,12 @@ export default function PathField({ value, onChange, placeholder, id, label, mod
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
         />
-        <button type="button" className="path-field-browse" data-action="M12" onClick={browse}>
+        <button
+          type="button"
+          className="path-field-browse"
+          title={mode === "file" ? "Opens a native file picker" : "Opens a native folder picker"}
+          data-action="M12" onClick={browse}
+        >
           Browse…
         </button>
       </div>

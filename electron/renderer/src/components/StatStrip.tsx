@@ -40,7 +40,7 @@ export interface StatStripProps {
 export default function StatStrip({ compact = false }: StatStripProps) {
   const { summary } = useEngineState();
 
-  const cells: { key: string; value: string; tone?: "accent" | "ok" }[] = [
+  const cells: { key: string; value: string; tone?: "accent" | "ok"; tip?: string }[] = [
     {
       key: "Demos",
       value: summary?.demos != null ? summary.demos.toLocaleString("en-US") : NOTHING_YET,
@@ -54,10 +54,12 @@ export default function StatStrip({ compact = false }: StatStripProps) {
       key: "Total",
       value: summary?.totalSeconds != null ? hms(summary.totalSeconds) : NOTHING_YET,
       tone: "ok",
+      tip: "Total combined duration of all clips in this batch (h:mm:ss)",
     },
     {
       key: "Avg / clip",
       value: summary?.avgSeconds != null ? hms(summary.avgSeconds) : NOTHING_YET,
+      tip: "Average clip length, computed as Total divided by Clips",
     },
   ];
 
@@ -65,7 +67,7 @@ export default function StatStrip({ compact = false }: StatStripProps) {
     return (
       <div className="stats-compact">
         {cells.map((cell) => (
-          <span className="stc" key={cell.key}>
+          <span className="stc" key={cell.key} title={cell.tip}>
             <span className="k">{cell.key}</span>
             <span className={cell.tone ? `v ${TONE_CLASS[cell.tone]}` : "v"}>{cell.value}</span>
           </span>
@@ -77,7 +79,7 @@ export default function StatStrip({ compact = false }: StatStripProps) {
   return (
     <div className="stats">
       {cells.map((cell) => (
-        <div className="st" key={cell.key}>
+        <div className="st" key={cell.key} title={cell.tip}>
           <div className="k">{cell.key}</div>
           <div className={cell.tone ? `v ${TONE_CLASS[cell.tone]}` : "v"}>{cell.value}</div>
         </div>
