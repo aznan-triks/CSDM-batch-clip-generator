@@ -28,8 +28,9 @@ export interface FilterDef {
 
 export interface Tables {
   filters: FilterDef[];
-  matchTypes: { key: string; label: string }[];
+  matchTypes: { key: string; label: string; tip: string }[];
   weaponCategories: Record<string, string[]>;
+  weaponCategoryTips: Record<string, string>;
   resolutions: { label: string; width: number; height: number }[];
   framerates: number[];
   videoCodecs: string[];
@@ -41,8 +42,9 @@ export interface Tables {
 /** Shape of the JSON `describe_filters` returns, before renaming to camelCase. */
 interface RawTables {
   filters: FilterDef[];
-  match_types: { key: string; label: string }[];
+  match_types: { key: string; label: string; tip: string }[];
   weapon_categories: Record<string, string[]>;
+  weapon_category_tips: Record<string, string>;
   resolutions: { label: string; width: number; height: number }[];
   framerates: number[];
   video_codecs: string[];
@@ -81,6 +83,7 @@ function useTablesFetch(skip: boolean): TablesValue {
           filters: raw.filters,
           matchTypes: raw.match_types,
           weaponCategories: raw.weapon_categories,
+          weaponCategoryTips: raw.weapon_category_tips,
           resolutions: raw.resolutions,
           framerates: raw.framerates,
           videoCodecs: raw.video_codecs,

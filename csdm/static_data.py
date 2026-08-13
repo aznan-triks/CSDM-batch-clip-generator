@@ -449,6 +449,18 @@ WEAPON_ICONS = {
     'C4 / World': '💥', 'Misc': '⚡', 'Other': '❓',
 }
 
+WEAPON_CATEGORY_TIPS = {
+    'Pistols': 'Sidearms — cheap, always available, decisive in eco/force rounds.',
+    'SMGs': 'Cheap rapid-fire weapons, strong on the move and at close range.',
+    'Rifles': 'Primary combat weapons — the main-round standard.',
+    'Snipers': 'High-damage precision weapons for long sightlines.',
+    'Heavy': 'Shotguns and LMGs — close-range spread and heavy sustained-fire weapons.',
+    'Knives': 'Melee kills.',
+    'Grenades & Utility': 'Kills from thrown utility: HE, molotov/incendiary, flashbang, decoy.',
+    'C4 / World': 'Bomb kills and non-weapon deaths (world damage, suicide, fall).',
+    'Misc': 'Taser and Zeus x27 — stun/utility items, not lethal by themselves.',
+}
+
 # Flat lookup built once at load time — O(1) instead of O(n²).
 # Also indexes the "weapon_" prefixed form so internal names resolve without extra stripping.
 _WEAPON_LOOKUP: dict = {}
@@ -500,21 +512,34 @@ def _weapon_category(weapon_name: str) -> str:
 
 
 # ── Match type / game mode filter ─────────────────────────────────────────────
-# Tuple shape: (db_values, cfg_key, ui_label)
+# Tuple shape: (db_values, cfg_key, ui_label, tip)
 MATCH_TYPE_DEFS: list = [
-    (["premier"],                              "match_type_premier",       "🏆 Premier"),
-    (["scrimcomp5v5", "competitive"],          "match_type_competitive",   "🎯 Competitive"),
-    (["scrimcomp2v2", "wingman"],              "match_type_wingman",       "🤝 Wingman"),
-    (["casual"],                               "match_type_casual",        "🎮 Casual"),
-    (["deathmatch"],                           "match_type_deathmatch",    "💀 Deathmatch"),
-    (["training"],                             "match_type_training",      "🎓 Training"),
-    (["new_user_training"],                    "match_type_new_user",      "🎓 New User"),
-    (["armsrace"],                             "match_type_armsrace",      "🔫 Arms Race"),
-    (["gungameprogressive"],                   "match_type_armsrace_alt",  "🔫 Arms Race (alt)"),
-    (["gungametrbomb"],                        "match_type_demolition",    "💣 Demolition"),
-    (["cooperative"],                          "match_type_coop",          "🤖 Co-op"),
-    (["skirmish"],                             "match_type_skirmish",      "⚡ Skirmish"),
-    (["retake"],                               "match_type_retake",        "↩ Retakes"),
+    (["premier"], "match_type_premier", "🏆 Premier",
+     "CS2 ranked Premier mode — CS Rating, map veto, single map per match."),
+    (["scrimcomp5v5", "competitive"], "match_type_competitive", "🎯 Competitive",
+     "Valve/community 5v5 competitive matches (MR12, ranked or unranked)."),
+    (["scrimcomp2v2", "wingman"], "match_type_wingman", "🤝 Wingman",
+     "2v2 Wingman matches, played on the wingman-only map pool."),
+    (["casual"], "match_type_casual", "🎮 Casual",
+     "Casual mode matches — relaxed rules, no team-damage penalty."),
+    (["deathmatch"], "match_type_deathmatch", "💀 Deathmatch",
+     "Free-for-all Deathmatch warm-up matches."),
+    (["training"], "match_type_training", "🎓 Training",
+     "Offline training / target-practice matches."),
+    (["new_user_training"], "match_type_new_user", "🎓 New User",
+     "Valve's new-player tutorial matches (new_user_training)."),
+    (["armsrace"], "match_type_armsrace", "🔫 Arms Race",
+     "Gun Game / Arms Race — weapon unlocks progressively per kill."),
+    (["gungameprogressive"], "match_type_armsrace_alt", "🔫 Arms Race (alt)",
+     "Alternate Arms Race variant, stored as gungameprogressive in CSDM."),
+    (["gungametrbomb"], "match_type_demolition", "💣 Demolition",
+     "Demolition mode — gun-progression matches on small bomb maps."),
+    (["cooperative"], "match_type_coop", "🤖 Co-op",
+     "Co-op Strike/Guardian matches against bots."),
+    (["skirmish"], "match_type_skirmish", "⚡ Skirmish",
+     "Short-format Skirmish matches."),
+    (["retake"], "match_type_retake", "↩ Retakes",
+     "Retake-mode practice — bombsite retake scenarios only."),
 ]
-_MATCH_TYPE_KEY_TO_DB: dict  = {cfg_k: db_vals for db_vals, cfg_k, _ in MATCH_TYPE_DEFS}
-_MATCH_TYPE_CFG_KEYS:  list  = [cfg_k for _, cfg_k, _ in MATCH_TYPE_DEFS]
+_MATCH_TYPE_KEY_TO_DB: dict = {cfg_k: db_vals for db_vals, cfg_k, _label, _tip in MATCH_TYPE_DEFS}
+_MATCH_TYPE_CFG_KEYS: list = [cfg_k for _db_vals, cfg_k, _label, _tip in MATCH_TYPE_DEFS]

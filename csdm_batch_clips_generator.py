@@ -689,7 +689,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         cb_frame.pack(fill="x", pady=(4, 0))
         self._mt_checkboxes: list = []   # [(widget, in_db)]
 
-        for col_idx, (db_vals, cfg_k, lbl) in enumerate(MATCH_TYPE_DEFS):
+        for col_idx, (db_vals, cfg_k, lbl, _tip) in enumerate(MATCH_TYPE_DEFS):
             in_db = any(v in found for v in db_vals)
             _cb = hchk(cb_frame, lbl, self.v[cfg_k])
             _cb.grid(row=col_idx // 4, column=col_idx % 4, sticky="w", padx=(0, 12), pady=1)

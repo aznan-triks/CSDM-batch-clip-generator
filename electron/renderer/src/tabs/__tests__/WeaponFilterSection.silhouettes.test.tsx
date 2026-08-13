@@ -31,6 +31,11 @@ const FILTERS_FIXTURE = {
     Rifles: ["AK-47"],
     Snipers: ["AWP", "SSG 08"],
   },
+  weapon_category_tips: {
+    SMGs: "Cheap rapid-fire weapons, strong on the move and at close range.",
+    Rifles: "Primary combat weapons — the main-round standard.",
+    Snipers: "High-damage precision weapons for long sightlines.",
+  },
   resolutions: [],
   framerates: [],
   video_codecs: [],

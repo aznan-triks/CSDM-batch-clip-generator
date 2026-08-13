@@ -121,7 +121,7 @@ export default function WeaponFilterSection() {
         <div className="chips">
           {categories.map(([category, names]) => (
             <div key={category} className="wf-category">
-              <span className="lab">{category}</span>
+              <span className="lab" title={tables.weaponCategoryTips[category]}>{category}</span>
               <div className="chips">
                 {names.map((name) => (
                   <Chip

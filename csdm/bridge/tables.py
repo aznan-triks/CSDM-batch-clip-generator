@@ -9,7 +9,7 @@ silently stop showing it.
 from csdm.config import _PRESET_ALL_CATS
 from csdm.static_data import (AUDIO_CODECS, FRAMERATES, KILL_FILTER_REGISTRY,
                               MATCH_TYPE_DEFS, RESOLUTIONS, VIDEO_CODECS,
-                              WEAPON_CATEGORIES)
+                              WEAPON_CATEGORIES, WEAPON_CATEGORY_TIPS)
 
 
 def describe_filters():
@@ -21,11 +21,12 @@ def describe_filters():
             for f in KILL_FILTER_REGISTRY
         ],
         "match_types": [
-            {"key": cfg_key, "label": label}
-            for _db_names, cfg_key, label in MATCH_TYPE_DEFS
+            {"key": cfg_key, "label": label, "tip": tip}
+            for _db_names, cfg_key, label, tip in MATCH_TYPE_DEFS
         ],
         "weapon_categories": {name: list(items)
                               for name, items in WEAPON_CATEGORIES.items()},
+        "weapon_category_tips": dict(WEAPON_CATEGORY_TIPS),
         "resolutions": [{"label": label, "width": w, "height": h}
                         for label, w, h in RESOLUTIONS],
         "framerates": list(FRAMERATES),
