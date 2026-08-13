@@ -11,6 +11,8 @@ interface SliderProps {
   /** Text shown at the right of the label row, e.g. "3s" or "total before: 5s". */
   readout?: string;
   id?: string;
+  /** Hover explanation for the whole slider row (label + rail + typed box). */
+  tip?: string;
 }
 
 /**
@@ -33,6 +35,7 @@ export default function Slider({
   label,
   readout,
   id,
+  tip,
 }: SliderProps) {
   // The filled portion, as a percentage. A native range input paints no
   // progress of its own, and the mock's rail is filled lime-to-accent up to
@@ -48,7 +51,7 @@ export default function Slider({
   // `.slider` is a picture of a rail, six pixels tall, and would flatten a
   // real range input to nothing.
   return (
-    <div className="row" style={{ ["--fill" as string]: `${filled}%` }}>
+    <div className="row" style={{ ["--fill" as string]: `${filled}%` }} title={tip}>
       <label className="lab" htmlFor={id}>
         {label}
       </label>
