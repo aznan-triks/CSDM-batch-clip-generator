@@ -7,13 +7,15 @@ interface TabProps {
   icon?: ReactNode;
   active?: boolean;
   badge?: boolean;
+  /** Hover explanation for the badge dot; ignored if `badge` is not set. */
+  badgeTip?: string;
   onSelect: () => void;
 }
 
 /**
  * One tab, extracted from the mock's `.tab` (mockup-v12-hologlass.html).
  */
-export function Tab({ label, icon, active, badge, onSelect }: TabProps) {
+export function Tab({ label, icon, active, badge, badgeTip, onSelect }: TabProps) {
   const classes = active ? "tab active" : "tab";
   return (
     <button
@@ -27,7 +29,7 @@ export function Tab({ label, icon, active, badge, onSelect }: TabProps) {
       {icon}
       <span className="tk" aria-hidden="true" />
       {label}
-      {badge && <span className="tab-badge" />}
+      {badge && <span className="tab-badge" title={badgeTip} />}
     </button>
   );
 }

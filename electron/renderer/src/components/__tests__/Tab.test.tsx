@@ -41,3 +41,14 @@ describe("TabBar's sliding indicator", () => {
     expect(container.querySelectorAll(".ind").length).toBe(1);
   });
 });
+
+describe("Tab's optional badgeTip", () => {
+  it("renders badgeTip as a title on the badge dot", () => {
+    const { container } = render(
+      <Tab label="Editing" badge badgeTip="Unsaved preview waiting to be generated" onSelect={() => {}} />,
+    );
+    expect((container.querySelector(".tab-badge") as HTMLElement).title).toBe(
+      "Unsaved preview waiting to be generated",
+    );
+  });
+});
