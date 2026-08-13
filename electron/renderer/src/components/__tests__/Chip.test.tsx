@@ -36,4 +36,14 @@ describe("Chip wears the mock's own selected class", () => {
     render(<Chip label="AWP" selected onToggle={() => {}} />);
     expect(screen.getByRole("button", { name: "AWP" }).getAttribute("aria-pressed")).toBe("true");
   });
+
+  it("renders an optional tip as a native title attribute", () => {
+    render(<Chip label="AWP" onToggle={() => {}} tip="Explains what AWP does" />);
+    expect(screen.getByRole("button", { name: "AWP" }).title).toBe("Explains what AWP does");
+  });
+
+  it("has no title attribute when tip is omitted", () => {
+    render(<Chip label="AWP" onToggle={() => {}} />);
+    expect(screen.getByRole("button", { name: "AWP" }).hasAttribute("title")).toBe(false);
+  });
 });
