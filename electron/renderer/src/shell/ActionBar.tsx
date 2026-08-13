@@ -119,6 +119,7 @@ export default function ActionBar({
             icon={<ICONS.run />}
             variant="run"
             disabled={!hasSelected || busy}
+            title="Run only the clips checked below, not a full batch"
             data-action="Q1"
             onClick={onGenerate}
           />
@@ -129,6 +130,7 @@ export default function ActionBar({
             icon={<ICONS.presets />}
             variant="preview"
             disabled={!hasPreview || busy}
+            title="Save the current settings and selection as a reusable preset"
             data-action="Q2"
             onClick={onSave}
           />
@@ -138,6 +140,7 @@ export default function ActionBar({
             label="CANCEL"
             icon={<ICONS.editing />}
             variant="preview"
+            title="Discard this preview and return to the Capture tab"
             data-action="Q3"
             onClick={onCancel}
           />
@@ -154,6 +157,7 @@ export default function ActionBar({
           label="PREVIEW"
           icon={<ICONS.preview />}
           variant="preview"
+          title="Scan and list candidate clips for review, without recording video yet"
           data-action="A2"
           onClick={onPreview}
         />
@@ -164,6 +168,7 @@ export default function ActionBar({
           icon={<ICONS.stop />}
           variant="stop"
           disabled={!engine.stopEnabled}
+          title="Ask the current run to stop gracefully after the in-progress clip"
           data-action="A3"
           onClick={onStop}
         />
@@ -174,6 +179,7 @@ export default function ActionBar({
           icon={<ICONS.kill />}
           variant="kill"
           disabled={!engine.killEnabled}
+          title="Force-terminate the run immediately, without a clean shutdown"
           data-action="A4"
           onClick={onKill}
         />
@@ -184,6 +190,7 @@ export default function ActionBar({
           icon={<ICONS.run />}
           variant="run"
           disabled={!engine.runEnabled}
+          title="Start a full batch run using the current settings"
           data-action="A1"
           onClick={onRun}
         />

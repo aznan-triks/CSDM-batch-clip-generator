@@ -289,6 +289,7 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
                   <span
                     className="drag-handle"
                     aria-label={`drag-${spec.id}`}
+                    title="Drag to move this card within the grid"
                     onClick={(e: MouseEvent) => e.stopPropagation()}
                   >
                     ⠿
