@@ -10,6 +10,8 @@ interface PathFieldProps {
   label?: string;
   /** `"file"` opens the native file picker, `"dir"` (default) the folder picker. */
   mode?: "file" | "dir";
+  /** Hover explanation for what this path is used for. */
+  tip?: string;
 }
 
 /**
@@ -20,7 +22,7 @@ interface PathFieldProps {
  * the button asks the main process through `pickPath` and writes back
  * whatever it resolves to -- `null` on Cancel leaves the typed value alone.
  */
-export default function PathField({ value, onChange, placeholder, id, label, mode = "dir" }: PathFieldProps) {
+export default function PathField({ value, onChange, placeholder, id, label, mode = "dir", tip }: PathFieldProps) {
   async function browse() {
     const picked = await pickPath({ file: mode === "file" });
     if (picked !== null) onChange(picked);
@@ -29,7 +31,7 @@ export default function PathField({ value, onChange, placeholder, id, label, mod
   return (
     <div className="path-field">
       {label && (
-        <label className="field-label" htmlFor={id}>
+        <label className="field-label" htmlFor={id} title={tip}>
           {label}
         </label>
       )}
@@ -40,9 +42,15 @@ export default function PathField({ value, onChange, placeholder, id, label, mod
           className="field path-field-input"
           value={value}
           placeholder={placeholder}
+          title={tip}
           onChange={(event) => onChange(event.target.value)}
         />
-        <button type="button" className="path-field-browse" data-action="M12" onClick={browse}>
+        <button
+          type="button"
+          className="path-field-browse"
+          title={mode === "file" ? "Opens a native file picker" : "Opens a native folder picker"}
+          data-action="M12" onClick={browse}
+        >
           Browse…
         </button>
       </div>

@@ -38,7 +38,12 @@ export default function MapFilterSection() {
       <div className="row">
         <span className="lab">empty = all maps</span>
         <SettingControl settingKey="map_filter_enabled">
-          <Chip label="Filter by map" selected={!!enabled} onToggle={() => setEnabled(!enabled)} />
+          <Chip
+            label="Filter by map"
+            tip="Turns map filtering on; when off, all maps are included regardless of selections below"
+            selected={!!enabled}
+            onToggle={() => setEnabled(!enabled)}
+          />
         </SettingControl>
       </div>
       {!database ? (

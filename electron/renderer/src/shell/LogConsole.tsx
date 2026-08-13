@@ -292,6 +292,7 @@ export default function LogConsole() {
             aria-checked={autoScroll}
             aria-label="Auto-scroll"
             className={autoScroll ? "chip on" : "chip"}
+            title="Auto-scroll the console to the newest line"
             data-action="J1"
             onClick={() => setAutoScroll((previous) => !previous)}
           >
@@ -304,6 +305,7 @@ export default function LogConsole() {
             aria-checked={showTimestamps}
             aria-label="Timestamps"
             className={showTimestamps ? "chip on" : "chip"}
+            title="Show the time each console line arrived"
             data-action="J2"
             onClick={() => setShowTimestamps((previous) => !previous)}
           >
@@ -316,6 +318,7 @@ export default function LogConsole() {
             aria-checked={showBadges}
             aria-label="Level badges"
             className={showBadges ? "chip on" : "chip"}
+            title="Show a colored level label (ERR/WARN/OK) on each line"
             data-action="J3"
             onClick={() => setShowBadges((previous) => !previous)}
           >
@@ -326,7 +329,7 @@ export default function LogConsole() {
             Copy all
           </button>
 
-          <button type="button" className="chip" data-action="J10" onClick={copySelection}>
+          <button type="button" className="chip" title="Copy the currently highlighted console text" data-action="J10" onClick={copySelection}>
             Copy sel.
           </button>
 
@@ -338,6 +341,7 @@ export default function LogConsole() {
               className="chip"
               aria-haspopup="menu"
               aria-expanded={exportMenuOpen}
+              title="Download the full console log as an HTML file"
               data-action="K1"
               onClick={() => setExportMenuOpen((previous) => !previous)}
             >

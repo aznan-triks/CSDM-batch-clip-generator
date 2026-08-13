@@ -31,13 +31,13 @@ import "./DemoSelectionSection.css";
 /** The window's own shortcuts (`_tab_capturer`'s `qr` row), in order. */
 const DATE_SHORTCUTS = [
   { label: "Yesterday", kind: "yesterday" },
-  { label: "7d", kind: "days", days: 7 },
-  { label: "30d", kind: "days", days: 30 },
+  { label: "7d", kind: "days", days: 7, title: "Set the date range to the last 7 days" },
+  { label: "30d", kind: "days", days: 30, title: "Set the date range to the last 30 days" },
   { label: "This month", kind: "month" },
-  { label: "3m", kind: "days", days: 90 },
-  { label: "6m", kind: "days", days: 180 },
+  { label: "3m", kind: "days", days: 90, title: "Set the date range to the last 3 months" },
+  { label: "6m", kind: "days", days: 180, title: "Set the date range to the last 6 months" },
   { label: "Year", kind: "year" },
-  { label: "All", kind: "all" },
+  { label: "All", kind: "all", title: "Clear the date range and reset the demo list and picker selection" },
 ] as const;
 
 type Shortcut = (typeof DATE_SHORTCUTS)[number];
@@ -182,6 +182,7 @@ export default function DemoSelectionSection() {
             key={shortcut.label}
             type="button"
             className="chip"
+            title={"title" in shortcut ? shortcut.title : undefined}
             data-action="F3" onClick={() => applyShortcut(shortcut)}
           >
             {shortcut.label}

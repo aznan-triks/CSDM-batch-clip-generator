@@ -189,7 +189,7 @@ DEFAULT_CONFIG = {
     "clutch_1v5": False,
     # Match type filter — all False = include every type (no filter applied)
     # Populated dynamically from MATCH_TYPE_DEFS; all default False
-    **{cfg_k: False for _, cfg_k, _ in MATCH_TYPE_DEFS},
+    **{cfg_k: False for _, cfg_k, _, _ in MATCH_TYPE_DEFS},
     # When True, *only* checked types pass; when False, all types pass (no filter).
     "match_type_filter_enabled": False,
     "map_filter_enabled": False,

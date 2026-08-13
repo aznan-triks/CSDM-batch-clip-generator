@@ -121,6 +121,11 @@ class WeaponCategoryTests(unittest.TestCase):
         self.assertEqual(sd._weapon_category("banana"), "Other")
         self.assertEqual(sd._weapon_category(""), "Other")
 
+    def test_every_weapon_category_has_a_tip(self):
+        self.assertEqual(set(sd.WEAPON_CATEGORIES.keys()), set(sd.WEAPON_CATEGORY_TIPS.keys()))
+        for category, tip in sd.WEAPON_CATEGORY_TIPS.items():
+            self.assertTrue(tip, f"{category} has no tip")
+
 
 # ════════════════════════════════════════════════════════════════════════════
 #  Config : valeurs par defaut + migrations ascendantes
@@ -131,8 +136,13 @@ class ConfigDefaultsTests(unittest.TestCase):
             self.assertIn(k, cfgmod.DEFAULT_CONFIG)
 
     def test_match_types_default_false(self):
-        for _, cfg_key, _ in sd.MATCH_TYPE_DEFS:
+        for _, cfg_key, _, _ in sd.MATCH_TYPE_DEFS:
             self.assertIs(cfgmod.DEFAULT_CONFIG.get(cfg_key), False)
+
+    def test_match_type_defs_all_have_a_non_empty_tip(self):
+        for db_values, cfg_key, label, tip in sd.MATCH_TYPE_DEFS:
+            self.assertTrue(tip, f"{cfg_key} has no tip")
+            self.assertNotEqual(tip, label, f"{cfg_key}'s tip just repeats its label")
 
 
 class ConfigMigrationTests(unittest.TestCase):

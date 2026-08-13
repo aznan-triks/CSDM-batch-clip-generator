@@ -65,15 +65,16 @@ export default function HudNav<T extends string>({
               icon={tab.icon}
               active={tab.id === active}
               badge={tab.badge}
+              badgeTip="This tab has an unsaved preview waiting to be generated"
               onSelect={() => onSelect(tab.id)}
             />
           ))}
         </TabBar>
         <div className="navtools">
-          <div className="p">
+          <div className="p" title="PostgreSQL database currently connected for this session">
             DB <b>{database || "--"}</b>
           </div>
-          <div className="p">
+          <div className="p" title="Active video encoding preset used when recording clips">
             Preset <b>{preset || "--"}</b>
           </div>
         </div>

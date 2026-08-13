@@ -84,6 +84,7 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll, onSetSe
           <button
             type="button"
             className="chip"
+            title="Checks the rows highlighted by click, Ctrl+click or Shift+click"
             data-action="D3" onClick={() => onSetSelected(Array.from(selected), true)}
           >
             ✓ Check selected
@@ -91,6 +92,7 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll, onSetSe
           <button
             type="button"
             className="chip"
+            title="Unchecks only the rows currently highlighted (click, Ctrl+click, Shift+click)"
             data-action="D4" onClick={() => onSetSelected(Array.from(selected), false)}
           >
             ✕ Uncheck selected

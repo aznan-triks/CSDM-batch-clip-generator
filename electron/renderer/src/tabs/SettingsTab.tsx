@@ -79,9 +79,17 @@ interface PendingSwitch {
 }
 
 /** The two fixed locations; the third (Choose…) resolves a path at click time. */
-const FOLDER_CHOICES: ReadonlyArray<{ value: string; label: string }> = [
-  { value: "", label: "App folder (portable)" },
-  { value: "appdata", label: "User Local AppData" },
+const FOLDER_CHOICES: ReadonlyArray<{ value: string; label: string; tip: string }> = [
+  {
+    value: "",
+    label: "App folder (portable)",
+    tip: "Stores settings next to the app itself -- portable, travels with the folder (e.g. USB drive)",
+  },
+  {
+    value: "appdata",
+    label: "User Local AppData",
+    tip: "Stores settings in Windows' per-user AppData folder -- survives moving/reinstalling the app",
+  },
 ];
 
 export default function SettingsTab() {
@@ -264,7 +272,13 @@ export default function SettingsTab() {
               <Field id="pg-port" label="Port" value={pgPort ?? ""} onChange={setPgPort} />
             </SettingControl>
             <SettingControl settingKey="pg_db">
-              <Field id="pg-db" label="Base" value={pgDb ?? ""} onChange={setPgDb} />
+              <Field
+                id="pg-db"
+                label="Base"
+                value={pgDb ?? ""}
+                onChange={setPgDb}
+                tip="PostgreSQL database name (the one created by CS Demo Manager)"
+              />
             </SettingControl>
             <SettingControl settingKey="pg_user">
               <Field id="pg-user" label="User" value={pgUser ?? ""} onChange={setPgUser} />
@@ -280,7 +294,13 @@ export default function SettingsTab() {
             </SettingControl>
           </div>
           <div className="row">
-            <button type="button" className="chip" data-action="M10" onClick={testAndReload}>
+            <button
+              type="button"
+              className="chip"
+              data-action="M10"
+              title="Tests the PostgreSQL connection and reloads players/tables from the database"
+              onClick={testAndReload}
+            >
               Test & Reload
             </button>
             {dbStatus && <span className="settings-db-status">{dbStatus}</span>}
@@ -310,6 +330,7 @@ export default function SettingsTab() {
               value={cs2CfgDir ?? ""}
               onChange={setCs2CfgDir}
               mode="dir"
+              tip="Where CSDM writes injected CS2 console commands before recording. Leave empty to auto-detect"
             />
           </SettingControl>
           <SettingControl settingKey="output_dir_clips">
@@ -347,6 +368,7 @@ export default function SettingsTab() {
               label="Subfolder per demo"
               selected={!!subfolderPerDemo}
               onToggle={() => setSubfolderPerDemo(!subfolderPerDemo)}
+              tip="When on, each demo's clips go in their own subfolder instead of sharing the raw clips folder"
             />
           </SettingControl>
         </Card>
@@ -373,6 +395,7 @@ export default function SettingsTab() {
                       aria-pressed={active}
                       data-action={choice.value === "" ? "M13" : "M14"}
                       disabled={!!pending}
+                      title={choice.tip}
                       onClick={() => chooseFolder(choice.value, choice.label)}
                     >
                       {choice.label}
@@ -492,6 +515,7 @@ export default function SettingsTab() {
                 value={themeBg ?? DEFAULT_GROUND}
                 onChange={chooseGround}
                 label="Ground"
+                tip="Dark variants: amoled = pure black (OLED), deepblue = blue-tinted, terminal = green-on-black"
               />
             </div>
           </SettingControl>
@@ -528,20 +552,45 @@ export default function SettingsTab() {
                 mono
                 value={String(currentSplit)}
                 onChange={(v) => setSplitPct(asNumber(v, currentSplit))}
+                tip="Width split between the left video panel and right settings panel, as a percentage"
               />
             </SettingControl>
           </div>
           <div className="row">
-            <button type="button" className="chip" data-action="M5" onClick={applyLayout}>
+            <button
+              type="button"
+              className="chip"
+              data-action="M5"
+              title="Resizes the live window to the width/height/split values typed above"
+              onClick={applyLayout}
+            >
               Apply
             </button>
-            <button type="button" className="chip" data-action="M6" onClick={autoLayout}>
+            <button
+              type="button"
+              className="chip"
+              data-action="M6"
+              title="Sizes the window automatically from your screen resolution (~86% width, 84% height)"
+              onClick={autoLayout}
+            >
               Auto
             </button>
-            <button type="button" className="chip" data-action="M7" onClick={resetLayoutDefaults}>
+            <button
+              type="button"
+              className="chip"
+              data-action="M7"
+              title="Resets window size and split to the app's built-in defaults"
+              onClick={resetLayoutDefaults}
+            >
               Reset default
             </button>
-            <button type="button" className="chip" data-action="M8" onClick={resetCardLayout}>
+            <button
+              type="button"
+              className="chip"
+              data-action="M8"
+              title="Resets every tab's card positions to the default arrangement -- does not affect window size"
+              onClick={resetCardLayout}
+            >
               Reset card layout
             </button>
             <SettingControl settingKey="ui_remember_layout">
@@ -549,6 +598,7 @@ export default function SettingsTab() {
                 label="Remember current layout"
                 selected={!!rememberLayout}
                 onToggle={() => setRememberLayout(!rememberLayout)}
+                tip="Automatically saves window size and pane split whenever they change, without pressing Apply"
               />
             </SettingControl>
           </div>

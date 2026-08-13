@@ -47,10 +47,20 @@ export default function EventTypeSection() {
       <div className="row">
         <span className="lab">Perspective</span>
         <SettingControl settingKey="event_actor">
-          <Chip label="Actor" selected={actorOn} onToggle={() => setActor(!actorOn)} />
+          <Chip
+            label="Actor"
+            tip="Capture events where the selected player performs the action (e.g. the kill)"
+            selected={actorOn}
+            onToggle={() => setActor(!actorOn)}
+          />
         </SettingControl>
         <SettingControl settingKey="event_target">
-          <Chip label="Target" selected={targetOn} onToggle={() => setTarget(!targetOn)} />
+          <Chip
+            label="Target"
+            tip="Capture events where the selected player is on the receiving end (e.g. gets killed)"
+            selected={targetOn}
+            onToggle={() => setTarget(!targetOn)}
+          />
         </SettingControl>
       </div>
 
@@ -59,6 +69,7 @@ export default function EventTypeSection() {
         <SettingControl settingKey="event_lethal">
           <Chip
             label="Lethal"
+            tip="Include kill and death moments. Requires Actor or Target to be selected"
             selected={asBool(lethal, true)}
             onToggle={() => setLethal(!asBool(lethal, true))}
             disabled={!lethalEnabled}
@@ -67,6 +78,7 @@ export default function EventTypeSection() {
         <SettingControl settingKey="event_non_lethal">
           <Chip
             label="Non-lethal"
+            tip="Include damage-dealt or damage-taken moments, without a kill"
             selected={asBool(nonLethal, false)}
             onToggle={() => setNonLethal(!asBool(nonLethal, false))}
           />
@@ -74,6 +86,7 @@ export default function EventTypeSection() {
         <SettingControl settingKey="event_other">
           <Chip
             label="Other"
+            tip="Include other actions like shots fired or jumps. Actor perspective only"
             selected={asBool(other, false)}
             onToggle={() => setOther(!asBool(other, false))}
             disabled={!otherEnabled}
@@ -84,10 +97,20 @@ export default function EventTypeSection() {
       <div className="row">
         <span className="lab">Team</span>
         <SettingControl settingKey="event_ally">
-          <Chip label="Ally" selected={asBool(ally, false)} onToggle={() => setAlly(!asBool(ally, false))} />
+          <Chip
+            label="Ally"
+            tip="Include events where the other player involved is a teammate"
+            selected={asBool(ally, false)}
+            onToggle={() => setAlly(!asBool(ally, false))}
+          />
         </SettingControl>
         <SettingControl settingKey="event_enemy">
-          <Chip label="Enemy" selected={asBool(enemy, true)} onToggle={() => setEnemy(!asBool(enemy, true))} />
+          <Chip
+            label="Enemy"
+            tip="Include events where the other player involved is an opponent"
+            selected={asBool(enemy, true)}
+            onToggle={() => setEnemy(!asBool(enemy, true))}
+          />
         </SettingControl>
       </div>
     </div>

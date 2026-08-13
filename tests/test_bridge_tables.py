@@ -37,7 +37,7 @@ class TestDescribeFilters(unittest.TestCase):
         _, msgs = _run([{"type": "command", "id": "1", "name": "describe_filters"}])
         data = [m for m in msgs if m["type"] == "result"][0]["data"]
         self.assertEqual([m["key"] for m in data["match_types"]],
-                         [cfg_key for _db, cfg_key, _label in MATCH_TYPE_DEFS])
+                         [cfg_key for _db, cfg_key, _label, _tip in MATCH_TYPE_DEFS])
 
     def test_video_tables_travel(self):
         from csdm.static_data import FRAMERATES, RESOLUTIONS, VIDEO_CODECS

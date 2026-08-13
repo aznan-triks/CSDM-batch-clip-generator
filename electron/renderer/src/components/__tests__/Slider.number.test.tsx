@@ -7,6 +7,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import NumberField from "../NumberField";
 import Slider from "../Slider";
 
 function setup(value = 3) {
@@ -59,5 +60,19 @@ describe("a gauge can be typed into", () => {
     expect(
       (screen.getByRole("spinbutton", { name: /seconds before/i }) as HTMLInputElement).value,
     ).toBe("12");
+  });
+
+  it("renders an optional tip as a title on the row", () => {
+    const { container } = render(
+      <Slider value={5} onChange={() => {}} min={0} max={10} label="Seconds" tip="Explains the setting" />,
+    );
+    expect((container.querySelector(".row") as HTMLElement).title).toBe("Explains the setting");
+  });
+});
+
+describe("NumberField's optional tip", () => {
+  it("renders an optional tip as a title on the number input", () => {
+    render(<NumberField value={5} onChange={() => {}} min={0} max={10} step={1} label="Seconds" tip="Explains it" />);
+    expect(screen.getByLabelText("Seconds").title).toBe("Explains it");
   });
 });

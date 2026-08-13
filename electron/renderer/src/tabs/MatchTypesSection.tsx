@@ -22,10 +22,12 @@ import "./MatchTypesSection.css";
 function MatchTypeChip({
   matchKey,
   label,
+  tip,
   disabled,
 }: {
   matchKey: string;
   label: string;
+  tip: string;
   disabled: boolean;
 }) {
   const [selected, setSelected] = useSetting<boolean>(matchKey);
@@ -33,6 +35,7 @@ function MatchTypeChip({
     <SettingControl settingKey={matchKey}>
       <Chip
         label={label}
+        tip={tip}
         selected={!!selected}
         onToggle={() => setSelected(!selected)}
         disabled={disabled}
@@ -58,6 +61,7 @@ export default function MatchTypesSection() {
         <SettingControl settingKey="match_type_filter_enabled">
           <Chip
             label="Filter by type"
+            tip="When off, all match types are included; the boxes below only apply while this is on"
             selected={!!enabled}
             onToggle={() => setEnabled(!enabled)}
           />
@@ -69,6 +73,7 @@ export default function MatchTypesSection() {
             key={matchType.key}
             matchKey={matchType.key}
             label={matchType.label}
+            tip={matchType.tip}
             disabled={boxesDisabled}
           />
         ))}

@@ -37,8 +37,12 @@ describe("no component keeps a button family the mock does not have", () => {
 
   it("the console's export button is a chip like every other small button", () => {
     const text = readFileSync(path.join(SRC, "shell/LogConsole.tsx"), "utf-8");
-    // It was the one <button> in the window with no class at all.
-    expect(text).toMatch(/className="chip"[\s\S]{0,200}Export/);
+    // It was the one <button> in the window with no class at all. The window
+    // is 260 chars, not 200: a `title` tooltip attribute widened the JSX
+    // between the class and the label without adding a second element or a
+    // bespoke class -- the invariant this guards is the class name, not the
+    // exact attribute count.
+    expect(text).toMatch(/className="chip"[\s\S]{0,260}Export/);
   });
 
   it("the picker's on/off buttons use the mock's own selected class", () => {
