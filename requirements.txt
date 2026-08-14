@@ -17,5 +17,9 @@ numpy>=2.4.3
 # Windows-specific functionality (Optional)
 # pywin32>=311; sys_platform == 'win32'
 
+# Code-symbol atlas (mechanical scan + optional semantic search).
+# Not on PyPI — install from source:
+atlas-kit @ git+https://github.com/aznan-triks/atlas_kit.git
+
 # Test suite (dev only, not a program dependency):
 # pytest — install separately, e.g. `pip install pytest`

@@ -43,10 +43,6 @@ electron/node_modules/
 electron/renderer/dist/
 electron/dist-app/
 
-# 7) Atlas — genere, jamais edite a la main (voir scripts/build_atlas.py).
-#    (L'atlas lui-meme est ignore en section 9 — le test le regenere.)
-!scripts/
-!scripts/**/*.py
 .worktrees/
 
 # 8) Fichiers de travail / debug jetables — jamais sur GitHub.
@@ -58,8 +54,8 @@ docs/INVENTAIRE_ACTIONS.md
 electron/.repro-*
 electron/scripts/refetch_cs2_icons.mjs
 
-# 9) Journal de chantier interne + atlas genere par script (jamais edites
-#    a la main — le test tests/test_atlas.py les regenere tout seul).
+# 9) Journal de chantier interne + atlas genere (atlas-kit scan) — jamais
+#    edites a la main, le test tests/test_atlas.py regenere atlas.json.
 CHANGELOG_DEV.md
-PROJECT_ATLAS.md
-PROJECT_ATLAS.json
+atlas.json
+semantic_index.json
