@@ -20,6 +20,53 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.9 — 2026-09-01
+
+### Fixed
+
+- **The clip list after a PREVIEW now opens by itself, and its checkboxes work.**
+  *Technique* — nothing switched to the EDITING tab on `preview_ready`, so a successful preview
+  looked like nothing had happened. `AppShell` now follows a new `previewSerial` counter
+  (`previewReady` goes true once and stays true, so its rising edge could only fire for the first
+  preview of a session). Clicking a clip sent `editing_toggle`, and opening the tab sent
+  `editing_viewed`; neither is a command `csdm/bridge/host.py` implements, and `sendCommand` never
+  reads a reply, so both failed silently. Both are local state now, on a single shared engine store
+  (`motion/engineStore.ts`) instead of one private copy per consumer.
+- **"Test & Reload" in the settings now reloads the players, weapons, maps and tags everywhere.**
+  *Technique* — `SettingsTab::testAndReload` called `connect_db` directly and discarded the fresh
+  payload; the shared `DatabaseProvider` was never told. It now calls `useDatabase().reload()`.
+- **Nothing gets cut off any more when a card is dragged narrow.**
+  *Technique* — four unwrapping horizontal groups and one column floor: `.kf-extra`, `.dp-buttons`
+  and the mock's `.seg` gain `flex-wrap: wrap`; `reflowColumns`' `column-width` (a floor, not a
+  ceiling) moves inside a container query. Measured in the real window: content cut off across the
+  width sweep went from 243 occurrences to 8, all of them 4-8px on input floors.
+- **Short labels sit next to the control they name instead of floating away from it.**
+  *Technique* — the mock's `.lab{min-width:76px}` is a column-alignment width; in a horizontal
+  group it aligns nothing. Dropped there only (`theme/mock-bridge.css`). 17 detached labels → 0;
+  "TK" had 69px of empty space before its segmented control.
+- **Every remove button looks and behaves the same.**
+  *Technique* — new `components/CloseButton` + `ChipPair`, modelled on the Tags delete pill.
+  Replaces three separate implementations, one of which was a `role="button"` span positioned on
+  top of a real `<button>`. A test fails if the glyph is drawn anywhere else.
+- **The crosshair pointer now appears on every tab.**
+  *Technique* — the reticle's background allowlist named page backgrounds that four tabs out of
+  five never expose (the cards cover them). It gains the card surfaces (`cursor/Reticle.tsx`).
+
+### Changed
+
+- **The "Perspective" wording in the event-type card is now "Event role".**
+  *Technique* — two unrelated settings shared the word: `event_actor`/`event_target` (Actor/Target)
+  and `perspective` (killer/victim/both, the camera POV). Only the first is renamed; the second
+  keeps the name its configuration key carries.
+
+### Added
+
+- **A DEBUG switch in the console header records every exchange with the engine, and exports it.**
+  *Technique* — `debug/trace.ts` keeps a bounded, password-masked timeline of commands, engine
+  receipts, results and state events, correlated by command id across both ends
+  (`set_debug` + `MSG_TRACE` on the Python side). Off by default: nothing recorded, no listener
+  mounted.
+
 ## 3.2.8 — 2026-08-13
 
 Buttons that promised to do things now actually do them.
