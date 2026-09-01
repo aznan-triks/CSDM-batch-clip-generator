@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { onMessage, send } from "../bridge";
+import { useTracing } from "../debug/useTracing";
 import { useAllSettings } from "../settings/store";
 import { PROMPT_COMMANDS, narrate, promptFor, reciteSelection } from "./consoleNarrative";
 import { useTypewriter } from "./useTypewriter";
@@ -145,6 +146,10 @@ function exportLinesAsHtml(lines: Line[]): void {
  * a run, and unmounting would throw them away.
  */
 export default function LogConsole() {
+  // The diagnostic switch lives here rather than in Settings on purpose: the
+  // console is where the user already looks when something did not happen,
+  // and a switch you have to go find in another tab is a switch nobody flips.
+  const { tracing, setTracing, exportTrace } = useTracing();
   const [lines, setLines] = useState<Line[]>([]);
   // A QUEUE, not a single slot. Each `ask` blocks one engine worker thread
   // until its own id is answered, so a second question must wait its turn
@@ -325,6 +330,19 @@ export default function LogConsole() {
             Badges
           </button>
 
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={tracing}
+            aria-label="Debug trace"
+            className={tracing ? "chip on" : "chip"}
+            title="Record every command sent to the engine, every answer and every state event, with timings. Off by default; export the recording from the Export menu"
+            data-action="J13"
+            onClick={() => setTracing(!tracing)}
+          >
+            DEBUG
+          </button>
+
           <button type="button" className="chip" data-action="J12" onClick={copyAll}>
             Copy all
           </button>
@@ -359,6 +377,21 @@ export default function LogConsole() {
                   }}
                 >
                   HTML (.html)
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  data-action="K3"
+                  disabled={!tracing}
+                  title={tracing
+                    ? "Download the recorded command/answer timeline"
+                    : "Turn DEBUG on first: there is nothing recorded yet"}
+                  onClick={() => {
+                    exportTrace();
+                    setExportMenuOpen(false);
+                  }}
+                >
+                  Debug trace (.txt)
                 </button>
               </div>
             )}

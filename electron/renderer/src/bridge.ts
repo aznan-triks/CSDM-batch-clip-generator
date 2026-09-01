@@ -11,6 +11,8 @@
  * when the engine process dies, so the window reports it instead of freezing.
  */
 
+import { recordCommand } from "./debug/trace";
+
 /** Levels the engine actually emits (grepped from `csdm/engine/core.py`). */
 export type LogLevel = "info" | "warn" | "err" | "ok" | "dim" | "";
 
@@ -57,6 +59,13 @@ export type BridgeMessage =
    */
   | { type: "result"; id: string | null; ok: boolean; error?: string; [key: string]: unknown }
   | { type: "fatal"; error: string; traceback: string }
+  /**
+   * One diagnostic line from the engine's own recorder, emitted only while
+   * `set_debug` is on (`csdm/bridge/host.py`). It is protocol -- both ends
+   * agree on the string -- but it is NOT engine state: nothing in the
+   * interface may change because a trace line arrived.
+   */
+  | { type: "trace"; phase: string; id: string | null; name: string; ms: number; detail?: string }
   | { type: "child_exit"; code: number | null; signal: string | null }
   | { type: "child_error"; error: string };
 
@@ -163,6 +172,10 @@ let commandCounter = 0;
 export function sendCommand(name: string, payload: CommandPayload = {}): string {
   commandCounter += 1;
   const id = String(commandCounter);
+  // Recorded BEFORE the send, so a command that never leaves still shows in
+  // the trace: "the click did nothing" and "the click sent something that
+  // died on the way" are different bugs and must not look alike.
+  recordCommand(name, id, payload);
   // Protocol fields last: a payload key can never rewrite them.
   send({ ...payload, type: "command", id, name });
   return id;

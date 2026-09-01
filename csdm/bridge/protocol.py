@@ -17,6 +17,9 @@ MSG_ANSWER = "answer"
 MSG_COMMAND = "command"
 MSG_RESULT = "result"
 MSG_FATAL = "fatal"
+# The diagnostic recorder's own line (2026-09-01). Protocol, not state: the
+# renderer records it and shows nothing. Emitted only while `set_debug` is on.
+MSG_TRACE = "trace"
 
 
 def encode(obj):

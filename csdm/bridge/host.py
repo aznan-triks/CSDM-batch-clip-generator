@@ -8,10 +8,11 @@ production code stops proving the contract holds.
 import platform
 import sys
 import threading
+import time
 import traceback
 
 from csdm.bridge.ports import PipePorts
-from csdm.bridge.protocol import LineWriter, MSG_FATAL, MSG_LOG, MSG_RESULT, decode
+from csdm.bridge.protocol import LineWriter, MSG_FATAL, MSG_LOG, MSG_RESULT, MSG_TRACE, decode
 from csdm.bridge.tables import describe_filters
 from csdm.config import (apply_config_dir, build_preset, load_config, load_presets,
                          normalize_presets, preset_payload, probe_config_dir,
@@ -28,6 +29,84 @@ class BridgeHost(EngineStateMixin, EngineMixin):
         self.init_engine_state()
         self.log, self.log_parts = ports.log, ports.log_parts
         self.state, self.ask = ports.state, ports.ask
+
+
+# --- diagnostic recorder ------------------------------------------------------
+#
+# Why the engine reports at all. The renderer already knows what it sent and
+# what came back; what it CANNOT know is whether silence means "the command
+# never arrived" or "it arrived and produced nothing". Those are different
+# bugs. So each command is announced on arrival and again on completion, under
+# the id the renderer already holds -- one timeline, both ends, no guessing.
+#
+# HC.1: the bounds of what a trace line may carry, named once.
+TRACE_LIMITS = {
+    "detail_chars": 300,   # a run cfg is kilobytes; the trace wants its shape
+    "secret_keys": ("pass", "pg_pass", "password"),
+    "mask": "***",
+}
+
+# Off by default and off between sessions: this is an instrument, not a mode
+# the app ships in. A dict rather than a bare global so `_run_command`, which
+# runs on its own thread, reads the same object every caller writes.
+_TRACE = {"on": False}
+
+
+def trace_enabled():
+    """Whether the engine is currently reporting its own command timeline."""
+    return _TRACE["on"]
+
+
+def set_trace_enabled(on):
+    """Flip the recorder. Also the reset used by tests, hence a plain setter."""
+    _TRACE["on"] = bool(on)
+
+
+def _trace_detail(command):
+    """One short, secret-free line describing a command's payload.
+
+    Built by hand rather than with `json.dumps`: a payload can hold anything a
+    renderer put in it, and a serialiser that raises here would kill the very
+    command it was supposed to describe.
+    """
+    parts = []
+    for key, value in command.items():
+        if key in ("type", "id", "name"):
+            continue
+        if key in TRACE_LIMITS["secret_keys"]:
+            parts.append(f"{key}={TRACE_LIMITS['mask']}")
+            continue
+        if isinstance(value, dict):
+            inner = ",".join(
+                f"{k}={TRACE_LIMITS['mask']}" if k in TRACE_LIMITS["secret_keys"] else str(k)
+                for k in value
+            )
+            parts.append(f"{key}={{{inner}}}")
+            continue
+        text = str(value)
+        parts.append(f"{key}={text}")
+    detail = " ".join(parts)
+    if len(detail) > TRACE_LIMITS["detail_chars"]:
+        detail = detail[: TRACE_LIMITS["detail_chars"]] + "…"
+    return detail
+
+
+def _trace(writer, phase, command_id, name, ms, detail=""):
+    """Write one trace line, through the one writer allowed to touch the pipe."""
+    if not _TRACE["on"]:
+        return
+    writer.send({"type": MSG_TRACE, "phase": phase, "id": command_id,
+                 "name": name, "ms": round(ms, 3), "detail": detail})
+
+
+def _cmd_set_debug(host, command):
+    """Turn the engine's own trace on or off, at runtime, without a restart.
+
+    Returns the state it reached rather than acknowledging blindly: a switch
+    whose position you cannot read is a switch you cannot trust.
+    """
+    set_trace_enabled(command.get("on"))
+    return {"data": {"debug": trace_enabled()}}
 
 
 def _cmd_ping(host, command):
@@ -318,6 +397,7 @@ def _cmd_start_preview(host, command):
 
 COMMANDS = {
     "ping": _cmd_ping,
+    "set_debug": _cmd_set_debug,
     "hello": _cmd_hello,
     "describe_filters": _cmd_describe_filters,
     "start_run": _cmd_start_run,
@@ -361,16 +441,27 @@ def _run_command(host, writer, command):
     """
     command_id = command.get("id")
     name = command.get("name")
+    # Taken before the handler runs, so `set_debug` turning the recorder ON
+    # still gets a `done` line: the first thing the trace shows is itself
+    # starting, which is how you know the switch actually took.
+    started = time.perf_counter()
+    _trace(writer, "recv", command_id, name, 0.0, _trace_detail(command))
     try:
         handler = COMMANDS[name]
     except KeyError:
+        elapsed = (time.perf_counter() - started) * 1000.0
+        _trace(writer, "done", command_id, name, elapsed, f"unknown command: {name}")
         writer.send({"type": MSG_RESULT, "id": command_id, "ok": False,
                      "error": f"unknown command: {name}"})
         return
     try:
         payload = handler(host, command) or {}
+        elapsed = (time.perf_counter() - started) * 1000.0
+        _trace(writer, "done", command_id, name, elapsed, "ok")
         writer.send({"type": MSG_RESULT, "id": command_id, "ok": True, **payload})
     except Exception as exc:  # noqa: BLE001 -- fail fast inside, report clean outside
+        elapsed = (time.perf_counter() - started) * 1000.0
+        _trace(writer, "done", command_id, name, elapsed, f"FAILED: {exc}")
         writer.send({"type": MSG_RESULT, "id": command_id, "ok": False, "error": str(exc)})
 
 
