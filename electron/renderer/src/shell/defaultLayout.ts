@@ -11,8 +11,14 @@
  */
 import type { GridSlot } from "./sectionLayout";
 
-/** Columns a normal (non-wide) card spans by default. */
-export const DEFAULT_CARD_COLS = 3;
+/**
+ * Columns a normal (non-wide) card spans by default.
+ *
+ * Six 48px columns, not three 96px ones: the column halved in 3.3.0 so a card
+ * has twice as many widths to choose from, and this is the SAME width it
+ * always was, counted in the new unit.
+ */
+export const DEFAULT_CARD_COLS = 6;
 
 /** Fine rows a card spans by default -- 24 rows of 24px reads as a full card. */
 export const DEFAULT_CARD_ROWS = 24;

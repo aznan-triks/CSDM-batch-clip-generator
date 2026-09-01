@@ -144,7 +144,14 @@ DEFAULT_CONFIG = {
     "concatenate_sequences": False, "true_view": True,
     "tag_on_export": "", "tag_enabled": False,
     "ui_active_tags": [],
-    "ui_card_block_size": 96,
+    # Width of ONE grid column, in pixels. Halved from 96 in 3.3.0: a card can
+    # only be a whole number of columns wide, so the column size IS the list of
+    # widths a card can have. At 96px a normal content pane offered eight or
+    # nine of them and nothing between "a third" and "a half"; at 48px it
+    # offers twice as many, at the same smallest size the eye can still read as
+    # a card (two columns). Stored layouts are rescaled by
+    # `_migrate_card_grid_half_step` so nothing moves the first time.
+    "ui_card_block_size": 48,
     # Fine row height of the card grid, in pixels. Cards resize vertically by
     # this step, so it decides how free the height feels: one quarter of a
     # block (96 / 4) reads as free without losing alignment.
@@ -605,6 +612,10 @@ def _migrate_config(saved: dict, cfg: dict) -> None:
         if "Rounds" in old_events:
             cfg["events"] = ["Rounds"]
 
+    # Card grid halved to a 48px column  (3.3.0). Last, and after every key
+    # rename above: it reads `ui_sections` and `ui_card_block_size` as they
+    # finally stand.
+    _migrate_card_grid_half_step(saved, cfg)
 
 # Legacy filter keys dropped from KILL_FILTER_REGISTRY, mapped onto their
 # replacement. Applied to the main config AND to preset payloads, since both
@@ -616,6 +627,70 @@ _LEGACY_FILTER_KEYS = {
 }
 # Retired companion keys with no replacement (never read by anything).
 _DEAD_FILTER_KEYS = ("kill_mod_no_trois_shot_req",)
+
+
+# Schema version of the `ui_sections` card layouts. THE RENDERER MIRRORS THIS
+# in `electron/renderer/src/shell/sectionLayout.ts::LAYOUT_VERSION`, and
+# `shell/__tests__/layout-version-parity.test.ts` reads this file to prove the
+# two agree -- the same discipline as the settings coverage guard, which reads
+# its key list from Python rather than keeping a TypeScript copy.
+UI_SECTIONS_VERSION = 4
+
+# Columns per stored column when the grid halved (v3 -> v4).
+_GRID_HALF_STEP_SCALE = 2
+
+
+def _migrate_card_grid_half_step(saved: dict, cfg: dict) -> None:
+    """Halve the grid column and widen every stored rectangle to match (v3 -> v4).
+
+    A card's rectangle is stored in COLUMNS, so halving the column would halve
+    every card on screen. The two changes are therefore one migration, not two:
+    the column size and the rectangles move together or the window reopens with
+    every card at half width.
+
+    Only `x` and `w` scale. `y` and `h` are in fine rows (`ui_card_row_height`),
+    which this change does not touch.
+
+    Idempotent: keyed on the stored version, and a tab already stamped `v: 4`
+    is left alone.
+    """
+    sections = saved.get("ui_sections")
+    if not isinstance(sections, dict):
+        return
+
+    migrated = {}
+    touched = False
+    for tab_id, layout in sections.items():
+        if not isinstance(layout, dict) or layout.get("v") == UI_SECTIONS_VERSION:
+            migrated[tab_id] = layout
+            continue
+        cards = layout.get("cards")
+        if not isinstance(cards, dict):
+            migrated[tab_id] = layout
+            continue
+        touched = True
+        scaled = {}
+        for card_id, slot in cards.items():
+            if not isinstance(slot, dict):
+                continue
+            widened = dict(slot)
+            for key in ("x", "w"):
+                value = slot.get(key)
+                if isinstance(value, (int, float)):
+                    widened[key] = int(value) * _GRID_HALF_STEP_SCALE
+            scaled[card_id] = widened
+        migrated[tab_id] = {**layout, "v": UI_SECTIONS_VERSION, "cards": scaled}
+
+    if not touched:
+        return
+
+    cfg["ui_sections"] = migrated
+    # The rectangles above are now counted in HALF columns, so the column must
+    # actually halve or every card doubles in width. A user who set a column
+    # size of their own keeps the choice, halved on the same scale.
+    stored_block = saved.get("ui_card_block_size")
+    if isinstance(stored_block, (int, float)) and stored_block > 0:
+        cfg["ui_card_block_size"] = max(8, round(stored_block / _GRID_HALF_STEP_SCALE))
 
 
 def migrate_legacy_filter_keys(d: dict) -> None:

@@ -6,7 +6,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { LAYOUT_VERSION, ROWS_PER_BLOCK, migrateLayout } from "../sectionLayout";
+import { COLS_SCALE_V3_TO_V4, LAYOUT_VERSION, ROWS_PER_BLOCK, migrateLayout } from "../sectionLayout";
 
 const IDS = ["player", "demo", "timing"] as const;
 
@@ -17,12 +17,14 @@ describe("migrateLayout", () => {
       cards: { player: { col: 2, row: 3, colSpan: 4, rowSpan: 2 } },
       collapsed: [],
     };
-    const { cards } = migrateLayout(v2, IDS, 10);
-    // v2 was 1-indexed, RGL is 0-indexed; rows scale by ROWS_PER_BLOCK.
+    const { cards } = migrateLayout(v2, IDS, 20);
+    // v2 was 1-indexed, RGL is 0-indexed; rows scale by ROWS_PER_BLOCK, and
+    // columns by COLS_SCALE_V3_TO_V4 -- v2 and v3 both counted 96px columns,
+    // v4 counts 48px ones, so a v2 slot crosses BOTH steps.
     expect(cards.player).toEqual({
-      x: 1,
+      x: 1 * COLS_SCALE_V3_TO_V4,
       y: 2 * ROWS_PER_BLOCK,
-      w: 4,
+      w: 4 * COLS_SCALE_V3_TO_V4,
       h: 2 * ROWS_PER_BLOCK,
     });
   });

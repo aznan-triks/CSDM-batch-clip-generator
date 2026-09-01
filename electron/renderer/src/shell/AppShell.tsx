@@ -109,7 +109,7 @@ export default function AppShell() {
   useEffect(() => {
     const size = typeof blockSize === "number" && Number.isFinite(blockSize) && blockSize > 0
       ? blockSize
-      : 96;
+      : 48;
     document.documentElement.style.setProperty("--block", `${size}px`);
   }, [blockSize]);
 

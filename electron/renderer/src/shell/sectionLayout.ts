@@ -38,8 +38,30 @@ interface TabLayout {
 
 type UiSections = Record<string, TabLayout>;
 
-/** Current stored schema. Bump on any breaking change to `GridSlot`. */
-export const LAYOUT_VERSION = 3;
+/**
+ * Current stored schema. Bump on any breaking change to `GridSlot`.
+ *
+ * MIRRORED FROM PYTHON: `csdm/config.py::UI_SECTIONS_VERSION` is the original,
+ * because that is where the migration actually runs (`_migrate_card_grid_half_step`,
+ * on every `load_config`). `__tests__/layout-version-parity.test.ts` reads
+ * config.py and fails if the two ever drift.
+ */
+export const LAYOUT_VERSION = 4;
+
+/**
+ * Columns per stored column when the grid halved (v3 -> v4).
+ *
+ * `ui_card_block_size` went from 96px to 48px so a card has twice as many
+ * widths to choose from. A rectangle is stored in COLUMNS, so the same number
+ * now describes half the width -- every stored `x` and `w` doubles, and the
+ * card reopens exactly where it was. `y`/`h` are fine rows and do not move.
+ *
+ * Python does this first and stamps `v: 4`, so this is normally a no-op. It
+ * stays because this module OWNS the stored shape: a layout that reaches the
+ * renderer still carrying `v: 3` (a config restored by hand, a tab written by
+ * an older build) must not be drawn at half width.
+ */
+export const COLS_SCALE_V3_TO_V4 = 2;
 
 /**
  * Fine rows per block: the v2 schema sized rows in whole blocks (96px), v3
@@ -96,6 +118,10 @@ export function migrateLayout(
     unknown
   >;
   const collapsed = Array.isArray(layout.collapsed) ? layout.collapsed.filter((id) => typeof id === "string") : [];
+  // Absent means the oldest schema this module ever read (v2), never "current":
+  // treating an unstamped layout as up to date is how a migration silently
+  // skips the layouts that need it most.
+  const storedVersion = typeof layout.v === "number" && Number.isFinite(layout.v) ? layout.v : 2;
 
   const cards: Record<string, GridSlot> = {};
   const fresh: string[] = [];
@@ -111,6 +137,17 @@ export function migrateLayout(
         w: Math.max(1, stored.colSpan),
         h: Math.max(1, stored.rowSpan * ROWS_PER_BLOCK),
       };
+    }
+    // A rectangle stored before v4 counts 96px columns; the grid counts 48px
+    // ones now. Scale before the clamp below, which is expressed in current
+    // columns.
+    if (slot && storedVersion < LAYOUT_VERSION) {
+      slot.x *= COLS_SCALE_V3_TO_V4;
+      slot.w *= COLS_SCALE_V3_TO_V4;
+      if (typeof slot.hPrev === "number") {
+        // `hPrev` is a HEIGHT in fine rows -- deliberately not scaled. Named
+        // here so the next reader does not "fix" it.
+      }
     }
     if (!slot) {
       // A newly declared card lands on its reference placement rather than

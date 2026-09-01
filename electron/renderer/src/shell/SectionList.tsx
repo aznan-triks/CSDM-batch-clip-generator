@@ -55,7 +55,7 @@ function readPx(name: string, fallback: number): number {
  * fed from `ui_card_block_size` / `ui_card_row_height`. They only apply when
  * there is no document at all (jsdom without a stylesheet).
  */
-const FALLBACK_BLOCK = 96;
+const FALLBACK_BLOCK = 48;
 const FALLBACK_GAP = 10;
 const FALLBACK_ROW = 24;
 

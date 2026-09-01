@@ -6,7 +6,7 @@
    AppShell.tsx (useSetting("ui_card_block_size") -> --block). */
 
 html {
-  --block: 96px;                /* fallback; overridden by settings store */
+  --block: 48px;                /* fallback; overridden by settings store */
   --block-gap: 10px;
   --block-row: 24px;            /* fallback; overridden by settings store */
   --block-collapsed-rows: 2;    /* fallback; overridden by settings store */

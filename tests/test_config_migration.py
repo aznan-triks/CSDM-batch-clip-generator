@@ -8,7 +8,7 @@ Covers the events-beyond-kill migration (Task 1 / Task 7):
   * `derive_event_flags_v2` flag derivation
   * run-input validation on both old and new formats
 """
-from csdm.config import DEFAULT_CONFIG, _migrate_config
+from csdm.config import DEFAULT_CONFIG, UI_SECTIONS_VERSION, _migrate_config
 from csdm.engine.core import EngineMixin
 
 
@@ -203,3 +203,62 @@ def test_rounds_only_config_validates_without_perspective():
     """A config with only Rounds (no perspective) still passes."""
     cfg = _migrated({"events": ["Rounds"], "steam_ids": ["76561198000000000"]})
     assert EngineMixin.validate_run_inputs(_DummyEngine(), cfg) is True
+
+
+# ---------------------------------------------------------------------------
+# Card grid halved to a 48px column (v3 -> v4)
+# ---------------------------------------------------------------------------
+
+
+def test_half_step_widens_stored_rectangles_so_no_card_moves():
+    # A rectangle is stored in COLUMNS. The column halved, so the same card
+    # needs twice as many of them to keep the width the user chose.
+    cfg = _migrated({
+        "ui_card_block_size": 96,
+        "ui_sections": {
+            "capture": {
+                "v": 3,
+                "cards": {"players": {"x": 3, "y": 8, "w": 3, "h": 24}},
+                "collapsed": ["timing"],
+            }
+        },
+    })
+    slot = cfg["ui_sections"]["capture"]["cards"]["players"]
+    assert (slot["x"], slot["w"]) == (6, 6)
+    # Rows are counted in `ui_card_row_height`, which this change never touched.
+    assert (slot["y"], slot["h"]) == (8, 24)
+    assert cfg["ui_sections"]["capture"]["v"] == UI_SECTIONS_VERSION
+    assert cfg["ui_sections"]["capture"]["collapsed"] == ["timing"]
+    assert cfg["ui_card_block_size"] == 48
+
+
+def test_half_step_is_idempotent():
+    once = _migrated({
+        "ui_card_block_size": 96,
+        "ui_sections": {"capture": {"v": 3, "cards": {"a": {"x": 2, "y": 0, "w": 4, "h": 12}}}},
+    })
+    twice = _migrated({
+        "ui_card_block_size": once["ui_card_block_size"],
+        "ui_sections": once["ui_sections"],
+    })
+    assert twice["ui_sections"] == once["ui_sections"]
+    assert twice["ui_card_block_size"] == once["ui_card_block_size"]
+
+
+def test_half_step_halves_a_column_size_the_user_chose_themselves():
+    # The rectangles are rescaled whatever the column size is, so the column
+    # has to follow on the same scale or every card doubles in width.
+    cfg = _migrated({
+        "ui_card_block_size": 120,
+        "ui_sections": {"capture": {"v": 3, "cards": {"a": {"x": 0, "y": 0, "w": 2, "h": 8}}}},
+    })
+    assert cfg["ui_card_block_size"] == 60
+    assert cfg["ui_sections"]["capture"]["cards"]["a"]["w"] == 4
+
+
+def test_half_step_leaves_a_config_with_no_layouts_alone():
+    cfg = _migrated({"ui_card_block_size": 96})
+    # Nothing stored to rescale: the user simply gets the new default column
+    # the next time a layout is written, and their explicit 96 is untouched.
+    assert cfg["ui_card_block_size"] == 96
+    assert "ui_sections" not in cfg or cfg["ui_sections"] == DEFAULT_CONFIG["ui_sections"]
