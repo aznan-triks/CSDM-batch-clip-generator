@@ -20,6 +20,66 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.10 — 2026-09-02
+
+### Fixed
+
+- **The crosshair stays on screen instead of flickering back to the mouse pointer every few
+  pixels.**
+  *Technique* — `cursor/Reticle.tsx` showed the reticle only over an allowlist of thirteen
+  background class names, so any label, glyph, value, span or paragraph inside a card turned it
+  off. Measured on the real window: crossing one card turned it off on 16 of the 19 element kinds
+  walked. The list now names the four surfaces that legitimately own a system cursor (text entry,
+  the log body, the tab strip, the drag/resize handles) and the crosshair is the default
+  everywhere else — 1 of 19 now, the drag handle, which is correct. A second defect on top: the
+  approved mock declares `cursor: pointer` on seven selectors, and `cursor: none` on `body` alone
+  is inherited, so the OS pointer was drawn ON TOP of a correctly locked reticle over every chip
+  and card header.
+
+- **Labels, typed values, chips and segmented controls are readable on the four night themes.**
+  *Technique* — `theme/mock-v12.css` declares its palette in its light `:root` and its night block
+  revisits only part of it; twelve tokens therefore kept a DAY value on every night ground.
+  `--muted` (the ink of `.lab`, `.fld`, `.chip`, `.seg span`, `.sh .cnt`) measured 3.31–3.65:1 on
+  the four night grounds, all below AA. `--hair` was a DARK hairline, so field and chip rims were
+  invisible at night; `--border` was a 75%-white rim on a night card. They are aliased to this
+  app's mode-aware tokens in `theme/tokens.css`, measured on the real window at 5.54–7.17:1 across
+  all five grounds. `--faint` and `--font` had a remap in `mock-bridge.css` that never applied
+  (`html` is 0,0,1 and the mock declares them at `:root`, 0,1,0), with two tests passing on the
+  text of a dead rule.
+
+- **The path and date fields look like the rest of the window instead of raw browser boxes.**
+  *Technique* — `PathField.tsx` and `DateField.tsx` emitted `field`, `field-label` and
+  `field-mono`: three class names with no rule anywhere in the project, so their inputs rendered
+  with default browser chrome under an unstyled 16px label. `NumberField` restated the field face
+  in `Slider.css` rather than wearing it, and its copy had drifted to `color: var(--ink)`, a token
+  this project never had. All of them wear the mock's `.fld` / `.lab` now; the real window reports
+  zero inputs left without it.
+
+### Added
+
+- **Text fields react to the pointer and to focus.**
+  *Technique* — the mock is a still picture and never had to say what a hovered, focused, empty or
+  disabled field looks like, and the typed VALUE was painted in the same quiet ink as the label
+  beside it. `components/Field.css` now gives the value primary ink, a rim visible at rest, an
+  accent wash on hover, an accent tick and glow on focus, a distinct placeholder, a disabled face,
+  and tabular digits in numeric fields.
+
+- **Card titles read as titles, and selected text follows the chosen accent.**
+  *Technique* — `.sh .t` is uppercase with the nav's tracking and `--txt-hi`, the voice the tab
+  strip, the stat keys and the console header already use. `.lab` gains weight rather than
+  loudness. `::selection` was the platform blue — the one surface in the window that ignored both
+  the accent and the ground.
+
+### Changed
+
+- **Cards can be resized to twice as many widths.**
+  *Technique* — a card is a whole number of grid columns wide, so the column size IS the list of
+  widths available. `ui_card_block_size` goes from 96px to 48px: measured on the real window, a
+  909px content pane went from 8 usable widths to 15. The column size and every stored rectangle
+  are one migration, not two (`csdm/config.py::_migrate_card_grid_half_step`, schema v4): a
+  rectangle is counted in columns, so halving the column alone would have halved every card on
+  screen. Existing layouts reopen exactly where they were.
+
 ## 3.2.9 — 2026-09-01
 
 ### Fixed
