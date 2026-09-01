@@ -6,36 +6,37 @@ const SNAP_PADDING = 10;
 const DEFAULT_SIZE = 26;
 
 /**
- * The BACKGROUND -- the only place, besides a button, where the reticle
- * replaces the OS cursor.
+ * Where the OS cursor WINS, and the only place it does.
  *
- * An ALLOWLIST, matched on the target itself, exactly as the approved mock
- * does it (`BG_SEL` there). It used to be a denylist of widgets, and that is
- * how this broke: restyle 5 renamed the card and the segmented control, and
- * the list kept naming their two old names -- both dead, zero usages. A
- * denylist that goes stale shows the reticle EVERYWHERE, which is why it
- * stopped reading as an accroche on a button: something already on screen
- * over every card cannot be seen to arrive on one.
+ * This list used to be the opposite: an allowlist of BACKGROUND surfaces, and
+ * the reticle appeared only when the pointer sat on one of thirteen named
+ * classes. A background cannot be enumerated -- a card is full of labels,
+ * glyphs, values, checkboxes and spans that are none of those thirteen names,
+ * so crossing a single card made the crosshair blink out and back a dozen
+ * times. That is the reported symptom ("the crosshair keeps getting replaced
+ * by the cursor"), and no amount of adding names to the allowlist ends it.
  *
- * An allowlist fails the safe way round -- a renamed container means the
- * reticle stops appearing there, which is visible immediately.
+ * The set that CAN be enumerated is the other one: the handful of surfaces
+ * where a system cursor is the right answer. Three of the four entries are
+ * HTML TAG names, which no restyle can rename -- that is the property the old
+ * denylist of widget classes lacked (its two widget class
+ * names were both renamed by restyle 5, and both went silently dead).
  *
- * `.shell-backdrop` is this window's own: the mock's grid canvas is `.grid`.
+ *  - text entry (`input`, `textarea`, `select`, `[contenteditable]`): a caret
+ *    is the correct cursor over text, and stealing it makes a field feel
+ *    broken.
+ *  - `.console .body`: the log is text the user selects and copies.
+ *  - `.tab`: the nav strip, excluded since 2026-08-02 -- locking onto tabs
+ *    fought the indicator animation.
+ *  - `.drag-handle` / `.react-resizable-handle`: their own cursor (grab,
+ *    se-resize) IS the affordance; replacing it hides what the handle does.
  *
- * The card surfaces were added on 2026-09-01. The list was exact and the
- * crosshair still almost never appeared: MEASURED on the real page
- * (`surface-audit.mjs`, section C3), four tabs out of five expose NO
- * background at all -- the cards cover `.scrollwrap` completely, and only the
- * near-empty EDITING tab leaves any of it visible. The mock's crosshair lives
- * on a wide open grid; this window does not have one. So the card's own
- * surface -- `.sec` and the boxes it is built from -- is the background here.
- *
- * Text fields stay out deliberately: a caret is the right cursor over text,
- * and `.tab` stays out for the reason above.
+ * Matched with `closest`, unlike the old allowlist: a caret must win from
+ * anywhere inside a field's box, and a resize handle draws an inner layer.
  */
-const BACKGROUND_SELECTOR =
-  "body, .app, .shell, .scrollwrap, .bento, .amb, .shell-backdrop, " +
-  ".sec, .fold, .fold-inner, .sb, .row";
+const NATIVE_CURSOR_SELECTOR =
+  "input, textarea, select, [contenteditable], " +
+  ".console .body, .tab, .drag-handle, .react-resizable-handle";
 
 /**
  * Every activatable control the reticle locks onto, mock v12's own language
@@ -86,12 +87,11 @@ export default function Reticle() {
       // background case, not a reason to bail out silently.
       const target = event.target instanceof Element ? event.target : null;
 
-      // Nav tabs are explicitly excluded from the reticle. `.tab` was
-      // removed from SNAP_SELECTOR but could still pass the background
-      // check if the pointer lands on a child deep inside the tab strip
-      // whose parent chain eventually sits in `.shell`. An early
-      // closest(".tab") guards against every path into that strip.
-      if (target?.closest(".tab")) {
+      // The system cursor wins first: a caret inside a field must not be
+      // taken away by a snap target that happens to wrap it, and the tab
+      // strip is excluded from the reticle whichever child the pointer
+      // actually landed on.
+      if (target?.closest(NATIVE_CURSOR_SELECTOR)) {
         hide();
         return;
       }
@@ -119,16 +119,9 @@ export default function Reticle() {
         return;
       }
 
-      // `matches`, not `closest`: the background is the element under the
-      // pointer ITSELF. A card sitting inside `.scrollwrap` must keep the
-      // native cursor, and `closest` would have found the wrapper and shown
-      // the reticle over the whole workspace.
-      const onBackground = target === null || target.matches(BACKGROUND_SELECTOR);
-      if (!onBackground) {
-        hide();
-        return;
-      }
-
+      // Everything left is ordinary window: the crosshair follows the
+      // pointer. No further test -- that test is what used to make it
+      // disappear, and there is nothing left it needs to ask.
       el!.style.setProperty("--cx", `${event.clientX}px`);
       el!.style.setProperty("--cy", `${event.clientY}px`);
       el!.style.setProperty("--cw", `${DEFAULT_SIZE}px`);

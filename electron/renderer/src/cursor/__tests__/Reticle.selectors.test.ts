@@ -3,15 +3,13 @@
  *
  * This is the guard that was missing. Restyle 5 renamed the card to `.sec` and
  * the segmented control to `.seg`; the reticle's list still said `.panel-box`
- * and `.segment`, both with zero usages anywhere. Nothing failed -- and because
- * that list was a DENYLIST of widgets, two dead names meant the reticle showed
- * over every card and every segmented control. Something already on screen
- * above every card cannot be seen to arrive on a button, which is why the
- * accroche stopped reading as one even though its code was correct.
+ * and `.segment`, both with zero usages anywhere. Nothing failed.
  *
- * The list is an allowlist of BACKGROUNDS now, as the approved mock has it, so
- * a stale name makes the reticle disappear from somewhere rather than appear
- * everywhere. This test makes either failure loud.
+ * The list names the surfaces that KEEP the system cursor now, and most of it
+ * is HTML tag names, which no restyle can rename. The handful of classes left
+ * in it still need this guard: a stale one there would silently steal a
+ * caret or a grab handle. `Reticle.coverage.test.tsx` holds the other end --
+ * that the crosshair survives a walk across a card.
  */
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
@@ -38,7 +36,7 @@ const ALL = sources(SRC)
   .map((file) => readFileSync(file, "utf-8"))
   .join("\n");
 
-/** The class names inside the reticle's background allowlist. */
+/** The class names inside one of the reticle's two selector constants. */
 function namedClasses(constant: string): string[] {
   const match = RETICLE.match(new RegExp(`${constant}\\s*(?::[^=]*)?=\\s*([^;]+);`));
   if (!match) throw new Error(`constant not found in Reticle.tsx: ${constant}`);
@@ -46,7 +44,7 @@ function namedClasses(constant: string): string[] {
 }
 
 describe("the reticle names only classes the window really renders", () => {
-  const classes = [...namedClasses("BACKGROUND_SELECTOR"), ...namedClasses("SNAP_SELECTOR")];
+  const classes = [...namedClasses("NATIVE_CURSOR_SELECTOR"), ...namedClasses("SNAP_SELECTOR")];
 
   it("names some", () => {
     expect(classes.length).toBeGreaterThan(3);
@@ -64,11 +62,23 @@ describe("the reticle names only classes the window really renders", () => {
   });
 });
 
-describe("the background list is an allowlist, matched on the target itself", () => {
-  it("uses matches, not closest, for the background test", () => {
-    // `closest` would find `.scrollwrap` from inside a card and show the
-    // reticle over the whole workspace.
-    expect(RETICLE).toMatch(/matches\(BACKGROUND_SELECTOR\)/);
+describe("the system cursor is a short list, and it is checked with closest", () => {
+  it("names no background surface at all -- the crosshair is the default", () => {
+    // The old allowlist of backgrounds is what made the crosshair blink out
+    // on every label, glyph and span inside a card. Re-introducing any
+    // "only show it here" test brings the reported symptom straight back.
+    expect(RETICLE).not.toContain("BACKGROUND_SELECTOR");
+    expect(RETICLE).not.toMatch(/matches\(/);
+  });
+
+  it("checks the native-cursor list with closest, so a caret wins from inside a field", () => {
+    expect(RETICLE).toMatch(/closest\(NATIVE_CURSOR_SELECTOR\)/);
+  });
+
+  it("keeps text entry on the system cursor", () => {
+    for (const tag of ["input", "textarea", "select", "[contenteditable]"]) {
+      expect(RETICLE).toContain(tag);
+    }
   });
 
   it("still uses closest for snap targets, which have layers inside them", () => {

@@ -99,15 +99,21 @@ describe("Reticle", () => {
     expect(document.body.classList.contains("customcursor")).toBe(false);
   });
 
-  it("hides the custom cursor over the log console (.console)", () => {
-    const console_ = document.createElement("div");
-    console_.className = "console";
-    document.body.appendChild(console_);
+  it("hides the custom cursor over the log body, which the user selects text in", () => {
+    // The console FRAME (its header, its chips) is ordinary chrome and keeps
+    // the reticle; only `.console .body` -- the log itself -- gives the
+    // caret back, because that text is meant to be selected and copied.
+    const frame = document.createElement("div");
+    frame.className = "console";
+    const body = document.createElement("div");
+    body.className = "body";
+    frame.appendChild(body);
+    document.body.appendChild(frame);
     render(<Reticle />);
 
-    fireEvent.mouseMove(console_, { clientX: 5, clientY: 5 });
+    fireEvent.mouseMove(body, { clientX: 5, clientY: 5 });
 
     expect(document.body.classList.contains("customcursor")).toBe(false);
-    console_.remove();
+    frame.remove();
   });
 });

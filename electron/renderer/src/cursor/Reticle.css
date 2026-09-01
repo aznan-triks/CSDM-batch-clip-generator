@@ -1,11 +1,24 @@
 /* electron/renderer/src/cursor/Reticle.css */
 /*
- * The crosshair reticle. Replaces the OS cursor ONLY over the background and
- * over buttons (`body.customcursor` toggles `cursor: none` below) -- over a
- * real widget (card, field, tab, console) the native cursor stays, so click
- * targets and text selection never feel fought over.
+ * The crosshair reticle. It replaces the OS cursor over the WHOLE window; the
+ * system cursor comes back only on the four surfaces that own one
+ * (Reticle.tsx::NATIVE_CURSOR_SELECTOR: text entry, the log body, the tab
+ * strip, the two drag/resize handles), and `body.customcursor` is off at
+ * exactly those moments.
+ *
+ * THE DESCENDANT RULE IS NOT DECORATION. `cursor: none` on `body` alone is
+ * inherited, so any element with a cursor of its own overrides it: the mock
+ * declares `cursor: pointer` on seven selectors -- `.sh`, `.chip`,
+ * `.seg span`, `.tab` among them -- which meant the OS pointer was drawn ON
+ * TOP of the reticle over every chip and every card header, the reticle
+ * snapping correctly underneath it the whole time. That double cursor is half
+ * of the reported "the crosshair keeps getting replaced by the cursor".
+ * `body.customcursor *` reads (0,1,1) and beats a bare `.chip` (0,1,0); the
+ * surfaces that genuinely need their own cursor are not in this rule's reach
+ * because the class is removed before the pointer gets there.
  */
-body.customcursor {
+body.customcursor,
+body.customcursor * {
   cursor: none;
 }
 
@@ -34,7 +47,11 @@ body.customcursor .cursor-reticle {
     display: none;
   }
 
-  body.customcursor {
+  /* Both halves of the rule above have to be released, or a touch device
+     keeps `cursor: none` on every descendant with the reticle hidden -- an
+     invisible pointer. */
+  body.customcursor,
+  body.customcursor * {
     cursor: auto;
   }
 }

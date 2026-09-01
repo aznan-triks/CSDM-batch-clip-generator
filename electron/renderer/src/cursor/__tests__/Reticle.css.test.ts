@@ -33,6 +33,10 @@ describe("@media (hover: none) hides the reticle AND restores the native cursor"
   });
 
   it("restores the native cursor instead of leaving cursor:none active", () => {
-    expect(block).toMatch(/body\.customcursor\s*\{[^}]*cursor:\s*auto;/);
+    // BOTH halves of the main rule: `body.customcursor` hides the OS cursor
+    // and `body.customcursor *` beats every widget's own `cursor: pointer`.
+    // Releasing only the first would leave a touch device with no visible
+    // pointer over any chip or card header, and the reticle hidden.
+    expect(block).toMatch(/body\.customcursor,\s*body\.customcursor \*\s*\{[^}]*cursor:\s*auto;/);
   });
 });
