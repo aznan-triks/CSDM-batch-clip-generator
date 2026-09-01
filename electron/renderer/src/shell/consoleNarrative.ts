@@ -160,6 +160,13 @@ export function narrate(message: BridgeMessage): NarratedLine | null {
         level: "err",
       };
 
+    case "trace":
+      // The diagnostic recorder's own line. It belongs to the recorder and
+      // nowhere else: this console narrates for a human and no protocol
+      // prefix may come back to the screen. Silent on purpose, and NOT left
+      // to the default branch below, which would print the raw JSON.
+      return null;
+
     default:
       return { runs: [[JSON.stringify(message), "dim"]], level: "dim" };
   }

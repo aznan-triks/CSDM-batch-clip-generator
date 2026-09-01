@@ -211,13 +211,23 @@ export function recordIncoming(message: IncomingLike): void {
 
   if (message.type === "state") {
     const anchor = lastCommand;
+    const payload = message.payload ?? {};
+    // The key list comes FIRST and is never truncated away. `preview_ready`
+    // carries several megabytes of events; the truncated body showed only its
+    // first key, which is exactly how a reducer reading the wrong key name
+    // stays invisible. What the payload CONTAINS is the diagnosis; what it
+    // says first is not.
+    const keys =
+      payload && typeof payload === "object" && !Array.isArray(payload)
+        ? Object.keys(payload as Record<string, unknown>)
+        : [];
     push(
       {
         kind: "state",
         name: String(message.name ?? "<unnamed state>"),
         id: anchor?.id ?? null,
         sinceCommandMs: anchor ? ms - anchor.ms : null,
-        detail: summarize(message.payload ?? {}),
+        detail: `keys=[${keys.join(",")}] ${summarize(payload)}`,
       },
       ms,
     );
