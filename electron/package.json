@@ -1,6 +1,6 @@
 {
   "name": "csdm-bridge-shell",
-  "version": "3.2.8",
+  "version": "3.2.9",
   "private": true,
   "description": "Electron shell driving the Python engine over the JSON/stdio bridge.",
   "main": "main.js",
