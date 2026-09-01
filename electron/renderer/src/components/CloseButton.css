@@ -1,0 +1,44 @@
+/*
+ * The shared remove control, lifted from the Tags pill it is modelled on.
+ *
+ * Colours come from theme tokens only. NO :hover rule here may translate or
+ * scale anything (D13/D16) -- the hover says danger with colour, as the Tags
+ * pill already did.
+ */
+
+/*
+ * The pair: the thing, then the button that removes it, joined with no gap so
+ * they read as one object. `inline-flex` keeps the pair on the line it sits on
+ * -- these appear inside wrapping rows of chips.
+ */
+.chip-pair {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* The left half keeps its rounding on the left only, so the seam is flat. */
+.chip-pair > .chip:first-child {
+  border-radius: var(--radius) 0 0 var(--radius);
+  border-right: none;
+}
+
+/*
+ * The remove half. Padded asymmetrically because the glyph's own side bearings
+ * are not symmetric: equal padding reads as off-centre.
+ */
+.chip-pair > .close-btn {
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding-left: 8px;
+  padding-right: 10px;
+  font-weight: 700;
+}
+
+/* A remove control on its own, outside a pair, stays a complete pill. */
+.close-btn {
+  font-weight: 700;
+}
+
+.close-btn:hover {
+  color: var(--blood-t);
+  border-color: var(--blood-t);
+}

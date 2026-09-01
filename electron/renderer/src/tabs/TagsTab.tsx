@@ -29,6 +29,7 @@ import { ICONS } from "../icons";
 import { pickPath, pickSavePath, runCommand } from "../bridge";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
+import CloseButton, { ChipPair } from "../components/CloseButton";
 import { useDatabase } from "../settings/useDatabase";
 import "./TagsTab.css";
 
@@ -336,7 +337,7 @@ export default function TagsTab() {
           {visibleTags.map(([tagId, tagName, color]) => {
             const active = activeTagIds.includes(tagId);
             return (
-              <span key={String(tagId)} className="tag-pair">
+              <ChipPair key={String(tagId)}>
                 <button
                   type="button"
                   className={active ? "chip on" : "chip"}
@@ -349,17 +350,13 @@ export default function TagsTab() {
                   <span className="d" style={{ background: color }} aria-hidden="true" />
                   {tagName}
                 </button>
-                <button
-                  type="button"
-                  className="chip tag-del"
-                  aria-label={`delete-tag-${tagName}`}
+                <CloseButton
+                  label={`delete-tag-${tagName}`}
                   title="Permanently delete this tag from the database"
-                  data-action="I2"
+                  dataAction="I2"
                   onClick={() => setPendingDelete({ tagId, tagName })}
-                >
-                  ×
-                </button>
-              </span>
+                />
+              </ChipPair>
             );
           })}
         </div>

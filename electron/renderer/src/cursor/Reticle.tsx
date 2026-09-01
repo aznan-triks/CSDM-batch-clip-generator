@@ -21,9 +21,21 @@ const DEFAULT_SIZE = 26;
  * reticle stops appearing there, which is visible immediately.
  *
  * `.shell-backdrop` is this window's own: the mock's grid canvas is `.grid`.
+ *
+ * The card surfaces were added on 2026-09-01. The list was exact and the
+ * crosshair still almost never appeared: MEASURED on the real page
+ * (`surface-audit.mjs`, section C3), four tabs out of five expose NO
+ * background at all -- the cards cover `.scrollwrap` completely, and only the
+ * near-empty EDITING tab leaves any of it visible. The mock's crosshair lives
+ * on a wide open grid; this window does not have one. So the card's own
+ * surface -- `.sec` and the boxes it is built from -- is the background here.
+ *
+ * Text fields stay out deliberately: a caret is the right cursor over text,
+ * and `.tab` stays out for the reason above.
  */
 const BACKGROUND_SELECTOR =
-  "body, .app, .shell, .scrollwrap, .bento, .amb, .shell-backdrop";
+  "body, .app, .shell, .scrollwrap, .bento, .amb, .shell-backdrop, " +
+  ".sec, .fold, .fold-inner, .sb, .row";
 
 /**
  * Every activatable control the reticle locks onto, mock v12's own language

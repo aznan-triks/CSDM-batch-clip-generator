@@ -4,7 +4,7 @@
  * Replaces the flat Kills / Deaths / Rounds block with two independent axes
  * (events-beyond-kill, Task 6):
  *
- *   Perspective  : Actor (I act) / Target (I am acted upon)
+ *   Event role   : Actor (I act) / Target (I am acted upon)
  *   Action type  : Lethal (kill & death) / Non-lethal (damage) / Other
  *   Team         : Ally / Enemy
  *
@@ -45,7 +45,13 @@ export default function EventTypeSection() {
   return (
     <div className="evt">
       <div className="row">
-        <span className="lab">Perspective</span>
+        {/* "Event role", not "Perspective": the Capture & Timing card has a
+            setting of its own called Perspective (killer / victim / both, the
+            camera POV). Two unrelated notions under one word had the user
+            asking which was which and why one had no "both" -- the answer
+            being that ticking both boxes here IS the both
+            (AUDIT_retours_ui_8_points.md, ecart E9). */}
+        <span className="lab">Event role</span>
         <SettingControl settingKey="event_actor">
           <Chip
             label="Actor"

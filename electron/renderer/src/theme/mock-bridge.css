@@ -83,3 +83,51 @@ html {
 .tab.active::after {
   display: none;
 }
+
+/* ── A label sticks to the control it names (2026-09-01) ──
+   The mock writes `.lab{min-width:76px}`. That is a COLUMN width: it exists so
+   a stack of labels lines its controls up on a common left edge, and in the
+   mock every `.lab` sits in such a stack.
+
+   This window puts several label+control pairs on ONE line (`.row` is a
+   wrapping flex row, `.kf-top-group` a horizontal group of three). There the
+   minimum aligns nothing -- there is no column to align to -- and its only
+   effect is to push the control away from the word that names it.
+
+   MEASURED on the real page (`node electron/e2e/surface-audit.mjs`, section
+   C4): 17 labels affected. Worst case "TK" -- 14px of ink in a 76px box,
+   leaving 69px of nothing between the word and its segmented control, while
+   "Headshots" next to it sits snug. That is the reported symptom exactly.
+
+   The minimum is dropped only inside horizontal groups; a `.lab` used as a
+   column heading anywhere else keeps it. */
+.row .lab,
+.kf-top-group .lab,
+.settings-folder-current .lab {
+  min-width: 0;
+}
+
+/* ── A segmented control takes a second line rather than leave the card ──
+   The mock writes `.seg{display:inline-flex}` with no wrapping, and in the
+   mock that is right: its segmented controls have two or three options and a
+   card wide enough for them.
+
+   This window has controls with six ("ultrafast … veryslow") and five
+   ("white / dark / amoled / deepblue / terminal"), inside cards the user can
+   drag narrow. MEASURED on the real page (`node electron/e2e/surface-audit.mjs`,
+   section C2): the ENCODING preset control reached 88px past its card and the
+   UI THEME mode control 35px, so the last options were simply not there.
+
+   Wrapping is the only behaviour that keeps every option reachable. It does
+   not change the look at any width where the control already fits. */
+.seg {
+  flex-wrap: wrap;
+}
+
+/* ── Why the last few pixels are LEFT alone (2026-09-01) ──
+   `.fld{min-width:90px}` and the demo table's `1fr` column still overflow
+   their card by 4-8px at the narrowest width. Dropping those floors was tried
+   and MEASURED: it took the overflow count from 8 to 72, because a numeric
+   field allowed to shrink past its own digits simply clips them instead. A
+   field that cannot show its value is worse than a field 6px too wide, so the
+   floor stays. Recorded here so the next person does not repeat the attempt. */

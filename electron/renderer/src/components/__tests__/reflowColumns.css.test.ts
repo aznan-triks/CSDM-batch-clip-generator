@@ -48,10 +48,40 @@ afterAll(() => {
 });
 
 describe("the shared reflow-columns rule", () => {
-  it("puts the container in multi-column flow", () => {
-    const style = getComputedStyle(group);
-    expect(style.columnWidth).not.toBe("auto");
-    expect(style.columnWidth).not.toBe("");
+  /**
+   * The multi-column flow moved inside a container query on 2026-09-01:
+   * `column-width` is a FLOOR, so declaring it unconditionally made every
+   * consumer insist on 419px no matter how narrow its card was, and the
+   * difference was cut off (AUDIT_retours_ui_8_points.md, ecart E5).
+   *
+   * jsdom does not evaluate container queries, so this one rule cannot be
+   * proved through a cascade here the way the others are. It is proved on the
+   * real page instead, by measurement: `node electron/e2e/surface-audit.mjs`
+   * reports zero cut-off content across the width sweep. What IS checked here
+   * is the part a cascade cannot catch either way -- that the query exists,
+   * that it governs this class, and that its threshold has not drifted from
+   * the custom property it is supposed to mirror.
+   */
+  it("asks for columns only once the container can hold one", () => {
+    const query = CSS.match(/@container\s*\(min-width:\s*(\d+)px\)\s*\{([\s\S]*?)\}\s*\}/);
+    expect(query).not.toBeNull();
+    expect(query![2]).toContain(".reflow-columns");
+    expect(query![2]).toContain("column-width: var(--reflow-col-min)");
+
+    // HC.1 cannot reach inside a container query -- its condition takes a
+    // length, never a custom property. So the number is written twice, and
+    // this is what keeps the two copies equal.
+    //
+    // Matched on a real declaration (start of line), not anywhere in the file:
+    // the comment above the property shows an override as an example, and a
+    // looser pattern reads THAT and compares against a number nothing uses.
+    const declarations = [...CSS.matchAll(/^\s*--reflow-col-min:\s*(\d+)px/gm)];
+    expect(declarations).toHaveLength(1);
+    expect(query![1]).toBe(declarations[0][1]);
+  });
+
+  it("makes the card the container the query asks about", () => {
+    expect(CSS).toContain("container-type: inline-size");
   });
 
   it("does not leave the container a flex box, where columns would be ignored", () => {

@@ -180,30 +180,10 @@
   color: var(--dim);
 }
 
-/*
- * The × inside each chip. The mock chip is a flex row with its own padding, so
- * this is pinned to the chip's right edge and the name gets a little extra
- * right padding to clear it. Colour change only on hover -- no motion (D13).
- */
-.ps-registered .chip {
-  position: relative;
-  padding-right: calc(var(--sp-4) + var(--sp-2));
-}
-
-.ps-chip-del {
-  position: absolute;
-  right: var(--sp-2);
-  top: 50%;
-  transform: translateY(-50%);
-  line-height: 1;
-  font-size: var(--fs-lg);
-  color: var(--dim);
-  cursor: pointer;
-}
-
-.ps-chip-del:hover {
-  color: var(--blood);
-}
+/* The × used to be pinned inside the chip -- a `role="button"` span sitting on
+   top of a real `<button>`, one control inside another. It is a proper button
+   beside the chip now (`components/CloseButton.css`, `.chip-pair`), so the
+   chip needs no room reserved on its right and no positioning context. */
 
 /*
  * The ★ register button at the right end of each player row. Filled once the

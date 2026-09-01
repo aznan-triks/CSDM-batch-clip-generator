@@ -62,8 +62,18 @@ vi.mock("../../settings/useDatabase", () => ({
   }),
 }));
 
+/**
+ * The player chips, WITHOUT the remove button that now sits beside each one.
+ *
+ * Since 2026-09-01 a registered account is a `.chip-pair`: the name chip and a
+ * separate `.close-btn`, rather than a `role="button"` span positioned on top
+ * of the chip (a control inside a control). Both carry `.chip`, so a bare
+ * `.chip` query counts two per player.
+ */
 function chips(): HTMLElement[] {
-  return [...document.querySelectorAll(".ps-registered .chip")] as HTMLElement[];
+  return [
+    ...document.querySelectorAll(".ps-registered .chip:not(.close-btn)"),
+  ] as HTMLElement[];
 }
 
 describe("the ★ Registered Accounts section", () => {

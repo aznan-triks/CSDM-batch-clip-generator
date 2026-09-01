@@ -23,8 +23,15 @@
   color: var(--dim);
 }
 
+/*
+ * MEASURED 2026-09-01 (`node electron/e2e/surface-audit.mjs`): four buttons on
+ * one unwrapping line reached 68px past a 311px card, so "Uncheck selected"
+ * was half off the edge. Same defect as `.kf-extra` -- a horizontal group that
+ * was never told it could take a second line.
+ */
 .dp-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--sp-2);
 }
 

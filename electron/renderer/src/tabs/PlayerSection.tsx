@@ -25,6 +25,7 @@ import Field from "../components/Field";
 import Segmented from "../components/Segmented";
 import SettingControl from "../settings/SettingControl";
 import { useSetting, useSettingsBatch } from "../settings/store";
+import CloseButton, { ChipPair } from "../components/CloseButton";
 import { useDatabase } from "../settings/useDatabase";
 import type { PlayerRow } from "../settings/useDatabase";
 import "./PlayerSection.css";
@@ -203,8 +204,8 @@ export default function PlayerSection() {
             {dragPreview.map((p, i) => {
               const isActive = active.includes(p.steam_id);
               return (
+                <ChipPair key={p.steam_id}>
                 <button
-                  key={p.steam_id}
                   type="button"
                   className={isActive ? "chip on" : "chip"}
                   aria-pressed={isActive}
@@ -241,19 +242,13 @@ export default function PlayerSection() {
                 >
                   <span className="d" aria-hidden="true" />
                   {p.name}
-                  <span
-                    className="ps-chip-del"
-                    aria-label={`Unregister ${p.name}`}
-                    role="button"
-                    title="Remove this player from your registered accounts (does not deselect them)"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeSaved(p.steam_id);
-                    }}
-                  >
-                    ×
-                  </span>
                 </button>
+                <CloseButton
+                  label={`Unregister ${p.name}`}
+                  title="Remove this player from your registered accounts (does not deselect them)"
+                  onClick={() => removeSaved(p.steam_id)}
+                />
+                </ChipPair>
               );
             })}
           </div>

@@ -115,34 +115,9 @@
   min-width: 160px;
 }
 
-/*
- * Tag chip pair (3.2.3): the tag name chip and the delete pill are two
- * buttons attached side-by-side with no gap, forming one visual unit.
- * The delete pill keeps its own hitbox and hovers to danger.
- */
-.tag-pair {
-  display: inline-flex;
-  align-items: center;
-}
-
-/* First button: tag name — rounded on the left only. */
-.tag-pair > .chip:first-child {
-  border-radius: var(--radius) 0 0 var(--radius);
-  border-right: none;
-}
-
-/* Second button: delete pill — rounded on the right, padded for a readable ×. */
-.tag-pair > .chip:last-child {
-  border-radius: 0 var(--radius) var(--radius) 0;
-  padding-left: 8px;
-  padding-right: 10px;
-  font-weight: 700;
-}
-
-.tag-pair > .chip:last-child:hover {
-  color: var(--blood-t);
-  border-color: var(--blood-t);
-}
+/* The tag chip and its delete pill are `components/CloseButton.css`'s
+   `.chip-pair` now -- the rules that used to live here were the model every
+   other remove control was supposed to follow and none of them did. */
 
 .tag-create {
   align-items: center;

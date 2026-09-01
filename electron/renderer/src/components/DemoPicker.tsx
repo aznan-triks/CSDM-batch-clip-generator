@@ -2,6 +2,17 @@ import { useState } from "react";
 
 import "./DemoPicker.css";
 
+/**
+ * HC.1: the two marks this picker draws, named once.
+ *
+ * Deliberately NOT `CloseButton`'s glyph. These are the two halves of one
+ * state -- a row is checked or it is not -- and they have to read as a pair;
+ * a heavier remove cross next to the tick would say "delete this demo", which
+ * is not what unchecking does. The audit of 2026-09-01 (ecart E4) asked for
+ * ONE remove control, not one glyph for every purpose.
+ */
+const MARK = { on: "✓", off: "✕" } as const;
+
 export interface DemoCompat {
   status: "ok" | "warn" | "missing";
   break: string | null;
@@ -76,10 +87,10 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll, onSetSe
         </span>
         <div className="dp-buttons">
           <button type="button" className="chip" data-action="D1" onClick={() => onSetAll(true)}>
-            ✓ Check all
+            {MARK.on} Check all
           </button>
           <button type="button" className="chip" data-action="D2" onClick={() => onSetAll(false)}>
-            ✕ Uncheck all
+            {MARK.off} Uncheck all
           </button>
           <button
             type="button"
@@ -87,7 +98,7 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll, onSetSe
             title="Checks the rows highlighted by click, Ctrl+click or Shift+click"
             data-action="D3" onClick={() => onSetSelected(Array.from(selected), true)}
           >
-            ✓ Check selected
+            {MARK.on} Check selected
           </button>
           <button
             type="button"
@@ -95,7 +106,7 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll, onSetSe
             title="Unchecks only the rows currently highlighted (click, Ctrl+click, Shift+click)"
             data-action="D4" onClick={() => onSetSelected(Array.from(selected), false)}
           >
-            ✕ Uncheck selected
+            {MARK.off} Uncheck selected
           </button>
         </div>
       </div>
@@ -149,7 +160,7 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll, onSetSe
                     onToggle(row.path);
                   }}
                 >
-                  {isOn ? "✓" : "✕"}
+                  {isOn ? MARK.on : MARK.off}
                 </button>
                 <span className="dp-col-date">{row.date}</span>
                 <span className="dp-col-map">{row.map}</span>

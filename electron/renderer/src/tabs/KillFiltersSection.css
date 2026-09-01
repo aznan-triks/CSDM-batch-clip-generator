@@ -35,8 +35,19 @@
   /* Nothing of its own left; the class stays as the section's own hook. */
 }
 
+/*
+ * MEASURED 2026-09-01 (`node electron/e2e/overflow-culprit-probe.mjs`): in a
+ * 318 px card this row insisted on 517 px and was handed 286 -- 231 px of it
+ * simply cut off, which is the "buttons half hidden" report. It was the
+ * deepest and largest of the two culprits.
+ *
+ * `nowrap` was never chosen: it is the initial value, and nothing here had a
+ * reason to keep a single line. A row of a label and two or three small
+ * controls reads perfectly well on two lines.
+ */
 .kf-extra {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--sp-2);
 }

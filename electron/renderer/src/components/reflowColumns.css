@@ -31,8 +31,27 @@
 
   /* `columns` is ignored on a flex container. The first consumer was one. */
   display: block;
-  column-width: var(--reflow-col-min);
   column-gap: var(--sp-5);
+
+  /*
+   * The card is the container this asks about, so the block sizes itself from
+   * the width it was actually GIVEN.
+   *
+   * `column-width` alone was the second half of the overflow (MEASURED
+   * 2026-09-01, `overflow-culprit-probe.mjs`): it is a FLOOR, not a ceiling --
+   * a column never gets narrower than the declared width, so in a 318 px card
+   * this block still insisted on 419 px and the difference was cut off. The
+   * declaration cannot simply be softened, because there is no length that
+   * means "this many pixels, unless there aren't". Asking the container is the
+   * expression of the same intent that can actually yield.
+   */
+  container-type: inline-size;
+}
+
+@container (min-width: 419px) {
+  .reflow-columns {
+    column-width: var(--reflow-col-min);
+  }
 }
 
 /*
