@@ -19,10 +19,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { _electron as electron } from "@playwright/test";
-import { createServer } from "vite";
-
-import { CONFIG, ELECTRON_DIR } from "./config.mjs";
+import { CONFIG } from "./config.mjs";
+import { launchWithEngine, waitForEngine } from "./engine-harness.mjs";
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const TRACE_DIR = path.join(REPO_ROOT, "docs", "audits", "traces");
@@ -45,35 +43,6 @@ const WAIT = {
   dbCommand: 60_000,
   preview: 240_000,
 };
-
-async function launchWithEngine() {
-  const server = await createServer({ configFile: path.join(ELECTRON_DIR, "vite.config.ts") });
-  await server.listen();
-  const url = server.resolvedUrls?.local?.[0];
-  if (!url) {
-    await server.close();
-    throw new Error("Vite started but reported no local URL -- port 5273 is probably taken");
-  }
-
-  // The engine env is cleaned the way `exe-smoke-proof.mjs` cleans it: a
-  // stray PYTHONPATH or VIRTUAL_ENV from the shell that launched this makes
-  // the child import a different tree than the one under test, and the
-  // resulting failure looks like a product bug.
-  const env = { ...process.env, VITE_DEV_SERVER_URL: url };
-  delete env.PYTHONPATH;
-  delete env.VIRTUAL_ENV;
-
-  const app = await electron.launch({
-    args: [ELECTRON_DIR],
-    cwd: ELECTRON_DIR,
-    timeout: CONFIG.launchTimeoutMs,
-    env,
-  });
-  const page = await app.firstWindow({ timeout: CONFIG.launchTimeoutMs });
-  await page.setViewportSize(CONFIG.viewport);
-  await page.waitForLoadState("domcontentloaded");
-  return { app, page, close: async () => { await app.close(); await server.close(); } };
-}
 
 /** Everything the console currently shows, as plain text. */
 function consoleText(page) {
@@ -144,13 +113,7 @@ async function main() {
   try {
     // 1. The engine must actually be alive, or every scenario below is noise.
     console.log("waiting for the engine banner…");
-    const alive = await page
-      .locator(".console .body")
-      .filter({ hasText: "engine ready" })
-      .first()
-      .waitFor({ timeout: WAIT.engineBanner })
-      .then(() => true)
-      .catch(() => false);
+    const alive = await waitForEngine(page, WAIT.engineBanner);
     console.log(`  engine ready: ${alive}`);
     if (!alive) {
       save("00-engine-never-started", await consoleText(page));
