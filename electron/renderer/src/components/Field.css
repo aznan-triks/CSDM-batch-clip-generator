@@ -14,14 +14,83 @@
    and a proportional face makes equal numbers look like unequal widths. */
 .fld-mono {
   font-family: var(--font-mono);
+  /* Digits of one width, so a column of numbers lines up and a value does not
+     jump sideways as it is typed. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==================== THE FIELD'S STATES (2026-09-02) ====================
+ *
+ * The mock states the face once and stops: it is a still picture, so a field
+ * in it never has to look hovered, focused, empty or disabled. Everything
+ * below is what a still picture cannot say -- reported as "the text boxes are
+ * ugly", and measured as three separate things:
+ *
+ *  1. The VALUE was painted in `--muted`, the mock's quiet ink -- the same
+ *     colour as the label beside it. A value and the word naming it carried
+ *     equal weight, which is what made a row of fields read as grey mush.
+ *     The value is primary text; the label is the quiet one.
+ *  2. The rim was `--hair` (9% ink). On the white card of light mode a white
+ *     field inside a 9% rim has almost no edge at all -- the box the user is
+ *     meant to type in did not read as a box. `--line-hi` is the same family,
+ *     one step up, and it is mode-aware.
+ *  3. There was no hover and no rest depth: the field only ever changed on
+ *     focus, so nothing said "this one is typeable" while the pointer was
+ *     over it.
+ *
+ * COLOUR AND SHADOW ONLY. No transform, no scale -- `__tests__/no-hover-motion.test.ts`
+ * sweeps the built bundle for exactly that, and this file is not exempt.
+ */
+.fld {
+  color: var(--txt);
+  border-color: var(--line-hi);
+  /* One hairline of light along the top edge: the same trick `--tile-bevel`
+     plays on the backdrop plates, which is what makes a surface read as glass
+     rather than as a rectangle with a border. */
+  box-shadow: inset 0 1px 0 var(--sheen-soft);
+  caret-color: var(--gold);
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease);
+}
+
+/* The prompt is not the value: same family, clearly quieter, so an empty
+   field never looks like a filled one. */
+.fld::placeholder {
+  color: var(--dim);
+  opacity: 0.8;
+}
+
+.fld:hover:not(:disabled):not(:focus) {
+  /* A faint accent wash, not a grey lift: `--raise-hi` is the flat-token
+     family this window migrated away from (GlassMigration.css.test.ts), and a
+     tint of the accent over the field's own `--solid` face is the glass way
+     of saying the same thing. */
+  background: color-mix(in srgb, var(--gold) 5%, var(--solid));
+  border-color: color-mix(in srgb, var(--gold) 26%, var(--line-hi));
+}
+
+.fld:disabled {
+  color: var(--dim);
+  background: var(--recess);
+  border-color: var(--line);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 .fld:focus {
+  background: color-mix(in srgb, var(--gold) 7%, var(--solid));
   border-color: color-mix(in srgb, var(--gold) 38%, transparent);
-  /* A quiet HUD "armed" glow, echoing `.btn:hover .bx` elsewhere in the same
-     window -- a field earns some of the same feedback a button gets, static
-     rather than animated so it never becomes a second focus ring. */
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 16%, transparent);
+  /* Three layers, one property: the accent tick that marks the field being
+     typed in (the HUD tell), the glass hairline the rest state already wears,
+     and a quiet "armed" glow echoing `.btn:hover .bx` elsewhere in this
+     window -- static rather than animated, so it never becomes a second focus
+     ring. */
+  box-shadow:
+    inset var(--bw-accent) 0 0 var(--gold),
+    inset 0 1px 0 var(--sheen-soft),
+    0 0 0 3px color-mix(in srgb, var(--gold) 16%, transparent);
 }
 
 .fld:focus-visible {
@@ -34,12 +103,12 @@
  * the theme -- a bright pill over a night ground on the PostgreSQL fields.
  * The UA override is the only thing that reaches the autofill face, so it is
  * repainted here from the same tokens the field itself uses: `--solid` face,
- * `--muted` ink (the mock's `.fld` colour), caret to match.
+ * `--txt` ink (the field's own colour), accent caret to match.
  */
 .fld:-webkit-autofill,
 .fld:-webkit-autofill:hover,
 .fld:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--muted);
+  -webkit-text-fill-color: var(--txt);
   -webkit-box-shadow: 0 0 0 1000px var(--solid) inset;
-  caret-color: var(--muted);
+  caret-color: var(--gold);
 }

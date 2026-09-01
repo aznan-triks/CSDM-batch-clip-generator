@@ -38,7 +38,7 @@ export default function NumberField({
     <input
       id={id ? `${id}-number` : undefined}
       type="number"
-      className="slider-number"
+      className="fld slider-number"
       aria-label={label}
       title={tip}
       min={min}

@@ -135,3 +135,32 @@ html {
    field allowed to shrink past its own digits simply clips them instead. A
    field that cannot show its value is worse than a field 6px too wide, so the
    floor stays. Recorded here so the next person does not repeat the attempt. */
+
+/* ── A label reads as a label, and a title as a title (2026-09-02) ──
+   Reported as "text visibility per theme is bad, and something stylish is
+   missing". The colours were the first half and are fixed at the source
+   (tokens.css now points the mock's `--muted` / `--faint` at this app's
+   mode-aware `--dim`). This is the second half: WEIGHT.
+
+   The mock paints `.lab` and `.fld` in the SAME ink, and its `.sh .t` in the
+   same `--txt` as body copy. On a still picture of eight cards that reads as
+   calm. On a live window of twenty-odd cards, where a label, its value and
+   the card's own title all carry equal weight, nothing tells the eye where a
+   group starts -- everything is one grey field. The three ranks below are the
+   window's existing type tokens, not new values: title loudest (`--txt-hi`),
+   value next (`--txt`, set on `.fld` in Field.css), label quietest but bold
+   (`--txt-lo`), so the word naming a control is findable without shouting
+   over the value it names.
+
+   Deliberately NOT uppercased: 20-odd of these labels are whole sentences
+   ("CS2 effects -- both HLAE and CS modes"), and uppercasing a sentence is
+   how a HUD starts looking like a warning dialog. */
+.lab {
+  color: var(--txt-lo);
+  font-weight: var(--fw-bold);
+}
+
+.sh .t {
+  color: var(--txt-hi);
+  letter-spacing: var(--tr-tight);
+}

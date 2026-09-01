@@ -31,7 +31,7 @@ export default function PathField({ value, onChange, placeholder, id, label, mod
   return (
     <div className="path-field">
       {label && (
-        <label className="field-label" htmlFor={id} title={tip}>
+        <label className="lab" htmlFor={id} title={tip}>
           {label}
         </label>
       )}
@@ -39,7 +39,7 @@ export default function PathField({ value, onChange, placeholder, id, label, mod
         <input
           id={id}
           type="text"
-          className="field path-field-input"
+          className="fld path-field-input"
           value={value}
           placeholder={placeholder}
           title={tip}

@@ -51,7 +51,7 @@ export default function DateField({ id, label, value, onChange }: DateFieldProps
   return (
     <div className="date-field-wrap">
       {label && (
-        <label className="field-label" htmlFor={id}>
+        <label className="lab" htmlFor={id}>
           {label}
         </label>
       )}
@@ -59,7 +59,7 @@ export default function DateField({ id, label, value, onChange }: DateFieldProps
         <input
           id={id}
           type="text"
-          className="field field-mono date-field-text"
+          className="fld fld-mono date-field-text"
           placeholder="dd-mm-yyyy"
           value={value}
           onChange={(event) => onChange(event.target.value)}

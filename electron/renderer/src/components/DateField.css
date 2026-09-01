@@ -18,6 +18,11 @@
 
 .date-field-text {
   width: 11ch;
+  /* The element wears `.fld` now, which declares `min-width: 90px` for fields
+     that share a row. `dd-mm-yyyy` is 11 characters and never more, so the
+     floor would only pad it. */
+  min-width: 0;
+  flex: 0 0 auto;
 }
 
 /* The calendar button is the mock's `.chip`; its face, its hover and its focus

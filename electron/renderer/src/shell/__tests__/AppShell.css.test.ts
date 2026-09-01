@@ -15,7 +15,6 @@ import { describe, expect, it } from "vitest";
 const THEME = path.join(__dirname, "..", "..", "theme");
 const APP_SHELL_CSS = readFileSync(path.join(__dirname, "..", "AppShell.css"), "utf-8");
 const MOCK_CSS = readFileSync(path.join(THEME, "mock-v12.css"), "utf-8");
-const BRIDGE_CSS = readFileSync(path.join(THEME, "mock-bridge.css"), "utf-8");
 const TOKENS_CSS = readFileSync(path.join(THEME, "tokens.css"), "utf-8");
 
 /** Comments out -- a comment quoting a rule is prose, and prose styles nothing. */

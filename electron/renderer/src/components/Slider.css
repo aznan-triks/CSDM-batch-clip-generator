@@ -100,20 +100,21 @@
 }
 
 /*
- * The typed half of the gauge. It borrows the mock's field face (`.fld`)
- * rather than inventing one, and is capped narrow: it holds two or three
- * digits, and a full-width box beside a rail is what made other rows read as
- * banners.
+ * The typed half of the gauge. Its comment always said it "borrows the mock's
+ * field face (`.fld`)" -- it did not: it RESTATED that face here, in five
+ * declarations, and `NumberField.tsx` emitted `slider-number` alone. The copy
+ * drifted the moment the field gained a state (`color: var(--ink)` named a
+ * token that does not exist in this project, so the ink fell back to
+ * inherited). The element wears `fld slider-number` now and this rule keeps
+ * only what makes it a NUMBER box: capped narrow, because it holds two or
+ * three digits and a full-width box beside a rail is what made other rows
+ * read as banners.
  */
 .slider-number {
   width: 4.5ch;
   flex: 0 0 auto;
+  min-width: 0; /* beats `.fld { min-width: 90px }`; the cap above is the point */
   padding: 4px 6px;
-  border: 1px solid var(--hair);
-  border-radius: var(--r-mid);
-  background: var(--solid);
-  color: var(--ink);
-  font: inherit;
   font-size: 12px;
   text-align: right;
 }
