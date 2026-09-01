@@ -90,10 +90,22 @@ let quitting = false; // true once before-quit has taken over the shutdown
  * only an interpreter that can actually run the engine.
  */
 function resolvePythonPath() {
-  const candidates = [];
+  // AN OVERRIDE OVERRIDES. This used to be merely the FIRST candidate, with
+  // `py`/`python`/`python3` tried after it -- so setting it to a name that
+  // cannot resolve did not select "no engine", it selected "whatever else is
+  // installed". e2e/harness.mjs sets it to `csdm-e2e-no-engine` precisely to
+  // get a hermetic window and its comment says so; on a machine with a working
+  // interpreter it silently got the real engine, connected to the real
+  // database, and photographed 8187 real player names into a baseline image
+  // committed to a PUBLIC repository (found 2026-09-02).
+  //
+  // Returned even when the probe fails: spawn() then reports the real error in
+  // the console, which is the visible failure the fallback was hiding.
   if (process.env.CSDM_PYTHON_PATH) {
-    candidates.push(process.env.CSDM_PYTHON_PATH);
+    return process.env.CSDM_PYTHON_PATH;
   }
+
+  const candidates = [];
   if (process.platform === "win32") {
     candidates.push("py");
   }

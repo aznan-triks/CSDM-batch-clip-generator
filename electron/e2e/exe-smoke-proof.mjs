@@ -59,6 +59,10 @@ const cleanEnv = { ...process.env };
 cleanEnv.PATH = windowsPathFromRegistry() || cleanEnv.PATH;
 delete cleanEnv.PYTHONPATH;
 delete cleanEnv.VIRTUAL_ENV;
+// Since 2026-09-02 this is an absolute override in main.js, not a first
+// candidate: an inherited value would pick an interpreter the user never
+// gets, which is the opposite of what this gate is for.
+delete cleanEnv.CSDM_PYTHON_PATH;
 const child = spawn(EXE, [`--remote-debugging-port=${PORT}`], {
   cwd: ELECTRON_DIR,
   detached: true,
