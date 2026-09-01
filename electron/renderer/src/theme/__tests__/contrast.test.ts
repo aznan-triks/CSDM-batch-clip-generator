@@ -44,7 +44,11 @@ function readToken(name: string, mode: Mode): string {
   if (!match) {
     throw new Error(`token not found in tokens.css for ${mode} mode: ${name}`);
   }
-  return match[1].trim();
+  const value = match[1].trim();
+  // Aliases (`--muted: var(--dim)`) resolve to the token they point at, in
+  // the SAME mode -- which is the whole point of aliasing rather than copying.
+  const ref = value.match(/^var\((--[a-z0-9-]+)\)$/);
+  return ref ? readToken(ref[1], mode) : value;
 }
 
 describe("tokens.css still declares both mode blocks", () => {
@@ -88,6 +92,13 @@ describe.each(MODES)("text passes WCAG AA on its real ground in %s mode", (mode)
     ["--dim", "--raise"],
     ["--dim", "--void"],
     ["--txt-hi", "--panel"],
+    // The mock's own ink names, aliased to --dim in tokens.css (2026-09-02).
+    // Pinned here so a future edit cannot quietly give either one a literal
+    // again: --muted is the ink of every field label, typed value, unselected
+    // chip and segment, and it sat at the mock's #5b6b83 -- 3.6:1 on the
+    // amoled ground -- until it was bridged.
+    ["--muted", "--raise"],
+    ["--faint", "--panel"],
     // Text-legible siblings of fill/border colours (--ok/--fire/--steel), same
     // precedent as --blood-t: these regressed silently once when light mode
     // shrank this list, so they are pinned here on purpose.
@@ -106,25 +117,36 @@ describe.each(MODES)("text passes WCAG AA on its real ground in %s mode", (mode)
   }
 });
 
-describe("--faint was removed and must not come back", () => {
-  // --faint held the same value as --dim after the contrast correction, and
-  // two names for one value only invites drift. If a future edit
-  // reintroduces --faint, that is exactly the drift we removed -- name it.
-  it("--faint does not exist in tokens.css", () => {
-    expect(TOKENS_CSS).not.toMatch(/--faint\s*:/);
-  });
-});
+describe("--faint and --muted are the mock's NAMES for --dim, not second values", () => {
+  // History: --faint once held its own value here, equal to --dim after the
+  // contrast correction -- two names for one colour, which only invites drift.
+  // It was deleted, and a remap was added to mock-bridge.css inside an
+  // `html { }` block. That remap NEVER APPLIED: `html` is (0,0,1) and the mock
+  // declares --faint at `:root` (0,1,0), so the mock's #93a1b5 won on every
+  // ground, and this test passed on the TEXT of a dead rule.
+  //
+  // Both names now live in tokens.css at `:root` -- same specificity as the
+  // mock, later in load order -- and both are `var(--dim)`, so there is still
+  // exactly one value with two spellings.
+  for (const name of ["--faint", "--muted"]) {
+    it(`${name} is an alias of --dim, declared where it actually wins`, () => {
+      // `:root` in tokens.css, not `html` in mock-bridge.css: same specificity
+      // as the mock's own declaration, later in load order.
+      const declaration = new RegExp(`${name}:\\s*var\\(--dim\\)`);
+      expect(SHARED_AND_LIGHT).toMatch(declaration);
+    });
 
-describe("--faint is remapped in mock-bridge.css, same defect as --muted", () => {
-  // The mock defines --faint: #93a1b5 in mock-v12.css and never had it
-  // corrected -- unlike --muted, which mock-bridge.css already remaps to
-  // --dim. AUDIT_huit_pistes_post_v299.md P1: 6 selectors (.st .k among them)
-  // rendered under 3:1 on the light ground because of this gap.
-  const BRIDGE_PATH = path.join(__dirname, "..", "mock-bridge.css");
-  const BRIDGE_CSS = readFileSync(BRIDGE_PATH, "utf-8");
+    it(`${name} resolves to the same colour as --dim in both modes`, () => {
+      for (const mode of MODES) {
+        expect(readToken(name, mode)).toBe(readToken("--dim", mode));
+      }
+    });
+  }
 
-  it("--faint: var(--dim) is present in mock-bridge.css", () => {
-    expect(BRIDGE_CSS).toMatch(/--faint:\s*var\(--dim\)/);
+  it("mock-bridge.css no longer pretends to remap them", () => {
+    const BRIDGE_PATH = path.join(__dirname, "..", "mock-bridge.css");
+    const BRIDGE_CSS = readFileSync(BRIDGE_PATH, "utf-8");
+    expect(BRIDGE_CSS).not.toMatch(/--faint:\s*var/);
   });
 });
 

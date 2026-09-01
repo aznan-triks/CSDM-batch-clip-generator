@@ -241,6 +241,49 @@
   --elev:
     0 8px 22px -10px rgba(30, 50, 90, 0.16), 0 2px 6px -3px rgba(30, 50, 90, 0.1);
   --elev-sm: 0 4px 12px -6px rgba(30, 50, 90, 0.16);
+
+  /* ===== THE MOCK'S OWN NAMES, POINTED AT THIS APP'S TOKENS =====
+     (2026-09-02, the cause of "text visibility per theme is bad")
+
+     `mock-v12.css` declares these in its LIGHT `:root` and its night block
+     never revisits them -- the mock has one dark ground and did not need to.
+     This window has five. Left alone, every one of them keeps a DAY value on
+     a night ground, and the mock uses them for the loudest surfaces there
+     are: measured `--muted` #5b6b83 on the amoled `--panel` #0a0a0a is
+     3.6:1, and it is the ink of `.lab`, `.fld`, `.chip`, `.seg span` and
+     `.sh .cnt` -- every field label, every typed value, every unselected
+     pill and segment in the window.
+
+     WHY HERE AND NOT IN `mock-bridge.css`. That file said `--faint` and
+     `--font` inside an `html { }` block: `html` is a type selector (0,0,1)
+     and the mock declares them at `:root` (0,1,0), so specificity decided it
+     and load order never got a say. Both lines had been dead since the day
+     they were written, and `contrast.test.ts` went green on the TEXT of the
+     rule -- exactly the trap section 10 records. `:root` here is the same
+     specificity as the mock's and loads after it, so order wins, and
+     `grounds.css` (which comes later still, at 0,2,0) redefines the tokens
+     these point AT rather than these names -- one edit per ground, not five.
+
+     Each right-hand side is this app's already mode-aware equivalent, never
+     a literal: a literal here would be a fourth copy of a colour and would
+     freeze again on the next ground. `theme/__tests__/mock-token-bridge.test.ts`
+     re-runs the sweep that found them and fails on any new one. */
+  --muted: var(--dim); /* the mock's quiet ink: labels, fields, chips, segments */
+  --faint: var(--dim); /* the mock's quietest ink: chevrons, stat keys, `.excl` */
+  --hair: var(--line); /* hairline rim: field, chip, checkbox, pill, segment tray */
+  --border: var(--edge-hi); /* the lit rim of a glass card (`.sec`) */
+  --shadow: var(--elev); /* a complete box-shadow, like --elev; see --shadow-tint above */
+  --shadow-sm: var(--elev-sm);
+  --holo-color: var(--holo); /* 9 uses; a literal froze the holographic layer off the accent */
+  --mono: var(--font-mono);
+  --font: var(--font-display);
+  /* Semantic fills under the mock's names. `--blue-2` matters most: it is
+     accent-derived here, and as a literal it kept two selectors blue while
+     the user's chosen accent moved. */
+  --blue-2: var(--gold-hi);
+  --emerald: var(--ok);
+  --amber: var(--fire);
+  --rose: var(--blood);
 }
 
 /* ==================== DARK MODE (night) ====================

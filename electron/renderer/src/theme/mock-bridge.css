@@ -10,8 +10,12 @@ html {
   --block-gap: 10px;
   --block-row: 24px;            /* fallback; overridden by settings store */
   --block-collapsed-rows: 2;    /* fallback; overridden by settings store */
-  --font: var(--font-display);  /* bridge mock's token to the shell */
-  --faint: var(--dim);         /* contrast bridge */
+  /* `--font` and `--faint` used to be bridged HERE and never applied: `html`
+     is a type selector (0,0,1), the mock declares them at `:root` (0,1,0), so
+     specificity settled it before load order was consulted. They live in
+     tokens.css now, at `:root`, with the ten other mock tokens that had the
+     same defect. This block keeps only what the APP invented -- names the
+     mock never declares, which is why a type selector is enough for them. */
   /* The placement backdrop's ink. Deliberately NOT `--line`: each night
      ground redefines that one for its own 1px separators (the terminal
      ground's greenish ink turned the whole pane into a neon lattice in

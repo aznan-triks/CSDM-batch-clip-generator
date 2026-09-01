@@ -45,6 +45,22 @@ function declarations(css: string): Map<string, string> {
 /** A shadow is a list of lengths; a colour is not. They are not interchangeable. */
 const isShadow = (value: string) => /-?\d+px/.test(value);
 
+/**
+ * Follow `var(--x)` before judging a type.
+ *
+ * tokens.css points the mock's names at this app's own tokens (`--shadow:
+ * var(--elev)`), so the literal it declares IS a shadow -- one hop away. A
+ * classifier that stopped at the text called that a colour and flagged a
+ * clash that does not exist. Following the reference keeps the real check
+ * alive: a name that flips between a colour and a shadow still trips.
+ */
+function resolve(value: string, table: Map<string, string>, depth = 0): string {
+  const ref = value.trim().match(/^var\((--[a-z0-9-]+)\)$/);
+  if (!ref || depth > 4) return value;
+  const next = table.get(ref[1]);
+  return next === undefined ? value : resolve(next, table, depth + 1);
+}
+
 // `__dirname`, not `new URL(path, import.meta.url)`: the latter throws "The
 // URL must be of scheme file" under this project's Vitest/jsdom setup on
 // Windows. `contrast.test.ts` reads tokens.css the same relative way.
@@ -56,7 +72,7 @@ describe("token vocabularies", () => {
     const app = declarations(readFileSync(path.join(THEME_DIR, "tokens.css"), "utf8"));
     const clashes = [...mock.keys()]
       .filter((name) => app.has(name))
-      .filter((name) => isShadow(mock.get(name)!) !== isShadow(app.get(name)!));
+      .filter((name) => isShadow(resolve(mock.get(name)!, mock)) !== isShadow(resolve(app.get(name)!, app)));
     expect(
       clashes,
       "same token name, different type: the mock's rules would receive a value " +

@@ -16,6 +16,7 @@ const THEME = path.join(__dirname, "..", "..", "theme");
 const APP_SHELL_CSS = readFileSync(path.join(__dirname, "..", "AppShell.css"), "utf-8");
 const MOCK_CSS = readFileSync(path.join(THEME, "mock-v12.css"), "utf-8");
 const BRIDGE_CSS = readFileSync(path.join(THEME, "mock-bridge.css"), "utf-8");
+const TOKENS_CSS = readFileSync(path.join(THEME, "tokens.css"), "utf-8");
 
 /** Comments out -- a comment quoting a rule is prose, and prose styles nothing. */
 const stripComments = (css: string) => css.replace(/\/\*[\s\S]*?\*\//g, "");
@@ -38,8 +39,13 @@ describe("the page body's base font is the sans face, like the mock", () => {
   });
 
   it("bridges the mock's --font to the sans display stack, never to mono", () => {
-    expect(BRIDGE_CSS).toMatch(/--font:\s*var\(--font-display\);/);
-    expect(BRIDGE_CSS).not.toMatch(/--font:\s*var\(--font-mono\);/);
+    // Read from tokens.css, not mock-bridge.css: the bridge declared this in
+    // an `html { }` block (0,0,1) that the mock's own `:root` (0,1,0) beat,
+    // so the line never applied and this test passed on a dead rule
+    // (2026-09-02). It sits at `:root` in tokens.css now, with the eleven
+    // other mock tokens that had the same defect.
+    expect(TOKENS_CSS).toMatch(/--font:\s*var\(--font-display\);/);
+    expect(TOKENS_CSS).not.toMatch(/--font:\s*var\(--font-mono\);/);
   });
 
   it("is never overridden back to monospace by the window's own sheet", () => {
