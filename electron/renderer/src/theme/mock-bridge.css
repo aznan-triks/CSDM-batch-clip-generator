@@ -160,7 +160,25 @@ html {
   font-weight: var(--fw-bold);
 }
 
+/* The card title, in the same voice as the tab strip above it. The mock
+   writes it as sentence case at body weight-and-a-half, which on its eight-card
+   page reads as a heading; across twenty-odd cards it read as one more line of
+   text. Uppercase with the nav's own tracking is what already tells this window
+   "this names a region" -- the tabs, the stat keys and the console header all
+   speak that way, and the card titles were the only headings that did not. */
 .sh .t {
   color: var(--txt-hi);
+  text-transform: uppercase;
   letter-spacing: var(--tr-tight);
+}
+
+/* ── Selected text belongs to the accent (2026-09-02) ──
+   Left to the browser this is the platform's own blue: the one surface in the
+   window that ignores the chosen accent AND the ground, and it appears every
+   time the user drags across a value or a log line. `--on-gold` is the label
+   colour already measured against the accent, so a chosen accent of any
+   lightness keeps the selection readable. */
+::selection {
+  background: color-mix(in srgb, var(--gold) 82%, transparent);
+  color: var(--on-gold);
 }
