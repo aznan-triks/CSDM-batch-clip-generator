@@ -22,6 +22,7 @@ import Slider from "../components/Slider";
 import { pickPath, runCommand, setWindowBounds } from "../bridge";
 import SectionList, { type SectionSpec } from "../shell/SectionList";
 import SettingControl from "../settings/SettingControl";
+import { useDatabase } from "../settings/useDatabase";
 import { useSetting, useSettingsBatch } from "../settings/store";
 import { ACCENT_PRESETS, applyAccent, resolveAccent } from "../theme/accent";
 import { applyMode, DEFAULT_GROUND, GROUND_MODES } from "../theme/mode";
@@ -94,6 +95,9 @@ const FOLDER_CHOICES: ReadonlyArray<{ value: string; label: string; tip: string 
 
 export default function SettingsTab() {
   const setMany = useSettingsBatch();
+  // Named at the call site: `reload` alone reads as "reload this tab" three
+  // hundred lines further down, where it is used.
+  const { reload: reloadDatabase } = useDatabase();
 
   const [csdmExe, setCsdmExe] = useSetting<string>("csdm_exe");
   const [cs2CfgDir, setCs2CfgDir] = useSetting<string>("cs2_cfg_dir");
@@ -247,6 +251,19 @@ export default function SettingsTab() {
     setMany({ ui_sections: {} });
   }
 
+  /**
+   * Test the connection AND make the rest of the window use what came back.
+   *
+   * The `connect_db` call alone was already answering with a fresh payload in
+   * ~200 ms -- and the answer went nowhere: the shared `DatabaseProvider` was
+   * never told, so players, weapons, maps and tags on the other tabs kept the
+   * list they were opened with. A button called "Test & Reload" that reloads
+   * nothing (AUDIT_retours_ui_8_points.md, ecart E1).
+   *
+   * `reload()` re-runs the command through the provider every other reader is
+   * subscribed to. The direct call above stays: it is the one that carries the
+   * fields being typed right now, before they have been saved anywhere.
+   */
   async function testAndReload() {
     setDbStatus("Connecting…");
     try {
@@ -254,6 +271,7 @@ export default function SettingsTab() {
         pg: { host: pgHost, port: pgPort, user: pgUser, pass: pgPass, db: pgDb },
       });
       setDbStatus("Connected");
+      reloadDatabase();
     } catch (cause) {
       setDbStatus((cause as Error).message);
     }

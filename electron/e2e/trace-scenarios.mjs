@@ -174,6 +174,12 @@ async function main() {
     // The engine answering is only half of PREVIEW. The other half is the
     // checklist appearing, and "the engine produced clips" and "the user sees
     // clips" are exactly the two things the report could not distinguish.
+    // Since the fix the window goes there by itself; record whether it did
+    // BEFORE forcing the tab, or the measurement would hide the behaviour.
+    const landedOnEditing = await page
+      .locator('.tab[aria-current="true"]')
+      .innerText()
+      .catch(() => "?");
     await openTab(page, "EDITING");
     const editingRows = await page.locator(".editing-list > *").count();
     const editingText = await page
@@ -188,7 +194,8 @@ async function main() {
 ${editingText}`);
     summary.push(
       `C preview: start_preview answered = ${startedC}, reached an end state = ${readyC}, ` +
-      `clips shown on the editing tab = ${editingRows}`,
+      `clips shown on the editing tab = ${editingRows}, ` +
+      `tab the window moved to on its own = ${landedOnEditing.replace(/\s+/g, " ").trim()}`,
     );
     // --- Scenario D: unchecking a clip on the editing checklist -------------
     // The editing tab is already open from scenario C.
@@ -196,21 +203,23 @@ ${editingText}`);
     await clearTrace(page);
     await note(page, "scenario D: click the first clip row");
     const firstRow = page.locator(".editing-list > *").first();
-    const beforeD = await firstRow.innerHTML().catch(() => "");
-    const checkedBefore = await page
-      .locator('.editing-list [aria-checked="true"], .editing-list input:checked')
-      .count();
+    // Inclusion is carried by the row's own class (`.editing-clip.selected`),
+    // not by an aria state or a nested input -- the first version of this probe
+    // counted `[aria-checked]` and `input:checked`, found none of either, and
+    // reported "0 -> 0" whatever happened.
+    const included = () => page.locator(".editing-clip.selected").count();
+    const beforeD = await included();
+    const classBefore = await firstRow.getAttribute("class");
     await firstRow.click();
     await page.waitForTimeout(WAIT.settle);
-    const checkedAfter = await page
-      .locator('.editing-list [aria-checked="true"], .editing-list input:checked')
-      .count();
-    const afterD = await firstRow.innerHTML().catch(() => "");
-    await note(page, `scenario D end (checked ${checkedBefore} -> ${checkedAfter}, row markup changed: ${beforeD !== afterD})`);
+    const afterD = await included();
+    const classAfter = await firstRow.getAttribute("class");
+    const header = await page.locator(".editing-header").innerText().catch(() => "");
+    await note(page, `scenario D end (included ${beforeD} -> ${afterD}, row class "${classBefore}" -> "${classAfter}")`);
     save("D-editing-toggle", await traceText(page));
     summary.push(
-      `D editing toggle: checked clips ${checkedBefore} -> ${checkedAfter}, ` +
-      `first row markup changed = ${beforeD !== afterD}`,
+      `D editing toggle: included clips ${beforeD} -> ${afterD}, ` +
+      `row class changed = ${classBefore !== classAfter}, header = ${header.replace(/\s+/g, " ").trim()}`,
     );
   } finally {
     await close();

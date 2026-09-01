@@ -116,6 +116,9 @@ describe("AppShell", () => {
       restartEngine() {
         return Promise.resolve();
       },
+      setWindowBounds() {
+        return Promise.resolve();
+      },
     };
     renderShell();
     expect(sent.some((c) => (c as { name?: string }).name === "hello")).toBe(true);

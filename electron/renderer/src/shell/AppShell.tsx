@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
-import { runCommand, sendCommand } from "../bridge";
+import { runCommand } from "../bridge";
 import Reticle from "../cursor/Reticle";
 import ClickSpark from "../effects/ClickSpark";
 import { ICONS } from "../icons";
-import { useEngineState } from "../motion/useEngineState";
+import { markEditingViewed, useEngineState } from "../motion/useEngineState";
 import { useWindowActivity } from "../motion/useWindowActivity";
 import { useSetting } from "../settings/store";
 import { DatabaseProvider } from "../settings/useDatabase";
@@ -185,13 +185,36 @@ export default function AppShell() {
     };
   });
 
-  // When the user opens the EDITING tab, clear the "new previews ready"
-  // badge the engine set on it (see editing_viewed in useEngineState).
+  // When the user opens the EDITING tab, put out the "new previews ready"
+  // badge. Local: this used to send `editing_viewed` to the engine and wait
+  // for an echo the engine never sent, so the badge stayed lit forever after
+  // the first preview (AUDIT_retours_ui_8_points.md, ecart E2).
   useEffect(() => {
     if (active === "editing" && engine.editingBadge) {
-      sendCommand("editing_viewed", {});
+      markEditingViewed();
     }
   }, [active, engine.editingBadge]);
+
+  /**
+   * A finished preview takes the user to its clips.
+   *
+   * Driven by `previewSerial`, which counts arrivals -- NOT by `previewReady`,
+   * which goes true on the first preview and stays true, so its rising edge
+   * fires once and never again (the second preview would leave the user
+   * wherever they were, with no way to tell it had finished). Watching the
+   * boolean's VALUE instead would be worse still: every unrelated re-render
+   * would drag the user back to EDITING.
+   *
+   * Only when there is something to show: a preview that matched nothing must
+   * leave the user in front of the filters that produced nothing, not on an
+   * empty list (AUDIT_retours_ui_8_points.md, ecart E3).
+   */
+  const lastPreviewSeen = useRef(0);
+  useEffect(() => {
+    if (engine.previewSerial === lastPreviewSeen.current) return;
+    lastPreviewSeen.current = engine.previewSerial;
+    if (engine.previewClips.length > 0) setActive("editing");
+  }, [engine.previewSerial, engine.previewClips.length]);
 
   return (
     <>

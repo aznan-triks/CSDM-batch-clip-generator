@@ -33,6 +33,9 @@ function installFakeBridge() {
     restartEngine() {
       return Promise.resolve();
     },
+    setWindowBounds() {
+      return Promise.resolve();
+    },
   };
   return {
     sent,
