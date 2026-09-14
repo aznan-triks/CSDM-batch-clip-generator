@@ -79,6 +79,12 @@ function clickEnable(container: HTMLElement, key: string) {
 }
 
 describe("KillFiltersSection", () => {
+  it("offers no TK choice: Ally / Enemy in Event Type is the one team filter", async () => {
+    const { container } = await renderTab();
+    expect(container.querySelector('[data-config-key="teamkills_mode"]')).toBeNull();
+    expect(screen.queryByText("TK")).toBeNull();
+  });
+
   it("builds one row per visible registry entry", async () => {
     const { container } = await renderTab();
     const visible = FILTERS_FIXTURE.filters.filter((f) => !f.hidden);

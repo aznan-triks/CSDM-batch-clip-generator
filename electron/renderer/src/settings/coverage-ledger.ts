@@ -6,6 +6,7 @@
  *  - NO_CONTROL_BY_DESIGN: keys the Tkinter application itself never put on
  *    screen. Each carries the reason, taken from docs/INVENTAIRE_REGLAGES.md.
  *    This list is stable; it shrinks only if a key is deleted outright.
+ *    A key superseded by another control (not merely hidden) also belongs here, with the control that replaced it.
  *
  *  - NOT_YET_PORTED: keys that DO have a control in Tkinter and do not have
  *    one here yet. This list is temporary and MUST shrink at every chantier.
@@ -38,6 +39,8 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   ui_card_block_size: "block-grid cell size; changed via config, never a widget",
   ui_card_row_height: "card grid row step; changed via config, never a widget",
   ui_card_collapsed_rows: "collapsed card height; changed via config, never a widget",
+  // Superseded, not forgotten: Ally / Enemy (Event Type) is the one team model.
+  teamkills_mode: "superseded by Ally / Enemy; kept for config migration and the Tkinter window",
 };
 
 /** Has a control in Tkinter, not ported yet. MUST shrink at every chantier. */

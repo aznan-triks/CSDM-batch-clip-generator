@@ -2,7 +2,7 @@
  * The KILL FILTERS section and the CLUTCH block.
  *
  * Ported from the "KILL FILTERS" `Sec` in csdm_batch_clips_generator.py: the
- * Suicides/TK/Headshots row, the three registry-driven groups (Mods,
+ * Suicides/Headshots row, the three registry-driven groups (Mods,
  * demoparser2 modifiers, Situation/DB), and the CLUTCH block below them.
  *
  * The 19 visible rows all go through `FilterRow` (tâche 2): a row built by
@@ -21,11 +21,11 @@ import type { FilterDef, Tables } from "../settings/useTables";
 import "../components/reflowColumns.css";
 import "./KillFiltersSection.css";
 
-/** Suicides / TK: the window's own three-way choice. */
-const SUICIDE_TK_MODES = ["include", "exclude", "only"] as const;
+/** Suicides: the window's own three-way choice. */
+const SUICIDE_MODES = ["include", "exclude", "only"] as const;
 
 /**
- * Headshots: a DIFFERENT three-way choice from suicides/TK.
+ * Headshots: a DIFFERENT three-way choice from suicides.
  *
  * `cfg.get("headshots_mode", "all")` is what the engine reads (core.py
  * lines 589, 843, 3362) -- "all" / "only" / "exclude", never "include". A
@@ -275,7 +275,6 @@ export default function KillFiltersSection() {
   const { tables } = useTables();
   const setMany = useSettingsBatch();
   const [suicidesMode, setSuicidesMode] = useSetting<string>("suicides_mode");
-  const [teamkillsMode, setTeamkillsMode] = useSetting<string>("teamkills_mode");
   const [headshotsMode, setHeadshotsMode] = useSetting<string>("headshots_mode");
   const [oneTap] = useSetting<boolean>("kill_mod_one_tap");
   const [troisTap] = useSetting<boolean>("kill_mod_trois_tap");
@@ -296,23 +295,11 @@ export default function KillFiltersSection() {
           <div className="kf-top-group">
             <span className="lab">Suicides</span>
             <Segmented
-              options={SUICIDE_TK_MODES}
-              value={suicidesMode ?? SUICIDE_TK_MODES[0]}
+              options={SUICIDE_MODES}
+              value={suicidesMode ?? SUICIDE_MODES[0]}
               onChange={setSuicidesMode}
               label="Suicides"
               tip="Include, exclude, or capture only clips where a suicide occurred"
-            />
-          </div>
-        </SettingControl>
-        <SettingControl settingKey="teamkills_mode">
-          <div className="kf-top-group">
-            <span className="lab">TK</span>
-            <Segmented
-              options={SUICIDE_TK_MODES}
-              value={teamkillsMode ?? SUICIDE_TK_MODES[0]}
-              onChange={setTeamkillsMode}
-              label="Teamkills"
-              tip="Team kills: include, exclude, or capture only team-kill clips"
             />
           </div>
         </SettingControl>
