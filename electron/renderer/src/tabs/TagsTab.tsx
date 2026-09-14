@@ -28,7 +28,7 @@ import Segmented from "../components/Segmented";
 import { ICONS } from "../icons";
 import { pickPath, pickSavePath, runCommand } from "../bridge";
 import SettingControl from "../settings/SettingControl";
-import { useSetting } from "../settings/store";
+import { useAllSettings, useSetting } from "../settings/store";
 import CloseButton, { ChipPair } from "../components/CloseButton";
 import { useDatabase } from "../settings/useDatabase";
 import "./TagsTab.css";
@@ -76,6 +76,7 @@ interface PendingTagDelete {
 export default function TagsTab() {
   const { database, error: dbError, reload } = useDatabase();
   const tags = database?.tags ?? [];
+  const settings = useAllSettings();
 
   const [tagEnabled, setTagEnabled] = useSetting<boolean>("tag_enabled");
   const [, setDateFrom] = useSetting<string>("date_from");
@@ -225,7 +226,7 @@ export default function TagsTab() {
 
   async function searchByConfig() {
     try {
-      const result = await runCommand("tags_search", { tag_ids: activeTagIds, cfg: {} });
+      const result = await runCommand("tags_search", { tag_ids: activeTagIds, cfg: settings });
       const data = result.data as { demos: FoundDemo[] };
       setFoundDemos(data.demos ?? []);
       setSelectedPaths(new Set());

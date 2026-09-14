@@ -195,6 +195,28 @@ class TestTagsSearch(unittest.TestCase):
             demos = result["data"]["demos"]
             self.assertEqual([d["path"] for d in demos], [dp_tagged])
 
+    def test_config_search_reads_the_same_run_model_as_preview(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dp = _touch(tmp, "c.dem", datetime(2025, 4, 1))
+            host = _tagged_host()
+            seen = {}
+
+            def fake_query(cfg):
+                seen.update(cfg)
+                return {dp: [{"tick": 100, "type": "kill"}]}
+
+            # Exactly what the window holds with ROUNDS off: no legacy events.
+            cfg = {"steam_ids": ["1"], "event_actor": True, "event_target": False,
+                   "event_lethal": True, "events": [], "tickrate": 64,
+                   "before": 5, "after": 5, "kill_mod_logic_mods": "any"}
+            with mock.patch.object(host, "_query_events", side_effect=fake_query):
+                result = COMMANDS["tags_search"](
+                    host, {"id": "c8", "name": "tags_search", "tag_ids": [], "cfg": cfg})
+
+            self.assertEqual(len(result["data"]["demos"]), 1)
+            self.assertTrue(seen["_events_lethal"])
+            self.assertEqual(seen["kill_mod_logic_mods"], "mixed")
+
 
 class TestTagsCalcRange(unittest.TestCase):
     def test_registered_as_a_command(self):

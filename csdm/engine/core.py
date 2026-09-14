@@ -3638,17 +3638,22 @@ class EngineMixin:
         fixed = {k: DEFAULT_CONFIG[k] for k in self._FIXED_FILTER_LOGIC_KEYS}
         return {**cfg, **fixed, **self.derive_event_flags_v2(cfg)}
 
+    @staticmethod
+    def run_inputs_problem(cfg):
+        """Why `cfg` cannot run, preview or search, in the user's words; None when it can."""
+        if not cfg.get("steam_ids"):
+            return "Check at least one registered account."
+        if not (cfg.get("event_actor") or cfg.get("event_target") or (cfg.get("events") or [])):
+            # Rounds is independent of the perspective axis.
+            return "Select at least one perspective (Actor / Target) or enable Rounds."
+        return None
+
     def validate_run_inputs(self, cfg):
         """Check the preconditions run and preview share. False stops the caller."""
-        if not cfg.get("steam_ids"):
-            self.ask("error", "Check at least one registered account.", [])
+        problem = EngineMixin.run_inputs_problem(cfg)
+        if problem:
+            self.ask("error", problem, [])
             return False
-        if not (cfg.get("event_actor") or cfg.get("event_target")):
-            # Rounds is independent of the perspective axis;
-            # allow a config with only Rounds enabled.
-            if not (cfg.get("events") or []):
-                self.ask("error", "Select at least one perspective (Actor / Target) or enable Rounds.", [])
-                return False
         return True
 
     def start_run(self, cfg, selected_clips=None):
@@ -6233,10 +6238,12 @@ class EngineMixin:
             return {"demos": demos, "tag_names": tag_names}
 
         # cfg supplied: config-filtered search, optionally intersected with tag_ids.
-        if not cfg.get("steam_ids"):
-            raise ValueError("Select at least one player account.")
-        if not (cfg.get("events") or []):
-            raise ValueError("Select at least one event.")
+        # Read through the run model PREVIEW uses, or the search asks the database
+        # a different question than PREVIEW does (audit 2026-09-15, E17).
+        cfg = self.build_run_cfg(cfg)
+        problem = self.run_inputs_problem(cfg)
+        if problem:
+            raise ValueError(problem)
 
         ts = self._tags_schema
         jt = ts.get("junction_table")
@@ -6269,7 +6276,8 @@ class EngineMixin:
                 if not chk or chk not in tagged_checksums:
                     continue
             ne = len(evts[dp])
-            seqs = self._build_sequences(evts[dp], cfg["tickrate"], cfg["before"], cfg["after"])
+            seqs = self._build_sequences(evts[dp], cfg["tickrate"],
+                                         self._effective_before(cfg), cfg["after"])
             demos.append({"path": dp, "name": Path(dp).name, "n_events": ne, "n_seq": len(seqs)})
 
         return {"demos": demos, "tag_names": tag_names}
