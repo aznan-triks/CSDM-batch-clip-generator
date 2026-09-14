@@ -262,3 +262,35 @@ def test_half_step_leaves_a_config_with_no_layouts_alone():
     # the next time a layout is written, and their explicit 96 is untouched.
     assert cfg["ui_card_block_size"] == 96
     assert "ui_sections" not in cfg or cfg["ui_sections"] == DEFAULT_CONFIG["ui_sections"]
+
+
+# ── the old-format migration runs once, never on a config the app wrote ─────
+
+_UI_STATE = {"event_actor": True, "event_target": True, "event_lethal": True,
+             "event_ally": True, "event_enemy": True, "teamkills_mode": "exclude"}
+
+
+def test_rounds_toggled_by_the_app_does_not_rerun_the_old_migration():
+    cfg = _migrated({**_UI_STATE, "events": ["Rounds"]})
+    assert (cfg["event_actor"], cfg["event_target"], cfg["event_lethal"]) == (True, True, True)
+    assert (cfg["event_ally"], cfg["event_enemy"]) == (True, True)
+    assert cfg["events"] == ["Rounds"]
+
+
+def test_a_leftover_kills_entry_does_not_rerun_the_old_migration():
+    cfg = _migrated({**_UI_STATE, "events": ["Kills"]})
+    assert cfg["event_target"] is True
+    assert (cfg["event_ally"], cfg["event_enemy"]) == (True, True)
+
+
+def test_old_format_migration_is_idempotent():
+    once = _migrated({"events": ["Kills", "Deaths", "Rounds"], "teamkills_mode": "exclude"})
+    twice = _migrated(dict(once))
+    for key in ("event_actor", "event_target", "event_lethal",
+                "event_ally", "event_enemy", "events"):
+        assert twice[key] == once[key], key
+
+
+def test_old_format_migration_keeps_only_rounds_in_events():
+    assert _migrated({"events": ["Kills", "Deaths"]})["events"] == []
+    assert _migrated({"events": ["Kills", "Rounds"]})["events"] == ["Rounds"]

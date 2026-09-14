@@ -551,6 +551,12 @@ def load_asm_names():
 def save_asm_names(names):
     _save_json(str(_file_dir() / "csdm_asm_names.json"), names)
 
+# The 2-axis event keys. A saved config carrying ANY of them was written by the
+# 2-axis app and must never go through the flat-`events` migration again.
+_EVENT_AXIS_KEYS = ("event_actor", "event_target", "event_lethal", "event_non_lethal",
+                    "event_other", "event_ally", "event_enemy")
+
+
 def _migrate_config(saved: dict, cfg: dict) -> None:
     """Apply all backward-compatibility migrations from a saved config dict into cfg.
 
@@ -588,7 +594,10 @@ def _migrate_config(saved: dict, cfg: dict) -> None:
     # flat events list → 2-axis event model  (events-beyond-kill, Task 1)
     # Old configs stored `events: ["Kills", "Deaths", "Rounds"]`; derive the
     # new Actor/Target/team keys from it so old configs migrate transparently.
-    if "events" in saved and saved["events"]:
+    # Only a config with NONE of the 2-axis keys is old. The app still writes
+    # `events` for ROUNDS; replaying this on every load wiped the user's
+    # Actor/Target/Lethal/Ally/Enemy choices (audit 2026-09-15, E16).
+    if saved.get("events") and not any(k in saved for k in _EVENT_AXIS_KEYS):
         old_events = saved["events"] or []
         cfg["event_actor"] = "Kills" in old_events or "Deaths" in old_events
         cfg["event_target"] = "Deaths" in old_events
@@ -608,9 +617,8 @@ def _migrate_config(saved: dict, cfg: dict) -> None:
         elif old_tk_mode == "only":
             cfg["event_ally"] = True
             cfg["event_enemy"] = False
-        # "Rounds" is kept in events list temporarily for backward compat
-        if "Rounds" in old_events:
-            cfg["events"] = ["Rounds"]
+        # Only "Rounds" still means something in `events`.
+        cfg["events"] = ["Rounds"] if "Rounds" in old_events else []
 
     # Card grid halved to a 48px column  (3.3.0). Last, and after every key
     # rename above: it reads `ui_sections` and `ui_card_block_size` as they
