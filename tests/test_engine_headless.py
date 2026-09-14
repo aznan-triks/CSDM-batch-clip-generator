@@ -55,7 +55,6 @@ class TestHeadlessHost(unittest.TestCase):
         # Must not raise -- they warn through the log port when a column is absent.
         self.host._qe_match_type_sql({})
         self.host._qe_headshot_sql({})
-        self.host._qe_teamkill_sql({})
 
     def test_filter_helpers_run(self):
         events = [{"type": "kill", "tick": 1, "killer_sid": "7"}]

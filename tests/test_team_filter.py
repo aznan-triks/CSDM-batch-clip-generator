@@ -42,3 +42,9 @@ def test_a_requested_side_filter_without_team_columns_is_announced():
         {"_events_ally": True, "_events_enemy": False}, "k", [], table="kills")
     assert clause == ""
     assert any(level == "warn" and "Ally" in message for level, message in engine.logs)
+
+
+def test_the_engine_reads_no_teamkills_mode():
+    """Ally / Enemy is the only team model; the old key lives in config migration only."""
+    core = pathlib.Path(__file__).resolve().parent.parent / "csdm" / "engine" / "core.py"
+    assert "teamkills_mode" not in core.read_text(encoding="utf-8")

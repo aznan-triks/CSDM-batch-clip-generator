@@ -633,34 +633,10 @@ class EngineMixin:
             self.log("⚠ One Tap: headshot column not found — HS enforcement skipped.", "warn")
         return hc, hsql
 
-    def _qe_teamkill_sql(self, cfg):
-        """Teamkill include/exclude/only WHERE fragment.
-
-        DEPRECATED (events-beyond-kill, Task 5): superseded by
-        `_build_team_filter_sql`. The legacy `teamkills_mode` key is migrated
-        to the 2-axis `event_ally` / `event_enemy` keys in `_migrate_config`,
-        so this helper is no longer referenced by the query path. Kept for
-        backward compatibility with old callers/tests until they are removed.
-        """
-        _tkmode = cfg.get("teamkills_mode", "include")
-        include_teamkills = (_tkmode != "exclude")
-        teamkills_only    = (_tkmode == "only")
-        tkc_k = self._find_col("kills", ["killer_team_name", "killer_side", "killer_team"])
-        tkc_v = self._find_col("kills", ["victim_team_name", "victim_side", "victim_team"])
-        if teamkills_only:
-            if tkc_k and tkc_v:
-                return f' AND k."{tkc_k}" = k."{tkc_v}"'
-            self.log("⚠ Teamkills only: team columns not found — filter ignored.", "warn")
-        elif not include_teamkills:
-            if tkc_k and tkc_v:
-                return f' AND k."{tkc_k}" != k."{tkc_v}"'
-            self.log("⚠ Exclude teamkills: team columns not found — filter ignored.", "warn")
-        return ""
-
     def _build_team_filter_sql(self, cfg, table_alias, params_list, table="kills"):
         """Build SQL clause filtering by team relationship.
 
-        Replaces the legacy `teamkills_mode` handling. Reads the 2-axis
+        The one team model (the old three-way teamkill choice is migrated in config). Reads the 2-axis
         `_events_ally` / `_events_enemy` derived flags (falling back to the
         raw `event_ally` / `event_enemy` keys) and returns a WHERE fragment
         comparing the table's attacker/victim team-name columns.
@@ -3837,11 +3813,12 @@ class EngineMixin:
             self.log("🚫 Suicides excluded", "info")
         elif _sm == "only":
             self.log("💀 Suicides only", "info")
-        _tkm = cfg.get("teamkills_mode", "include")
-        if _tkm == "exclude":
-            self.log("🚫 Teamkills excluded", "info")
-        elif _tkm == "only":
-            self.log("⚔ Teamkills only", "info")
+        _ally = cfg.get("_events_ally", cfg.get("event_ally", False))
+        _enemy = cfg.get("_events_enemy", cfg.get("event_enemy", True))
+        if _ally and not _enemy:
+            self.log("⚔ Allies only", "info")
+        elif _enemy and not _ally:
+            self.log("🚫 Allies excluded", "info")
         if cfg.get("clutch_enabled"):
             _cmode = "Full clutch" if cfg.get("clutch_mode") == "full_clutch" else "Kills only"
             _csizes = [f"1v{n}" for n in range(1, 6) if cfg.get(f"clutch_1v{n}")]
