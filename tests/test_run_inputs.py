@@ -149,3 +149,14 @@ def test_start_preview_labels_the_stop_button_for_a_preview(monkeypatch):
     host.start_preview(dict(VALID))
     buttons = [p for n, p in host.states if n == "buttons"]
     assert buttons == [{"stop": True, "stop_label": "⏸ Stop Preview"}]
+
+
+def test_run_cfg_always_uses_the_fixed_filter_logic():
+    stale = {"kill_mod_logic_mods": "any", "kill_mod_logic_dp2": "all",
+             "kill_mod_logic_db": "any", "kill_mod_through_smoke": True,
+             "kill_mod_airborne": True}
+    built = Host().build_run_cfg(stale)
+    assert [built[k] for k in ("kill_mod_logic_mods", "kill_mod_logic_dp2",
+                               "kill_mod_logic_db")] == ["mixed", "mixed", "mixed"]
+    assert Host()._mods_dp2_global_any_union_enabled(built) is False
+    assert stale["kill_mod_logic_mods"] == "any", "the caller's dict must not be mutated"

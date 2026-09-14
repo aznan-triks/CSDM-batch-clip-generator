@@ -3624,13 +3624,19 @@ class EngineMixin:
             "events_rounds": "Rounds" in events,
         }
 
+    # The AND/OR selector left in v124: one fixed model is always used. A config
+    # or preset written before that still carries "any"/"all" and must not revive
+    # the branches that read it (audit 2026-09-15, E7).
+    _FIXED_FILTER_LOGIC_KEYS = ("kill_mod_logic_mods", "kill_mod_logic_dp2", "kill_mod_logic_db")
+
     def build_run_cfg(self, cfg):
         """Return `cfg` plus the derived event flags, ready for run or preview.
 
         A copy, never the caller's dict: the window reuses the one it
         collected, and a run must not leave marks on it.
         """
-        return {**cfg, **self.derive_event_flags_v2(cfg)}
+        fixed = {k: DEFAULT_CONFIG[k] for k in self._FIXED_FILTER_LOGIC_KEYS}
+        return {**cfg, **fixed, **self.derive_event_flags_v2(cfg)}
 
     def validate_run_inputs(self, cfg):
         """Check the preconditions run and preview share. False stops the caller."""
