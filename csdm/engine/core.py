@@ -53,7 +53,7 @@ from csdm.core_utils import (
 
 # Tables probed when reading the CSDM schema, in probe order.
 DISCOVERY_TABLES = ("kills", "matches", "demos", "rounds", "players", "tags",
-                    "checksum_tags", "match_tags")
+                    "checksum_tags", "match_tags", "damages", "shots")
 # SQL types that can carry a match date.
 DISCOVERY_DATE_TYPES = frozenset({
     "date", "timestamp", "timestamp with time zone", "timestamp without time zone",
