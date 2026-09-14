@@ -105,8 +105,8 @@ def test_new_format_preserved_no_migration():
     assert cfg["event_target"] is False
     assert cfg["event_enemy"] is True
     assert cfg["event_ally"] is True
-    # no `events` key should have been synthesized
-    assert "events" not in cfg
+    # nothing should have been synthesized into `events`
+    assert cfg["events"] == []
 
 
 def test_new_format_overrides_not_clobbered_by_defaults():

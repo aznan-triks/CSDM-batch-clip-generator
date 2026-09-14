@@ -1,5 +1,6 @@
 """Preset category logic, extracted from the window so a pipe can call it."""
-from csdm.config import build_preset, normalize_presets, preset_keys_for, preset_payload
+from csdm.config import (DEFAULT_CONFIG, build_preset, normalize_presets, preset_keys_for,
+                         preset_payload)
 
 
 def test_full_means_every_key_not_a_key_list():
@@ -52,7 +53,8 @@ def test_build_preset_omits_selected_clips_when_absent():
 def test_preset_payload_reads_the_new_format():
     data, keys, _ = preset_payload({"cats": ["date"], "data": {"date_from": "x"}})
     assert data == {"date_from": "x"}
-    assert keys == ["date_from", "date_to"]
+    # `date_to` was not stored, so loading must not overwrite it with nothing.
+    assert keys == ["date_from"]
 
 
 def test_preset_payload_returns_none_for_selected_clips_when_absent():
@@ -103,3 +105,33 @@ def test_normalize_presets_keeps_selected_clips_when_present():
     assert "selected_clips" not in normalize_presets(
         {"p": {"cats": ["capture"], "data": {}}}
     )["p"]
+
+
+def test_selection_and_rounds_are_real_settings():
+    assert DEFAULT_CONFIG["steam_ids"] == []
+    assert DEFAULT_CONFIG["events"] == []
+
+
+def test_the_players_category_carries_the_whole_selection():
+    cfg = {"steam_id": "1", "steam_ids": ["1", "2"], "player_name": "a"}
+    data, keys, _ = preset_payload(build_preset(cfg, ["players"]))
+    assert data["steam_ids"] == ["1", "2"]
+    assert "steam_ids" in keys
+
+
+def test_the_filters_category_carries_rounds():
+    data, keys, _ = preset_payload(build_preset({"events": ["Rounds"]}, ["filters"]))
+    assert data["events"] == ["Rounds"]
+    assert "events" in keys
+
+
+def test_an_old_players_preset_still_selects_its_player():
+    data, keys, _ = preset_payload(
+        {"cats": ["players"], "data": {"steam_id": "7", "player_name": "x"}})
+    assert data["steam_ids"] == ["7"]
+    assert "steam_ids" in keys
+
+
+def test_a_preset_never_overwrites_a_key_it_did_not_store():
+    _, keys, _ = preset_payload({"cats": ["filters"], "data": {"event_actor": True}})
+    assert keys == ["event_actor"]

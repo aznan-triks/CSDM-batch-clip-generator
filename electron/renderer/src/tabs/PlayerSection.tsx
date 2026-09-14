@@ -343,46 +343,48 @@ export default function PlayerSection() {
         <p className="capture-hint">Waiting for DB…</p>
       ) : (
         <SettingControl settingKey="steam_id">
-          <div className="ps-list">
-            {visible.length === 0 && <p className="capture-hint">No player matches.</p>}
-            {visible.map((row) => {
-              const [label, steamId] = row;
-              const name = row[2];
-              const isActive = active.includes(steamId);
-              const isRegistered = savedPlayers.some((p) => p.steam_id === steamId);
-              return (
-                // A div, not a button: the row carries its own register ★
-                // button, and HTML forbids a button inside a button. The row's
-                // checkbox role keeps the active-toggle semantics intact; the
-                // ★ is a sibling that stopPropagation's away from it.
-                <div
-                  key={steamId}
-                  role="checkbox"
-                  aria-checked={isActive}
-                  className={isActive ? "ps-row ps-row-active" : "ps-row"}
-                  data-action="N10"
-                  onClick={() => toggle(steamId)}
-                >
-                  <span className="ps-dot" aria-hidden="true" />
-                  <span className="ps-label">{label}</span>
-                  <button
-                    type="button"
-                    className="ps-star"
-                    aria-label={isRegistered ? "Remove from accounts" : "Add to accounts"}
-                    aria-pressed={isRegistered}
-                    title="Save this player to your Registered Accounts for quick access later"
-                    data-action="N11"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleRegister(steamId, name);
-                    }}
+          <SettingControl settingKey="steam_ids">
+            <div className="ps-list">
+              {visible.length === 0 && <p className="capture-hint">No player matches.</p>}
+              {visible.map((row) => {
+                const [label, steamId] = row;
+                const name = row[2];
+                const isActive = active.includes(steamId);
+                const isRegistered = savedPlayers.some((p) => p.steam_id === steamId);
+                return (
+                  // A div, not a button: the row carries its own register ★
+                  // button, and HTML forbids a button inside a button. The row's
+                  // checkbox role keeps the active-toggle semantics intact; the
+                  // ★ is a sibling that stopPropagation's away from it.
+                  <div
+                    key={steamId}
+                    role="checkbox"
+                    aria-checked={isActive}
+                    className={isActive ? "ps-row ps-row-active" : "ps-row"}
+                    data-action="N10"
+                    onClick={() => toggle(steamId)}
                   >
-                    {isRegistered ? "★" : "☆"}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                    <span className="ps-dot" aria-hidden="true" />
+                    <span className="ps-label">{label}</span>
+                    <button
+                      type="button"
+                      className="ps-star"
+                      aria-label={isRegistered ? "Remove from accounts" : "Add to accounts"}
+                      aria-pressed={isRegistered}
+                      title="Save this player to your Registered Accounts for quick access later"
+                      data-action="N11"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleRegister(steamId, name);
+                      }}
+                    >
+                      {isRegistered ? "★" : "☆"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </SettingControl>
         </SettingControl>
       )}
     </div>

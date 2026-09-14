@@ -119,6 +119,7 @@ DEFAULT_CONFIG = {
     "ui_font_family": "auto", # "auto" = first available of UI_FONT_STACK; or a forced name (e.g. "JetBrains Mono")
     "steam_id": "", "player_name": "", "player_name_override": "",
     "saved_players": [],
+    "steam_ids": [],          # every active player; steam_id mirrors the first one
     # Event model (2-axis: Actor/Target × Lethal/Non-lethal/Other)
     "event_actor": True,      # Actor perspective — I am the one acting
     "event_target": False,    # Target perspective — I am the one acted upon
@@ -127,6 +128,7 @@ DEFAULT_CONFIG = {
     "event_enemy": True,      # Include enemy-on-me / me-on-enemy events
     "event_non_lethal": False,  # Include non-lethal damage events
     "event_other": False,     # Include "other" events (shots, jumps, grenade misses)
+    "events": [],             # ["Rounds"] when full-round clips are on (legacy list name)
     # Derived booleans (set by build_run_cfg, NOT stored):
     #   events_lethal, events_non_lethal, events_other
     "weapons": [],
@@ -244,10 +246,10 @@ PRESET_CATEGORIES = {
 PRESET_KEYS = {
     "full":        None,
     # ── Capture group ──────────────────────────────────────────────────────────
-    "players":     ["steam_id", "player_name", "player_name_override"],
+    "players":     ["steam_id", "steam_ids", "player_name", "player_name_override"],
     "date":        ["date_from", "date_to"],
     "filters":     ["event_actor", "event_target", "event_lethal", "event_ally", "event_enemy",
-                    "event_non_lethal", "event_other",
+                    "event_non_lethal", "event_other", "events",
                     "weapons", "perspective", "victim_pre_s",
                     "headshots_mode", "suicides_mode", "teamkills_mode",
                     "kill_mod_logic_mods", "kill_mod_logic_dp2", "kill_mod_logic_db",
@@ -274,8 +276,8 @@ PRESET_KEYS = {
     "timing":      ["before", "after", "close_game_after",
                     "retry_count", "retry_delay", "delay_between_demos", "recording_timeout"],
     # ── Backward-compat aliases (old format → new granular keys) ───────────────
-    "player":      ["steam_id", "player_name", "event_actor", "event_target",
-                    "event_lethal", "event_ally", "event_enemy", "event_non_lethal", "event_other",
+    "player":      ["steam_id", "steam_ids", "player_name", "event_actor", "event_target",
+                    "event_lethal", "event_ally", "event_enemy", "event_non_lethal", "event_other", "events",
                     "weapons", "date_from", "date_to",
                     "perspective", "victim_pre_s", "headshots_mode", "suicides_mode",
                     "teamkills_mode", "kill_mod_logic_mods", "kill_mod_logic_dp2",
@@ -510,15 +512,21 @@ def preset_payload(preset):
     """Return `(data, keys, selected_clips)` for a stored preset.
 
     `keys` is None for a full preset, which is exactly what
-    `_apply_config(cfg, keys=None)` expects.
+    `_apply_config(cfg, keys=None)` expects. Otherwise it lists only the keys
+    the preset really stored: a category that gained a key after the preset
+    was saved must not overwrite the user's current value with nothing.
+    A preset saved before `steam_ids` existed gets it from its `steam_id`,
+    or loading it would change the name and not the player (audit E8).
     `selected_clips` is None when the preset has no clip selection
     (saved before editing support, or intentionally omitted).
     """
-    return (
-        preset.get("data", {}),
-        preset_keys_for(preset_cats(preset)),
-        preset.get("selected_clips"),
-    )
+    data = dict(preset.get("data", {}))
+    if "steam_id" in data and "steam_ids" not in data:
+        data["steam_ids"] = [data["steam_id"]] if data["steam_id"] else []
+    keys = preset_keys_for(preset_cats(preset))
+    if keys is not None:
+        keys = [k for k in keys if k in data]
+    return data, keys, preset.get("selected_clips")
 
 
 def normalize_presets(presets):
