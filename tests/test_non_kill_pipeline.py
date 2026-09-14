@@ -66,3 +66,21 @@ def test_preparse_with_non_lethal_events_returns_quietly_without_demo_files():
     host._preparse_dp2({"_events_non_lethal": True, "kill_mod_no_scope": True},
                        ["does-not-exist.dem"])
     assert not any(level == "err" for level, _ in host.logs)
+
+
+def test_a_preview_cancelled_during_the_filters_emits_no_result():
+    host = _Host()
+    host._previewing = True
+    host._query_events = lambda cfg: {"d.dem": [{"tick": 10, "type": "kill"}]}
+    host._preparse_dp2 = lambda cfg, paths: None
+
+    def filters_while_the_user_clicks_stop(evts, cfg):
+        host.cancel_preview()
+        return evts
+
+    host._apply_dp2_filters_to_events = filters_while_the_user_clicks_stop
+    host._apply_global_filter_gate_dict = lambda evts, cfg: evts
+    host._effective_before = lambda cfg: 1
+    host._build_sequences = lambda events, tickrate, before, after: []
+    host._preview_worker({"tickrate": 64, "after": 1})
+    assert "preview_ready" not in host.states

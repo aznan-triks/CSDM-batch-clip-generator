@@ -3554,6 +3554,8 @@ class EngineMixin:
                         events, cfg["tickrate"],
                         self._effective_before(cfg), cfg["after"])
             t_seq = time.time() - t0
+            if self._preview_cancel.is_set():
+                return
             timings = {
                 "query":    t_query,
                 "preparse": t_preparse,
