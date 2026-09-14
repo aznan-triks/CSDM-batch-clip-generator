@@ -2990,7 +2990,7 @@ class EngineMixin:
         # (airborne, no-scope) is active. Keeps the DP2 pre-parse lean otherwise.
         if (cfg.get("_events_non_lethal") or cfg.get("_events_other")):
             for f in KILL_FILTER_REGISTRY:
-                if self._modifier_needs_positions(f.key) and (
+                if EngineMixin._modifier_needs_positions(f.key) and (
                     cfg.get(f.key) or cfg.get(f"{f.key}_exclude")):
                     sections.add("positions")
                     break
