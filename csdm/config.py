@@ -523,6 +523,9 @@ def preset_payload(preset):
     data = dict(preset.get("data", {}))
     if "steam_id" in data and "steam_ids" not in data:
         data["steam_ids"] = [data["steam_id"]] if data["steam_id"] else []
+    if ("event_ally" not in data and "event_enemy" not in data
+            and data.get("teamkills_mode") in TEAMKILLS_MODE_SIDES):
+        data["event_ally"], data["event_enemy"] = TEAMKILLS_MODE_SIDES[data["teamkills_mode"]]
     keys = preset_keys_for(preset_cats(preset))
     if keys is not None:
         keys = [k for k in keys if k in data]
@@ -558,6 +561,10 @@ def load_asm_names():
 
 def save_asm_names(names):
     _save_json(str(_file_dir() / "csdm_asm_names.json"), names)
+
+# The old three-way teamkill choice as (event_ally, event_enemy). One table for
+# the config migration and the preset loader, so both decide the same way.
+TEAMKILLS_MODE_SIDES = {"include": (True, True), "exclude": (False, True), "only": (True, False)}
 
 # The 2-axis event keys. A saved config carrying ANY of them was written by the
 # 2-axis app and must never go through the flat-`events` migration again.
@@ -616,15 +623,8 @@ def _migrate_config(saved: dict, cfg: dict) -> None:
         #   "exclude" → ally=False, enemy=True  (only enemy passes)
         #   "only"    → ally=True,  enemy=False (only ally passes)
         old_tk_mode = saved.pop("teamkills_mode", "include")
-        if old_tk_mode == "include":
-            cfg["event_ally"] = True
-            cfg["event_enemy"] = True
-        elif old_tk_mode == "exclude":
-            cfg["event_ally"] = False
-            cfg["event_enemy"] = True
-        elif old_tk_mode == "only":
-            cfg["event_ally"] = True
-            cfg["event_enemy"] = False
+        if old_tk_mode in TEAMKILLS_MODE_SIDES:
+            cfg["event_ally"], cfg["event_enemy"] = TEAMKILLS_MODE_SIDES[old_tk_mode]
         # Only "Rounds" still means something in `events`.
         cfg["events"] = ["Rounds"] if "Rounds" in old_events else []
 

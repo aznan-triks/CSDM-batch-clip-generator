@@ -57,6 +57,12 @@ def test_preset_payload_reads_the_new_format():
     assert keys == ["date_from"]
 
 
+def test_an_old_filters_preset_keeps_its_teamkill_choice_as_sides():
+    data, keys, _ = preset_payload({"cats": ["filters"], "data": {"teamkills_mode": "only"}})
+    assert (data["event_ally"], data["event_enemy"]) == (True, False)
+    assert "event_ally" in keys and "event_enemy" in keys
+
+
 def test_preset_payload_returns_none_for_selected_clips_when_absent():
     _, _, sc = preset_payload({"cats": ["date"], "data": {"date_from": "x"}})
     assert sc is None
