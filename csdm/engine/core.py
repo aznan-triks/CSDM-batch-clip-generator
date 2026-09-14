@@ -684,10 +684,13 @@ class EngineMixin:
         if not ally and not enemy:
             return " AND 1=0", False  # exclude all
 
-        at_col = self._find_col(table, ["attacker_team_name", "attacker_team"])
+        # `kills` names the acting side `killer_*`, `damages` names it `attacker_*`.
+        at_col = self._find_col(table, ["attacker_team_name", "killer_team_name",
+                                        "attacker_team", "killer_team"])
         vt_col = self._find_col(table, ["victim_team_name", "victim_team"])
         if not at_col or not vt_col:
-            return "", False  # can't filter without team columns
+            self.log(f"⚠ Ally / Enemy filter ignored: no team columns in {table}.", "warn")
+            return "", False
 
         if ally and not enemy:
             return f' AND {table_alias}."{at_col}" = {table_alias}."{vt_col}"', True
