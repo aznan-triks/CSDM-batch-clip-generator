@@ -20,6 +20,75 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.11 — 2026-09-15
+
+Non-lethal damage and "other" events work end to end, settings survive a restart, and the team
+filter finally applies to kills.
+
+### Fixed
+
+- **Previews and runs with "Non-lethal" or "Other" ticked no longer crash.**
+  *Technique* — `csdm/engine/core.py::_dp2_required_sections` is a `@staticmethod` but called
+  `self._modifier_needs_positions`, so every pre-parse with `_events_non_lethal` or
+  `_events_other` raised `NameError` (preview and run alike). It now uses the class-level call the
+  file already uses elsewhere; `tests/test_non_kill_pipeline.py` forbids any static method that
+  reaches for `self` across `csdm/`.
+
+- **"Non-lethal" finds damage and "Other" finds shots.** On a reference week: 62 damage events,
+  554 shots — previously zero.
+  *Technique* — `DISCOVERY_TABLES` never read `damages` or `shots`, and `_query_damages` /
+  `_query_shots` return silently when their table is missing from the schema. The older tests
+  injected a schema that already listed both tables. A new test checks that every table the
+  engine queries is discovered.
+
+- **Stopping a preview late really stops it.**
+  *Technique* — `_preview_worker` checked the cancel flag only after the query and the demo
+  pre-parse; a STOP during filtering or sequence building still emitted `preview_ready`. The flag
+  is now checked before the result is sent.
+
+- **Your Actor / Target / Lethal / Ally / Enemy choices are kept when the app restarts.**
+  Turning ROUNDS on used to untick Actor and Lethal at the next launch.
+  *Technique* — `csdm/config.py::_migrate_config` re-ran the old flat-`events` migration on every
+  load, because the app still writes `events` for ROUNDS. It now runs only for a config carrying
+  none of the 2-axis keys, and leaves only `"Rounds"` in `events`.
+
+- **Presets remember the selected players and ROUNDS.** Loading a "players" preset now changes
+  the player that is actually captured, and a preset never blanks a setting it did not save.
+  *Technique* — `steam_ids` and `events` join `DEFAULT_CONFIG` (so the coverage guard sees them)
+  and the `players` / `filters` preset categories; `preset_payload` only returns keys the preset
+  stored, and derives `steam_ids` from `steam_id` for presets saved before it existed.
+
+- **Tags › "search with filters" finds the demos a preview would.**
+  *Technique* — `TagsTab.tsx::searchByConfig` sent an empty `cfg`, and
+  `search_tagged_demos` read the pre-2-axis `events` list without `build_run_cfg`. It now sends the
+  window's settings and validates them with the same rule as RUN and PREVIEW
+  (`EngineMixin.run_inputs_problem`).
+
+- **"Ally only" and "Enemy only" now filter kills, not just damage.**
+  *Technique* — `_build_team_filter_sql` looked for `attacker_team_name` on `kills`, whose columns
+  are `killer_team_name`; the clause was silently empty. Missing team columns are now reported in
+  the console.
+
+- **The classic (Tkinter) window's Kills / Deaths / TK choices reach the engine again.**
+  *Technique* — the window still shows the flat Kills/Deaths/Rounds + TK model, but its
+  `_collect_config` never set the 2-axis keys the engine reads, so Deaths never enabled the target
+  perspective and, once the team filter applied to kills, teamkills would always have been
+  excluded. `csdm/config.py::legacy_event_axes` is now the one translation, shared by the config
+  migration and the window.
+
+- **Old filter-logic values in a config or preset can no longer change results.**
+  *Technique* — `build_run_cfg` always applies the fixed filter model (`mixed`) chosen when the
+  AND/OR selector was removed.
+
+### Removed
+
+- **The "TK" choice in Kill Filters.** Ally / Enemy in the event type card already covers
+  include, exclude and teamkills only, and TK had not affected results since the 2-axis model.
+  *Technique* — `KillFiltersSection.tsx` no longer mounts `teamkills_mode` (kept in
+  `DEFAULT_CONFIG` for config migration and the Tkinter window, justified in
+  `coverage-ledger.ts`); the dead `_qe_teamkill_sql` is gone, and old configs and presets map TK
+  through one table, `TEAMKILLS_MODE_SIDES`.
+
 ## 3.2.10 — 2026-09-02
 
 ### Fixed
