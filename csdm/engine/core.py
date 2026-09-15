@@ -636,7 +636,8 @@ class EngineMixin:
     def _build_team_filter_sql(self, cfg, table_alias, params_list, table="kills"):
         """Build SQL clause filtering by team relationship.
 
-        The one team model (the old three-way teamkill choice is migrated in config). Reads the 2-axis
+        Ally / Enemy is the only team filter; the old three-way teamkill choice is
+        translated in config. Reads the 2-axis
         `_events_ally` / `_events_enemy` derived flags (falling back to the
         raw `event_ally` / `event_enemy` keys) and returns a WHERE fragment
         comparing the table's attacker/victim team-name columns.
@@ -3819,6 +3820,8 @@ class EngineMixin:
             self.log("⚔ Allies only", "info")
         elif _enemy and not _ally:
             self.log("🚫 Allies excluded", "info")
+        elif not _ally and not _enemy:
+            self.log("⚠ Neither allies nor enemies ticked: no kill or damage can match.", "warn")
         if cfg.get("clutch_enabled"):
             _cmode = "Full clutch" if cfg.get("clutch_mode") == "full_clutch" else "Kills only"
             _csizes = [f"1v{n}" for n in range(1, 6) if cfg.get(f"clutch_1v{n}")]

@@ -345,6 +345,7 @@ export default function PlayerSection() {
         <p className="capture-hint">Waiting for DB…</p>
       ) : (
         <SettingControl settingKey="steam_id">
+          {/* One list, two keys: a row click writes steam_ids (every active player) and steam_id (the first). Both markers let the coverage guard see them reach the screen. */}
           <SettingControl settingKey="steam_ids">
             <div className="ps-list">
               {visible.length === 0 && <p className="capture-hint">No player matches.</p>}
