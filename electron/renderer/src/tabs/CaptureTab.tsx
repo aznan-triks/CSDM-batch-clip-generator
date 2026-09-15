@@ -161,6 +161,7 @@ export default function CaptureTab() {
                 onChange={setPerspective}
                 label="Perspective"
                 tip="Whose camera to record: the killer, the victim, or both with a camera switch"
+                optionActions={Object.fromEntries(PERSPECTIVES.map((p) => [p, "L5"]))}
               />
             </div>
           </SettingControl>

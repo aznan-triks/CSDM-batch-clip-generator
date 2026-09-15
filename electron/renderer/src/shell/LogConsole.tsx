@@ -360,7 +360,7 @@ export default function LogConsole() {
               aria-haspopup="menu"
               aria-expanded={exportMenuOpen}
               title="Download the full console log as an HTML file"
-              data-action="K1"
+              data-action="J14"
               onClick={() => setExportMenuOpen((previous) => !previous)}
             >
               Export ▾
@@ -370,7 +370,6 @@ export default function LogConsole() {
                 <button
                   type="button"
                   role="menuitem"
-                  data-action="K2"
                   onClick={() => {
                     exportLinesAsHtml(lines);
                     setExportMenuOpen(false);
@@ -381,7 +380,6 @@ export default function LogConsole() {
                 <button
                   type="button"
                   role="menuitem"
-                  data-action="K3"
                   disabled={!tracing}
                   title={tracing
                     ? "Download the recorded command/answer timeline"
@@ -416,7 +414,7 @@ export default function LogConsole() {
               OK
             </button>
           ) : (
-            <button type="button" data-action="P9" onClick={() => answer(null)}>
+            <button type="button" data-action="P6" onClick={() => answer(null)}>
               Cancel
             </button>
           )}

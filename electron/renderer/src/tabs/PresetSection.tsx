@@ -182,7 +182,11 @@ export default function PresetSection({
           SAVE
         </button>
         {error && <span className="preset-message preset-message-error">{error}</span>}
-        {!error && status && <span className="preset-message preset-message-ok">{status}</span>}
+        {!error && status && (
+          <span className="preset-message preset-message-ok" data-action="P10">
+            {status}
+          </span>
+        )}
       </div>
 
       <ul className="preset-list">

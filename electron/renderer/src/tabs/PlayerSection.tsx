@@ -195,7 +195,7 @@ export default function PlayerSection() {
             <span className="lab">★ Registered Accounts</span>
             <span className="lab ps-count">{savedPlayers.length} registered</span>
           </div>
-          <div className="ps-registered-chips">
+          <div className="ps-registered-chips" data-action="N11">
             {savedPlayers.length === 0 && (
               <span className="ps-registered-empty">
                 None. Select a player below and click ★ to register.
@@ -246,6 +246,7 @@ export default function PlayerSection() {
                 <CloseButton
                   label={`Unregister ${p.name}`}
                   title="Remove this player from your registered accounts (does not deselect them)"
+                  dataAction="N12"
                   onClick={() => removeSaved(p.steam_id)}
                 />
                 </ChipPair>
@@ -290,7 +291,7 @@ export default function PlayerSection() {
         </div>
       </SettingControl>
 
-      <div className="row">
+      <div className="row" data-action="N1">
         <Field
           id="player-search"
           value={search}
@@ -311,6 +312,7 @@ export default function PlayerSection() {
               setSortBy(next as Order);
               setPage(0);
             }}
+            optionActions={{ name: "N3", recent: "N4" }}
           />
           <span className="lab ps-count">
             {matching.length} player{matching.length === 1 ? "" : "s"}
@@ -361,7 +363,7 @@ export default function PlayerSection() {
                     role="checkbox"
                     aria-checked={isActive}
                     className={isActive ? "ps-row ps-row-active" : "ps-row"}
-                    data-action="N10"
+                    data-action="N13"
                     onClick={() => toggle(steamId)}
                   >
                     <span className="ps-dot" aria-hidden="true" />
@@ -372,7 +374,7 @@ export default function PlayerSection() {
                       aria-label={isRegistered ? "Remove from accounts" : "Add to accounts"}
                       aria-pressed={isRegistered}
                       title="Save this player to your Registered Accounts for quick access later"
-                      data-action="N11"
+                      data-action="N10"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleRegister(steamId, name);

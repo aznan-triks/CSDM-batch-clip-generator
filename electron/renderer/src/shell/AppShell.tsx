@@ -283,6 +283,7 @@ export default function AppShell() {
             aria-orientation="vertical"
             aria-label="Resize console"
             title="Drag to resize the workspace and console panes"
+            data-action="O2"
             onMouseDown={startSplitDrag}
           />
           <LogConsole />

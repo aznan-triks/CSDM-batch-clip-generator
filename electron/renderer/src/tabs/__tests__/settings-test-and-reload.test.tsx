@@ -91,7 +91,7 @@ describe("Test & Reload", () => {
     await waitFor(() => expect(connectCalls()).toBeGreaterThanOrEqual(1));
     const beforeClick = connectCalls();
 
-    const button = container.querySelector('[data-action="M10"]') as HTMLElement;
+    const button = container.querySelector('[data-action="B1"]') as HTMLElement;
     expect(button).not.toBeNull();
     await act(async () => {
       fireEvent.click(button);
@@ -105,7 +105,7 @@ describe("Test & Reload", () => {
 
   it("still says what happened", async () => {
     const { container } = renderTab();
-    const button = container.querySelector('[data-action="M10"]') as HTMLElement;
+    const button = container.querySelector('[data-action="B1"]') as HTMLElement;
     await act(async () => {
       fireEvent.click(button);
     });
@@ -123,7 +123,7 @@ describe("Test & Reload", () => {
     // replace a usable list with an error for no reason.
     engineAccepts = false;
 
-    const button = container.querySelector('[data-action="M10"]') as HTMLElement;
+    const button = container.querySelector('[data-action="B1"]') as HTMLElement;
     await act(async () => {
       fireEvent.click(button);
     });

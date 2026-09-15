@@ -167,7 +167,7 @@ export default function DemoSelectionSection() {
         </SettingControl>
         <SettingControl settingKey="date_to">
           <div className="ds-date-to">
-            <DateField id="date-to" label="To" value={dateTo ?? ""} onChange={setDateTo} />
+            <DateField id="date-to" label="To" value={dateTo ?? ""} onChange={setDateTo} dataAction="F2" />
             <button type="button" className="chip" data-action="F5" onClick={setToday}>
               Today
             </button>

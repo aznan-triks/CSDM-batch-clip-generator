@@ -61,7 +61,7 @@ export default function HlaeOptionsSection() {
       </SettingControl>
 
       <SettingControl settingKey="hlae_slow_motion">
-        <div className="row">
+        <div className="row" data-action="L8">
           <Field
             id="hlae-game-speed"
             label="Game Speed (%)"

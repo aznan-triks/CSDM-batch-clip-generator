@@ -150,7 +150,7 @@ export default function ActionBar({
   }
 
   return (
-    <div className="actbar">
+    <div className="actbar" data-action="P1">
       {weapon}
       <span className="action-bar-btn" ref={registerButton("preview")}>
         <ActionButton

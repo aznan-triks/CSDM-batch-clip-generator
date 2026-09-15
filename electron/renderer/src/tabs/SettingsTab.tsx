@@ -315,7 +315,7 @@ export default function SettingsTab() {
             <button
               type="button"
               className="chip"
-              data-action="M10"
+              data-action="B1"
               title="Tests the PostgreSQL connection and reloads players/tables from the database"
               onClick={testAndReload}
             >
@@ -508,6 +508,7 @@ export default function SettingsTab() {
                       aria-checked={selected}
                       className={selected ? "settings-swatch settings-swatch-selected" : "settings-swatch"}
                       style={{ backgroundColor: preset.hex }}
+                      data-action="M2"
                       onClick={() => chooseAccent(preset.hex)}
                     >
                       <span className="settings-swatch-label">{preset.name}</span>
@@ -519,6 +520,7 @@ export default function SettingsTab() {
                   <input
                     type="color"
                     value={currentAccent}
+                    data-action="M3"
                     onChange={(event) => chooseAccent(event.target.value)}
                   />
                 </label>
@@ -534,6 +536,7 @@ export default function SettingsTab() {
                 onChange={chooseGround}
                 label="Ground"
                 tip="Dark variants: amoled = pure black (OLED), deepblue = blue-tinted, terminal = green-on-black"
+                optionActions={Object.fromEntries(GROUND_OPTIONS.map((g) => [g, "M1"]))}
               />
             </div>
           </SettingControl>
@@ -605,7 +608,6 @@ export default function SettingsTab() {
             <button
               type="button"
               className="chip"
-              data-action="M8"
               title="Resets every tab's card positions to the default arrangement -- does not affect window size"
               onClick={resetCardLayout}
             >
@@ -628,15 +630,19 @@ export default function SettingsTab() {
       element: (
         <Card title="Performance" icon={<ICONS.performance />}>
           <SettingControl settingKey="dp2_threads">
-            <Slider
-              id="dp2-threads"
-              label="DP2 parse threads"
-              min={1}
-              max={8}
-              value={asNumber(dp2Threads, 4)}
-              onChange={setDp2Threads}
-              readout={String(asNumber(dp2Threads, 4))}
-            />
+            {/* Marker only, same "display: contents" rule SettingControl
+                itself uses: Slider does not forward a data-action. */}
+            <div data-action="M11" style={{ display: "contents" }}>
+              <Slider
+                id="dp2-threads"
+                label="DP2 parse threads"
+                min={1}
+                max={8}
+                value={asNumber(dp2Threads, 4)}
+                onChange={setDp2Threads}
+                readout={String(asNumber(dp2Threads, 4))}
+              />
+            </div>
           </SettingControl>
           <p className="settings-hint">
             Number of parallel threads used to pre-parse demo files with demoparser2 (TROIS SHOT /

@@ -90,11 +90,11 @@ export default function WeaponBand({
   return (
     <div className="wband" ref={bandRef}>
       <div className="band-meta">
-        <div className="band-status">{status}</div>
+        <div className="band-status" data-action="P2">{status}</div>
         <div className="band-progress">
           <i style={{ width: `${Math.round(Math.max(0, Math.min(1, progress ?? 0)) * 100)}%` }} />
         </div>
-        <div className="band-counter">{counter}</div>
+        <div className="band-counter" data-action="P3">{counter}</div>
         {/* User feedback 2026-08-01: Demos/Clips/Total/Avg-per-clip used to sit
             in their own card at the bottom of the Capture tab only -- gone the
             moment another tab was open. The band is mounted for the app's

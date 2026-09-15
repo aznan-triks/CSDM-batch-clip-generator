@@ -9,6 +9,8 @@ interface DateFieldProps {
   /** `dd-mm-yyyy`, or `""` for "no bound". Never a Date -- the config key IS this string. */
   value: string;
   onChange: (value: string) => void;
+  /** The inventory code for the calendar button. Two call sites, two different actions (F1/F2). */
+  dataAction?: string;
 }
 
 /** `dd-mm-yyyy` -> `yyyy-mm-dd` (what `<input type="date">` wants), or `""` if unparsable. */
@@ -35,7 +37,7 @@ function fromIso(iso: string): string {
  * dark` on the hidden input is the equivalent fix here -- the one lever CSS
  * has over a browser-native popup that no token can reach into.
  */
-export default function DateField({ id, label, value, onChange }: DateFieldProps) {
+export default function DateField({ id, label, value, onChange, dataAction = "F1" }: DateFieldProps) {
   const pickerRef = useRef<HTMLInputElement>(null);
 
   function openCalendar() {
@@ -69,7 +71,7 @@ export default function DateField({ id, label, value, onChange }: DateFieldProps
           className="chip"
           aria-label="Open calendar"
           title="Open a calendar to pick this date"
-          data-action="F1" onClick={openCalendar}
+          data-action={dataAction} onClick={openCalendar}
         >
           📅
         </button>

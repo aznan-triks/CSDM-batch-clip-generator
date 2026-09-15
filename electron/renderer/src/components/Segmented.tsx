@@ -16,6 +16,8 @@ interface SegmentedProps {
   disabled?: boolean;
   /** Hover explanation for the whole control (not per-option). */
   tip?: string;
+  /** The inventory code for each option, when one exists. option value -> id. */
+  optionActions?: Record<string, string>;
 }
 
 /**
@@ -27,7 +29,7 @@ interface SegmentedProps {
  * the screen reader keep working, and the mock's segment styling is not
  * copied out to reach a different element.
  */
-export default function Segmented({ options, value, onChange, label, disabled, tip }: SegmentedProps) {
+export default function Segmented({ options, value, onChange, label, disabled, tip, optionActions }: SegmentedProps) {
   return (
     <div className="seg" role="radiogroup" aria-label={label} title={tip}>
       {options.map((option) => {
@@ -39,6 +41,7 @@ export default function Segmented({ options, value, onChange, label, disabled, t
             role="radio"
             aria-checked={checked}
             aria-disabled={!!disabled}
+            data-action={optionActions?.[option]}
             onClick={() => {
               if (!disabled) onChange(option);
             }}

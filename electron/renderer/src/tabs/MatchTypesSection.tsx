@@ -33,13 +33,18 @@ function MatchTypeChip({
   const [selected, setSelected] = useSetting<boolean>(matchKey);
   return (
     <SettingControl settingKey={matchKey}>
-      <Chip
-        label={label}
-        tip={tip}
-        selected={!!selected}
-        onToggle={() => setSelected(!selected)}
-        disabled={disabled}
-      />
+      {/* Marker only, same "display: contents" rule SettingControl itself
+          uses: Chip does not forward a data-action, and every match-type
+          chip is the same registry action (H1), not one per type. */}
+      <div data-action="H1" style={{ display: "contents" }}>
+        <Chip
+          label={label}
+          tip={tip}
+          selected={!!selected}
+          onToggle={() => setSelected(!selected)}
+          disabled={disabled}
+        />
+      </div>
     </SettingControl>
   );
 }

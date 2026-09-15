@@ -180,6 +180,7 @@ export default function VideoTab() {
                 value={currentResolutionLabel}
                 onChange={chooseResolution}
                 label="Resolution"
+                optionActions={Object.fromEntries(tables.resolutions.map((r) => [r.label, "L3"]))}
               />
             </div>
           )}
@@ -254,6 +255,7 @@ export default function VideoTab() {
                 value={recsys ?? RECSYS_OPTIONS[0]}
                 onChange={setRecsys}
                 label="System"
+                optionActions={{ HLAE: "L7", CS: "L7" }}
               />
             </div>
           </SettingControl>
@@ -361,6 +363,7 @@ export default function VideoTab() {
                 className="fld"
                 title="FFmpeg video encoder (e.g. libx264 = CPU H.264, h264_nvenc = NVIDIA GPU encoder)"
                 value={videoCodec ?? ""}
+                data-action="L1"
                 onChange={(event) => setVideoCodec(event.target.value)}
               >
                 {(tables?.videoCodecs ?? []).map((codec) => (
@@ -416,6 +419,7 @@ export default function VideoTab() {
                 className="fld"
                 title="FFmpeg audio encoder used for the output track (e.g. aac, mp3, copy)"
                 value={audioCodec ?? ""}
+                data-action="L2"
                 onChange={(event) => setAudioCodec(event.target.value)}
               >
                 {(tables?.audioCodecs ?? []).map((codec) => (

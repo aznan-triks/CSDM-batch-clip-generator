@@ -58,7 +58,12 @@ export default function FilterRow({
     <div className="filter-row" title={def.tip}>
       <span className="filter-row-label">{def.label}</span>
       <SettingControl settingKey={def.key}>
-        <Chip label="Enable" selected={!!enabled} onToggle={toggleEnabled} />
+        {/* Marker only, same "display: contents" rule SettingControl itself
+            uses: Chip does not forward a data-action, and every filter row's
+            Enable chip is the same registry action (G1), not one per row. */}
+        <div data-action="G1" style={{ display: "contents" }}>
+          <Chip label="Enable" selected={!!enabled} onToggle={toggleEnabled} />
+        </div>
       </SettingControl>
       <SettingControl settingKey={`${def.key}_req`}>
         <Chip
@@ -69,7 +74,9 @@ export default function FilterRow({
       </SettingControl>
       {hasExclude && (
         <SettingControl settingKey={`${def.key}_exclude`}>
-          <Chip label="Exclude" selected={!!excluded} onToggle={() => setExcluded(!excluded)} />
+          <div data-action="G2" style={{ display: "contents" }}>
+            <Chip label="Exclude" selected={!!excluded} onToggle={() => setExcluded(!excluded)} />
+          </div>
         </SettingControl>
       )}
       {children}

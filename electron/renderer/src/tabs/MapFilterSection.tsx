@@ -50,7 +50,7 @@ export default function MapFilterSection() {
         <p className="capture-hint">Waiting for DB…</p>
       ) : (
         <SettingControl settingKey="map_filter">
-          <div className="chips">
+          <div className="chips" data-action="H2">
             {database.maps.map(([display]) => (
               <Chip
                 key={display}

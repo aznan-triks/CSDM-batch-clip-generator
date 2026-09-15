@@ -39,14 +39,14 @@ export default function ConfirmDialog({ title, message, onCancel, onConfirm, dan
         <h2 className="confirm-title">{title}</h2>
         <p className="confirm-message">{message}</p>
         <div className="confirm-actions">
-          <button type="button" className="chip" onClick={onCancel} ref={cancelRef} data-action="D1">
+          <button type="button" className="chip" onClick={onCancel} ref={cancelRef} data-action="P9">
             Cancel
           </button>
           <button
             type="button"
             className={danger ? "chip danger" : "chip"}
             onClick={onConfirm}
-            data-action="D2"
+            data-action="P9"
           >
             Confirm
           </button>
