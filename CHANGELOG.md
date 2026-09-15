@@ -196,6 +196,12 @@ filter finally applies to kills.
   (`set_debug` + `MSG_TRACE` on the Python side). Off by default: nothing recorded, no listener
   mounted.
 
+- **Settings, Editing and Tags now have tooltips on every control.**
+  *Technique* — `SettingsTab`, `EditingTab`, `TagsTab` and `PresetSection` wire the `tip` prop
+  introduced in 3.2.8 to every control, completing tooltip coverage across all five tabs. The
+  merge commit `4681430` also adds guard-header comments to bring `test_atlas.py`'s forbid-check
+  back into alignment.
+
 ## 3.2.8 — 2026-08-13
 
 Buttons that promised to do things now actually do them.
@@ -222,6 +228,18 @@ column-count reflows and was clamping card widths down on every resize.
 GENERATE/SAVE/CANCEL buttons (`ActionBar.tsx`) so the action-registry coverage
 guard no longer flags them as unclassified. New tests:
 `ActionBar.test.tsx`, `SettingsTab.test.tsx`, `SectionList.paneResize.test.tsx`.
+
+**Humanised:** Every filter toggle, slider and path field in the Capture and
+Video tabs now shows a short tooltip on hover — so you always know what a
+setting does without hunting through documentation.
+
+**Technical:** `tip` prop added to `Chip`, `Segmented`, `Slider`,
+`NumberField`, `Field`, and `Tab` (plus `badgeTip`). Tooltips wired across
+shell chrome, action bar, nav, console, `DemoPicker`, `StatStrip`,
+`DateField`, `PathField`, and all Capture and Video sections
+(`CaptureTab`, `DemoSelectionSection`, `EventTypeSection`, `PlayerSection`,
+kill-filter switches, map filter, weapon-category grid, `VideoTab`,
+`Cs2EffectsSection`, `HlaeOptionsSection`).
 
 ---
 
