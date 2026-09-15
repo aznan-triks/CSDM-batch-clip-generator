@@ -140,7 +140,7 @@ from csdm.config import (
     load_presets, save_presets, build_preset, preset_payload,
     load_saved_players, save_saved_players,
     load_asm_names, save_asm_names,
-    _migrate_config, load_config, save_config,
+    _migrate_config, load_config, save_config, legacy_event_axes,
 )
 
 # ── Pure helpers (Phase 1.1) -- moved to csdm/core_utils.py ─────────────────
@@ -414,6 +414,10 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         if cfg.get("encoder") not in ENCODER_OPTIONS:
             cfg["encoder"] = "FFmpeg"
         cfg["events"] = [e for e, v in self.sel_events.items() if v.get()]
+        # The window still shows the flat Kills/Deaths/Rounds + TK model; the
+        # engine reads only the 2-axis keys. Same translation as the config
+        # migration, or the window's choices never reach the query.
+        cfg.update(legacy_event_axes(cfg["events"], cfg.get("teamkills_mode")))
         cfg["weapons"]     = [w for w, v in self.sel_weapons.items() if v.get()]
         cfg["map_filter"]  = [dk for dk, v in self._map_filter_vars.items() if v.get()]
         # Compat: output_dir mirrors output_dir_clips
