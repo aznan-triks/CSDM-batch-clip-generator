@@ -566,6 +566,25 @@ def save_asm_names(names):
 # the config migration and the preset loader, so both decide the same way.
 TEAMKILLS_MODE_SIDES = {"include": (True, True), "exclude": (False, True), "only": (True, False)}
 
+
+def legacy_event_axes(events, teamkills_mode):
+    """The 2-axis event keys a flat Kills/Deaths/Rounds list and the old
+    three-way teamkill choice stand for.
+
+    One mapping for `_migrate_config` (old saved files) and the Tkinter window,
+    which still shows the flat model: the engine reads only the 2-axis keys, so
+    the window's choices must be translated before every run. Kills and Deaths
+    share the actor perspective, as they always did. An unknown teamkill value
+    leaves the ally side to whatever the caller already holds.
+    """
+    events = events or []
+    lethal = "Kills" in events or "Deaths" in events
+    axes = {"event_actor": lethal, "event_target": "Deaths" in events,
+            "event_lethal": lethal, "event_enemy": True}
+    if teamkills_mode in TEAMKILLS_MODE_SIDES:
+        axes["event_ally"], axes["event_enemy"] = TEAMKILLS_MODE_SIDES[teamkills_mode]
+    return axes
+
 # The 2-axis event keys. A saved config carrying ANY of them was written by the
 # 2-axis app and must never go through the flat-`events` migration again.
 _EVENT_AXIS_KEYS = ("event_actor", "event_target", "event_lethal", "event_non_lethal",
@@ -614,17 +633,7 @@ def _migrate_config(saved: dict, cfg: dict) -> None:
     # Actor/Target/Lethal/Ally/Enemy choices (audit 2026-09-15, E16).
     if saved.get("events") and not any(k in saved for k in _EVENT_AXIS_KEYS):
         old_events = saved["events"] or []
-        cfg["event_actor"] = "Kills" in old_events or "Deaths" in old_events
-        cfg["event_target"] = "Deaths" in old_events
-        cfg["event_lethal"] = "Kills" in old_events or "Deaths" in old_events
-        cfg["event_enemy"] = True
-        # teamkills_mode migration:
-        #   "include" → ally=True,  enemy=True  (both pass)
-        #   "exclude" → ally=False, enemy=True  (only enemy passes)
-        #   "only"    → ally=True,  enemy=False (only ally passes)
-        old_tk_mode = saved.pop("teamkills_mode", "include")
-        if old_tk_mode in TEAMKILLS_MODE_SIDES:
-            cfg["event_ally"], cfg["event_enemy"] = TEAMKILLS_MODE_SIDES[old_tk_mode]
+        cfg.update(legacy_event_axes(old_events, saved.pop("teamkills_mode", "include")))
         # Only "Rounds" still means something in `events`.
         cfg["events"] = ["Rounds"] if "Rounds" in old_events else []
 
