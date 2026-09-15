@@ -67,5 +67,70 @@ class TestDerivedCapabilities(unittest.TestCase):
         self.assertEqual(imported - {"typing", "csdm.static_data"}, set())
 
 
+def _owners(attribute):
+    from collections import defaultdict
+    from csdm.capabilities import CAPABILITIES
+
+    owners = defaultdict(list)
+    for capability in CAPABILITIES:
+        for name in getattr(capability, attribute):
+            owners[name].append(capability.id)
+    return owners
+
+
+class TestPartition(unittest.TestCase):
+    def test_every_config_key_has_exactly_one_owner(self):
+        from csdm.config import DEFAULT_CONFIG
+
+        owners = _owners("config_keys")
+        orphans = [k for k in DEFAULT_CONFIG if k not in owners]
+        shared = {k: v for k, v in owners.items() if len(v) > 1}
+        self.assertEqual(orphans, [], "settings with no capability -- give each an owner")
+        self.assertEqual(shared, {}, "settings claimed by two capabilities -- keep one owner")
+
+    def test_no_ghost_key(self):
+        from csdm.config import DEFAULT_CONFIG
+
+        ghosts = sorted(k for k in _owners("config_keys") if k not in DEFAULT_CONFIG)
+        self.assertEqual(ghosts, [], "capabilities naming a setting DEFAULT_CONFIG does not have")
+
+    def test_every_bridge_command_has_exactly_one_owner(self):
+        from csdm.bridge.host import COMMANDS
+
+        owners = _owners("commands")
+        orphans = [c for c in COMMANDS if c not in owners]
+        shared = {c: v for c, v in owners.items() if len(v) > 1}
+        self.assertEqual(orphans, [], "bridge commands with no capability -- give each an owner")
+        self.assertEqual(shared, {}, "bridge commands claimed by two capabilities -- keep one owner")
+
+    def test_no_ghost_command(self):
+        from csdm.bridge.host import COMMANDS
+
+        ghosts = sorted(c for c in _owners("commands") if c not in COMMANDS)
+        self.assertEqual(ghosts, [], "capabilities naming a command the bridge does not have")
+
+    def test_ids_are_unique(self):
+        from collections import Counter
+        from csdm.capabilities import CAPABILITIES
+
+        duplicates = [i for i, n in Counter(c.id for c in CAPABILITIES).items() if n > 1]
+        self.assertEqual(duplicates, [])
+
+    def test_every_capability_is_filed_and_owns_something(self):
+        from csdm.capabilities import CAPABILITIES, INTENTIONS
+
+        codes = {code for code, _label in INTENTIONS}
+        for capability in CAPABILITIES:
+            self.assertIn(capability.intention, codes, capability.id)
+            self.assertTrue(capability.config_keys or capability.commands, capability.id)
+            self.assertTrue(capability.label, capability.id)
+
+    def test_every_intention_has_a_capability(self):
+        from csdm.capabilities import CAPABILITIES, INTENTIONS
+
+        used = {c.intention for c in CAPABILITIES}
+        self.assertEqual([code for code, _ in INTENTIONS if code not in used], [])
+
+
 if __name__ == "__main__":
     unittest.main()
