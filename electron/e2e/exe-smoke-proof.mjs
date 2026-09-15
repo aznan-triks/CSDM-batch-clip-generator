@@ -90,10 +90,16 @@ try {
   await page.waitForSelector(".brand-version", { timeout: 30000 });
   const chip = await page.locator(".brand-version").textContent();
 
-  // Give the engine banner a moment to land in the console.
-  await page.waitForTimeout(2000);
+  // Wait for the banner, never a fixed sleep: the console types each line a
+  // character at a time (MOTION.consoleType), so a read after N seconds can
+  // catch "engine re" mid-typing and fail a healthy engine.
+  const engineReady = await page
+    .waitForFunction(() => document.querySelector(".console")?.textContent?.includes("engine ready"), null, {
+      timeout: 30000,
+    })
+    .then(() => true)
+    .catch(() => false);
   const consoleText = (await page.locator(".console").textContent().catch(() => "")) ?? "";
-  const engineReady = consoleText.includes("engine ready");
   const shownVersion = consoleText.match(/(\d+\.\d+\.\d+)/)?.[1] ?? null;
   console.log(`console snippet: ${JSON.stringify(consoleText.trim().slice(0, 400))}`);
 
