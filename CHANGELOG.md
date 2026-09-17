@@ -20,6 +20,41 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.13 — 2026-09-17
+
+Every tab scrolls far less at 1600×900, and the fix from 3.2.12 now actually reaches a real launch.
+
+### Fixed
+
+- **Closes the "known issue" from 3.2.12.** The Capture/Video/Settings tabs could render their
+  cards before the saved configuration finished loading, silently falling back to the flat
+  auto-generated stack on a real launch regardless of the reference layout shipped in 3.2.12.
+  Tabs now wait for that load to settle before deciding which cards have no stored position, so
+  the reference layout from 3.2.12 reaches the screen every time, not on a lucky race.
+  *Technique* — `settings/store.tsx` tracked a `loading` flag that nothing read;
+  `shell/SectionList.tsx`'s once-only "which cards are fresh" snapshot now also waits on
+  `useSettingsStatus().loading`, so it fires after `load_config` resolves (or rejects — the flag
+  still flips to `false` on failure, so the no-engine e2e suite is unaffected beyond one
+  microtask). Reproduced and confirmed fixed against the real engine on an isolated profile, twice
+  in a row.
+
+- **Every card in Capture/Video/Settings used to reserve a flat, oversized block of height (24
+  fine rows) regardless of how much it actually contains** — a one-slider card like Performance
+  took the same vertical space as a five-field form, and every tab scrolled far past its real
+  content. Card heights in the reference layout are now sized to what each card actually holds
+  (measured live against the real engine, with margin), cutting total scroll roughly in half to
+  two-thirds across the three tabs.
+
+### Added
+
+- **`electron/e2e/default-layout-real-engine-proof.mjs`** — a permanent proof that launches the
+  real engine (not the hermetic no-engine harness) at the real 1600×900 default and asserts no
+  card's content is clipped. `default-window-proof.mjs` alone could not catch either bug above: it
+  runs without an engine, so it only ever measured the pure auto-stack fallback, never the curated
+  reference layout a real launch actually loads.
+
+---
+
 ## 3.2.12 — 2026-09-17
 
 The default card arrangement no longer leaves a wide empty strip on a first launch at 1600×900.

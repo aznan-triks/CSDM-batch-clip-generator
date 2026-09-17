@@ -12,6 +12,7 @@ import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import Card from "../../components/Card";
+import { SettingsProvider } from "../../settings/store";
 import SectionList, { type SectionSpec } from "../SectionList";
 
 globalThis.ResizeObserver ??= class {
@@ -38,9 +39,21 @@ vi.mock("../sectionLayout", async () => {
 
 const SECTIONS: SectionSpec[] = [{ id: "alpha", element: <Card title="Alpha">a</Card> }];
 
+// SectionList reads `useSettingsStatus()` (the race-condition fix,
+// 2026-09-17), so every render needs a real SettingsProvider ancestor --
+// jsdom has no bridge, so its `load_config` call rejects immediately and
+// `loading` settles to `false` on its own, same as the real no-engine e2e path.
+function renderSectionList() {
+  return render(
+    <SettingsProvider>
+      <SectionList tabId="t" sections={SECTIONS} />
+    </SettingsProvider>,
+  );
+}
+
 describe("resize handle placement", () => {
   it("the handle is a direct child of the grid item", () => {
-    const { container } = render(<SectionList tabId="t" sections={SECTIONS} />);
+    const { container } = renderSectionList();
     const item = container.querySelector(".react-grid-item");
     const handle = container.querySelector(".react-resizable-handle");
     expect(item).not.toBeNull();
@@ -49,14 +62,14 @@ describe("resize handle placement", () => {
   });
 
   it("the handle is NOT inside the card's scrolling body", () => {
-    const { container } = render(<SectionList tabId="t" sections={SECTIONS} />);
+    const { container } = renderSectionList();
     const body = container.querySelector(".sb-scroll");
     const handle = container.querySelector(".react-resizable-handle");
     expect(body?.contains(handle as Node)).toBe(false);
   });
 
   it("the card is a child of the grid item, not the grid item itself", () => {
-    const { container } = render(<SectionList tabId="t" sections={SECTIONS} />);
+    const { container } = renderSectionList();
     const item = container.querySelector(".react-grid-item");
     expect(item?.classList.contains("sec")).toBe(false);
     expect(item?.querySelector(":scope > .sec")).not.toBeNull();

@@ -8,7 +8,21 @@ import { act, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Card from "../../components/Card";
+import { SettingsProvider } from "../../settings/store";
 import SectionList, { type SectionSpec } from "../SectionList";
+
+// SectionList now reads `useSettingsStatus()` (the race-condition fix,
+// 2026-09-17) alongside the mocked `useSectionLayout` above, so every render
+// needs a real SettingsProvider ancestor -- jsdom has no bridge, so its
+// `load_config` call rejects immediately and `loading` settles to `false`
+// on its own, the same as the real no-engine e2e path.
+function renderSectionList(sections: SectionSpec[] = SECTIONS) {
+  return render(
+    <SettingsProvider>
+      <SectionList tabId="t" sections={sections} />
+    </SettingsProvider>,
+  );
+}
 
 // The ResizeObserver/clientWidth stubs SectionList needs in jsdom live in
 // the global test-setup.ts (every tab that renders it needs the same fix).
@@ -46,18 +60,18 @@ const SECTIONS: SectionSpec[] = [
 
 describe("SectionList", () => {
   it("renders one grid item per declared section", () => {
-    const { container } = render(<SectionList tabId="t" sections={SECTIONS} />);
+    const { container } = renderSectionList();
     expect(container.querySelectorAll(".react-grid-item")).toHaveLength(2);
   });
 
   it("gives every card a drag handle", () => {
-    render(<SectionList tabId="t" sections={SECTIONS} />);
+    renderSectionList();
     expect(screen.getByLabelText("drag-alpha")).toBeTruthy();
     expect(screen.getByLabelText("drag-beta")).toBeTruthy();
   });
 
   it("passes the persisted fold state down to the card", () => {
-    render(<SectionList tabId="t" sections={SECTIONS} />);
+    renderSectionList();
     // `beta` is collapsed in the stub above.
     const betaHeader = screen.getByRole("button", { name: /Beta/ });
     expect(betaHeader.getAttribute("aria-expanded")).toBe("false");
@@ -65,7 +79,7 @@ describe("SectionList", () => {
 
   it("keeps a section that has no stored slot", () => {
     const extra: SectionSpec[] = [...SECTIONS, { id: "gamma", element: <Card title="Gamma">g</Card> }];
-    render(<SectionList tabId="t" sections={extra} />);
+    renderSectionList(extra);
     expect(screen.getByText("Gamma")).toBeTruthy();
   });
 
@@ -75,7 +89,7 @@ describe("SectionList", () => {
     // react-grid-layout itself may still echo the untouched layout back
     // through onLayoutChange on mount, which is harmless. What must hold is
     // that no call ever reports a height other than the one that was stored.
-    render(<SectionList tabId="t" sections={SECTIONS} />);
+    renderSectionList();
     await act(async () => {});
     for (const [cards] of saved.mock.calls) {
       expect(cards.alpha.h).toBe(8);

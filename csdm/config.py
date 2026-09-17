@@ -70,51 +70,62 @@ DEFAULT_CONFIG = {
     "ui_remember_layout": True,
     # Reference card layout (LAYOUT_VERSION 4, sectionLayout.ts), redesigned
     # 2026-09-17 for the real column count a 1600x900 window measures today
-    # (15 columns of `ui_card_block_size`, content pane ~902px). The previous
-    # snapshot (v3, captured 2026-08-11) was sized for the pre-3.3.0 8-column
-    # grid; left as-is post-halving it rendered each non-wide card at half the
-    # pane width with a wide empty gap beside it (measured live, e2e/default-
-    # window-proof.mjs screenshots). This one packs non-wide cards two or
-    # three to a row so the reference layout actually fills 1600x900.
+    # (15 columns of `ui_card_block_size`, content pane ~902px), and again
+    # same day for per-card HEIGHT: a flat 24 rows for every card (the first
+    # pass) is roughly what a form-heavy card like Paths needs but wildly
+    # oversized for a short one like Performance (one slider), which is why
+    # every tab still scrolled far past its real content. Heights below are
+    # each card's real content height measured live (real engine, real
+    # window, `.sb-scroll` intrinsic height with its flex-grow shrunk to 1px
+    # so it can't mask short content as full-height), rounded up with margin
+    # -- generous margin on cards whose content depends on a live DB
+    # connection (weapon-filter, map-filter, resolution, kill-filters),
+    # since that measurement ran without one and would otherwise understate
+    # the real thing. The previous snapshot (v3, captured 2026-08-11) was
+    # sized for the pre-3.3.0 8-column grid; left as-is post-halving it
+    # rendered each non-wide card at half the pane width with a wide empty
+    # gap beside it (measured live, e2e/default-window-proof.mjs
+    # screenshots). This one packs non-wide cards two or three to a row so
+    # the reference layout actually fills 1600x900 both ways.
     "ui_sections": {
         "capture": {
             "v": 4,
             "cards": {
-                "player": {"x": 0, "y": 0, "w": 15, "h": 24},
-                "demo-selection": {"x": 0, "y": 24, "w": 5, "h": 24},
-                "capture-timing": {"x": 5, "y": 24, "w": 5, "h": 24},
-                "timing-retries": {"x": 10, "y": 24, "w": 5, "h": 24},
-                "weapon-filter": {"x": 0, "y": 48, "w": 15, "h": 24},
-                "kill-filters": {"x": 0, "y": 72, "w": 10, "h": 61},
-                "match-types": {"x": 10, "y": 72, "w": 5, "h": 24},
-                "map-filter": {"x": 10, "y": 96, "w": 5, "h": 24},
+                "player": {"x": 0, "y": 0, "w": 15, "h": 14},
+                "demo-selection": {"x": 0, "y": 14, "w": 5, "h": 19},
+                "capture-timing": {"x": 5, "y": 14, "w": 5, "h": 14},
+                "timing-retries": {"x": 10, "y": 14, "w": 5, "h": 9},
+                "weapon-filter": {"x": 0, "y": 33, "w": 15, "h": 17},
+                "kill-filters": {"x": 0, "y": 50, "w": 10, "h": 39},
+                "match-types": {"x": 10, "y": 50, "w": 5, "h": 13},
+                "map-filter": {"x": 10, "y": 63, "w": 5, "h": 10},
             },
             "collapsed": [],
         },
         "video": {
             "v": 4,
             "cards": {
-                "final-assembly": {"x": 0, "y": 0, "w": 7, "h": 24},
-                "recording-system": {"x": 7, "y": 0, "w": 8, "h": 24},
-                "resolution": {"x": 0, "y": 24, "w": 15, "h": 24},
-                "hlae-options": {"x": 0, "y": 48, "w": 7, "h": 24},
-                "in-game-options": {"x": 7, "y": 48, "w": 8, "h": 24},
-                "cs2-effects": {"x": 0, "y": 72, "w": 15, "h": 24},
-                "encoding": {"x": 0, "y": 96, "w": 15, "h": 24},
+                "final-assembly": {"x": 0, "y": 0, "w": 7, "h": 8},
+                "recording-system": {"x": 7, "y": 0, "w": 8, "h": 7},
+                "resolution": {"x": 0, "y": 8, "w": 15, "h": 14},
+                "hlae-options": {"x": 0, "y": 22, "w": 7, "h": 13},
+                "in-game-options": {"x": 7, "y": 22, "w": 8, "h": 9},
+                "cs2-effects": {"x": 0, "y": 35, "w": 15, "h": 13},
+                "encoding": {"x": 0, "y": 48, "w": 15, "h": 12},
             },
             "collapsed": [],
         },
         "settings": {
             "v": 4,
             "cards": {
-                "postgresql": {"x": 0, "y": 0, "w": 15, "h": 24},
-                "paths": {"x": 0, "y": 24, "w": 15, "h": 24},
-                "config-folder": {"x": 0, "y": 48, "w": 15, "h": 24},
-                "presets": {"x": 0, "y": 72, "w": 5, "h": 24},
-                "ui-theme": {"x": 5, "y": 72, "w": 5, "h": 24},
-                "ui-layout": {"x": 10, "y": 72, "w": 5, "h": 24},
-                "performance": {"x": 0, "y": 96, "w": 7, "h": 24},
-                "injection-preview": {"x": 7, "y": 96, "w": 8, "h": 24},
+                "postgresql": {"x": 0, "y": 0, "w": 15, "h": 6},
+                "paths": {"x": 0, "y": 6, "w": 15, "h": 14},
+                "config-folder": {"x": 0, "y": 20, "w": 15, "h": 7},
+                "presets": {"x": 0, "y": 27, "w": 5, "h": 12},
+                "ui-theme": {"x": 5, "y": 27, "w": 5, "h": 10},
+                "ui-layout": {"x": 10, "y": 27, "w": 5, "h": 11},
+                "performance": {"x": 0, "y": 39, "w": 7, "h": 6},
+                "injection-preview": {"x": 7, "y": 39, "w": 8, "h": 7},
             },
             "collapsed": [],
         },

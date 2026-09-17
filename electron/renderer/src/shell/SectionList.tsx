@@ -20,6 +20,7 @@ import { cloneElement, useEffect, useRef, useState, type CSSProperties, type Mou
 import GridLayout, { type Layout } from "react-grid-layout/legacy";
 
 import { useSectionLayout, COLLAPSED_ROWS_FALLBACK, type GridSlot } from "./sectionLayout";
+import { useSettingsStatus } from "../settings/store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./SectionList.css";
@@ -120,6 +121,7 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
   );
   const layout = useSectionLayout(tabId, declaredIds, cols, wideIds, collapsedRows);
   const slots = layout.slots();
+  const { loading: settingsLoading } = useSettingsStatus();
 
   // A card is measured exactly once: on the render where it has no stored
   // rectangle (fresh install, or the Settings "reset cards" button, which
@@ -144,16 +146,28 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
   // sibling's commit, and locked in there before its own content ever
   // arrived -- measured live at the real 1100x900 default, unchanged across
   // three different attempts at the timing before this snapshot was taken.
+  //
+  // Also gated on `settingsLoading`: this component mounts and measures
+  // before `load_config` answers (`settings/store.tsx`'s `loading` flag used
+  // to go unread everywhere), so on a real launch every card could be seen
+  // as "never configured" here even though the loaded config's `ui_sections`
+  // covers every one of them a moment later -- the reference layout's own
+  // rectangles never showing up, replaced by the flat auto-stack, on
+  // whichever launches lost this race (found 2026-09-17, reproduced twice in
+  // a row against the real engine). `settingsLoading` still flips to `false`
+  // on a REJECTED `load_config` (store.tsx's `.finally`), so the no-engine
+  // e2e suite (CSDM_PYTHON_PATH="csdm-e2e-no-engine") sees no behaviour
+  // change beyond one microtask.
   const [freshSnapshot, setFreshSnapshot] = useState<string[] | null>(null);
   useEffect(() => {
-    if (freshSnapshot !== null || width <= 0) return;
+    if (freshSnapshot !== null || width <= 0 || settingsLoading) return;
     const ids = layout.freshIds();
     if (ids.length > 0) setFreshSnapshot(ids);
     // Runs once per mount (tabId change remounts this component): checked by
     // `freshSnapshot !== null` above, not by a dependency list that would
     // have to include the ever-shrinking `layout.freshIds()` itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width, freshSnapshot]);
+  }, [width, freshSnapshot, settingsLoading]);
 
   useEffect(() => {
     if (!freshSnapshot || !containerRef.current) return;
