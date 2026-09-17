@@ -20,6 +20,36 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.12 — 2026-09-17
+
+The default card arrangement no longer leaves a wide empty strip on a first launch at 1600×900.
+
+### Fixed
+
+- **A brand-new install's Capture/Video/Settings tabs used to leave roughly a third of the window
+  empty next to every non-wide card.** The reference arrangement now groups two or three cards per
+  row so it actually fills the window width, instead of one narrow card per row with dead space
+  beside it.
+  *Technique* — `DEFAULT_CONFIG["ui_sections"]` (`csdm/config.py`) was a hand-tuned snapshot
+  captured 2026-08-11 for the pre-3.3.0 8-column grid (96px blocks); left un-migrated past the
+  3.3.0 column halving (`v: 3`, doubled implicitly at render by `sectionLayout.ts::migrateLayout`),
+  it produced cards half the intended width with the other half left blank. Redesigned for the real
+  15-column count a 1600×900 window measures today (content pane ≈902px, `ui_card_block_size`
+  48px), stamped `v: 4` directly so no implicit doubling applies. `electron/e2e/default-window-
+  proof.mjs` was itself pinned to a stale 1100×900 comparison window (true default moved back to
+  1600×900 in 3.2.7); corrected to 1600×900 so the proof actually exercises today's default.
+
+### Known issue (not fixed by this release)
+
+- **The reference layout above can still be skipped on a real first launch.** Every tab mounts and
+  measures its cards *before* the saved/default configuration finishes loading over the bridge
+  (`settings/store.tsx`'s `loading` flag is tracked but nothing gates rendering on it), so a
+  fresh-install window can render the flat auto-generated stack on its very first paint and then
+  silently save that instead of the reference arrangement above. Reproducing and fixing this
+  timing race is out of scope for this release — tracked in `NEXT_SESSION.md`.
+
+---
+
 ## 3.2.11 — 2026-09-15
 
 Non-lethal damage and "other" events work end to end, settings survive a restart, and the team

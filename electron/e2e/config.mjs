@@ -7,11 +7,11 @@ export const REPO_ROOT = path.dirname(ELECTRON_DIR);
 
 export const CONFIG = {
   // Pinned at the size the stored baseline (baseline/capture-tab.png) was shot
-  // at, for harness.mjs / mock.spec.mjs's pixel-diff regression suite. NOT the
-  // app's real default window size (that is 1100x900, settings/windowDefaults.ts)
-  // -- changing this number invalidates the baseline image, not just the proof
-  // reading it. A proof that needs the REAL default frames itself locally
-  // instead of reading this constant (electron/e2e/default-window-proof.mjs).
+  // at, for harness.mjs / mock.spec.mjs's pixel-diff regression suite. Also the
+  // app's real default window size today (settings/windowDefaults.ts) -- that
+  // wasn't always true (it was 1100x900 between v3.2.3 and v3.2.7), so a proof
+  // that needs the REAL default still frames itself locally rather than
+  // trusting the two staying equal (electron/e2e/default-window-proof.mjs).
   viewport: { width: 1600, height: 900 },
   // Share of pixels allowed to differ before a shot counts as a regression.
   diffThreshold: 0.01,

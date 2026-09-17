@@ -68,48 +68,53 @@ DEFAULT_CONFIG = {
     "ui_window_h": 900,
     "ui_split_pct": 60,
     "ui_remember_layout": True,
-    # Reference card layout (LAYOUT_VERSION 3, sectionLayout.ts), captured
-    # 2026-08-11 from the user's own tuned arrangement so a fresh install or
-    # a layout reset starts from it instead of the auto-derived stack.
+    # Reference card layout (LAYOUT_VERSION 4, sectionLayout.ts), redesigned
+    # 2026-09-17 for the real column count a 1600x900 window measures today
+    # (15 columns of `ui_card_block_size`, content pane ~902px). The previous
+    # snapshot (v3, captured 2026-08-11) was sized for the pre-3.3.0 8-column
+    # grid; left as-is post-halving it rendered each non-wide card at half the
+    # pane width with a wide empty gap beside it (measured live, e2e/default-
+    # window-proof.mjs screenshots). This one packs non-wide cards two or
+    # three to a row so the reference layout actually fills 1600x900.
     "ui_sections": {
         "capture": {
-            "v": 3,
+            "v": 4,
             "cards": {
-                "player": {"x": 0, "y": 0, "w": 5, "h": 24},
-                "demo-selection": {"x": 0, "y": 24, "w": 3, "h": 24},
-                "weapon-filter": {"x": 0, "y": 48, "w": 5, "h": 24},
-                "capture-timing": {"x": 0, "y": 72, "w": 3, "h": 24},
-                "timing-retries": {"x": 0, "y": 96, "w": 3, "h": 24},
-                "kill-filters": {"x": 0, "y": 120, "w": 3, "h": 61},
-                "match-types": {"x": 0, "y": 181, "w": 3, "h": 24},
-                "map-filter": {"x": 0, "y": 205, "w": 3, "h": 24},
+                "player": {"x": 0, "y": 0, "w": 15, "h": 24},
+                "demo-selection": {"x": 0, "y": 24, "w": 5, "h": 24},
+                "capture-timing": {"x": 5, "y": 24, "w": 5, "h": 24},
+                "timing-retries": {"x": 10, "y": 24, "w": 5, "h": 24},
+                "weapon-filter": {"x": 0, "y": 48, "w": 15, "h": 24},
+                "kill-filters": {"x": 0, "y": 72, "w": 10, "h": 61},
+                "match-types": {"x": 10, "y": 72, "w": 5, "h": 24},
+                "map-filter": {"x": 10, "y": 96, "w": 5, "h": 24},
             },
             "collapsed": [],
         },
         "video": {
-            "v": 3,
+            "v": 4,
             "cards": {
-                "final-assembly": {"x": 0, "y": 0, "w": 3, "h": 24},
-                "resolution": {"x": 0, "y": 24, "w": 6, "h": 24},
-                "recording-system": {"x": 0, "y": 48, "w": 3, "h": 24},
-                "hlae-options": {"x": 3, "y": 48, "w": 3, "h": 24},
-                "in-game-options": {"x": 3, "y": 72, "w": 3, "h": 24},
-                "cs2-effects": {"x": 0, "y": 96, "w": 6, "h": 24},
-                "encoding": {"x": 0, "y": 120, "w": 6, "h": 24},
+                "final-assembly": {"x": 0, "y": 0, "w": 7, "h": 24},
+                "recording-system": {"x": 7, "y": 0, "w": 8, "h": 24},
+                "resolution": {"x": 0, "y": 24, "w": 15, "h": 24},
+                "hlae-options": {"x": 0, "y": 48, "w": 7, "h": 24},
+                "in-game-options": {"x": 7, "y": 48, "w": 8, "h": 24},
+                "cs2-effects": {"x": 0, "y": 72, "w": 15, "h": 24},
+                "encoding": {"x": 0, "y": 96, "w": 15, "h": 24},
             },
             "collapsed": [],
         },
         "settings": {
-            "v": 3,
+            "v": 4,
             "cards": {
-                "postgresql": {"x": 0, "y": 0, "w": 6, "h": 24},
-                "paths": {"x": 0, "y": 24, "w": 6, "h": 24},
-                "config-folder": {"x": 0, "y": 48, "w": 6, "h": 24},
-                "presets": {"x": 0, "y": 72, "w": 3, "h": 24},
-                "ui-theme": {"x": 3, "y": 72, "w": 3, "h": 24},
-                "ui-layout": {"x": 3, "y": 96, "w": 3, "h": 24},
-                "performance": {"x": 0, "y": 96, "w": 3, "h": 24},
-                "injection-preview": {"x": 3, "y": 120, "w": 3, "h": 24},
+                "postgresql": {"x": 0, "y": 0, "w": 15, "h": 24},
+                "paths": {"x": 0, "y": 24, "w": 15, "h": 24},
+                "config-folder": {"x": 0, "y": 48, "w": 15, "h": 24},
+                "presets": {"x": 0, "y": 72, "w": 5, "h": 24},
+                "ui-theme": {"x": 5, "y": 72, "w": 5, "h": 24},
+                "ui-layout": {"x": 10, "y": 72, "w": 5, "h": 24},
+                "performance": {"x": 0, "y": 96, "w": 7, "h": 24},
+                "injection-preview": {"x": 7, "y": 96, "w": 8, "h": 24},
             },
             "collapsed": [],
         },

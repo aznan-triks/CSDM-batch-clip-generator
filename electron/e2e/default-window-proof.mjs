@@ -1,9 +1,8 @@
 /**
- * Proof for the default window: at 1100x900 (the real default, see
- * settings/windowDefaults.ts -- NOT CONFIG.viewport, which stays pinned at
- * 1600x900 for the unrelated baseline pixel-diff suite), on a profile with
- * no stored card layout, no tab may need a vertical scrollbar on first
- * paint, and no card may clip its own content.
+ * Proof for the default window: at 1600x900 (the real default, see
+ * settings/windowDefaults.ts), on a profile with no stored card layout, no
+ * tab may need a vertical scrollbar on first paint, and no card may clip its
+ * own content.
  *
  * The scrollbar IS the measurement, per the criterion set on 2026-08-10: if
  * `.scrollwrap` can scroll before the user has touched anything, the
@@ -20,7 +19,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 
 import { CONFIG, ELECTRON_DIR, SHOT_DIR } from "./config.mjs";
 
-const DEFAULT_VIEWPORT = { width: 1100, height: 900 };
+const DEFAULT_VIEWPORT = { width: 1600, height: 900 };
 
 mkdirSync(SHOT_DIR, { recursive: true });
 
