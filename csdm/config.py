@@ -77,11 +77,12 @@ DEFAULT_CONFIG = {
     # every tab still scrolled far past its real content. Heights below are
     # each card's real content height measured live (real engine, real
     # window, `.sb-scroll` intrinsic height with its flex-grow shrunk to 1px
-    # so it can't mask short content as full-height), rounded up with margin
-    # -- generous margin on cards whose content depends on a live DB
-    # connection (weapon-filter, map-filter, resolution, kill-filters),
-    # since that measurement ran without one and would otherwise understate
-    # the real thing. The previous snapshot (v3, captured 2026-08-11) was
+    # so it can't mask short content as full-height), rounded up with margin.
+    # First pass (3.2.13) over-margined `player` and `resolution` on the
+    # assumption their DB-backed content would grow once connected --  a
+    # real screenshot with the DB actually up (2026-09-17) showed both still
+    # short even populated, so their height was cut back down the same day.
+    # The previous snapshot (v3, captured 2026-08-11) was
     # sized for the pre-3.3.0 8-column grid; left as-is post-halving it
     # rendered each non-wide card at half the pane width with a wide empty
     # gap beside it (measured live, e2e/default-window-proof.mjs
@@ -91,14 +92,14 @@ DEFAULT_CONFIG = {
         "capture": {
             "v": 4,
             "cards": {
-                "player": {"x": 0, "y": 0, "w": 15, "h": 14},
-                "demo-selection": {"x": 0, "y": 14, "w": 5, "h": 19},
-                "capture-timing": {"x": 5, "y": 14, "w": 5, "h": 14},
-                "timing-retries": {"x": 10, "y": 14, "w": 5, "h": 9},
-                "weapon-filter": {"x": 0, "y": 33, "w": 15, "h": 17},
-                "kill-filters": {"x": 0, "y": 50, "w": 10, "h": 39},
-                "match-types": {"x": 10, "y": 50, "w": 5, "h": 13},
-                "map-filter": {"x": 10, "y": 63, "w": 5, "h": 10},
+                "player": {"x": 0, "y": 0, "w": 15, "h": 9},
+                "demo-selection": {"x": 0, "y": 9, "w": 5, "h": 19},
+                "capture-timing": {"x": 5, "y": 9, "w": 5, "h": 14},
+                "timing-retries": {"x": 10, "y": 9, "w": 5, "h": 9},
+                "weapon-filter": {"x": 0, "y": 28, "w": 15, "h": 17},
+                "kill-filters": {"x": 0, "y": 45, "w": 10, "h": 39},
+                "match-types": {"x": 10, "y": 45, "w": 5, "h": 13},
+                "map-filter": {"x": 10, "y": 58, "w": 5, "h": 10},
             },
             "collapsed": [],
         },
@@ -106,12 +107,12 @@ DEFAULT_CONFIG = {
             "v": 4,
             "cards": {
                 "final-assembly": {"x": 0, "y": 0, "w": 7, "h": 8},
-                "recording-system": {"x": 7, "y": 0, "w": 8, "h": 7},
-                "resolution": {"x": 0, "y": 8, "w": 15, "h": 14},
-                "hlae-options": {"x": 0, "y": 22, "w": 7, "h": 13},
-                "in-game-options": {"x": 7, "y": 22, "w": 8, "h": 9},
-                "cs2-effects": {"x": 0, "y": 35, "w": 15, "h": 13},
-                "encoding": {"x": 0, "y": 48, "w": 15, "h": 12},
+                "recording-system": {"x": 7, "y": 0, "w": 8, "h": 6},
+                "resolution": {"x": 0, "y": 8, "w": 15, "h": 9},
+                "hlae-options": {"x": 0, "y": 17, "w": 7, "h": 13},
+                "in-game-options": {"x": 7, "y": 17, "w": 8, "h": 9},
+                "cs2-effects": {"x": 0, "y": 30, "w": 15, "h": 13},
+                "encoding": {"x": 0, "y": 43, "w": 15, "h": 12},
             },
             "collapsed": [],
         },

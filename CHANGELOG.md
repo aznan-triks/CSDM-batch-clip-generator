@@ -20,6 +20,23 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.14 — 2026-09-17
+
+Player and Resolution stop reserving a mostly-empty block twice as tall as anything in them.
+
+### Fixed
+
+- **Two cards in the reference layout still reserved far more height than their content ever
+  uses**, spotted from an actual screenshot after 3.2.13 rather than assumed: Player (a search box
+  and two lines of text, in a box built for a long roster) and Resolution (four buttons and two
+  fields, in a box built for much more). Both cut down close to their real size; Recording System
+  trimmed a little too.
+  *Technique* — 3.2.13's height pass gave both extra margin on the assumption their DB-backed
+  content would grow once connected. A real screenshot with the database actually up showed
+  neither does. `DEFAULT_CONFIG["ui_sections"]` (`csdm/config.py`) updated; no code change.
+
+---
+
 ## 3.2.13 — 2026-09-17
 
 Every tab scrolls far less at 1600×900, and the fix from 3.2.12 now actually reaches a real launch.
