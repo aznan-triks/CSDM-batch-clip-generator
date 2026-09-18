@@ -20,6 +20,43 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.3.0 — 2026-09-18
+
+Kill Filters finally has siblings: two new cards let you pick non-lethal moments — damage and shots —
+the same way you pick kills. Filters that already apply to damage and shots now really do, and
+clutches come straight from CS Demo Manager's own table.
+
+### Added
+
+- **Damage Filters** card (Capture tab), for non-lethal hits (tick *Non-lethal* in Event Type):
+  **Headshot hit**, **Big hit** (at least N damage in one hit, 90 by default), **1 HP survivor**
+  (victim left with N HP or less, 5 by default), **Multi-nade** (one grenade hitting at least N
+  players, one clip per grenade) and **Team damage** (needs *Ally* ticked in Event Type).
+- **Shot Filters** card (Capture tab), for shots (tick *Other* in Event Type): **Knife swing**,
+  **Long spray** (a burst reaching N bullets, one clip per burst) and **Run & gun** (firing a gun
+  while moving at N u/s or more).
+- Every filter row works like Kill Filters: Enable, ★ Must, Exclude.
+- Knife swings are now their own event type, shown with a **Swing** badge in the Editing tab.
+
+### Changed
+
+- **Weapon, map, match type and suicide settings now also filter damage and shots**, not only kills.
+  Before, a damage clip on any weapon slipped through an "AK-47 only" setting.
+- **AIRBORNE** now also judges shots and says so ("also shots"); every other kill filter only
+  judges kills.
+- **Clutches are read from CS Demo Manager's `clutches` table** when it exists. Rounds won by the
+  bomb exploding, a defuse or the timer now count as won clutches (about 14 % more "wins only"
+  clutches on a real database). Older databases fall back to the previous detection.
+- A demo whose kills are all excluded is no longer dropped when it still has damage or shots to clip.
+
+### Fixed
+
+- The previous clutch detection could mix up teams named "T" and "CT" and report impossible sizes
+  such as 1v6.
+- The Editing tab no longer shows **Jump** and **Miss** badges: nothing ever produced them. The
+  *Other* event type now says what it really gives (shots and knife swings, not jumps).
+- The UI Theme card in Settings was cut off by a few pixels since the font control was added.
+
 ## 3.2.15 — 2026-09-18
 
 FERRARI PEEK gets its Exclude button back, the grid size and font become editable from Settings, and
