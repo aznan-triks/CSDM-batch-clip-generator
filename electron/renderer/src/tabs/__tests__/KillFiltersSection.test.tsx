@@ -100,6 +100,21 @@ describe("KillFiltersSection", () => {
     }
   });
 
+  it("gives FERRARI PEEK the same Exclude box as every other filter", async () => {
+    // E11: FERRARI PEEK (kill_mod_high_velocity) used to be special-cased out
+    // of its Exclude box even though kill_mod_high_velocity_exclude is a real
+    // DEFAULT_CONFIG key. It must render and toggle exactly like WALLBANG's.
+    const { container } = await renderTab();
+    const row = rowFor(container, "kill_mod_high_velocity");
+    const excludeBox = row.querySelector('[data-config-key="kill_mod_high_velocity_exclude"]');
+    expect(excludeBox).not.toBeNull();
+
+    const exclude = within(row).getByRole("button", { name: /Exclude/ });
+    expect(exclude.getAttribute("aria-pressed")).toBe("false");
+    act(() => exclude.click());
+    expect(exclude.getAttribute("aria-pressed")).toBe("true");
+  });
+
   it("hides the FERRARI PEEK sub-panel until the filter is enabled", async () => {
     const { container } = await renderTab();
     expect(container.querySelector('[data-config-key="kill_mod_high_vel_thr"]')).toBeNull();

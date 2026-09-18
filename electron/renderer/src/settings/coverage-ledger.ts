@@ -27,7 +27,6 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   kill_mod_logic_mods: "forced to 'mixed'; no ANY/ALL/MIXED selector exists",
   kill_mod_logic_dp2: "forced to 'mixed'; no ANY/ALL/MIXED selector exists",
   kill_mod_logic_db: "forced to 'mixed'; no ANY/ALL/MIXED selector exists",
-  kill_mod_high_velocity_exclude: "auto-generated; FERRARI PEEK builds no Exclude box",
   // Added in v213 with the confirmed process exit, after the inventory was
   // written. Read by the engine through _host_cfg; no widget was ever built.
   process_exit_poll_interval: "engine-only: how often the task list is polled",
