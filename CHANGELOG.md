@@ -20,6 +20,25 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.2.15 — 2026-09-18
+
+FERRARI PEEK gets its Exclude button back, the grid size and font become editable from Settings, and
+"Test & Reload" finally tests what you just typed.
+
+### Fixed
+
+- **FERRARI PEEK had no Exclude button**, unlike every other kill filter, even though the setting
+  existed. The row was built by hand long ago and lost the button; the Electron screen had copied that
+  gap as if it were intended. It now goes through the same row as the other filters.
+- **"Test & Reload" ignored database fields you had typed but not yet saved**: it sent them under
+  names the engine does not read, so the test ran against the old values. It now sends the typed
+  host, port, user, password and database.
+
+### Added
+
+- **Card grid size** (Settings → UI Layout) and **Font family** (Settings → UI Theme) are now controls
+  on screen. They used to be reachable only by editing the config file by hand. The font applies live.
+
 ## 3.2.14 — 2026-09-17
 
 Player and Resolution stop reserving a mostly-empty block twice as tall as anything in them.
