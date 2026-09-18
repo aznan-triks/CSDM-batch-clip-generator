@@ -1,8 +1,13 @@
 /**
  * Parity coverage: no Tkinter action may go unanswered — each one is mounted
  * or ledgered with a reason; no stale ledger entry, no unknown mount.
+ *
+ * docs/INVENTAIRE_ACTIONS.md is git-ignored private working material (see
+ * .gitignore section 8) and is absent from a fresh public clone. This suite
+ * compares shipped code against that private document, so it skips outright
+ * when the document is not there instead of failing on a missing file.
  */
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 import { render } from "@testing-library/react";
@@ -15,8 +20,14 @@ import CaptureTab from "../../tabs/CaptureTab";
 import SettingsTab from "../../tabs/SettingsTab";
 import TagsTab from "../../tabs/TagsTab";
 import VideoTab from "../../tabs/VideoTab";
-import { NOT_YET_PORTED, NO_PORT_BY_DESIGN, PORTED_BEHIND_STATE } from "../action-ledger";
-import { readActionInventory } from "../inventory";
+import {
+  NOT_YET_PORTED,
+  NO_PORT_BY_DESIGN,
+  PORTED_BEHIND_STATE,
+} from "../action-ledger";
+import { INVENTORY_PATH, readActionInventory } from "../inventory";
+
+const hasInventory = existsSync(INVENTORY_PATH);
 
 vi.mock("../../bridge", () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -88,7 +99,11 @@ function mountedActions(): Set<string> {
   ];
 
   for (const { Component } of tabs) {
-    const { container } = render(<SettingsProvider><Component /></SettingsProvider>);
+    const { container } = render(
+      <SettingsProvider>
+        <Component />
+      </SettingsProvider>,
+    );
     collectActions(container, found);
   }
 
@@ -126,62 +141,95 @@ function markerHomes(): Map<string, Set<string>> {
   return homes;
 }
 
-describe("every Tkinter action is answered for", () => {
-  const inventory = readActionInventory().filter((entry) => !entry.removed);
-  const mounted = mountedActions();
+describe.skipIf(!hasInventory)(
+  hasInventory
+    ? "every Tkinter action is answered for"
+    : `every Tkinter action is answered for (skipped: ${INVENTORY_PATH} not present in this checkout)`,
+  () => {
+    // Guarded by hasInventory above: describe.skipIf still runs this factory
+    // to register the (skipped) tests, so readActionInventory() must not run
+    // when the document is absent.
+    const inventory = hasInventory
+      ? readActionInventory().filter((entry) => !entry.removed)
+      : [];
+    const mounted = mountedActions();
 
-  it("accounts for each one: mounted, or in the ledger with a reason", () => {
-    const unaccounted = inventory
-      .filter(
-        (entry) =>
-          !mounted.has(entry.id) &&
-          !(entry.id in NO_PORT_BY_DESIGN) &&
-          !(entry.id in NOT_YET_PORTED) &&
-          !(entry.id in PORTED_BEHIND_STATE),
-      )
-      .map((entry) => `${entry.id} (${entry.label})`);
-    expect(unaccounted, "these Tkinter actions have no answer in this shell").toEqual([]);
-  });
+    it("accounts for each one: mounted, or in the ledger with a reason", () => {
+      const unaccounted = inventory
+        .filter(
+          (entry) =>
+            !mounted.has(entry.id) &&
+            !(entry.id in NO_PORT_BY_DESIGN) &&
+            !(entry.id in NOT_YET_PORTED) &&
+            !(entry.id in PORTED_BEHIND_STATE),
+        )
+        .map((entry) => `${entry.id} (${entry.label})`);
+      expect(
+        unaccounted,
+        "these Tkinter actions have no answer in this shell",
+      ).toEqual([]);
+    });
 
-  it("holds no stale ledger entry", () => {
-    const known = new Set(inventory.map((entry) => entry.id));
-    const stale = [
-      ...Object.keys(NO_PORT_BY_DESIGN),
-      ...Object.keys(NOT_YET_PORTED),
-      ...Object.keys(PORTED_BEHIND_STATE),
-    ].filter((id) => !known.has(id));
-    expect(stale, "these ids are in the ledger but not in the inventory").toEqual([]);
-  });
+    it("holds no stale ledger entry", () => {
+      const known = new Set(inventory.map((entry) => entry.id));
+      const stale = [
+        ...Object.keys(NO_PORT_BY_DESIGN),
+        ...Object.keys(NOT_YET_PORTED),
+        ...Object.keys(PORTED_BEHIND_STATE),
+      ].filter((id) => !known.has(id));
+      expect(
+        stale,
+        "these ids are in the ledger but not in the inventory",
+      ).toEqual([]);
+    });
 
-  it("mounts no action the inventory does not know", () => {
-    const known = new Set(readActionInventory().map((entry) => entry.id));
-    const invented = [...mounted].filter((id) => !known.has(id));
-    expect(invented, "these data-action markers name nothing real").toEqual([]);
-  });
+    it("mounts no action the inventory does not know", () => {
+      const known = new Set(readActionInventory().map((entry) => entry.id));
+      const invented = [...mounted].filter((id) => !known.has(id));
+      expect(invented, "these data-action markers name nothing real").toEqual(
+        [],
+      );
+    });
 
-  it("never files one id in two lists", () => {
-    const lists = [NO_PORT_BY_DESIGN, NOT_YET_PORTED, PORTED_BEHIND_STATE].map((l) => Object.keys(l));
-    const seen = new Map<string, number>();
-    for (const ids of lists) for (const id of ids) seen.set(id, (seen.get(id) ?? 0) + 1);
-    expect([...seen].filter(([, n]) => n > 1).map(([id]) => id)).toEqual([]);
-  });
+    it("never files one id in two lists", () => {
+      const lists = [
+        NO_PORT_BY_DESIGN,
+        NOT_YET_PORTED,
+        PORTED_BEHIND_STATE,
+      ].map((l) => Object.keys(l));
+      const seen = new Map<string, number>();
+      for (const ids of lists)
+        for (const id of ids) seen.set(id, (seen.get(id) ?? 0) + 1);
+      expect([...seen].filter(([, n]) => n > 1).map(([id]) => id)).toEqual([]);
+    });
 
-  it("lists nothing as pending that is already on screen", () => {
-    const stale = Object.keys(NOT_YET_PORTED).filter((id) => mounted.has(id));
-    expect(stale, "mounted, so no longer 'not yet ported'").toEqual([]);
-  });
+    it("lists nothing as pending that is already on screen", () => {
+      const stale = Object.keys(NOT_YET_PORTED).filter((id) => mounted.has(id));
+      expect(stale, "mounted, so no longer 'not yet ported'").toEqual([]);
+    });
 
-  it("gives every action id a single home in the source", () => {
-    const shared = [...markerHomes()].filter(([, files]) => files.size > 1)
-      .map(([id, files]) => `${id}: ${[...files].join(", ")}`);
-    expect(shared, "one id marks one action, in one component").toEqual([]);
-  });
+    it("gives every action id a single home in the source", () => {
+      const shared = [...markerHomes()]
+        .filter(([, files]) => files.size > 1)
+        .map(([id, files]) => `${id}: ${[...files].join(", ")}`);
+      expect(shared, "one id marks one action, in one component").toEqual([]);
+    });
 
-  it("finds the marker of every action said to wait behind a state", () => {
-    const homes = markerHomes();
-    const noMarker = Object.keys(PORTED_BEHIND_STATE).filter((id) => !homes.has(id));
-    const mountedAnyway = Object.keys(PORTED_BEHIND_STATE).filter((id) => mounted.has(id));
-    expect(noMarker, "said to be ported, but no component marks it").toEqual([]);
-    expect(mountedAnyway, "mounted in the test, so not behind a state").toEqual([]);
-  });
-});
+    it("finds the marker of every action said to wait behind a state", () => {
+      const homes = markerHomes();
+      const noMarker = Object.keys(PORTED_BEHIND_STATE).filter(
+        (id) => !homes.has(id),
+      );
+      const mountedAnyway = Object.keys(PORTED_BEHIND_STATE).filter((id) =>
+        mounted.has(id),
+      );
+      expect(noMarker, "said to be ported, but no component marks it").toEqual(
+        [],
+      );
+      expect(
+        mountedAnyway,
+        "mounted in the test, so not behind a state",
+      ).toEqual([]);
+    });
+  },
+);

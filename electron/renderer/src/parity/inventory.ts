@@ -9,8 +9,14 @@ import path from "node:path";
  * and a parity check that drifts is worse than none -- it reassures wrongly.
  *
  * Node-only: this module is imported by tests, never by the renderer bundle.
+ *
+ * The document lives under docs/, which is git-ignored (private working
+ * material -- see the repo's .gitignore, section 8). A fresh public clone
+ * does not have it: callers that need to skip when it is absent should test
+ * `existsSync(INVENTORY_PATH)` rather than let `readActionInventory()` throw
+ * during test collection.
  */
-const INVENTORY = path.join(
+export const INVENTORY_PATH = path.join(
   __dirname,
   "..", "..", "..", "..", // parity -> src -> renderer -> electron -> repo root
   "docs",
@@ -29,7 +35,7 @@ export interface ActionEntry {
 const ROW = /^\|\s*(\*\*)?([A-Q]\d+)(\*\*)?\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/;
 
 export function readActionInventory(): ActionEntry[] {
-  const text = readFileSync(INVENTORY, "utf8");
+  const text = readFileSync(INVENTORY_PATH, "utf8");
   const entries: ActionEntry[] = [];
   let family = "";
 
@@ -59,7 +65,7 @@ export function readActionInventory(): ActionEntry[] {
 
   if (entries.length === 0) {
     // Fail fast: an empty parse would make every downstream check vacuous.
-    throw new Error(`no action rows parsed from ${INVENTORY} -- has its table format changed?`);
+    throw new Error(`no action rows parsed from ${INVENTORY_PATH} -- has its table format changed?`);
   }
   return entries;
 }

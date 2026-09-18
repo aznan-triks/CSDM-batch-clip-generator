@@ -1,7 +1,13 @@
 /**
  * mock-v12.css must not drift from a fresh extraction of the approved mock -- it is GENERATED.
+ *
+ * The source HTML (docs/ui-restyle-mockups/mockup-v12-hologlass.html) is
+ * git-ignored private working material (see .gitignore section 8) and is
+ * absent from a fresh public clone. Only the drift-lock test below needs it
+ * -- it skips when the file is missing instead of failing; the other test
+ * in this file only reads the committed mock-v12.css and stays active.
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -11,23 +17,37 @@ import {
   extractMockCss,
 } from "../../../../scripts/extract-mock-css.mjs";
 
+const hasMockHtml = existsSync(MOCK_HTML_PATH);
+
 describe("the shipped mock stylesheet", () => {
-  it("is byte-identical to a fresh extraction of the approved mock", () => {
-    const expected = extractMockCss(readFileSync(MOCK_HTML_PATH, "utf8"));
-    const actual = readFileSync(MOCK_CSS_PATH, "utf8");
-    expect(
-      actual,
-      "mock-v12.css no longer matches the approved mock. It is GENERATED: " +
-        "run `npm run --prefix electron build:mock-css` instead of editing it.",
-    ).toBe(expected);
-  });
+  it.skipIf(!hasMockHtml)(
+    hasMockHtml
+      ? "is byte-identical to a fresh extraction of the approved mock"
+      : `is byte-identical to a fresh extraction of the approved mock (skipped: ${MOCK_HTML_PATH} not present in this checkout)`,
+    () => {
+      const expected = extractMockCss(readFileSync(MOCK_HTML_PATH, "utf8"));
+      const actual = readFileSync(MOCK_CSS_PATH, "utf8");
+      expect(
+        actual,
+        "mock-v12.css no longer matches the approved mock. It is GENERATED: " +
+          "run `npm run --prefix electron build:mock-css` instead of editing it.",
+      ).toBe(expected);
+    },
+  );
 
   it("carries the rules the window actually needs", () => {
     const css = readFileSync(MOCK_CSS_PATH, "utf8");
     // A truncated extraction would still be "identical to a fresh extraction"
     // if the regex broke on both sides. These are load-bearing selectors from
     // the top, middle and bottom of the mock's <style> block.
-    for (const selector of [".hud-nav", ".sec", ".chip", ".console", ".actbar", ".tcursor"]) {
+    for (const selector of [
+      ".hud-nav",
+      ".sec",
+      ".chip",
+      ".console",
+      ".actbar",
+      ".tcursor",
+    ]) {
       expect(css, `missing ${selector}`).toContain(selector);
     }
   });
@@ -69,10 +89,16 @@ const THEME_DIR = path.join(__dirname, "..");
 describe("token vocabularies", () => {
   it("never gives one name two different TYPES across the two stylesheets", () => {
     const mock = declarations(readFileSync(MOCK_CSS_PATH, "utf8"));
-    const app = declarations(readFileSync(path.join(THEME_DIR, "tokens.css"), "utf8"));
+    const app = declarations(
+      readFileSync(path.join(THEME_DIR, "tokens.css"), "utf8"),
+    );
     const clashes = [...mock.keys()]
       .filter((name) => app.has(name))
-      .filter((name) => isShadow(resolve(mock.get(name)!, mock)) !== isShadow(resolve(app.get(name)!, app)));
+      .filter(
+        (name) =>
+          isShadow(resolve(mock.get(name)!, mock)) !==
+          isShadow(resolve(app.get(name)!, app)),
+      );
     expect(
       clashes,
       "same token name, different type: the mock's rules would receive a value " +
@@ -81,8 +107,12 @@ describe("token vocabularies", () => {
   });
 
   it("defines every token the mock's rules read but never declare", () => {
-    const bridge = declarations(readFileSync(path.join(THEME_DIR, "mock-bridge.css"), "utf8"));
-    const app = declarations(readFileSync(path.join(THEME_DIR, "tokens.css"), "utf8"));
+    const bridge = declarations(
+      readFileSync(path.join(THEME_DIR, "mock-bridge.css"), "utf8"),
+    );
+    const app = declarations(
+      readFileSync(path.join(THEME_DIR, "tokens.css"), "utf8"),
+    );
     // Runtime-only: painted by JS per element, never declared in a stylesheet.
     const runtime = new Set(["--mx", "--my", "--ang", "--sc", "--r", "--fill"]);
     const css = readFileSync(MOCK_CSS_PATH, "utf8");
@@ -92,8 +122,13 @@ describe("token vocabularies", () => {
     );
     const missing = [...read].filter(
       (name) =>
-        !runtime.has(name) && !declared.has(name) && !bridge.has(name) && !app.has(name),
+        !runtime.has(name) &&
+        !declared.has(name) &&
+        !bridge.has(name) &&
+        !app.has(name),
     );
-    expect(missing, "the mock reads these and nothing declares them").toEqual([]);
+    expect(missing, "the mock reads these and nothing declares them").toEqual(
+      [],
+    );
   });
 });
