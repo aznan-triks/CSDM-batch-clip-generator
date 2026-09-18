@@ -8,13 +8,20 @@ time, so a key added tomorrow is measured tomorrow.
 import pathlib
 import unittest
 
+# A registry filter's capability id ends with its key's suffix; the prefix is
+# its event category (kill_filter_ / damage_filter_ / shot_filter_).
+from csdm.capabilities import filter_capability_id
+from csdm.static_data import KILL_FILTER_REGISTRY as _REG
+
+_FILTER_ID_SUFFIXES = tuple(filter_capability_id(f) for f in _REG)
+
 
 class TestDerivedCapabilities(unittest.TestCase):
     def test_every_kill_filter_has_one_capability(self):
         from csdm.capabilities import CAPABILITIES
         from csdm.static_data import KILL_FILTER_REGISTRY
 
-        derived = [c for c in CAPABILITIES if c.id.startswith("kill_filter_")]
+        derived = [c for c in CAPABILITIES if c.id.endswith(_FILTER_ID_SUFFIXES)]
         self.assertEqual(len(derived), len(KILL_FILTER_REGISTRY))
         owners = {c.config_keys[0] for c in derived}
         self.assertEqual(owners, {f.key for f in KILL_FILTER_REGISTRY})
@@ -24,7 +31,7 @@ class TestDerivedCapabilities(unittest.TestCase):
         from csdm.static_data import _FILTER_CONFIG_DEFAULTS, KILL_FILTER_REGISTRY
 
         by_first_key = {c.config_keys[0]: c for c in CAPABILITIES
-                        if c.id.startswith("kill_filter_")}
+                        if c.id.endswith(_FILTER_ID_SUFFIXES)}
         for f in KILL_FILTER_REGISTRY:
             expected = {k for k in (f.key, f"{f.key}_req", f"{f.key}_exclude")
                         if k in _FILTER_CONFIG_DEFAULTS}
@@ -36,7 +43,7 @@ class TestDerivedCapabilities(unittest.TestCase):
         from csdm.static_data import KILL_FILTER_REGISTRY
 
         by_first_key = {c.config_keys[0]: c for c in CAPABILITIES
-                        if c.id.startswith("kill_filter_")}
+                        if c.id.endswith(_FILTER_ID_SUFFIXES)}
         for f in KILL_FILTER_REGISTRY:
             self.assertEqual(by_first_key[f.key].intention,
                              "I5" if f.camera_fn else "I4", f.key)
@@ -144,7 +151,7 @@ class TestLevels(unittest.TestCase):
         from csdm.static_data import KILL_FILTER_REGISTRY
 
         by_first_key = {c.config_keys[0]: c for c in CAPABILITIES
-                        if c.id.startswith("kill_filter_")}
+                        if c.id.endswith(_FILTER_ID_SUFFIXES)}
         for f in KILL_FILTER_REGISTRY:
             expected = "essential" if f.camera_fn else "advanced"
             self.assertEqual(by_first_key[f.key].level, expected, f.key)

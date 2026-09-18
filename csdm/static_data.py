@@ -13,7 +13,8 @@ from typing import NamedTuple, Optional, List as _List
 #  Kill Filter Registry — single source of truth
 # ═══════════════════════════════════════════════════════════════════════════════
 #
-# Every kill modifier is declared exactly ONCE here.
+# Every filter -- kill modifiers and, since C5bis, the damage / shot filters
+# (applies_to restricted, category "event") -- is declared exactly ONCE here.
 # All other structures (DEFAULT_CONFIG entries, bool_keys,
 # PRESET_KEYS, _FILTER_BADGE_DEFS, _DP2_FILTER_DEFS, _MOD_COLS,
 # needs_dp2, and UI rows) are DERIVED from this registry.
@@ -26,7 +27,7 @@ class FilterDef(NamedTuple):
     key:          str
     label:        str            # UI label (flabel), e.g. "💨 SMOKE:"
     badge:        str            # short badge text, e.g. "💨 SMOKE"
-    category:     str            # "mods" | "dp2" | "db"
+    category:     str            # "mods" | "dp2" | "db" | "event"
     tip:          str            # tooltip
     sql_cols:     Optional[list] = None  # mods: candidate DB columns
     dp2_filter:   Optional[str]  = None  # dp2: per-demo App method name
@@ -47,6 +48,10 @@ class FilterDef(NamedTuple):
     # on that event: the global gate lets an applicable filter keep or drop a
     # non-kill event, and lets every non-applicable filter pass it untouched.
     applies_to: tuple = ("kill",)
+    # Row labels for the extra_config settings, {config_key: (label, unit)}.
+    # A row built from the registry (Damage / Shot Filters cards) renders one
+    # numeric field per entry; kill filters keep their own hand-tuned extras.
+    extra_ui: Optional[dict] = None
 
 
 KILL_FILTER_REGISTRY: _List[FilterDef] = [
@@ -165,6 +170,48 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
         dp2_log="👥 MATE POV", dp2_result="mate pov", dp2_skip="0 mate POV",
         camera_fn="_mate_pov_camera_sid",
         hide_ui=True),   # rendered in Capture & Timing, not in Kill Filters
+    # ── Damage filters — judged on non-lethal damage events (C5bis) ─────
+    # "event": evaluated by the engine's shared modifier layer on the columns
+    # the damages / shots queries carry, never by SQL on kills or by dp2.
+    FilterDef("dmg_mod_headshot_hit",    "🎯 HEADSHOT HIT:",  "🎯 HS HIT",     "event",
+        "Damage that landed on the head (damages.hitgroup = 1).",
+        applies_to=("damage",)),
+    FilterDef("dmg_mod_big_hit",         "💥 BIG HIT:",       "💥 BIG HIT",    "event",
+        "One hit dealing at least N health damage (damages.health_damage).",
+        applies_to=("damage",),
+        extra_config={"dmg_mod_big_hit_min": 90},
+        extra_ui={"dmg_mod_big_hit_min": ("Min damage", "HP")}),
+    FilterDef("dmg_mod_low_hp",          "🩸 1 HP SURVIVOR:", "🩸 LOW HP",     "event",
+        ("The hit left the victim alive on 1 to N HP (damages.victim_new_health).\n"
+         "A hit that killed (0 HP) is a kill, not a survivor."),
+        applies_to=("damage",),
+        extra_config={"dmg_mod_low_hp_max": 5},
+        extra_ui={"dmg_mod_low_hp_max": ("Max HP left", "HP")}),
+    FilterDef("dmg_mod_multi_nade",      "💣 MULTI-NADE:",    "💣 MULTI-NADE", "event",
+        ("One grenade (same damages.weapon_unique_id) hurt N or more distinct players\n"
+         "(the thrower himself does not count). One clip per grenade, on its first impact."),
+        applies_to=("damage",),
+        extra_config={"dmg_mod_multi_nade_min": 3},
+        extra_ui={"dmg_mod_multi_nade_min": ("Min victims", "")}),
+    FilterDef("dmg_mod_team_damage",     "🤦 TEAM DAMAGE:",   "🤦 TEAM DMG",   "event",
+        "Damage dealt to a teammate (damages.attacker_side = victim_side).",
+        applies_to=("damage",)),
+    # ── Shot filters — judged on shot and knife-swing events (C5bis) ─────
+    FilterDef("shot_mod_knife_swing",    "🔪 KNIFE SWING:",   "🔪 SWING",      "event",
+        "A knife swing (shots row fired with the knife).",
+        applies_to=("shot",)),
+    FilterDef("shot_mod_long_spray",     "🔫 LONG SPRAY:",    "🔫 LONG SPRAY", "event",
+        ("A burst that reaches shots.recoil_index N (N-th bullet without releasing).\n"
+         "One clip per burst, on the shot that reaches N."),
+        applies_to=("shot",),
+        extra_config={"shot_mod_long_spray_min": 10},
+        extra_ui={"shot_mod_long_spray_min": ("Min bullets", "")}),
+    FilterDef("shot_mod_run_gun",        "🏃 RUN & GUN:",     "🏃 RUN&GUN",    "event",
+        ("Shot fired while moving at N u/s or more on the ground plane\n"
+         "(sqrt(player_velocity_x² + player_velocity_y²)). Run speeds: knife 250 · AK 215 · AWP 200."),
+        applies_to=("shot",),
+        extra_config={"shot_mod_run_gun_speed": 200},
+        extra_ui={"shot_mod_run_gun_speed": ("Min speed", "u/s")}),
 ]
 
 # ── Derived structures (auto-generated — DO NOT EDIT, edit KILL_FILTER_REGISTRY) ──

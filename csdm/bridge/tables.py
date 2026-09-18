@@ -18,7 +18,11 @@ def describe_filters():
     return {
         "filters": [
             {"key": f.key, "label": f.label, "tip": f.tip,
-             "category": f.category, "hidden": bool(f.hide_ui)}
+             "category": f.category, "hidden": bool(f.hide_ui),
+             "applies_to": list(f.applies_to),
+             "extras": [{"key": k, "label": label, "unit": unit,
+                         "default": (f.extra_config or {}).get(k)}
+                        for k, (label, unit) in (f.extra_ui or {}).items()]}
             for f in KILL_FILTER_REGISTRY
         ],
         "match_types": [

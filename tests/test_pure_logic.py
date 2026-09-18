@@ -63,7 +63,8 @@ class FilterRegistryTests(unittest.TestCase):
 
     def test_categories_are_known(self):
         for f in sd.KILL_FILTER_REGISTRY:
-            self.assertIn(f.category, {"mods", "dp2", "db"})
+            # "event": damage / shot filters judged by the shared modifier layer (C5bis)
+            self.assertIn(f.category, {"mods", "dp2", "db", "event"})
 
     def test_sql_cols_only_on_mods(self):
         for f in sd.KILL_FILTER_REGISTRY:

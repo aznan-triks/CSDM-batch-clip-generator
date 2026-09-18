@@ -1995,6 +1995,20 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
                 self._build_filter_row(sec, _fdef, self._must_widgets["db"])
         self.after(50, lambda: self._on_logic_mode_change("db"))
 
+        # ── Damage / shot filters (C5bis) — registry-built, settings from extra_ui ──
+        _sep(sec)
+        _ev_hdr = tk.Frame(sec, bg=BG2)
+        _ev_hdr.pack(fill="x", pady=(0, 4))
+        slabel(_ev_hdr, "Damage + shot filters:").pack(side="left")
+        self._must_widgets["event"] = []
+        for _fdef in [f for f in KILL_FILTER_REGISTRY if f.category == "event"]:
+            _ev_row = self._build_filter_row(sec, _fdef, self._must_widgets["event"])
+            for _xk, (_xlabel, _xunit) in (_fdef.extra_ui or {}).items():
+                mlabel(_ev_row, f"  {_xlabel}:").pack(side="left", padx=(8, 0))
+                sentry(_ev_row, self.v[_xk], width=4).pack(side="left", padx=(4, 0), ipady=4)
+                if _xunit:
+                    mlabel(_ev_row, _xunit).pack(side="left", padx=(2, 0))
+
         # ── CLUTCH ────────────────────────────────────────────────────────────
         _sep(sec, pady=(8, 4))
         _clutch_hdr = tk.Frame(sec, bg=BG2)

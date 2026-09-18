@@ -207,8 +207,18 @@ _HAND_WRITTEN: list = [
 ]
 
 
+def filter_capability_id(f) -> str:
+    """Capability id of a registry filter, named after what it judges.
+
+    The prefix is the filter's first event category (`applies_to[0]`), so a
+    damage filter reads `damage_filter_*` and never poses as a kill filter;
+    the suffix is the key without its `<x>_mod_` prefix.
+    """
+    return f"{f.applies_to[0]}_filter_" + f.key.split("_mod_", 1)[1]
+
+
 def _derived_filter_capabilities() -> list:
-    """One capability per kill filter, owning every key the registry generated.
+    """One capability per registry filter, owning every key the registry generated.
 
     The filter's own key comes first: it names the capability. A filter that
     supplies a camera (`camera_fn`) decides how the clip is filmed, so it is
@@ -221,7 +231,7 @@ def _derived_filter_capabilities() -> list:
                      if k in _FILTER_CONFIG_DEFAULTS]
         extra = [k for k in (f.extra_config or {}) if k not in generated]
         capabilities.append(Capability(
-            id="kill_filter_" + f.key.removeprefix("kill_mod_"),
+            id=filter_capability_id(f),
             intention="I5" if f.camera_fn else "I4",
             label=f.badge,
             config_keys=tuple(generated + extra),

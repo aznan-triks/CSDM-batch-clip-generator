@@ -167,6 +167,12 @@ class AppliesToTests(unittest.TestCase):
         expected = {f.key: ("kill",) for f in KILL_FILTER_REGISTRY}
         # shots.player_velocity_z lets airborne be judged on a shot.
         expected["kill_mod_airborne"] = ("kill", "shot")
+        # C5bis damage / shot filters judge only their own category.
+        for f in KILL_FILTER_REGISTRY:
+            if f.key.startswith("dmg_mod_"):
+                expected[f.key] = ("damage",)
+            elif f.key.startswith("shot_mod_"):
+                expected[f.key] = ("shot",)
         actual = {f.key: tuple(f.applies_to) for f in KILL_FILTER_REGISTRY}
         self.assertEqual(actual, expected)
 
