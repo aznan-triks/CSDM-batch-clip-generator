@@ -23,12 +23,16 @@ from csdm.static_data import (_FILTER_CONFIG_DEFAULTS, KILL_FILTER_REGISTRY,
                               MATCH_TYPE_DEFS)
 
 
+LEVELS: _Tuple[str, str, str] = ("essential", "advanced", "expert")
+
+
 class Capability(NamedTuple):
     id:          str
     intention:   str                # a code from INTENTIONS
     label:       str
     config_keys: _Tuple[str, ...] = ()
     commands:    _Tuple[str, ...] = ()
+    level:       str = ""           # a value from LEVELS
 
 
 # Ordered as the user meets them, not as the tabs present them.
@@ -55,96 +59,150 @@ _C = Capability
 _HAND_WRITTEN: list = [
     # ── I1 Set up the tool ─────────────────────────────────────────────────
     _C("database_connection", "I1", "Database connection",
-       ("pg_host", "pg_port", "pg_db", "pg_user", "pg_pass"), ("connect_db",)),
-    _C("csdm_executable", "I1", "CS Demo Manager executable", ("csdm_exe",)),
+       ("pg_host", "pg_port", "pg_db", "pg_user", "pg_pass"), ("connect_db",),
+       level="essential"),
+    _C("csdm_executable", "I1", "CS Demo Manager executable", ("csdm_exe",),
+       level="essential"),
     _C("output_folders", "I1", "Output folders",
        ("output_dir_clips", "output_dir_concat", "output_dir_assembled",
-        "subfolder_per_demo", "output_dir")),
-    _C("cs2_cfg_folder", "I1", "CS2 cfg folder override", ("cs2_cfg_dir",)),
+        "subfolder_per_demo", "output_dir"),
+       level="essential"),
+    _C("cs2_cfg_folder", "I1", "CS2 cfg folder override", ("cs2_cfg_dir",),
+       level="advanced"),
     _C("settings_location", "I1", "Settings location",
-       ("config_dir",), ("probe_config_dir", "apply_config_dir")),
-    _C("demo_parse_threads", "I1", "Demo pre-parse threads", ("dp2_threads",)),
+       ("config_dir",), ("probe_config_dir", "apply_config_dir"),
+       level="advanced"),
+    _C("demo_parse_threads", "I1", "Demo pre-parse threads", ("dp2_threads",),
+       level="expert"),
     _C("engine_internals", "I1", "Engine internals",
        ("encoder", "tickrate", "use_config_file_mode",
-        "process_exit_poll_interval", "process_exit_timeout", "cs2_process_name")),
+        "process_exit_poll_interval", "process_exit_timeout", "cs2_process_name"),
+       level="expert"),
     # ── I2 Choose who ──────────────────────────────────────────────────────
     _C("player_selection", "I2", "Players",
-       ("steam_id", "steam_ids", "player_name", "saved_players")),
-    _C("player_name_override", "I2", "In-game name override", ("player_name_override",)),
+       ("steam_id", "steam_ids", "player_name", "saved_players"),
+       level="essential"),
+    _C("player_name_override", "I2", "In-game name override", ("player_name_override",),
+       level="advanced"),
     # ── I3 Choose which demos ──────────────────────────────────────────────
-    _C("demo_date_range", "I3", "Date range", ("date_from", "date_to")),
-    _C("manual_demo_pick", "I3", "Pick demos by hand", (), ("list_demos",)),
-    _C("map_filter", "I3", "Map filter", ("map_filter_enabled", "map_filter")),
-    _C("tagged_demo_search", "I3", "Find demos by tag", (), ("tags_search", "tags_calc_range")),
-    _C("clip_order", "I3", "Processing order", ("clip_order",)),
+    _C("demo_date_range", "I3", "Date range", ("date_from", "date_to"),
+       level="essential"),
+    _C("manual_demo_pick", "I3", "Pick demos by hand", (), ("list_demos",),
+       level="advanced"),
+    _C("map_filter", "I3", "Map filter", ("map_filter_enabled", "map_filter"),
+       level="advanced"),
+    _C("tagged_demo_search", "I3", "Find demos by tag", (), ("tags_search", "tags_calc_range"),
+       level="advanced"),
+    _C("clip_order", "I3", "Processing order", ("clip_order",),
+       level="advanced"),
     # ── I4 Choose which moments ────────────────────────────────────────────
-    _C("event_role", "I4", "Event role", ("event_actor", "event_target")),
-    _C("event_kind", "I4", "Event kind", ("event_lethal", "event_non_lethal", "event_other")),
+    _C("event_role", "I4", "Event role", ("event_actor", "event_target"),
+       level="essential"),
+    _C("event_kind", "I4", "Event kind", ("event_lethal", "event_non_lethal", "event_other"),
+       level="essential"),
     # teamkills_mode is the model Ally / Enemy replaced, kept for migration.
-    _C("event_side", "I4", "Other player's side", ("event_ally", "event_enemy", "teamkills_mode")),
-    _C("round_clips", "I4", "Full-round clips", ("events",)),
-    _C("weapon_filter", "I4", "Weapons", ("weapons",)),
-    _C("headshot_filter", "I4", "Headshots", ("headshots_mode",)),
-    _C("suicide_filter", "I4", "Suicides", ("suicides_mode",)),
+    _C("event_side", "I4", "Other player's side", ("event_ally", "event_enemy", "teamkills_mode"),
+       level="advanced"),
+    _C("round_clips", "I4", "Full-round clips", ("events",),
+       level="advanced"),
+    _C("weapon_filter", "I4", "Weapons", ("weapons",),
+       level="essential"),
+    _C("headshot_filter", "I4", "Headshots", ("headshots_mode",),
+       level="advanced"),
+    _C("suicide_filter", "I4", "Suicides", ("suicides_mode",),
+       level="advanced"),
     _C("clutch_filter", "I4", "Clutches",
        ("clutch_enabled", "clutch_wins_only", "clutch_mode",
-        "clutch_1v1", "clutch_1v2", "clutch_1v3", "clutch_1v4", "clutch_1v5")),
+        "clutch_1v1", "clutch_1v2", "clutch_1v3", "clutch_1v4", "clutch_1v5"),
+       level="advanced"),
     _C("filter_logic", "I4", "Filter logic",
-       ("kill_mod_logic_mods", "kill_mod_logic_dp2", "kill_mod_logic_db")),
+       ("kill_mod_logic_mods", "kill_mod_logic_dp2", "kill_mod_logic_db"),
+       level="expert"),
     # ── I5 Choose how to film ──────────────────────────────────────────────
-    _C("camera_perspective", "I5", "Camera perspective", ("perspective", "victim_pre_s")),
-    _C("clip_window", "I5", "Seconds before and after", ("before", "after")),
-    _C("recording_system", "I5", "Recording system", ("recsys",)),
+    _C("camera_perspective", "I5", "Camera perspective", ("perspective", "victim_pre_s"),
+       level="essential"),
+    _C("clip_window", "I5", "Seconds before and after", ("before", "after"),
+       level="essential"),
+    _C("recording_system", "I5", "Recording system", ("recsys",),
+       level="essential"),
     _C("hlae_options", "I5", "HLAE options",
        ("hlae_fov", "hlae_slow_motion", "hlae_afx_stream", "hlae_no_spectator_ui",
-        "hlae_fix_scope_fov", "hlae_extra_args")),
+        "hlae_fix_scope_fov", "hlae_extra_args"),
+       level="expert"),
     _C("in_game_display", "I5", "In-game display",
-       ("true_view", "show_only_death_notices", "death_notices_duration", "show_xray")),
+       ("true_view", "show_only_death_notices", "death_notices_duration", "show_xray"),
+       level="advanced"),
     _C("cs2_effects", "I5", "CS2 effects",
        ("phys_ragdoll_gravity", "phys_ragdoll_scale", "phys_sv_gravity",
-        "phys_ragdoll_enable", "phys_blood", "phys_dynamic_lighting")),
-    _C("cs2_window", "I5", "CS2 window", ("cs2_window_mode", "cs2_send_to_back")),
+        "phys_ragdoll_enable", "phys_blood", "phys_dynamic_lighting"),
+       level="expert"),
+    _C("cs2_window", "I5", "CS2 window", ("cs2_window_mode", "cs2_send_to_back"),
+       level="advanced"),
     # ── I6 Make the batch reliable ─────────────────────────────────────────
-    _C("retries", "I6", "Retries", ("retry_count", "retry_delay")),
-    _C("batch_pacing", "I6", "Pacing and timeout", ("delay_between_demos", "recording_timeout")),
-    _C("close_game_between_demos", "I6", "Close CS2 after each demo", ("close_game_after",)),
+    _C("retries", "I6", "Retries", ("retry_count", "retry_delay"),
+       level="advanced"),
+    _C("batch_pacing", "I6", "Pacing and timeout", ("delay_between_demos", "recording_timeout"),
+       level="advanced"),
+    _C("close_game_between_demos", "I6", "Close CS2 after each demo", ("close_game_after",),
+       level="advanced"),
     # ── I7 Tune the video render ───────────────────────────────────────────
-    _C("resolution_framerate", "I7", "Resolution and framerate", ("width", "height", "framerate")),
+    _C("resolution_framerate", "I7", "Resolution and framerate", ("width", "height", "framerate"),
+       level="essential"),
     _C("video_encoding", "I7", "Video encoding",
-       ("video_codec", "crf", "video_preset", "video_container")),
-    _C("audio_encoding", "I7", "Audio encoding", ("audio_codec", "audio_bitrate")),
+       ("video_codec", "crf", "video_preset", "video_container"),
+       level="advanced"),
+    _C("audio_encoding", "I7", "Audio encoding", ("audio_codec", "audio_bitrate"),
+       level="advanced"),
     _C("ffmpeg_raw_params", "I7", "Raw FFmpeg parameters",
-       ("ffmpeg_input_params", "ffmpeg_output_params")),
-    _C("sequence_concatenation", "I7", "Join a demo's sequences", ("concatenate_sequences",)),
+       ("ffmpeg_input_params", "ffmpeg_output_params"),
+       level="expert"),
+    _C("sequence_concatenation", "I7", "Join a demo's sequences", ("concatenate_sequences",),
+       level="advanced"),
     _C("final_assembly", "I7", "Final assembly",
-       ("assemble_after", "assemble_output", "delete_after_assemble")),
+       ("assemble_after", "assemble_output", "delete_after_assemble"),
+       level="advanced"),
     # ── I8 Check before running ────────────────────────────────────────────
-    _C("preview", "I8", "Preview", (), ("start_preview", "cancel_preview")),
+    _C("preview", "I8", "Preview", (), ("start_preview", "cancel_preview"),
+       level="essential"),
     # ── I9 Run and control ─────────────────────────────────────────────────
-    _C("batch_run", "I9", "Run, stop, kill", (), ("start_run", "request_stop", "request_kill")),
+    _C("batch_run", "I9", "Run, stop, kill", (), ("start_run", "request_stop", "request_kill"),
+       level="essential"),
     # ── I10 Organise with tags ─────────────────────────────────────────────
     _C("tag_management", "I10", "Tags",
-       ("ui_active_tags",), ("tag_create", "tag_delete", "tags_set_active")),
-    _C("tag_demos", "I10", "Tag demos", (), ("tags_apply", "tags_remove")),
-    _C("tag_on_export", "I10", "Tag on export", ("tag_enabled", "tag_on_export")),
+       ("ui_active_tags",), ("tag_create", "tag_delete", "tags_set_active"),
+       level="advanced"),
+    _C("tag_demos", "I10", "Tag demos", (), ("tags_apply", "tags_remove"),
+       level="advanced"),
+    _C("tag_on_export", "I10", "Tag on export", ("tag_enabled", "tag_on_export"),
+       level="advanced"),
     _C("tag_transfer", "I10", "Export and import tags",
-       (), ("tags_export", "tags_import_scan", "tags_import_apply")),
+       (), ("tags_export", "tags_import_scan", "tags_import_apply"),
+       level="expert"),
     # ── I11 Save and reuse ─────────────────────────────────────────────────
     _C("presets", "I11", "Presets",
-       (), ("list_presets", "save_preset", "load_preset", "delete_preset")),
-    _C("config_persistence", "I11", "Settings saved automatically", (), ("load_config", "save_config")),
+       (), ("list_presets", "save_preset", "load_preset", "delete_preset"),
+       level="advanced"),
+    _C("config_persistence", "I11", "Settings saved automatically", (), ("load_config", "save_config"),
+       level="expert"),
     # ── I12 Monitor ────────────────────────────────────────────────────────
-    _C("debug_trace", "I12", "Debug trace", (), ("set_debug",)),
+    _C("debug_trace", "I12", "Debug trace", (), ("set_debug",),
+       level="expert"),
     # ── I13 Personalise the window ─────────────────────────────────────────
-    _C("theme", "I13", "Theme", ("theme_bg", "theme_accent")),
+    _C("theme", "I13", "Theme", ("theme_bg", "theme_accent"),
+       level="advanced"),
     _C("window_layout", "I13", "Window size and split",
-       ("ui_window_w", "ui_window_h", "ui_split_pct", "ui_remember_layout")),
+       ("ui_window_w", "ui_window_h", "ui_split_pct", "ui_remember_layout"),
+       level="advanced"),
     _C("card_layout", "I13", "Card layout",
-       ("ui_sections", "ui_card_block_size", "ui_card_row_height", "ui_card_collapsed_rows")),
-    _C("font", "I13", "Font", ("ui_font_family",)),
+       ("ui_sections", "ui_card_block_size", "ui_card_row_height", "ui_card_collapsed_rows"),
+       level="advanced"),
+    _C("font", "I13", "Font", ("ui_font_family",),
+       level="advanced"),
     # ── I14 Diagnose ───────────────────────────────────────────────────────
-    _C("engine_handshake", "I14", "Engine handshake", (), ("ping", "hello", "describe_filters")),
-    _C("developer_probes", "I14", "Developer probes", (), ("demo_logs", "demo_ask", "tkinter_check")),
+    _C("engine_handshake", "I14", "Engine handshake", (), ("ping", "hello", "describe_filters"),
+       level="expert"),
+    _C("developer_probes", "I14", "Developer probes", (), ("demo_logs", "demo_ask", "tkinter_check"),
+       level="expert"),
 ]
 
 
@@ -153,7 +211,8 @@ def _derived_filter_capabilities() -> list:
 
     The filter's own key comes first: it names the capability. A filter that
     supplies a camera (`camera_fn`) decides how the clip is filmed, so it is
-    filed under I5; every other filter narrows which moments are kept (I4).
+    filed under I5 and ranked "essential"; every other filter narrows which
+    moments are kept (I4) and is a refinement ("advanced").
     """
     capabilities = []
     for f in KILL_FILTER_REGISTRY:
@@ -165,6 +224,7 @@ def _derived_filter_capabilities() -> list:
             intention="I5" if f.camera_fn else "I4",
             label=f.badge,
             config_keys=tuple(generated + extra),
+            level="essential" if f.camera_fn else "advanced",
         ))
     return capabilities
 
@@ -177,6 +237,7 @@ def _derived_match_type_capability() -> Capability:
         label="Match type filter",
         config_keys=("match_type_filter_enabled",
                      *(cfg_key for _db, cfg_key, _label, _tip in MATCH_TYPE_DEFS)),
+        level="advanced",
     )
 
 

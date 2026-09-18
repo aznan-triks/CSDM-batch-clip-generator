@@ -132,5 +132,35 @@ class TestPartition(unittest.TestCase):
         self.assertEqual([code for code, _ in INTENTIONS if code not in used], [])
 
 
+class TestLevels(unittest.TestCase):
+    def test_every_capability_has_a_valid_level(self):
+        from csdm.capabilities import CAPABILITIES, LEVELS
+
+        invalid = [c.id for c in CAPABILITIES if c.level not in LEVELS]
+        self.assertEqual(invalid, [], "capabilities with no valid level -- assign one")
+
+    def test_a_filter_that_supplies_a_camera_is_essential(self):
+        from csdm.capabilities import CAPABILITIES
+        from csdm.static_data import KILL_FILTER_REGISTRY
+
+        by_first_key = {c.config_keys[0]: c for c in CAPABILITIES
+                        if c.id.startswith("kill_filter_")}
+        for f in KILL_FILTER_REGISTRY:
+            expected = "essential" if f.camera_fn else "advanced"
+            self.assertEqual(by_first_key[f.key].level, expected, f.key)
+
+    def test_match_type_filter_is_advanced(self):
+        from csdm.capabilities import CAPABILITIES
+
+        match = next(c for c in CAPABILITIES if c.id == "match_type_filter")
+        self.assertEqual(match.level, "advanced")
+
+    def test_all_three_levels_are_used(self):
+        from csdm.capabilities import CAPABILITIES, LEVELS
+
+        used = {c.level for c in CAPABILITIES}
+        self.assertEqual(used, set(LEVELS))
+
+
 if __name__ == "__main__":
     unittest.main()
