@@ -144,7 +144,7 @@ DEFAULT_CONFIG = {
     "event_ally": False,      # Include ally-on-ally / ally-on-me events
     "event_enemy": True,      # Include enemy-on-me / me-on-enemy events
     "event_non_lethal": False,  # Include non-lethal damage events
-    "event_other": False,     # Include "other" events (shots, jumps, grenade misses)
+    "event_other": False,     # Include "other" events (shots, knife swings)
     "events": [],             # ["Rounds"] when full-round clips are on (legacy list name)
     # Derived booleans (set by build_run_cfg, NOT stored):
     #   events_lethal, events_non_lethal, events_other

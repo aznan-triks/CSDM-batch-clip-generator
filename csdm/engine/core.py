@@ -1258,11 +1258,12 @@ class EngineMixin:
     def _query_shots(self, cfg, sids, conn, results):
         """Query the shots table for "other" events (near-miss, void shots).
 
-        Builds a 'shot' event per shot fired by a tracked player. A shot is
-        inherently an actor action, so it only applies when the actor
-        perspective is selected. Jump / knife-swing / grenade-miss refinement
-        from player_positions is left to the shared modifier layer (Task 3);
-        here we surface the raw shot stream with weapon when available.
+        Builds one event per shot fired by a tracked player: 'knife_swing'
+        when the weapon is the knife, 'shot' otherwise. A shot is inherently an
+        actor action, so it only applies when the actor perspective is
+        selected. Scope filters come from _nonkill_where_sql. Jump and
+        grenade-miss have no producer: the DB stores no jump event and no
+        verified projectile-to-damage link.
         """
         if not (cfg.get("_events_other") and self._db_schema.get("shots")):
             return
@@ -1304,31 +1305,37 @@ class EngineMixin:
                 if wc:
                     evt["weapon"] = str(row[ci] or "")
                     ci += 1
+                    # A knife "shot" is a swing, not a gun shot (E3).
+                    if evt["weapon"].strip().lower() == "knife":
+                        evt["type"] = "knife_swing"
                 if vzc and ci < len(row):
                     evt["player_velocity_z"] = row[ci]
                 results.setdefault(dp, []).append(evt)
 
     # ── Shared modifier layer — evaluate kill modifiers on any event type ──
 
+    # Every event type the engine produces, mapped to its FilterDef.applies_to
+    # category. Jump / grenade-miss have no producer (C6a plan), so they are
+    # absent on purpose.
+    _EVENT_CATEGORIES = {
+        "kill":          "kill",
+        "death":         "kill",
+        "damage_actor":  "damage",
+        "damage_target": "damage",
+        "shot":          "shot",
+        "knife_swing":   "shot",
+        "round":         "round",
+        "clutch_round":  "round",
+    }
+
     @staticmethod
     def _event_category(etype):
-        """Map an event type string to its category bucket.
+        """Category of an event type ("kill" | "damage" | "shot" | "round").
 
-        Categories match FilterDef.applies_to:
-          "kill"   → kill / death events
-          "damage" → non-lethal damage events
-          "shot"   → raw shot events
-          "round"  → round events
-        Anything unknown falls back to "kill" (safest — preserves old behaviour).
+        Explicit table — an unknown type returns None (no filter applies to
+        it) instead of silently counting as a kill.
         """
-        etype = etype or ""
-        if etype.startswith("damage"):
-            return "damage"
-        if etype.startswith("shot"):
-            return "shot"
-        if etype.startswith("round"):
-            return "round"
-        return "kill"
+        return EngineMixin._EVENT_CATEGORIES.get(etype)
 
     @staticmethod
     def _modifier_needs_positions(k):
