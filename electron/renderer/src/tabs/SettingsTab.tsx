@@ -268,7 +268,7 @@ export default function SettingsTab() {
     setDbStatus("Connecting…");
     try {
       await runCommand("connect_db", {
-        pg: { host: pgHost, port: pgPort, user: pgUser, pass: pgPass, db: pgDb },
+        pg: { pg_host: pgHost, pg_port: pgPort, pg_user: pgUser, pg_pass: pgPass, pg_db: pgDb },
       });
       setDbStatus("Connected");
       reloadDatabase();
