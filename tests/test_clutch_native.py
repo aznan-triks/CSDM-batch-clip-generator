@@ -705,3 +705,42 @@ def test_fallback_fixture_covers_wins_losses_and_sizes():
     assert ("c.dem", 1) not in got          # the ghost teammate was still alive
     assert got[("c.dem", 2)] == (2, True)
     assert "d.dem" not in windows
+
+
+# ── Ghost-player correction must match team names exactly, not by substring ──
+#
+# The roster-based ghost correction used to match a roster team name to a
+# kill-row team label by substring containment ("t" in "ct"). With real team
+# names "t"/"ct" (the side labels CSDM falls back to), that check is true no
+# matter which name is on which side, so *both* roster entries collapse onto
+# whichever label python's `set` iterates first for that process — an order
+# the test cannot control or predict. Whichever label wins ends up sized
+# max(t_roster, ct_roster) and the other is left at its raw, uncorrected kill
+# count. Sizing the two rosters asymmetrically (5 vs 2) makes sure that is
+# wrong under *either* winner: the losing team is either stuck at 1 (raw,
+# never topped up) or ballooned to 5 (the other team's roster size stolen).
+# Only an exact match reliably yields the real opponent size (2) both ways.
+
+def test_ghost_correction_matches_team_names_exactly_not_by_substring():
+    host = _Host()
+    host._demo_checksums = {"e.dem": "chkE"}
+    # "t" team: 5 rostered, all 5 show up in the kills below (no ghost need).
+    # "ct" team: 2 rostered, only e1 shows up in kills (e2 is a silent ghost).
+    host._clutch_roster_sizes = {"chkE": {"t": 5, "ct": 2}}
+
+    e = [
+        _k(100, "e1", "ct", "c2", "t", 1),
+        _k(110, "e1", "ct", "c3", "t", 1),
+        _k(120, "e1", "ct", "c4", "t", 1),
+        _k(130, "e1", "ct", "c5", "t", 1),   # P's team now down to P alone
+        _k(140, "P",  "t",  "e1", "ct", 1),  # P trades the only observed opponent
+    ]
+    all_kills = {"e.dem": e}
+    results = {"e.dem": [{"tick": k["tick"], "type": "kill", "weapon": "ak47",
+                           "killer_sid": k["killer_sid"]}
+                          for k in e if k["killer_sid"] == "P"]}
+
+    windows = host._detect_clutch_windows_from_kills(results, ["P"], _cfg(), all_kills)
+    window = windows["e.dem"][("e.dem", 1)]
+    # The real roster says 2 opponents (e1 + the ghost e2), never 1 and never 5.
+    assert window["opponents"] == 2

@@ -2118,16 +2118,18 @@ class EngineMixin:
                 roster = getattr(self, "_clutch_roster_sizes", {}).get(chk, {})
                 if roster:
                     # roster: {team_name: player_count} — e.g. {"ct": 5, "t": 5}
-                    # Find our team name and opponent team names
+                    # Find our team name and opponent team names.
+                    # Exact match only (case-insensitive): both team_name (players
+                    # table) and killer/victim_team (kills table) come from the
+                    # same CSDM column convention, so they agree verbatim. A
+                    # substring check ("t" in "ct") used to be order-dependent —
+                    # every roster entry collapsed onto whichever label python's
+                    # `set` happened to iterate first — and could size a team
+                    # larger than its real roster (e.g. an impossible "1v6").
                     _team_names = set(v for v in alive_set.values() if v)
                     for tname, count in roster.items():
                         tname_lo = tname.lower()
-                        # Match to team label in alive_set (our_team or opponent)
-                        matched_label = None
-                        for label in _team_names:
-                            if label and (tname_lo in label.lower() or label.lower() in tname_lo):
-                                matched_label = label
-                                break
+                        matched_label = tname_lo if tname_lo in _team_names else None
                         if matched_label is None:
                             continue
                         observed = sum(1 for v in alive_set.values() if v == matched_label)
