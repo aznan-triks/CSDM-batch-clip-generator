@@ -104,7 +104,11 @@ export default function WeaponFilterSection() {
     }
   }
 
+  // ONE marker for the whole section, not just the grid: "Select all" and
+  // "Deselect all" write `weapons` too, and a control writing a key outside
+  // its `SettingControl` is invisible to the coverage and no-stray guards.
   return (
+    <SettingControl settingKey="weapons">
     <div className="weapon-filter">
       <div className="row">
         <span className="lab">empty = all</span>
@@ -117,7 +121,6 @@ export default function WeaponFilterSection() {
           </button>
         </div>
       </div>
-      <SettingControl settingKey="weapons">
         <div className="chips">
           {categories.map(([category, names]) => (
             <div key={category} className="wf-category">
@@ -135,7 +138,6 @@ export default function WeaponFilterSection() {
             </div>
           ))}
         </div>
-      </SettingControl>
 
       {/* The mock's `.casc`: the silhouette of each picked weapon. A weapon
           being deselected fades out (.casc-g out) instead of vanishing. */}
@@ -166,5 +168,6 @@ export default function WeaponFilterSection() {
         );
       })()}
     </div>
+    </SettingControl>
   );
 }
