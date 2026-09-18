@@ -53,7 +53,7 @@ from csdm.core_utils import (
 
 # Tables probed when reading the CSDM schema, in probe order.
 DISCOVERY_TABLES = ("kills", "matches", "demos", "rounds", "players", "tags",
-                    "checksum_tags", "match_tags", "damages", "shots")
+                    "checksum_tags", "match_tags", "damages", "shots", "clutches")
 # SQL types that can carry a match date.
 DISCOVERY_DATE_TYPES = frozenset({
     "date", "timestamp", "timestamp with time zone", "timestamp without time zone",
@@ -1107,13 +1107,12 @@ class EngineMixin:
 
         # ── Clutch filter ──────────────────────────────────────────────────
         if cfg.get("clutch_enabled") and results:
-            demo_paths = set(results.keys())
-            all_kills_by_demo = self._fetch_all_kills_for_demos(demo_paths)
-            if all_kills_by_demo:
-                results = self._apply_clutch_filter(results, sids, cfg, all_kills_by_demo)
+            clutch_windows = self._clutch_windows_for(results, sids, cfg)
+            if clutch_windows is not None:
+                results = self._apply_clutch_windows(results, sids, cfg, clutch_windows)
             else:
                 self.log(
-                    "  ⚠ Clutch: could not fetch all-kills data — clutch filter skipped.",
+                    "  ⚠ Clutch: no clutch data (clutches table or kills) — clutch filter skipped.",
                     "warn")
 
         return results
@@ -1812,33 +1811,154 @@ class EngineMixin:
 
         return out
 
+    # ── Clutch filter ───────────────────────────────────────────────────────────
+    # A clutch "window" is one round in which the tracked player was the last one
+    # alive on his team. Two sources build windows ({(demo_path, round): window}):
+    #   * _fetch_native_clutches — CSDM's own `clutches` table (primary);
+    #   * _detect_clutch_windows_from_kills — rebuilt from the kills (fallback,
+    #     for a database without the table or a demo the table does not cover).
+    # _apply_clutch_windows then applies size / wins-only / mode to either.
+    # Window keys: start_tick, opponents, won, round_tick_min, round_tick_max
+    # (tick range of the round, used to match kill events), end_tick (end of the
+    # full-clutch clip), kill_ticks.
+
+    _CLUTCH_COLS = {
+        "match": ["match_checksum", "match_id", "checksum"],
+        "round": ["round_number", "round_num", "round"],
+        "tick": ["tick"],
+        "sid": ["clutcher_steam_id", "steam_id"],
+        "won": ["won", "has_won"],
+        "opponents": ["opponent_count", "opponents"],
+    }
+
+    def _fetch_native_clutches(self, demo_paths, sids):
+        """Clutch windows from CSDM's `clutches` table, joined to `rounds`.
+
+        Returns {demo_path: {(demo_path, round_number): window}} for every demo
+        the table covers (an empty dict when the player had no clutch there),
+        or None when the table, a needed column, or the query is unavailable —
+        the caller then falls back to kill-based detection. Rows with
+        opponent_count < 1 are CSDM anomalies and are excluded. When several of
+        the tracked players clutched the same round, the earliest clutch wins
+        (one window per round, as the fallback produces).
+        """
+        if not self._db_schema.get("clutches"):
+            return None
+        col = {k: self._find_col("clutches", v) for k, v in self._CLUTCH_COLS.items()}
+        dc  = self._find_col("matches", ["demo_path", "demo_file_path", "demo_filepath",
+                                         "share_code", "file_path", "path"])
+        mkm = self._find_col("matches", ["checksum", "id", "match_id"])
+        rmk = self._find_col("rounds", ["match_checksum", "match_id", "checksum"])
+        rnum = self._find_col("rounds", ["number", "round_number"])
+        rst = self._find_col("rounds", ["start_tick"])
+        ren = self._find_col("rounds", ["end_tick"])
+        reo = self._find_col("rounds", ["end_officially_tick"])
+        if not all(col.values()) or not all([dc, mkm, rmk, rnum, rst, ren]):
+            return None
+        if not demo_paths:
+            return {}
+
+        demo_paths = set(demo_paths)
+        chk_to_dp = {self._demo_checksums[dp]: dp for dp in demo_paths
+                     if self._demo_checksums.get(dp)}
+        by_checksum = len(chk_to_dp) == len(demo_paths)
+        keys = list(chk_to_dp) if by_checksum else list(demo_paths)
+        where_col = f'm."{mkm}"' if by_checksum else f'm."{dc}"'
+        round_max = f'COALESCE(r."{reo}", r."{ren}")' if reo else f'r."{ren}"'
+        sql = (f'SELECT m."{dc}", c."{col["match"]}", c."{col["round"]}", c."{col["tick"]}", '
+               f'c."{col["sid"]}", c."{col["won"]}", c."{col["opponents"]}", '
+               f'r."{rst}", r."{ren}", {round_max} '
+               f'FROM clutches c '
+               f'JOIN matches m ON m."{mkm}" = c."{col["match"]}" '
+               f'JOIN rounds r ON r."{rmk}" = c."{col["match"]}" '
+               f'AND r."{rnum}" = c."{col["round"]}" '
+               f'WHERE c."{col["opponents"]}" >= 1 '
+               f'AND {where_col} IN ({",".join(["%s"] * len(keys))}) '
+               f'ORDER BY m."{dc}", c."{col["round"]}", c."{col["tick"]}"')
+        try:
+            with self._pg().cursor() as cur:
+                cur.execute(sql, keys)
+                rows = cur.fetchall()
+        except Exception as e:
+            self.log(f"  ⚠ Clutch: clutches table unreadable — {e}", "warn")
+            return None
+
+        sids_set = set(str(s) for s in sids)
+        out: dict = {}
+        for (dp_val, chk, rn, tick, sid, won, opp,
+             r_start, r_end, r_max) in rows:
+            dp = chk_to_dp.get(chk) if by_checksum else str(dp_val)
+            if dp not in demo_paths or rn is None or tick is None:
+                continue
+            windows = out.setdefault(dp, {})     # the table covers this demo
+            if str(sid) not in sids_set:
+                continue
+            rk = (dp, int(rn))
+            if rk in windows and windows[rk]["start_tick"] <= int(tick):
+                continue
+            start = int(tick)
+            end = int(r_end) if r_end is not None else start
+            windows[rk] = {
+                "start_tick": start,
+                "opponents": int(opp),
+                "won": bool(won),
+                "round_tick_min": int(r_start) if r_start is not None else start,
+                "round_tick_max": int(r_max) if r_max is not None else end,
+                "end_tick": end,
+                "kill_ticks": [],
+            }
+        return out
+
+    def _clutch_windows_for(self, results, sids, cfg):
+        """Clutch windows for every demo in results: native table first, kills else.
+
+        Logs which source served how many demos. Returns None only when neither
+        source produced anything (the caller then skips the clutch filter, as
+        before E9).
+        """
+        demo_paths = set(results)
+        native = self._fetch_native_clutches(demo_paths, sids)
+        windows = dict(native or {})
+        missing = demo_paths - set(windows)
+        n_fallback = 0
+        if missing:
+            all_kills = self._fetch_all_kills_for_demos(missing)
+            if all_kills:
+                detected = self._detect_clutch_windows_from_kills(
+                    {dp: results[dp] for dp in missing}, sids, cfg, all_kills)
+                windows.update(detected)
+                n_fallback = len([dp for dp in missing if dp in all_kills])
+            elif native is None:
+                return None
+        parts = []
+        if native:
+            parts.append(f"{len(native)} demo(s) from the CSDM clutches table")
+        if missing:
+            parts.append(f"{n_fallback} demo(s) by kill-based detection"
+                         + ("" if native is not None else " (no clutches table)"))
+        self.log("  Clutch source: " + ", ".join(parts) + ".", "info")
+        return windows
+
     def _apply_clutch_filter(self, results, sids, cfg, all_kills_by_demo):
-        """Filter results so that only events occurring during a clutch phase are kept.
+        """Kill-based clutch filter (fallback path): detect, then apply.
 
-        A "clutch" is defined as the period starting from the tick of the kill
-        that makes the player the last alive on his team until the round ends
-        (player death or last opponent death).
+        Kept as one call so the pre-E9 entry point still exists; its output is
+        pinned against the pre-E9 implementation in tests/test_clutch_native.py.
+        """
+        windows = self._detect_clutch_windows_from_kills(results, sids, cfg, all_kills_by_demo)
+        return self._apply_clutch_windows(results, sids, cfg, windows)
 
-        cfg keys used:
-          clutch_enabled   — master guard (caller already checked, but kept for safety)
-          clutch_wins_only — only rounds where the player kills all remaining opponents
-          clutch_mode      — "kills_only" | "full_clutch"
-          clutch_1v1 … clutch_1v5 — size filters (all False = all sizes)
+    def _detect_clutch_windows_from_kills(self, results, sids, cfg, all_kills_by_demo):
+        """Rebuild clutch windows from the kills alone (fallback source).
 
-        Returns a filtered copy of results with the same structure.
-        Events tagged with:
-          "_clutch_start_tick"  — tick at which the clutch started
-          "_clutch_opponents"   — number of opponents when the clutch began
-          "_clutch_won"         — bool: player killed all opponents
-          "type" == "clutch_round" (full_clutch mode only) — the synthetic full-round event
+        A "clutch" starts at the kill that leaves the player last alive on his
+        team; it is won when every opponent dies (bomb, defuse and time wins
+        are invisible here — the native table sees them). Returns
+        {demo_path: {round_key: window}} for demos with at least one clutch,
+        every size and outcome included (filtering is _apply_clutch_windows').
         """
         sids_set = set(str(s) for s in sids)
         tickrate  = int(cfg.get("tickrate", 64))
-        wins_only = cfg.get("clutch_wins_only", False)
-        mode      = cfg.get("clutch_mode", "kills_only")
-        size_filter = {n for n in range(1, 6) if cfg.get(f"clutch_1v{n}", False)}
-        # All False = include every size
-        any_size_filter = bool(size_filter)
 
         def _round_key_from_kill(kill, dp):
             rn = kill.get("round_num")
@@ -1846,9 +1966,9 @@ class EngineMixin:
                 return (dp, int(rn))
             return (dp, kill["tick"] // max(1, tickrate * 115))
 
-        filtered = {}
+        windows_by_demo = {}
 
-        for dp, events in results.items():
+        for dp in results:
             demo_kills = all_kills_by_demo.get(dp, [])
             if not demo_kills:
                 # No all-kills data → cannot detect clutch → skip demo
@@ -2009,27 +2129,58 @@ class EngineMixin:
                 if clutch_start_tick is None:
                     continue  # no clutch in this round
 
-                # Apply size filter
-                if any_size_filter and clutch_opponents not in size_filter:
-                    continue
-                # Apply wins_only
-                if wins_only and not clutch_won:
-                    continue
-
                 round_ticks = [k["tick"] for k in r_kills]
+                round_tick_max = max(round_ticks) if round_ticks else clutch_start_tick
                 clutch_windows[rk] = {
                     "start_tick":  clutch_start_tick,
                     "opponents":   clutch_opponents,
                     "won":         clutch_won,
                     "kill_ticks":  clutch_kill_ticks,
                     "round_tick_min": min(round_ticks) if round_ticks else clutch_start_tick,
-                    "round_tick_max": max(round_ticks) if round_ticks else clutch_start_tick,
+                    "round_tick_max": round_tick_max,
+                    # full clutch ends at the round's last kill
+                    "end_tick":    round_tick_max,
                 }
 
+            if clutch_windows:
+                windows_by_demo[dp] = clutch_windows
+
+        return windows_by_demo
+
+    def _apply_clutch_windows(self, results, sids, cfg, windows_by_demo):
+        """Keep only what happens inside a clutch window, whatever its source.
+
+        cfg keys used:
+          clutch_wins_only — only won clutches
+          clutch_mode      — "kills_only" | "full_clutch"
+          clutch_1v1 … clutch_1v5 — size filters (all False = all sizes)
+
+        A demo with no window left is dropped. Non-kill, non-death, non-round
+        events pass through untouched. Kill events are matched to a window by
+        the round's tick range (kill events carry no round number).
+        Events tagged with:
+          "_clutch_start_tick"  — tick at which the clutch started
+          "_clutch_opponents"   — number of opponents when the clutch began
+          "_clutch_won"         — bool: clutch won
+          "type" == "clutch_round" (full_clutch mode only) — the synthetic full-round event
+        """
+        sids_set = set(str(s) for s in sids)
+        tickrate  = int(cfg.get("tickrate", 64))
+        wins_only = cfg.get("clutch_wins_only", False)
+        mode      = cfg.get("clutch_mode", "kills_only")
+        size_filter = {n for n in range(1, 6) if cfg.get(f"clutch_1v{n}", False)}
+
+        filtered = {}
+
+        for dp, events in results.items():
+            clutch_windows = {
+                rk: cw for rk, cw in (windows_by_demo.get(dp) or {}).items()
+                if (not size_filter or cw["opponents"] in size_filter)
+                and (not wins_only or cw["won"])
+            }
             if not clutch_windows:
                 continue
 
-            # ── Filter / generate events from the clutch windows ─────────────
             kill_events   = [e for e in events if e.get("type") == "kill"]
             non_kill      = [e for e in events if e.get("type") not in ("kill", "death", "round")]
 
@@ -2037,27 +2188,25 @@ class EngineMixin:
                 # One synthetic event per clutch window.
                 # _seq_start_tick / _seq_end_tick respect the Before/After sliders:
                 #   start = clutch_start_tick - before_ticks  (lead-in from when player is last alive)
-                #   end   = last_kill_tick    + after_ticks   (tail after the final kill of the clutch)
+                #   end   = window end_tick   + after_ticks
                 before_s = float(cfg.get("before", 3))
                 after_s  = float(cfg.get("after",  5))
                 bt = int(before_s * tickrate)
                 at = int(after_s  * tickrate)
                 new_events = []
                 for rk, cw in sorted(clutch_windows.items(), key=lambda x: x[1]["start_tick"]):
-                    # End boundary: last kill tick in this round from all_kills data
-                    r_kills = rounds_all.get(rk, [])
-                    last_round_tick = max((k["tick"] for k in r_kills), default=cw["start_tick"])
+                    end_tick = cw["end_tick"]
                     synthetic = {
                         "tick":              cw["start_tick"],
                         "type":              "clutch_round",
                         "weapon":            "",
                         "_clutch_start_tick":cw["start_tick"],
-                        "_clutch_end_tick":  last_round_tick,
+                        "_clutch_end_tick":  end_tick,
                         "_clutch_opponents": cw["opponents"],
                         "_clutch_won":       cw["won"],
                         # Apply Before/After padding around the clutch boundaries
                         "_seq_start_tick":   max(0, cw["start_tick"] - bt),
-                        "_seq_end_tick":     last_round_tick + at,
+                        "_seq_end_tick":     end_tick + at,
                     }
                     # Add kills from this clutch as sub-events for badge display.
                     # Match by tick range: kill_tick in [clutch_start, round_end].
@@ -2073,23 +2222,17 @@ class EngineMixin:
                     filtered[dp] = new_events + non_kill
 
             else:  # kills_only
-                # Keep only kill events that fall within a clutch window for this round.
-                # Build a sorted list of (tick_min, tick_max, cw) for tick-based fallback
-                # in case the round_key method differs between all_kills and query_events rows.
-                _cw_by_key   = clutch_windows                        # primary: key lookup
-                _cw_by_ticks = sorted(                               # fallback: tick range
+                # Keep only kill events that fall within a clutch window's round.
+                # Rounds do not overlap, so the tick range identifies the round.
+                _cw_by_ticks = sorted(
                     [(cw["round_tick_min"], cw["round_tick_max"], cw)
                      for cw in clutch_windows.values()],
                     key=lambda x: x[0])
 
-                def _find_cw(e_tick, e_rk):
-                    cw = _cw_by_key.get(e_rk)
-                    if cw is not None:
-                        return cw
-                    # Fallback: find the window whose round tick-range contains e_tick
-                    for tmin, tmax, cw_fb in _cw_by_ticks:
+                def _find_cw(e_tick):
+                    for tmin, tmax, cw in _cw_by_ticks:
                         if tmin <= e_tick <= tmax:
-                            return cw_fb
+                            return cw
                     return None
 
                 kept_kills = []
@@ -2097,9 +2240,7 @@ class EngineMixin:
                     if str(e.get("killer_sid", "")) not in sids_set:
                         continue
                     e_tick = e["tick"]
-                    e_rk = _round_key_from_kill(
-                        {"tick": e_tick, "round_num": e.get("round_num")}, dp)
-                    cw = _find_cw(e_tick, e_rk)
+                    cw = _find_cw(e_tick)
                     if cw is None:
                         continue
                     if e_tick < cw["start_tick"]:
