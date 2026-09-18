@@ -125,7 +125,7 @@ DEFAULT_CONFIG = {
                 "paths": {"x": 0, "y": 6, "w": 15, "h": 14},
                 "config-folder": {"x": 0, "y": 20, "w": 15, "h": 7},
                 "presets": {"x": 0, "y": 27, "w": 5, "h": 12},
-                "ui-theme": {"x": 5, "y": 27, "w": 5, "h": 10},
+                "ui-theme": {"x": 5, "y": 27, "w": 5, "h": 11},
                 "ui-layout": {"x": 10, "y": 27, "w": 5, "h": 11},
                 "performance": {"x": 0, "y": 39, "w": 7, "h": 6},
                 "injection-preview": {"x": 7, "y": 39, "w": 8, "h": 7},
