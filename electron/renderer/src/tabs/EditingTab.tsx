@@ -40,12 +40,13 @@ const EVENT_TYPE_META: Record<string, { label: string; kind: string }> = {
   damage_actor:  { label: "🔫 Dmg",  kind: "damage" },
   damage_target: { label: "🩹 Hit",  kind: "damage" },
   shot:          { label: "🎯 Shot", kind: "shot" },
-  jump:          { label: "🦘 Jump", kind: "shot" },
   knife_swing:   { label: "🔪 Swing", kind: "shot" },
-  grenade_miss:  { label: "💣 Miss", kind: "shot" },
 };
 
-function eventTypeMeta(eventType: string): { label: string; kind: string } {
+// No Jump / Miss badge: the engine produces no jump and no grenade-miss event
+// (no DB source for either, C6 E3), so a badge for them would promise clips
+// that never come.
+export function eventTypeMeta(eventType: string): { label: string; kind: string } {
   return EVENT_TYPE_META[eventType] ?? { label: eventType, kind: "other" };
 }
 

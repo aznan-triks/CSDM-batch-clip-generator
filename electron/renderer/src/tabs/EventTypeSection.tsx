@@ -39,7 +39,7 @@ export default function EventTypeSection() {
   const targetOn = asBool(target, false);
   // Lethal requires at least one perspective to make sense.
   const lethalEnabled = actorOn || targetOn;
-  // "Other" (shots, jumps) only makes sense from the actor's own camera.
+  // "Other" (shots, knife swings) only makes sense from the actor's own camera.
   const otherEnabled = actorOn;
 
   return (
@@ -92,7 +92,7 @@ export default function EventTypeSection() {
         <SettingControl settingKey="event_other">
           <Chip
             label="Other"
-            tip="Include other actions like shots fired or jumps. Actor perspective only"
+            tip="Include shots fired and knife swings, without a hit. Actor perspective only"
             selected={asBool(other, false)}
             onToggle={() => setOther(!asBool(other, false))}
             disabled={!otherEnabled}
