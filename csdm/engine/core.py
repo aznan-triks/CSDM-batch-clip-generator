@@ -38,7 +38,7 @@ except ImportError:
     psycopg2 = None
 
 from csdm.static_data import (
-    SUICIDE_WEAPONS, DELAYED_EFFECT_WEAPONS, KILL_FILTER_REGISTRY,
+    SUICIDE_WEAPONS, DELAYED_EFFECT_WEAPONS, KILL_FILTER_REGISTRY, GUN_WEAPONS_LOWER,
     KILL_FILTER_SQL_COLS, CPU_VIDEO_CODECS,
     CSDM_RUNTIME_CFG_NAME, CSDM_RUNTIME_BLOCK_START, CSDM_RUNTIME_BLOCK_END,
     _NO_AUTO_EXCLUDE, PERSP_LABELS, _MATCH_TYPE_KEY_TO_DB, _MATCH_TYPE_CFG_KEYS,
@@ -1406,6 +1406,8 @@ class EngineMixin:
         return e.get("type") == "knife_swing"
 
     def _rule_run_gun(self, e, n):
+        if str(e.get("weapon") or "").strip().lower() not in GUN_WEAPONS_LOWER:
+            return False
         vx, vy = self._num(e.get("player_velocity_x")), self._num(e.get("player_velocity_y"))
         if vx is None or vy is None:
             return False

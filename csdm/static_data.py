@@ -207,7 +207,7 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
         extra_config={"shot_mod_long_spray_min": 10},
         extra_ui={"shot_mod_long_spray_min": ("Min bullets", "")}),
     FilterDef("shot_mod_run_gun",        "🏃 RUN & GUN:",     "🏃 RUN&GUN",    "event",
-        ("Shot fired while moving at N u/s or more on the ground plane\n"
+        ("Gun shot (no grenade, no knife) fired while moving at N u/s or more on the ground plane\n"
          "(sqrt(player_velocity_x² + player_velocity_y²)). Run speeds: knife 250 · AK 215 · AWP 200."),
         applies_to=("shot",),
         extra_config={"shot_mod_run_gun_speed": 200},
@@ -462,6 +462,14 @@ WEAPON_CATEGORIES = {
         "Zeus x27",
     ],
 }
+
+# Every firearm name (lower-case), derived from the gun categories above.
+# RUN & GUN judges gun shots only: a grenade throw or a knife swing on the run
+# is not a run-and-gun moment (real data 2026-09-18: 1 fast "shot" in 4).
+GUN_WEAPONS_LOWER = frozenset(
+    name.lower()
+    for cat in ("Pistols", "SMGs", "Rifles", "Snipers", "Heavy")
+    for name in WEAPON_CATEGORIES[cat])
 
 WEAPON_ICONS = {
     'Pistols': '🔫', 'SMGs': '🔫', 'Rifles': '🎯', 'Snipers': '🎯',

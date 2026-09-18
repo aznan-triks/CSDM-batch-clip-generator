@@ -270,6 +270,15 @@ class RunGunTests(_Base):
         self.assertEqual(self.run_filters(self.EVENTS, shot_mod_run_gun=True,
                                           shot_mod_run_gun_speed=210), [1])
 
+    def test_only_gun_shots_count(self):
+        # Real data (2026-09-18): 1 in 4 fast "shots" were grenade throws or
+        # knife swings -- not a run & gun moment.
+        events = [shot(1, weapon="HE Grenade", vx=240.0),
+                  shot(2, weapon="Knife", vx=250.0, etype="knife_swing"),
+                  shot(3, weapon="MP9", vx=240.0)]
+        self.assertEqual(self.run_filters(events, shot_mod_run_gun=True,
+                                          shot_mod_run_gun_req=True), [3])
+
 
 class KillGateTests(_Base):
     """A kill is judged only by the filters that apply to kills."""
