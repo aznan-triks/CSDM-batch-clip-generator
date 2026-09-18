@@ -133,6 +133,24 @@ export default function AppShell() {
     document.documentElement.style.setProperty("--block-collapsed-rows", String(rows));
   }, [collapsedRows]);
 
+  // Monospace font family (E12): Tkinter read this once at boot, before any
+  // widget existed, and never offered a control for it (INVENTAIRE_REGLAGES,
+  // ui_font_family). The port had adopted the same "config only" gap. "auto"
+  // (or empty) removes the override and falls back to tokens.css's own
+  // `--font-mono` stack; a forced name is prepended ahead of that same
+  // fallback chain, so an uninstalled family degrades exactly like the CSS
+  // default already does, without needing this renderer to probe installed
+  // fonts the way `resolve_mono_family` (csdm/ui_kit.py) does on the Tk side.
+  const [fontFamily] = useSetting<string>("ui_font_family");
+  useEffect(() => {
+    const root = document.documentElement;
+    if (!fontFamily || fontFamily === "auto") {
+      root.style.removeProperty("--font-mono");
+    } else {
+      root.style.setProperty("--font-mono", `"${fontFamily}", "Cascadia Mono", "Consolas", monospace`);
+    }
+  }, [fontFamily]);
+
   // The open tab, on the document, so the backdrop can draw a different field
   // per screen (`BACKDROP_BY_TAB` in shell/backdropField.ts). An attribute
   // rather than a prop: the canvas is a sibling of `.app`, not a child of the

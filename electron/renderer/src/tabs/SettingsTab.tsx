@@ -130,6 +130,9 @@ export default function SettingsTab() {
 
   const [dp2Threads, setDp2Threads] = useSetting<number>("dp2_threads");
 
+  const [cardBlockSize, setCardBlockSize] = useSetting<number>("ui_card_block_size");
+  const [fontFamily, setFontFamily] = useSetting<string>("ui_font_family");
+
   // Configuration folder (v3.0.1): the active location plus a pending switch.
   const [, setConfigDir] = useSetting<string>("config_dir");
   const [folderInfo, setFolderInfo] = useState<FolderProbe | null>(null);
@@ -540,6 +543,16 @@ export default function SettingsTab() {
               />
             </div>
           </SettingControl>
+          <SettingControl settingKey="ui_font_family">
+            <Field
+              id="ui-font-family"
+              label="Font family"
+              value={fontFamily ?? ""}
+              onChange={setFontFamily}
+              placeholder="auto"
+              tip='Monospace font used across the UI. "auto" keeps the built-in stack (JetBrains Mono / Fira Code / Cascadia Mono / Consolas); type an installed font name to force it'
+            />
+          </SettingControl>
         </Card>
       ),
     },
@@ -619,6 +632,21 @@ export default function SettingsTab() {
                 selected={!!rememberLayout}
                 onToggle={() => setRememberLayout(!rememberLayout)}
                 tip="Automatically saves window size and pane split whenever they change, without pressing Apply"
+              />
+            </SettingControl>
+          </div>
+          <div className="row">
+            <SettingControl settingKey="ui_card_block_size">
+              <Slider
+                id="ui-card-block-size"
+                label="Card grid size"
+                min={24}
+                max={96}
+                step={4}
+                value={asNumber(cardBlockSize, 48)}
+                onChange={setCardBlockSize}
+                readout={`${asNumber(cardBlockSize, 48)}px`}
+                tip="Width of one grid column, in pixels -- decides how finely cards can be resized and repositioned"
               />
             </SettingControl>
           </div>
