@@ -1158,8 +1158,8 @@ class EngineMixin:
 
         Builds events of type 'damage_actor' (tracked player is the attacker)
         or 'damage_target' (tracked player is the victim) with attacker/victim
-        SIDs, weapon, hitgroup, health_damage and armor_damage when the
-        relevant columns exist. Applies the actor/target perspective and
+        SIDs plus every optional column that exists (weapon, hitgroup, damage,
+        victim HP left, sides, weapon type and unique id), each selected once. Applies the actor/target perspective and
         ally/enemy team filter like the kills query.
         """
         if not (cfg.get("_events_non_lethal") and self._db_schema.get("damages")):
@@ -1171,10 +1171,20 @@ class EngineMixin:
         tc = self._find_col("damages", ["tick"])
         ak = self._find_col("damages", ["attacker_steam_id", "attacker_steamid"])
         vk = self._find_col("damages", ["victim_steam_id", "victim_steamid"])
-        wc = self._find_col("damages", ["weapon_name", "weapon"])
-        hg = self._find_col("damages", ["hitgroup"])
-        hd = self._find_col("damages", ["health_damage", "hp_damage"])
-        ad = self._find_col("damages", ["armor_damage"])
+        # Optional columns, each carried on the event under its own field
+        # name: the damage filters (C5bis) read them, badges read weapon.
+        optional = [(field, self._find_col("damages", cands)) for field, cands in (
+            ("weapon", ["weapon_name", "weapon"]),
+            ("hitgroup", ["hitgroup"]),
+            ("health_damage", ["health_damage", "hp_damage"]),
+            ("armor_damage", ["armor_damage"]),
+            ("victim_new_health", ["victim_new_health"]),
+            ("attacker_side", ["attacker_side"]),
+            ("victim_side", ["victim_side"]),
+            ("weapon_type", ["weapon_type"]),
+            ("weapon_unique_id", ["weapon_unique_id"]),
+        )]
+        optional = [(field, col) for field, col in optional if col]
 
         if not all([dc, mkk, mkm, tc, ak, vk]):
             return
@@ -1184,20 +1194,8 @@ class EngineMixin:
         target_on = cfg.get("_events_target", False)
 
         with conn.cursor() as cur:
-            extra = ""
             col_list = [f'm."{dc}"', f'd."{tc}"', f'd."{ak}"', f'd."{vk}"']
-            if wc:
-                extra += f',d."{wc}"'
-                col_list.append(f'd."{wc}"')
-            if hg:
-                extra += f',d."{hg}"'
-                col_list.append(f'd."{hg}"')
-            if hd:
-                extra += f',d."{hd}"'
-                col_list.append(f'd."{hd}"')
-            if ad:
-                extra += f',d."{ad}"'
-                col_list.append(f'd."{ad}"')
+            col_list += [f'd."{col}"' for _field, col in optional]
 
             sid_ph = ",".join(["%s"] * len(sids))
             conditions = []
@@ -1222,7 +1220,7 @@ class EngineMixin:
             scope_sql, scope_params = self._nonkill_where_sql(cfg, "d", "damages")
             params.extend(scope_params)
 
-            sql = (f'SELECT {",".join(col_list)}{extra} FROM damages d '
+            sql = (f'SELECT {",".join(col_list)} FROM damages d '
                    f'JOIN matches m ON m."{mkm}"=d."{mkk}" {self._map_join} '
                    f'WHERE {psql}{team_clause}{scope_sql} ORDER BY m."{dc}",d."{tc}"')
             cur.execute(sql, params)
@@ -1237,21 +1235,11 @@ class EngineMixin:
                 et = "damage_actor" if attacker_sid in sids_set else "damage_target"
                 evt = {"tick": int(tick), "type": et,
                        "attacker_sid": attacker_sid, "victim_sid": victim_sid}
-                # Attach optional extra columns in the same order they were selected
-                ci = 4
-                if wc:
-                    evt["weapon"] = str(row[ci] or "")
-                    ci += 1
-                if hg:
-                    evt["hitgroup"] = row[ci]
-                    ci += 1
-                if hd:
-                    evt["health_damage"] = row[ci]
-                    ci += 1
-                if ad:
-                    evt["armor_damage"] = row[ci]
-                    ci += 1
-
+                for i, (field, _col) in enumerate(optional, start=4):
+                    if i < len(row):
+                        evt[field] = row[i]
+                if "weapon" in evt:
+                    evt["weapon"] = str(evt["weapon"] or "")
                 results.setdefault(dp, []).append(evt)
 
     def _query_shots(self, cfg, sids, conn, results):
@@ -1277,8 +1265,12 @@ class EngineMixin:
         pk = self._find_col("shots", ["player_steam_id", "attacker_steam_id",
                                       "shooter_steam_id", "steam_id"])
         wc = self._find_col("shots", ["weapon_name", "weapon", "weapon_type"])
-        # Vertical velocity at the shot tick — lets AIRBORNE be judged on a shot.
-        vzc = self._find_col("shots", ["player_velocity_z"])
+        # Movement and recoil at the shot tick: AIRBORNE reads the vertical
+        # velocity, RUN & GUN the ground-plane one, LONG SPRAY the recoil index.
+        motion = [(field, self._find_col("shots", [field])) for field in (
+            "player_velocity_z", "player_velocity_x", "player_velocity_y",
+            "recoil_index")]
+        motion = [(field, col) for field, col in motion if col]
 
         if not all([dc, mkk, mkm, tc, pk]):
             return
@@ -1287,8 +1279,7 @@ class EngineMixin:
         with conn.cursor() as cur:
             sid_ph = ",".join(["%s"] * len(sids_list))
             extra = f',s."{wc}"' if wc else ""
-            if vzc:
-                extra += f',s."{vzc}"'
+            extra += "".join(f',s."{col}"' for _field, col in motion)
             scope_sql, scope_params = self._nonkill_where_sql(cfg, "s", "shots")
             sql = (f'SELECT m."{dc}",s."{tc}",s."{pk}"{extra} FROM shots s '
                    f'JOIN matches m ON m."{mkm}"=s."{mkk}" {self._map_join} '
@@ -1307,8 +1298,10 @@ class EngineMixin:
                     # A knife "shot" is a swing, not a gun shot (E3).
                     if evt["weapon"].strip().lower() == "knife":
                         evt["type"] = "knife_swing"
-                if vzc and ci < len(row):
-                    evt["player_velocity_z"] = row[ci]
+                for field, _col in motion:
+                    if ci < len(row):
+                        evt[field] = row[ci]
+                    ci += 1
                 results.setdefault(dp, []).append(evt)
 
     # ── Shared modifier layer — evaluate kill modifiers on any event type ──
@@ -1346,7 +1339,7 @@ class EngineMixin:
         """
         return k in ("kill_mod_airborne", "kill_mod_no_scope")
 
-    def _check_modifier(self, f, event, player_positions_df=None):
+    def _check_modifier(self, f, event, player_positions_df=None, cfg=None):
         """Evaluate a single FilterDef against one event dict.
 
         Returns True when the modifier's condition is met, False otherwise.
@@ -1355,6 +1348,14 @@ class EngineMixin:
         the optional player_positions frame for position-derived modifiers.
         """
         key = f.key
+
+        # Damage / shot filters (C5bis): a rule on the event's own columns, or
+        # membership of a group (grenade / burst) stamped beforehand.
+        if key in self._GROUP_RULES:
+            return key in (event.get("_grp") or {})
+        rule = self._EVENT_RULES.get(key)
+        if rule is not None:
+            return bool(rule(self, event, self._filter_setting(cfg or {}, f)))
 
         # Position-derived modifiers — need the per-demo player_positions frame.
         if key == "kill_mod_airborne":
@@ -1372,6 +1373,132 @@ class EngineMixin:
             if col in event and event[col]:
                 return True
         return False
+
+    # ── Damage / shot filter rules (C5bis) ──────────────────────────────
+    # One function per registry key, reading only columns the damages / shots
+    # queries carry. `n` is the filter's numeric setting (None when it has
+    # none). Missing data never matches (conservative, like _check_modifier).
+
+    @staticmethod
+    def _num(v):
+        try:
+            return None if v is None else float(v)
+        except (TypeError, ValueError):
+            return None
+
+    def _rule_headshot_hit(self, e, n):
+        return self._num(e.get("hitgroup")) == 1
+
+    def _rule_big_hit(self, e, n):
+        hp = self._num(e.get("health_damage"))
+        return hp is not None and hp >= n
+
+    def _rule_low_hp(self, e, n):
+        left = self._num(e.get("victim_new_health"))
+        return left is not None and 1 <= left <= n
+
+    def _rule_team_damage(self, e, n):
+        a, v = e.get("attacker_side"), e.get("victim_side")
+        return (a is not None and a == v
+                and str(e.get("attacker_sid")) != str(e.get("victim_sid")))
+
+    def _rule_knife_swing(self, e, n):
+        return e.get("type") == "knife_swing"
+
+    def _rule_run_gun(self, e, n):
+        vx, vy = self._num(e.get("player_velocity_x")), self._num(e.get("player_velocity_y"))
+        if vx is None or vy is None:
+            return False
+        return (vx * vx + vy * vy) ** 0.5 >= n
+
+    _EVENT_RULES = {
+        "dmg_mod_headshot_hit": _rule_headshot_hit,
+        "dmg_mod_big_hit":      _rule_big_hit,
+        "dmg_mod_low_hp":       _rule_low_hp,
+        "dmg_mod_team_damage":  _rule_team_damage,
+        "shot_mod_knife_swing": _rule_knife_swing,
+        "shot_mod_run_gun":     _rule_run_gun,
+    }
+
+    # Group filters judge a set of events (one grenade, one burst). Every
+    # member is stamped in e["_grp"] as "first" (the one clip kept) or "dup".
+    _GROUP_RULES = ("dmg_mod_multi_nade", "shot_mod_long_spray")
+
+    @staticmethod
+    def _filter_setting(cfg, f):
+        """The filter's numeric setting from cfg (text fields send strings)."""
+        if not f.extra_config:
+            return None
+        key, default = next(iter(f.extra_config.items()))
+        v = EngineMixin._num(cfg.get(key, default))
+        return float(default) if v is None else v
+
+    def _stamp_group_modifiers(self, cfg, events):
+        """Stamp grenade / burst membership for the active group filters."""
+        by_key = {f.key: f for f in KILL_FILTER_REGISTRY}
+        for key in self._GROUP_RULES:
+            if not (cfg.get(key) or cfg.get(f"{key}_exclude")):
+                continue
+            n = self._filter_setting(cfg, by_key[key])
+            groups = (self._multi_nade_groups(events, n) if key == "dmg_mod_multi_nade"
+                      else self._long_spray_groups(events, n))
+            for members, first in groups:
+                for e in members:
+                    e.setdefault("_grp", {})[key] = "first" if e is first else "dup"
+
+    def _multi_nade_groups(self, events, n):
+        """One grenade (weapon_unique_id) that hurt >= n distinct players.
+
+        The thrower is never counted as his own victim. The group's clip is
+        its first impact.
+        """
+        nades = {}
+        for e in events:
+            if self._event_category(e.get("type")) != "damage":
+                continue
+            if str(e.get("weapon_type") or "").lower() != "grenade":
+                continue
+            uid = e.get("weapon_unique_id")
+            if not uid:
+                continue
+            nades.setdefault((e.get("attacker_sid"), uid), []).append(e)
+        out = []
+        for (thrower, _uid), members in nades.items():
+            victims = {str(e.get("victim_sid")) for e in members
+                       if str(e.get("victim_sid")) != str(thrower)}
+            if len(victims) >= n:
+                members.sort(key=lambda e: e.get("tick") or 0)
+                out.append((members, members[0]))
+        return out
+
+    def _long_spray_groups(self, events, n):
+        """Bursts whose recoil index reaches n; the clip is the shot reaching n.
+
+        A burst is a run of shots by one player with one weapon whose
+        recoil_index keeps climbing; a drop (trigger released, recoil decayed)
+        starts the next burst.
+        """
+        seqs = {}
+        for e in events:
+            if e.get("type") != "shot":
+                continue
+            seqs.setdefault((e.get("attacker_sid"), e.get("weapon")), []).append(e)
+        out = []
+        for shots in seqs.values():
+            shots.sort(key=lambda e: e.get("tick") or 0)
+            burst, prev = [], None
+            for e in shots + [None]:
+                r = None if e is None else self._num(e.get("recoil_index"))
+                if e is None or r is None or prev is None or r <= prev:
+                    reach = next((b for b in burst
+                                  if (self._num(b.get("recoil_index")) or 0) >= n), None)
+                    if reach is not None:
+                        out.append((burst, reach))
+                    burst = []
+                if e is not None and r is not None:
+                    burst.append(e)
+                prev = r
+        return out
 
     def _event_airborne(self, event, positions_df):
         """True when the event's actor was airborne at the event tick.
@@ -1441,7 +1568,7 @@ class EngineMixin:
             key = f.key
             if not (cfg.get(key) or cfg.get(f"{key}_exclude")):
                 continue
-            if self._check_modifier(f, event, player_positions_df):
+            if self._check_modifier(f, event, player_positions_df, cfg):
                 mf.add(key)
         return mf
 
@@ -1453,6 +1580,8 @@ class EngineMixin:
         _player_positions_cache when any active modifier needs it. Kill events
         keep whatever _mf the main query already stamped on them.
         """
+        for events in results.values():
+            self._stamp_group_modifiers(cfg, events)
         active_needs_positions = any(
             self._modifier_needs_positions(f.key)
             for f in KILL_FILTER_REGISTRY
@@ -5800,14 +5929,18 @@ class EngineMixin:
         req_set = set(req_keys)
         opt_set = set(opt_keys)
         applies = {f.key: f.applies_to for f in KILL_FILTER_REGISTRY}
+        # A kill is judged only by the filters that apply to kills: a damage
+        # or shot filter (C5bis) must not drop every kill it cannot match.
+        kill_req = {k for k in req_set if "kill" in applies.get(k, ())}
+        kill_opt = {k for k in opt_set if "kill" in applies.get(k, ())}
         kept, non_kill = [], []
         for e in events:
             etype = e.get("type")
             matched = set(e.get("_mf") or set())
             if etype == "kill":
-                if req_set and not req_set.issubset(matched):
+                if kill_req and not kill_req.issubset(matched):
                     continue
-                if opt_set and not (matched & opt_set):
+                if kill_opt and not (matched & kill_opt):
                     continue
                 kept.append(e)
                 continue
@@ -5823,6 +5956,11 @@ class EngineMixin:
             if opt and not (matched & opt):
                 continue
             if exc & matched:
+                continue
+            # One clip per grenade / burst: an enabled group filter keeps only
+            # the member it chose ("first"), never the rest of the group.
+            grp = e.get("_grp") or {}
+            if any(role == "dup" and k in (req | opt) for k, role in grp.items()):
                 continue
             non_kill.append(e)
         result = kept + non_kill
