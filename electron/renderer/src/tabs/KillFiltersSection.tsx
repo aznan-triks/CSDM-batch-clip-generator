@@ -49,14 +49,18 @@ const KILL_COUNT_OPTIONS = ["2", "3", "4", "5"] as const;
 /**
  * Registry entries whose Exclude box this task does not build.
  *
- * `kill_mod_trois_tap`: `${key}_exclude` was never added to DEFAULT_CONFIG.
- * `kill_mod_high_velocity`: the key exists, but `coverage-ledger.ts`'s
- * `NO_CONTROL_BY_DESIGN` records that FERRARI PEEK never had an Exclude box
- * in the Tkinter window -- building one here would make that ledger entry
- * stale, and the coverage guard's "no stale ledger entry" test exists
- * specifically to catch that.
+ * `kill_mod_trois_tap`: `${key}_exclude` was never added to DEFAULT_CONFIG
+ * (see `_NO_AUTO_EXCLUDE` in csdm/static_data.py) -- there is no key to wire.
+ *
+ * FERRARI PEEK (`kill_mod_high_velocity`) used to be listed here too, mirroring
+ * the Tkinter window's own hand-built row (v207), which bypassed the shared
+ * row builder and silently shipped without an Exclude box even though
+ * `kill_mod_high_velocity_exclude` is a real DEFAULT_CONFIG key. That is
+ * exactly the bug FilterRow.tsx's own docstring warns about -- it is fixed
+ * here rather than replicated, so FERRARI PEEK now gets the box like every
+ * other filter with a real `_exclude` key.
  */
-const NO_EXCLUDE_BOX = new Set<string>(["kill_mod_trois_tap", "kill_mod_high_velocity"]);
+const NO_EXCLUDE_BOX = new Set<string>(["kill_mod_trois_tap"]);
 
 /** Read a setting that should be a number, tolerating text-field strings. */
 function asText(value: unknown, fallback: number): string {

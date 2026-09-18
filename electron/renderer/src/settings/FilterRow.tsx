@@ -21,15 +21,12 @@ export default function FilterRow({
 }: {
   def: FilterDef;
   /**
-   * Whether `${def.key}_exclude` is a real DEFAULT_CONFIG key with a box the
-   * Tkinter window actually built.
+   * Whether `${def.key}_exclude` is a real DEFAULT_CONFIG key.
    *
-   * Two different reasons can make this false, and both must omit the box the
-   * same way: the key can simply not exist (`kill_mod_trois_tap`), or it can
-   * exist but be listed in `coverage-ledger.ts`'s `NO_CONTROL_BY_DESIGN`
-   * (`kill_mod_high_velocity_exclude` -- FERRARI PEEK builds no Exclude box).
-   * Only the caller iterating the registry against DEFAULT_CONFIG knows which
-   * case applies, so it is passed in rather than guessed here.
+   * False only when the key simply does not exist (`kill_mod_trois_tap`, see
+   * `_NO_AUTO_EXCLUDE` in csdm/static_data.py). Only the caller iterating the
+   * registry against DEFAULT_CONFIG knows which keys those are, so it is
+   * passed in rather than guessed here.
    */
   hasExclude?: boolean;
   children?: ReactNode;

@@ -87,18 +87,31 @@ describe("FilterRow", () => {
     expect(container.querySelector('[data-config-key$="_exclude"]')).toBeNull();
   });
 
-  it("omits a box the ledger marks as never shown", async () => {
-    // `kill_mod_high_velocity_exclude` exists in DEFAULT_CONFIG but the
-    // window never built a box for it. Showing it here would make a
-    // coverage-ledger.ts entry stale.
+  it("omits the box whenever the caller passes hasExclude={false}", async () => {
+    // FilterRow itself just obeys the prop; whether a given key gets it is
+    // KillFiltersSection's call (NO_EXCLUDE_BOX), not FilterRow's.
     const { container } = render(
       <SettingsProvider>
-        <FilterRow def={{ ...DEF, key: "kill_mod_high_velocity" }} hasExclude={false} />
+        <FilterRow def={{ ...DEF, key: "kill_mod_wall_bang" }} hasExclude={false} />
+      </SettingsProvider>,
+    );
+    await act(async () => {});
+    expect(container.querySelector('[data-config-key$="_exclude"]')).toBeNull();
+  });
+
+  it("gives FERRARI PEEK an Exclude box like every other filter with a real _exclude key", async () => {
+    // `kill_mod_high_velocity_exclude` IS a real DEFAULT_CONFIG key (see
+    // csdm/static_data.py); FERRARI PEEK must get the box by default, same as
+    // any other filter def, unless a caller explicitly opts it out.
+    const { container } = render(
+      <SettingsProvider>
+        <FilterRow def={{ ...DEF, key: "kill_mod_high_velocity", label: "FERRARI PEEK:" }} />
       </SettingsProvider>,
     );
     await act(async () => {});
     expect(
       container.querySelector('[data-config-key="kill_mod_high_velocity_exclude"]'),
-    ).toBeNull();
+    ).not.toBeNull();
+    expect(screen.getByRole("button", { name: /Exclude/ })).toBeTruthy();
   });
 });
