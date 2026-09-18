@@ -13,7 +13,7 @@ import traceback
 
 from csdm.bridge.ports import PipePorts
 from csdm.bridge.protocol import LineWriter, MSG_FATAL, MSG_LOG, MSG_RESULT, MSG_TRACE, decode
-from csdm.bridge.tables import describe_filters, describe_menus
+from csdm.bridge.tables import describe_filters
 from csdm.config import (apply_config_dir, build_preset, load_config, load_presets,
                          normalize_presets, preset_payload, probe_config_dir,
                          save_config, save_presets)
@@ -137,10 +137,6 @@ def _cmd_describe_filters(host, command):
     """Hand the renderer every static table it needs to build its rows."""
     return {"data": describe_filters()}
 
-
-def _cmd_describe_menus(host, command):
-    """Hand the renderer every menu, with capabilities resolved from intention."""
-    return {"data": describe_menus()}
 
 
 def _cmd_demo_logs(host, command):
@@ -405,7 +401,6 @@ COMMANDS = {
     "set_debug": _cmd_set_debug,
     "hello": _cmd_hello,
     "describe_filters": _cmd_describe_filters,
-    "describe_menus": _cmd_describe_menus,
     "start_run": _cmd_start_run,
     "start_preview": _cmd_start_preview,
     "load_config": _cmd_load_config,

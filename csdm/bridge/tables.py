@@ -6,7 +6,6 @@ build its rows from the same source the engine filters on. A table copied into
 TypeScript would drift the day someone adds a filter, and the window would then
 silently stop showing it.
 """
-from csdm.capabilities import CAPABILITIES, LEVELS, MENUS
 from csdm.config import _PRESET_ALL_CATS
 from csdm.static_data import (AUDIO_CODECS, FRAMERATES, KILL_FILTER_REGISTRY,
                               MATCH_TYPE_DEFS, RESOLUTIONS, VIDEO_CODECS,
@@ -47,27 +46,3 @@ def describe_filters():
         "preset_categories": ["full"] + list(_PRESET_ALL_CATS),
     }
 
-
-def describe_menus():
-    """Every menu in order, each with the capabilities its intentions resolve to.
-
-    A menu names intentions (`csdm.capabilities.MENUS`), never capability ids --
-    membership is derived here from `Capability.intention`, the same discipline
-    that keeps a kill filter's capability generated instead of retyped.
-    """
-    return {
-        "menus": [
-            {
-                "id": menu.id,
-                "label": menu.label,
-                "capabilities": [
-                    {"id": c.id, "label": c.label, "intention": c.intention,
-                     "level": c.level, "config_keys": list(c.config_keys),
-                     "commands": list(c.commands)}
-                    for c in CAPABILITIES if c.intention in menu.intentions
-                ],
-            }
-            for menu in MENUS
-        ],
-        "levels": list(LEVELS),
-    }

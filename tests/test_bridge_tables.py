@@ -65,25 +65,5 @@ class TestDescribeFilters(unittest.TestCase):
         self.assertNotIn("tkinter", source)
 
 
-class TestDescribeMenus(unittest.TestCase):
-    def test_every_capability_travels_exactly_once(self):
-        from csdm.capabilities import CAPABILITIES
-
-        _, msgs = _run([{"type": "command", "id": "1", "name": "describe_menus"}])
-        result = [m for m in msgs if m["type"] == "result"][0]
-        self.assertTrue(result["ok"], result.get("error"))
-        seen = [c["id"] for menu in result["data"]["menus"] for c in menu["capabilities"]]
-        self.assertEqual(sorted(seen), sorted(c.id for c in CAPABILITIES))
-        self.assertEqual(len(seen), len(set(seen)))
-
-    def test_menus_travel_in_order_with_levels(self):
-        from csdm.capabilities import LEVELS, MENUS
-
-        _, msgs = _run([{"type": "command", "id": "1", "name": "describe_menus"}])
-        data = [m for m in msgs if m["type"] == "result"][0]["data"]
-        self.assertEqual([m["id"] for m in data["menus"]], [m.id for m in MENUS])
-        self.assertEqual(data["levels"], list(LEVELS))
-
-
 if __name__ == "__main__":
     unittest.main()
