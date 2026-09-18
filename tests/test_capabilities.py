@@ -162,5 +162,51 @@ class TestLevels(unittest.TestCase):
         self.assertEqual(used, set(LEVELS))
 
 
+class TestMenus(unittest.TestCase):
+    def test_every_intention_is_in_exactly_one_menu(self):
+        from collections import defaultdict
+
+        from csdm.capabilities import INTENTIONS, MENUS
+
+        owners = defaultdict(list)
+        for menu in MENUS:
+            for code in menu.intentions:
+                owners[code].append(menu.id)
+        codes = {code for code, _label in INTENTIONS}
+        missing = [c for c in codes if c not in owners]
+        shared = {c: v for c, v in owners.items() if len(v) > 1}
+        self.assertEqual(missing, [], "intentions cited by no menu -- give each a menu")
+        self.assertEqual(shared, {}, "intentions cited by two menus -- keep one owner")
+
+    def test_a_menu_cites_only_known_intentions(self):
+        from csdm.capabilities import INTENTIONS, MENUS
+
+        codes = {code for code, _label in INTENTIONS}
+        for menu in MENUS:
+            unknown = [code for code in menu.intentions if code not in codes]
+            self.assertEqual(unknown, [], menu.id)
+
+    def test_every_capability_resolves_to_exactly_one_menu(self):
+        from collections import defaultdict
+
+        from csdm.capabilities import CAPABILITIES, MENUS
+
+        menus_by_intention = defaultdict(list)
+        for menu in MENUS:
+            for code in menu.intentions:
+                menus_by_intention[code].append(menu.id)
+        for capability in CAPABILITIES:
+            resolved = menus_by_intention.get(capability.intention, [])
+            self.assertEqual(len(resolved), 1, capability.id)
+
+    def test_menu_ids_are_unique(self):
+        from collections import Counter
+
+        from csdm.capabilities import MENUS
+
+        duplicates = [i for i, n in Counter(m.id for m in MENUS).items() if n > 1]
+        self.assertEqual(duplicates, [])
+
+
 if __name__ == "__main__":
     unittest.main()
