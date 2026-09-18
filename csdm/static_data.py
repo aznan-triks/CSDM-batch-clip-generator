@@ -194,7 +194,8 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
         extra_config={"dmg_mod_multi_nade_min": 3},
         extra_ui={"dmg_mod_multi_nade_min": ("Min victims", "")}),
     FilterDef("dmg_mod_team_damage",     "🤦 TEAM DAMAGE:",   "🤦 TEAM DMG",   "event",
-        "Damage dealt to a teammate (damages.attacker_side = victim_side).",
+        ("Damage dealt to a teammate (damages.attacker_side = victim_side).\n"
+         "Needs Ally ticked in Event Type: with Enemy only, team damage is never fetched."),
         applies_to=("damage",)),
     # ── Shot filters — judged on shot and knife-swing events (C5bis) ─────
     FilterDef("shot_mod_knife_swing",    "🔪 KNIFE SWING:",   "🔪 SWING",      "event",

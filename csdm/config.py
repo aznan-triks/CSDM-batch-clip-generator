@@ -100,6 +100,8 @@ DEFAULT_CONFIG = {
                 "kill-filters": {"x": 0, "y": 45, "w": 10, "h": 39},
                 "match-types": {"x": 10, "y": 45, "w": 5, "h": 13},
                 "map-filter": {"x": 10, "y": 58, "w": 5, "h": 10},
+                "damage-filters": {"x": 0, "y": 84, "w": 8, "h": 14},
+                "shot-filters": {"x": 8, "y": 84, "w": 7, "h": 14},
             },
             "collapsed": [],
         },

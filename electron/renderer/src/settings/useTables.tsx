@@ -18,13 +18,33 @@ import type { ReactNode } from "react";
 
 import { runCommand } from "../bridge";
 
+/** A numeric setting a registry filter carries (`FilterDef.extra_ui` in Python). */
+export interface FilterExtra {
+  key: string;
+  label: string;
+  unit: string;
+  default: number | string | boolean | null;
+}
+
+/** Event categories a filter can judge (`FilterDef.applies_to` in Python). */
+export type EventCategory = "kill" | "damage" | "shot" | "round";
+
 export interface FilterDef {
   key: string;
   label: string;
   tip: string;
-  category: "mods" | "dp2" | "db";
+  category: "mods" | "dp2" | "db" | "event";
   hidden: boolean;
+  /**
+   * What the filter judges. Absent means `["kill"]` -- the same default as
+   * Python's `FilterDef.applies_to`, so a table from an older engine still
+   * reads as kill filters only.
+   */
+  applies_to?: EventCategory[];
+  /** Labelled numeric settings for a registry-built row (damage / shot filters). */
+  extras?: FilterExtra[];
 }
+
 
 export interface Tables {
   filters: FilterDef[];

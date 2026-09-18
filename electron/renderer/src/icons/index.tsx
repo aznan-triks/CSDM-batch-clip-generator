@@ -172,6 +172,27 @@ function IconKillFilters() {
   );
 }
 
+/** Damage filters: the filter funnel over a chamfered impact burst. */
+function IconDamageFilters() {
+  return (
+    <Glyph>
+      <path d="M2 3h12l-5 6v6l-2-2V9z" />
+      <path d="M17 11l2 3 3-1-2 3 2 3-3-1-2 3-1-3-3-1 3-2z" />
+    </Glyph>
+  );
+}
+
+/** Shot filters: the filter funnel beside three stacked rounds. */
+function IconShotFilters() {
+  return (
+    <Glyph>
+      <path d="M2 3h12l-5 6v6l-2-2V9z" />
+      <path d="M16 4h2l1 3v3h-4V7zm0 8h2l1 3v3h-4v-3z" />
+      <path d="M20 8h1l1 2v2h-2z" />
+    </Glyph>
+  );
+}
+
 /** Match types: three chamfered brackets stacked. */
 function IconMatchTypes() {
   return (
@@ -365,7 +386,8 @@ export type IconName =
   | "capture" | "tags" | "video" | "settings"
   | "run" | "preview" | "stop" | "kill"
   | "player" | "demoSelection" | "weaponFilter" | "captureTiming"
-  | "killFilters" | "matchTypes" | "mapFilter" | "finalAssembly"
+  | "killFilters" | "damageFilters" | "shotFilters"
+  | "matchTypes" | "mapFilter" | "finalAssembly"
   | "resolution" | "encoding" | "inGameOptions" | "recordingSystem"
   | "hlaeOptions" | "cs2Effects" | "tagRange" | "operations"
   | "paths" | "uiTheme" | "uiLayout" | "postgresql"
@@ -386,6 +408,8 @@ export const ICONS: Record<IconName, () => JSX.Element> = {
   weaponFilter: IconWeaponFilter,
   captureTiming: IconCaptureTiming,
   killFilters: IconKillFilters,
+  damageFilters: IconDamageFilters,
+  shotFilters: IconShotFilters,
   matchTypes: IconMatchTypes,
   mapFilter: IconMapFilter,
   finalAssembly: IconFinalAssembly,

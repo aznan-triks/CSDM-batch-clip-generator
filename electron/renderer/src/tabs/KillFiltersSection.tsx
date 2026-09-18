@@ -16,8 +16,9 @@ import Segmented from "../components/Segmented";
 import FilterRow from "../settings/FilterRow";
 import SettingControl from "../settings/SettingControl";
 import { useSetting, useSettingsBatch } from "../settings/store";
+import { appliesTo } from "../settings/appliesTo";
 import { useTables } from "../settings/useTables";
-import type { FilterDef, Tables } from "../settings/useTables";
+import type { EventCategory, FilterDef, Tables } from "../settings/useTables";
 import "../components/reflowColumns.css";
 import "./KillFiltersSection.css";
 
@@ -68,12 +69,47 @@ function asText(value: unknown, fallback: number): string {
 }
 
 /** The category groups, in the window's own order. */
-const CATEGORY_ORDER: FilterDef["category"][] = ["mods", "dp2", "db"];
-const CATEGORY_HEADING: Record<FilterDef["category"], string> = {
+// "event" filters (damage / shot) have their own cards (EventFiltersSection).
+const CATEGORY_ORDER: Exclude<FilterDef["category"], "event">[] = ["mods", "dp2", "db"];
+const CATEGORY_HEADING: Record<Exclude<FilterDef["category"], "event">, string> = {
   mods: "Mods — none checked = all kills",
   dp2: "demoparser2 modifiers",
   db: "Situation (DB)",
 };
+
+/** How the "also …" mention names each non-kill category a filter judges. */
+const ALSO_NAME: Record<Exclude<EventCategory, "kill">, string> = {
+  damage: "damage",
+  shot: "shots",
+  round: "rounds",
+};
+
+/**
+ * The filters this card shows: the ones that judge kills. Damage and shot
+ * filters (C5bis) have their own cards; which card a filter lands in is its
+ * `applies_to`, never a list kept here.
+ */
+function judgesKills(def: FilterDef): boolean {
+  return appliesTo(def).includes("kill");
+}
+
+/**
+ * "also shots" when a kill filter judges other events too (AIRBORNE judges
+ * shots from their vertical velocity). Derived from `applies_to`, so the day
+ * a filter learns another category the mention follows on its own.
+ */
+function AlsoMention({ def }: { def: FilterDef }) {
+  const others = appliesTo(def).filter((c): c is Exclude<EventCategory, "kill"> => c !== "kill");
+  if (others.length === 0) return null;
+  return (
+    <span
+      className="kf-also"
+      title="This filter also keeps or drops those events when they are captured (Event Type)"
+    >
+      also {others.map((c) => ALSO_NAME[c]).join(" + ")}
+    </span>
+  );
+}
 
 /** The extras a filter row carries beyond Enable / Must / Exclude, if any. */
 function FilterExtras({ filterKey }: { filterKey: string }) {
@@ -268,7 +304,9 @@ function ClutchBlock() {
 
 function buildClearChanges(tables: Tables): Record<string, unknown> {
   const changes: Record<string, unknown> = {};
-  for (const def of tables.filters) {
+  // Only the rows this card shows: Clear must not reach into the Damage /
+  // Shot Filters cards, which the user cannot see from here.
+  for (const def of tables.filters.filter(judgesKills)) {
     changes[def.key] = false;
     changes[`${def.key}_req`] = false;
   }
@@ -335,7 +373,9 @@ export default function KillFiltersSection() {
       </div>
 
       {CATEGORY_ORDER.map((category) => {
-        const defs = tables.filters.filter((f) => f.category === category && !f.hidden);
+        const defs = tables.filters.filter(
+          (f) => f.category === category && !f.hidden && judgesKills(f),
+        );
         if (defs.length === 0) return null;
         return (
           // `reflow-columns` spreads these rows over as many columns as the
@@ -346,6 +386,7 @@ export default function KillFiltersSection() {
             <span className="lab reflow-columns-header">{CATEGORY_HEADING[category]}</span>
             {defs.map((def) => (
               <FilterRow key={def.key} def={def} hasExclude={!NO_EXCLUDE_BOX.has(def.key)}>
+                <AlsoMention def={def} />
                 <FilterExtras filterKey={def.key} />
               </FilterRow>
             ))}

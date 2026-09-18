@@ -22,6 +22,7 @@ import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
 import { TablesProvider } from "../settings/useTables";
 import DemoSelectionSection from "./DemoSelectionSection";
+import EventFiltersSection from "./EventFiltersSection";
 import EventTypeSection from "./EventTypeSection";
 import KillFiltersSection from "./KillFiltersSection";
 import MapFilterSection from "./MapFilterSection";
@@ -316,6 +317,22 @@ export default function CaptureTab() {
       element: (
         <Card title="Kill Filters" icon={<ICONS.killFilters />}>
           <KillFiltersSection />
+        </Card>
+      ),
+    },
+    {
+      id: "damage-filters",
+      element: (
+        <Card title="Damage Filters" icon={<ICONS.damageFilters />}>
+          <EventFiltersSection category="damage" />
+        </Card>
+      ),
+    },
+    {
+      id: "shot-filters",
+      element: (
+        <Card title="Shot Filters" icon={<ICONS.shotFilters />}>
+          <EventFiltersSection category="shot" />
         </Card>
       ),
     },
