@@ -33,7 +33,7 @@ const snapshot = () =>
 // Reset first, so the "reference" we record is the real reference.
 await page.locator('[role="tab"]', { hasText: /settings/i }).first().click();
 await page.waitForTimeout(500);
-await page.locator('button[data-action="M8"]').click();
+await page.locator('button', { hasText: "Reset card layout" }).click();
 await page.waitForTimeout(900);
 await page.locator('[role="tab"]', { hasText: /capture/i }).first().click();
 await page.waitForTimeout(700);
@@ -58,7 +58,7 @@ const moved = await snapshot();
 // Reset and compare.
 await page.locator('[role="tab"]', { hasText: /settings/i }).first().click();
 await page.waitForTimeout(500);
-await page.locator('button[data-action="M8"]').click();
+await page.locator('button', { hasText: "Reset card layout" }).click();
 await page.waitForTimeout(900);
 await page.locator('[role="tab"]', { hasText: /capture/i }).first().click();
 await page.waitForTimeout(700);

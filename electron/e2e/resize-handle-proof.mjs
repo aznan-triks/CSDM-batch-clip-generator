@@ -35,7 +35,7 @@ const settingsTab = page.locator('[role="tab"]', { hasText: /settings/i });
 if ((await settingsTab.count()) > 0) {
   await settingsTab.first().click();
   await page.waitForTimeout(400);
-  await page.locator('button[data-action="M8"]').click();
+  await page.locator('button', { hasText: "Reset card layout" }).click();
   await page.waitForTimeout(700);
   await page.locator('[role="tab"]', { hasText: /capture/i }).first().click();
   await page.waitForTimeout(500);
