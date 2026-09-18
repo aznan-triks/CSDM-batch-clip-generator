@@ -57,8 +57,8 @@ def test_required_sections_survive_non_lethal_events():
 
 
 def test_required_sections_ask_positions_for_a_position_modifier_on_other_events():
-    cfg = {"_events_other": True, "kill_mod_no_scope_exclude": True}
-    assert EngineMixin._dp2_required_sections(cfg) == {"positions", "names"}
+    cfg = {"_events_other": True, "kill_mod_airborne_exclude": True}
+    assert EngineMixin._dp2_required_sections(cfg) == {"death", "positions", "names"}
 
 
 def test_preparse_with_non_lethal_events_returns_quietly_without_demo_files():

@@ -692,17 +692,53 @@ class EngineMixin:
         return any(cfg.get(k) for k, *_ in self._DP2_FILTER_DEFS)
 
     @staticmethod
-    def _qe_suicide_sql(cfg, weapon_col):
+    def _qe_suicide_sql(cfg, weapon_col, alias="k"):
         """Suicide WHERE fragment (params = SUICIDE_WEAPONS appended by caller)."""
         _sm = cfg.get("suicides_mode", "include")
         if _sm == "include" or not weapon_col:
             return ""
         ph = ",".join(["%s"] * len(SUICIDE_WEAPONS))
         if _sm == "exclude":
-            return f' AND k."{weapon_col}" NOT IN ({ph})'
+            return f' AND {alias}."{weapon_col}" NOT IN ({ph})'
         if _sm == "only":
-            return f' AND k."{weapon_col}" IN ({ph})'
+            return f' AND {alias}."{weapon_col}" IN ({ph})'
         return ""
+
+    def _nonkill_where_sql(self, cfg, alias, table):
+        """Scope WHERE fragment for a non-kill table (damages / shots).
+
+        Returns (clause, params). Applies the same scope filters as the kills
+        query wherever the table can answer them: weapons and suicides on the
+        weapon column, headshots on `hitgroup` (1 = head; damages only — a shot
+        has no hit location, so "headshots only" does not apply to it), match
+        type and map on the joined matches row. The caller must join
+        `matches m` and `self._map_join`.
+        """
+        clause, params = "", []
+        wc = self._find_col(table, ["weapon_name", "weapon", "weapon_type"])
+        weapons = cfg.get("weapons", [])
+        if weapons and wc:
+            clause += f' AND {alias}."{wc}" IN ({",".join(["%s"] * len(weapons))})'
+            params.extend(weapons)
+        suicide = self._qe_suicide_sql(cfg, wc, alias)
+        if suicide:
+            clause += suicide
+            params.extend(SUICIDE_WEAPONS)
+        hg = self._find_col(table, ["hitgroup"])
+        hs_mode = cfg.get("headshots_mode", "all")
+        if hg and hs_mode == "only":
+            clause += f' AND {alias}."{hg}" = 1'
+        elif hg and hs_mode == "exclude":
+            clause += f' AND {alias}."{hg}" IS DISTINCT FROM 1'
+        mtsql = self._qe_match_type_sql(cfg)
+        if isinstance(mtsql, tuple):
+            clause += mtsql[0]
+            params.extend(mtsql[1])
+        mf_sql, mf_raw = self._qe_map_filter_sql(cfg)
+        if mf_sql:
+            clause += mf_sql
+            params.extend(mf_raw)
+        return clause, params
 
     @staticmethod
     def _mod_sql_expr(mod_key, col, positive=True):
@@ -1184,10 +1220,12 @@ class EngineMixin:
             team_clause, _ = self._build_team_filter_sql(cfg, "d", params, table="damages")
 
             psql = "(" + " OR ".join(conditions) + ")"
+            scope_sql, scope_params = self._nonkill_where_sql(cfg, "d", "damages")
+            params.extend(scope_params)
 
             sql = (f'SELECT {",".join(col_list)}{extra} FROM damages d '
-                   f'JOIN matches m ON m."{mkm}"=d."{mkk}" '
-                   f'WHERE {psql}{team_clause} ORDER BY m."{dc}",d."{tc}"')
+                   f'JOIN matches m ON m."{mkm}"=d."{mkk}" {self._map_join} '
+                   f'WHERE {psql}{team_clause}{scope_sql} ORDER BY m."{dc}",d."{tc}"')
             cur.execute(sql, params)
 
             for row in cur.fetchall():
@@ -1239,6 +1277,8 @@ class EngineMixin:
         pk = self._find_col("shots", ["player_steam_id", "attacker_steam_id",
                                       "shooter_steam_id", "steam_id"])
         wc = self._find_col("shots", ["weapon_name", "weapon", "weapon_type"])
+        # Vertical velocity at the shot tick — lets AIRBORNE be judged on a shot.
+        vzc = self._find_col("shots", ["player_velocity_z"])
 
         if not all([dc, mkk, mkm, tc, pk]):
             return
@@ -1247,18 +1287,25 @@ class EngineMixin:
         with conn.cursor() as cur:
             sid_ph = ",".join(["%s"] * len(sids_list))
             extra = f',s."{wc}"' if wc else ""
+            if vzc:
+                extra += f',s."{vzc}"'
+            scope_sql, scope_params = self._nonkill_where_sql(cfg, "s", "shots")
             sql = (f'SELECT m."{dc}",s."{tc}",s."{pk}"{extra} FROM shots s '
-                   f'JOIN matches m ON m."{mkm}"=s."{mkk}" '
-                   f'WHERE s."{pk}" IN ({sid_ph}) ORDER BY m."{dc}",s."{tc}"')
-            cur.execute(sql, sids_list)
+                   f'JOIN matches m ON m."{mkm}"=s."{mkk}" {self._map_join} '
+                   f'WHERE s."{pk}" IN ({sid_ph}){scope_sql} ORDER BY m."{dc}",s."{tc}"')
+            cur.execute(sql, sids_list + scope_params)
 
             for row in cur.fetchall():
                 dp, tick = row[0], row[1]
                 if not dp or tick is None:
                     continue
                 evt = {"tick": int(tick), "type": "shot", "attacker_sid": str(row[2])}
+                ci = 3
                 if wc:
-                    evt["weapon"] = str(row[3] or "")
+                    evt["weapon"] = str(row[ci] or "")
+                    ci += 1
+                if vzc and ci < len(row):
+                    evt["player_velocity_z"] = row[ci]
                 results.setdefault(dp, []).append(evt)
 
     # ── Shared modifier layer — evaluate kill modifiers on any event type ──
@@ -1267,7 +1314,7 @@ class EngineMixin:
     def _event_category(etype):
         """Map an event type string to its category bucket.
 
-        Categories match FilterDef.applicable_to:
+        Categories match FilterDef.applies_to:
           "kill"   → kill / death events
           "damage" → non-lethal damage events
           "shot"   → raw shot events
@@ -1328,6 +1375,14 @@ class EngineMixin:
         vertical displacement across a short window (a grounded player keeps a
         roughly constant Z; a jumping player's Z changes).
         """
+        # A shot carries its own vertical velocity (shots.player_velocity_z):
+        # on the ground it is 0, any climb or fall means the shooter is airborne.
+        vz = event.get("player_velocity_z")
+        if vz is not None:
+            try:
+                return abs(float(vz)) > 1.0
+            except (TypeError, ValueError):
+                return False
         tick = event.get("tick")
         sid = str(event.get("attacker_sid") or event.get("killer_sid") or "")
         if tick is None or not sid or positions_df is None or len(positions_df) == 0:
@@ -1369,13 +1424,13 @@ class EngineMixin:
         """Compute the _mf set of active modifiers that match a single event.
 
         Iterates KILL_FILTER_REGISTRY, skipping modifiers that are not active
-        in cfg or whose applicable_to does not include this event's category.
+        in cfg or whose applies_to does not include this event's category.
         Returns a set of cfg_key strings (same _mf format used by kill events).
         """
         mf = set()
         category = self._event_category(event.get("type"))
         for f in KILL_FILTER_REGISTRY:
-            if category not in f.applicable_to:
+            if category not in f.applies_to:
                 continue
             key = f.key
             if not (cfg.get(key) or cfg.get(f"{key}_exclude")):
@@ -2967,9 +3022,12 @@ class EngineMixin:
             sections.add("hurt")
         # Lazy player_positions for the shared modifier layer: needed only when
         # non-lethal / "other" events are enabled AND a position-derived modifier
-        # (airborne, no-scope) is active. Keeps the DP2 pre-parse lean otherwise.
+        # (airborne, no-scope) is active and can be judged on a non-kill event
+        # (applies_to). Keeps the DP2 pre-parse lean otherwise.
         if (cfg.get("_events_non_lethal") or cfg.get("_events_other")):
             for f in KILL_FILTER_REGISTRY:
+                if set(f.applies_to) == {"kill"}:
+                    continue
                 if EngineMixin._modifier_needs_positions(f.key) and (
                     cfg.get(f.key) or cfg.get(f"{f.key}_exclude")):
                     sections.add("positions")
@@ -3217,7 +3275,7 @@ class EngineMixin:
             events = [e for e in events
                       if e.get("type") != "kill"
                       or (e["tick"], str(e.get("killer_sid", ""))) not in excluded_sigs]
-            if not _count_kills(events):
+            if not events:
                 self.log("  ⏭ SKIP: all kills excluded", "dim")
                 return None
 
@@ -5574,23 +5632,49 @@ class EngineMixin:
         return self._one_tap_filter(demo_path, lucky_events, cfg)
 
     def _apply_global_filter_gate_events(self, events, cfg):
+        """Keep the events the active kill filters allow (★ Must / optional / exclude).
+
+        A kill must match every required filter and at least one optional one
+        (its exclusions already ran in SQL / dp2). A non-kill event is judged
+        only by the active filters whose `applies_to` covers its category —
+        required, optional and excluded alike; a filter that cannot judge it
+        lets it through. Death events are left as they were: SQL already
+        filtered them and the dp2 filters are killer-side only.
+        Returns the kept events (kills first), or None when nothing is left.
+        """
         active_keys = [k for k, *_ in self._FILTER_BADGE_DEFS if cfg.get(k)]
-        if not active_keys:
+        excluded = {f.key for f in KILL_FILTER_REGISTRY if cfg.get(f"{f.key}_exclude")}
+        if not active_keys and not excluded:
             return events
         req_keys, opt_keys = self._split_required_optional(cfg, active_keys)
         req_set = set(req_keys)
         opt_set = set(opt_keys)
-        non_kill = [e for e in events if e.get("type") != "kill"]
-        kept = []
+        applies = {f.key: f.applies_to for f in KILL_FILTER_REGISTRY}
+        kept, non_kill = [], []
         for e in events:
-            if e.get("type") != "kill":
-                continue
+            etype = e.get("type")
             matched = set(e.get("_mf") or set())
-            if req_set and not req_set.issubset(matched):
+            if etype == "kill":
+                if req_set and not req_set.issubset(matched):
+                    continue
+                if opt_set and not (matched & opt_set):
+                    continue
+                kept.append(e)
                 continue
-            if opt_set and not (matched & opt_set):
+            category = self._event_category(etype)
+            if etype == "death" or category is None:
+                non_kill.append(e)
                 continue
-            kept.append(e)
+            req = {k for k in req_set if category in applies.get(k, ())}
+            opt = {k for k in opt_set if category in applies.get(k, ())}
+            exc = {k for k in excluded if category in applies.get(k, ())}
+            if req and not req.issubset(matched):
+                continue
+            if opt and not (matched & opt):
+                continue
+            if exc & matched:
+                continue
+            non_kill.append(e)
         result = kept + non_kill
         return result or None
 

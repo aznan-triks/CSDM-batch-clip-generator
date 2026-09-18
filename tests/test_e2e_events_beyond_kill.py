@@ -261,17 +261,18 @@ class SharedModifierLayerTests(unittest.TestCase):
             event_actor=True, event_non_lethal=True, event_ally=True,
             event_enemy=True, steam_ids=[ME], **mods))
 
-    def test_no_scope_detected_on_damage_event(self):
-        cfg = self._mod_cfg(kill_mod_no_scope=True)
+    def test_airborne_detected_on_shot_event(self):
+        # No-scope is kill-only (no damage / shot column can prove it, E4);
+        # airborne is judged on a shot from shots.player_velocity_z.
+        cfg = self._mod_cfg(kill_mod_airborne=True)
         results = {
             "d1.dem": [{
-                "tick": 100, "type": "damage_actor",
-                "attacker_sid": ME, "victim_sid": ENEMY,
-                "is_no_scope": True,
+                "tick": 100, "type": "shot",
+                "attacker_sid": ME, "player_velocity_z": -120.0,
             }],
         }
         self.app._apply_shared_modifiers(cfg, results)
-        self.assertIn("kill_mod_no_scope", results["d1.dem"][0]["_mf"])
+        self.assertIn("kill_mod_airborne", results["d1.dem"][0]["_mf"])
 
     def test_modifier_not_matched_stays_untagged(self):
         cfg = self._mod_cfg(kill_mod_no_scope=True)
