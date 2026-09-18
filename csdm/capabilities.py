@@ -199,7 +199,8 @@ _HAND_WRITTEN: list = [
     _C("font", "I13", "Font", ("ui_font_family",),
        level="advanced"),
     # ── I14 Diagnose ───────────────────────────────────────────────────────
-    _C("engine_handshake", "I14", "Engine handshake", (), ("ping", "hello", "describe_filters"),
+    _C("engine_handshake", "I14", "Engine handshake", (),
+       ("ping", "hello", "describe_filters", "describe_menus"),
        level="expert"),
     _C("developer_probes", "I14", "Developer probes", (), ("demo_logs", "demo_ask", "tkinter_check"),
        level="expert"),
@@ -246,3 +247,25 @@ CAPABILITIES: list = [
     _derived_match_type_capability(),
     *_derived_filter_capabilities(),
 ]
+
+
+class Menu(NamedTuple):
+    id:         str
+    label:      str
+    intentions: _Tuple[str, ...]     # codes from INTENTIONS
+
+
+# Variant B (journey), chosen 2026-09-18 (docs/refonte-menus/WORKFLOW.md §7/§8.2),
+# built from docs/ui-restyle-mockups/menus-v13-variants/B-parcours.html. A menu
+# cites intentions, never capability ids: which capabilities land in a menu is
+# derived (below), the same way a filter's capability is derived from
+# KILL_FILTER_REGISTRY rather than copied.
+MENUS: _Tuple[Menu, ...] = (
+    Menu("setup",    "Setup",             ("I1", "I13")),
+    Menu("sources",  "Who & which demos", ("I2", "I3")),
+    Menu("moments",  "Moments & filming", ("I4", "I5")),
+    Menu("render",   "Render",            ("I7",)),
+    Menu("run",      "Run",               ("I6", "I8", "I9", "I12")),
+    Menu("organise", "Organise",          ("I10", "I11")),
+    Menu("diagnose", "Diagnose",          ("I14",)),
+)
