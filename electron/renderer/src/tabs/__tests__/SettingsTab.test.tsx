@@ -6,10 +6,10 @@
  * `VideoTab.test.tsx`: render through `SettingsProvider`, flush the pipe
  * once, then read the tree.
  */
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { SettingsProvider } from "../../settings/store";
+import { SAVE_DEBOUNCE_MS, SettingsProvider } from "../../settings/store";
 import SettingsTab from "../SettingsTab";
 
 /** A configuration with the window's defaults for the 16 keys this tab ports. */
@@ -31,6 +31,8 @@ const CONFIG_FIXTURE = {
   pg_user: "csdm",
   pg_pass: "secret",
   pg_db: "csdm",
+  ui_card_block_size: 48,
+  ui_font_family: "auto",
 };
 
 vi.mock("../../bridge", () => ({
@@ -55,6 +57,10 @@ vi.mock("../../bridge", () => ({
           kind: "app",
         },
       });
+    }
+    if (command === "save_config") {
+      saveCalls.push(payload);
+      return Promise.resolve({ type: "result", id: "1", ok: true, data: {} });
     }
     if (command === "apply_config_dir") {
       applyCalls.push(payload);
@@ -89,6 +95,9 @@ let applyCalls: Array<Record<string, unknown>> = [];
 /** Captures every `setWindowBounds` call during a test. */
 let windowBoundsCalls: Array<[number, number]> = [];
 
+/** Captures every `save_config` payload during a test. */
+let saveCalls: Array<Record<string, unknown>> = [];
+
 async function renderTab() {
   const rendered = render(
     <SettingsProvider>
@@ -103,6 +112,7 @@ describe("SettingsTab", () => {
   beforeEach(() => {
     applyCalls = [];
     windowBoundsCalls = [];
+    saveCalls = [];
   });
 
   it("shows every path the window had", async () => {
@@ -212,5 +222,61 @@ describe("SettingsTab", () => {
     });
     expect(screen.getByRole("button", { name: /^App folder \(portable\)$/ }).getAttribute("aria-pressed")).toBe("false");
     expect(screen.getByRole("button", { name: /^User Local AppData$/ }).getAttribute("aria-pressed")).toBe("true");
+  });
+
+  // E12: ui_card_block_size (grid size) and ui_font_family (font) used to be
+  // editable only by hand-editing csdm_config.json. Both now have a control
+  // here, wired through the same SettingControl/useSetting binding every
+  // other field on this tab uses.
+  describe("E12: grid size and font family", () => {
+    it("mounts both with their config-key wrapper", async () => {
+      const { container } = await renderTab();
+      expect(container.querySelector('[data-config-key="ui_card_block_size"]')).not.toBeNull();
+      expect(container.querySelector('[data-config-key="ui_font_family"]')).not.toBeNull();
+    });
+
+    it("writes ui_card_block_size when the grid-size slider changes", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      try {
+        const { container } = await renderTab();
+        const slider = container.querySelector('#ui-card-block-size.slider-input') as HTMLInputElement;
+        expect(slider).not.toBeNull();
+
+        act(() => {
+          fireEvent.change(slider, { target: { value: "64" } });
+        });
+        await act(async () => {
+          vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
+        });
+
+        const saves = saveCalls.filter((c) => c.cfg !== undefined);
+        const last = saves.at(-1)?.cfg as Record<string, unknown> | undefined;
+        expect(last?.ui_card_block_size).toBe(64);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it("writes ui_font_family when the font field changes", async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      try {
+        const { container } = await renderTab();
+        const field = container.querySelector("#ui-font-family") as HTMLInputElement;
+        expect(field).not.toBeNull();
+
+        act(() => {
+          fireEvent.change(field, { target: { value: "JetBrains Mono" } });
+        });
+        await act(async () => {
+          vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
+        });
+
+        const saves = saveCalls.filter((c) => c.cfg !== undefined);
+        const last = saves.at(-1)?.cfg as Record<string, unknown> | undefined;
+        expect(last?.ui_font_family).toBe("JetBrains Mono");
+      } finally {
+        vi.useRealTimers();
+      }
+    });
   });
 });

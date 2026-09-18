@@ -18,7 +18,7 @@ import { SettingsProvider } from "../../settings/store";
 import { DatabaseProvider } from "../../settings/useDatabase";
 import SettingsTab from "../SettingsTab";
 
-interface SentCommand { type: string; id: string; name: string }
+interface SentCommand { type: string; id: string; name: string; pg?: Record<string, unknown> }
 
 let sent: SentCommand[] = [];
 /** Flipped by a test to make the engine refuse from that point on. */
@@ -129,5 +129,25 @@ describe("Test & Reload", () => {
     });
 
     await waitFor(() => expect(connectCalls()).toBe(beforeClick + 1));
+  });
+
+  it("sends the flat pg_* config keys the engine reads, not a nested/dotted shape", async () => {
+    const { container } = renderTab();
+    await waitFor(() => expect(connectCalls()).toBeGreaterThanOrEqual(1));
+
+    const button = container.querySelector('[data-action="B1"]') as HTMLElement;
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    await waitFor(() => expect(connectCalls()).toBeGreaterThanOrEqual(2));
+
+    const direct = sent.filter((c) => c.name === "connect_db").at(-2);
+    expect(direct?.pg).toBeDefined();
+    // `set_pg_params` (csdm/engine/core.py) reads exactly these five flat
+    // keys off the `pg` object -- host/port/user/pass/db (or "pg.host" etc.)
+    // are silently ignored, which is the bug this test guards against.
+    expect(Object.keys(direct!.pg!).sort()).toEqual(
+      ["pg_db", "pg_host", "pg_pass", "pg_port", "pg_user"].sort(),
+    );
   });
 });

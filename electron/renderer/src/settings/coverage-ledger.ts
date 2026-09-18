@@ -20,7 +20,6 @@
 /** Defined in DEFAULT_CONFIG, never shown by the Tkinter application either. */
 export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   output_dir: "internal fallback, mirrors output_dir_clips",
-  ui_font_family: "read once at start-up, before any variable exists",
   encoder: "ENCODER_OPTIONS has a single value, so no selector was ever built",
   tickrate: "used only for tick maths",
   use_config_file_mode: "never referenced outside its own initialisation",
@@ -36,7 +35,6 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   cs2_process_name: "engine-only: the image name the exit watcher looks for",
   ui_sections: "driven by drag-and-drop and the card header toggle, not a form field",
   ui_active_tags: "driven by the tag-chip grid's selection, not a form field",
-  ui_card_block_size: "block-grid cell size; changed via config, never a widget",
   ui_card_row_height: "card grid row step; changed via config, never a widget",
   ui_card_collapsed_rows: "collapsed card height; changed via config, never a widget",
   // Superseded, not forgotten: Ally / Enemy (Event Type) is the one team model.
