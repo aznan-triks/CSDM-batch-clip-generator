@@ -651,6 +651,11 @@ async function readEngineState(page) {
 async function runPreviewAndWait(page, timeoutMs) {
   const before = await readEngineState(page);
   const previousSerial = before?.previewSerial ?? 0;
+  // PREVIEW only exists on the capture action bar. A preview that returns
+  // clips switches the app to EDITING (AppShell's previewSerial effect), whose
+  // bar shows GENERATE / SAVE / CANCEL instead, so a second click in a row
+  // waited on a button that was not mounted. Go back first, as a user would.
+  await switchTab(page, "capture");
   // A large previewClips array (thousands, e.g. N=max) re-renders EditingTab
   // in full (all 5 tabs stay mounted -- AUDIT_perf_ressources.md suspect 4)
   // and can keep the main thread busy long enough that Playwright's default
