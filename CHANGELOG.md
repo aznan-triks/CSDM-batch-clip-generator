@@ -33,6 +33,8 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Recording in the app no longer fails on the very first line CSDM prints: the bridge was missing
   the list of error markers the engine checks output against, so every recording run aborted
   immediately.
+- Previews using demoparser2-based filters (spray transfer, one-tap, no-scope…) no longer hang the
+  app on Windows.
 
 ### Changed
 
