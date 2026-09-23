@@ -48,7 +48,7 @@ from csdm.static_data import (
 from csdm.config import DEFAULT_CONFIG
 from csdm.core_utils import (
     build_camera_ticks, safe_folder_name, _count_kills, fmt_duration, progress_bar,
-    process_is_running, ensure_csdm_dirs, _generate_id_for_type,
+    process_is_running, ensure_csdm_dirs, _generate_id_for_type, display_to_iso,
 )
 
 # Tables probed when reading the CSDM schema, in probe order.
@@ -576,21 +576,23 @@ class EngineMixin:
 
     @staticmethod
     def _qe_epoch_bounds(cfg):
-        """Epoch bounds (ts_from, ts_to) for the post-query Python date filter."""
+        """Epoch bounds (ts_from, ts_to) for the post-query Python date filter.
+
+        Accepts both formats a host sends: the Tkinter window converts to
+        `yyyy-mm-dd`, the Electron renderer stores the `dd-mm-yyyy` its
+        DateField shows. `display_to_iso` normalizes either; an unparsable
+        bound becomes "" and is ignored.
+        """
         ts_from = None
         ts_to   = None
-        if cfg.get("date_from", ""):
-            try:
-                ts_from = int(datetime.strptime(cfg["date_from"], "%Y-%m-%d")
-                              .replace(hour=0, minute=0, second=0).timestamp())
-            except ValueError:
-                pass
-        if cfg.get("date_to", ""):
-            try:
-                ts_to = int((datetime.strptime(cfg["date_to"], "%Y-%m-%d")
-                             .replace(hour=23, minute=59, second=59)).timestamp())
-            except ValueError:
-                pass
+        date_from = display_to_iso(cfg.get("date_from", ""))
+        date_to   = display_to_iso(cfg.get("date_to", ""))
+        if date_from:
+            ts_from = int(datetime.strptime(date_from, "%Y-%m-%d")
+                          .replace(hour=0, minute=0, second=0).timestamp())
+        if date_to:
+            ts_to = int((datetime.strptime(date_to, "%Y-%m-%d")
+                         .replace(hour=23, minute=59, second=59)).timestamp())
         return ts_from, ts_to
 
     def _qe_match_type_sql(self, cfg):
