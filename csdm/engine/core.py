@@ -95,6 +95,14 @@ _CS2_DEMO_BREAKS = [
 class EngineMixin:
     """The engine half of App. See module docstring for the three sockets."""
 
+    # ── CSDM output error markers (used by `_exec`) ─────────────────────────────
+    RETRYABLE = ["game error", "game crashed", "process exited", "timed out"]
+    FATAL = ["is not iterable", "ENOENT", "Cannot find", "not found", "TypeError",
+             "ReferenceError", "SyntaxError", "FATAL", "Unhandled", "Cannot read properties"]
+    # "error:" (with colon) avoids false positives on "no errors found",
+    # "error-corrected", "errorless", etc.
+    ALL_ERR = RETRYABLE + FATAL + ["error:", "Error:"]
+
     # ── Map-column detection ────────────────────────────────────────────────────
     # CSDM stores map_name in the `demos` table (not `matches`).
     # If a future version moves it back to `matches`, the candidates list handles it.

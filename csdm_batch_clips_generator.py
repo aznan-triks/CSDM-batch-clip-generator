@@ -5072,12 +5072,8 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
     # ═══════════════════════════════════════════════════
     #  Exec
     # ═══════════════════════════════════════════════════
-    RETRYABLE = ["game error", "game crashed", "process exited", "timed out"]
-    FATAL = ["is not iterable", "ENOENT", "Cannot find", "not found", "TypeError",
-             "ReferenceError", "SyntaxError", "FATAL", "Unhandled", "Cannot read properties"]
-    # "error:" (with colon) avoids false positives on "no errors found",
-    # "error-corrected", "errorless", etc.
-    ALL_ERR = RETRYABLE + FATAL + ["error:", "Error:"]
+    # RETRYABLE / FATAL / ALL_ERR now live on EngineMixin (csdm/engine/core.py)
+    # so the bridge host has them too — see EngineHostContractTests.
 
     def _run(self):
         """Button hook: the launch lives in the engine, not in the window."""
