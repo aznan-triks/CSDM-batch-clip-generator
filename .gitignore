@@ -15,6 +15,7 @@
 
 # 2) Autoriser les fichiers publics du depot
 !.gitignore
+!.codefaunacodexignore
 !CHANGELOG.md
 !LICENSE
 !README.md
@@ -54,8 +55,10 @@ docs/INVENTAIRE_ACTIONS.md
 electron/.repro-*
 electron/scripts/refetch_cs2_icons.mjs
 
-# 9) Journal de chantier interne + atlas genere (atlas-kit scan) — jamais
-#    edites a la main, le test tests/test_atlas.py regenere atlas.json.
+# 9) Journal de chantier interne + codex genere (code-fauna-codex scan) — jamais
+#    edites a la main, le test tests/test_codex.py regenere codex.json.
 CHANGELOG_DEV.md
+codex.json
 atlas.json
 semantic_index.json
+

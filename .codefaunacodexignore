@@ -1,0 +1,9 @@
+node_modules/**
+electron/node_modules/**
+electron/dist-app/**
+.claude/**
+VAULT/**
+dist-app/**
+__pycache__/**
+*.pyc
+.git/**
