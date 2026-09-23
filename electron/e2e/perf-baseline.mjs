@@ -99,7 +99,6 @@ const DRY_RUN = process.env.PERF_BASELINE_DRY_RUN === "1";
 
 const DATASET_LABELS = DRY_RUN ? ["10"] : ["10", "100", "max"];
 const IDLE_MS = DRY_RUN ? 3000 : 30000; // S1: 30s per tab at rest
-const MINIMIZED_IDLE_MS = DRY_RUN ? 2000 : 30000; // I2
 const TAB_SWITCH_COUNT = DRY_RUN ? 3 : 20; // S2
 const PREVIEW_REPEATS = DRY_RUN ? 1 : 3; // S3bis
 const RUN_COUNT = DRY_RUN ? 1 : 2; // Task 2: "Exécuter 2 fois"
@@ -462,58 +461,6 @@ async function launchPackagedExe(env) {
   };
 }
 
-/** Minimize or restore the app's own OS window via raw Win32 (`user32.dll`
- * through PowerShell/Add-Type). Tried CDP's `Browser.setWindowBounds` first
- * (the tool-agnostic way to do this) -- Electron's CDP surface does not
- * implement `Browser.getWindowForTarget` (confirmed: "wasn't found"), and
- * the main process is unreachable for the same reasons noted in the file
- * header, so this is OS-level, outside both. */
-const SW_MINIMIZE = 6;
-const SW_RESTORE = 9;
-
-/**
- * The portable exe's own spawned PID is a launcher stub that re-execs the
- * real Electron main process as a CHILD (confirmed by hand: `FindTopWindowForPid`
- * on the spawned PID alone returned NOTFOUND, while the actual top-level
- * window belongs to a descendant). So this searches every PID in the
- * process tree rooted at `mainPid`, not `mainPid` alone.
- */
-function setWindowStateNative(mainPid, showCmd) {
-  const pids = [mainPid, ...getProcessTree(mainPid).map((p) => p.ProcessId)];
-  const pidArrayLiteral = `@(${pids.join(",")})`;
-  const script = `
-Add-Type @'
-using System;
-using System.Runtime.InteropServices;
-public class CsdmWinTool {
-  public delegate bool EnumProc(IntPtr hWnd, IntPtr lParam);
-  [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc lpEnumFunc, IntPtr lParam);
-  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr hWnd);
-  [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
-}
-'@
-$targetPids = ${pidArrayLiteral}
-$found = [IntPtr]::Zero
-$callback = {
-  param([IntPtr]$hWnd, [IntPtr]$lParam)
-  $wPid = 0
-  [CsdmWinTool]::GetWindowThreadProcessId($hWnd, [ref]$wPid) | Out-Null
-  if (($targetPids -contains $wPid) -and [CsdmWinTool]::IsWindowVisible($hWnd)) {
-    $script:found = $hWnd
-    return $false
-  }
-  return $true
-}
-[CsdmWinTool]::EnumWindows(($callback -as [CsdmWinTool+EnumProc]), [IntPtr]::Zero) | Out-Null
-if ($found -eq [IntPtr]::Zero) { Write-Output "NOTFOUND"; exit 1 }
-[CsdmWinTool]::ShowWindowAsync($found, ${showCmd}) | Out-Null
-Write-Output "OK"
-`;
-  const out = execFileSync("powershell", ["-NoProfile", "-NonInteractive", "-Command", script], { encoding: "utf8" }).trim();
-  if (out !== "OK") throw new Error(`setWindowStateNative(${mainPid}, ${showCmd}) failed: ${out} (searched pids ${pids.join(",")})`);
-}
-
 // ═══════════════════════════════════════════════════════════════════════
 //  CDP / page helpers
 // ═══════════════════════════════════════════════════════════════════════
@@ -767,29 +714,6 @@ async function runS1(page, cdp, mainPid) {
     });
   }
   return perTab;
-}
-
-async function runS1Minimized(page, cdp, mainPid) {
-  await switchTab(page, "capture");
-  await installRafSpy(page);
-  await readAndResetRafSpy(page);
-  const before = await metricsMap(cdp).catch(() => null); // CDP may go quiet while minimized
-  const procBefore = sampleProcesses(mainPid);
-  setWindowStateNative(mainPid, SW_MINIMIZE);
-  await page.waitForTimeout(MINIMIZED_IDLE_MS);
-  const after = await metricsMap(cdp).catch(() => null);
-  const procAfter = sampleProcesses(mainPid);
-  const rafCalls = await readAndResetRafSpy(page).catch(() => null);
-  setWindowStateNative(mainPid, SW_RESTORE);
-  await page.waitForTimeout(500);
-  return {
-    idleMs: MINIMIZED_IDLE_MS,
-    metricsDelta: before && after ? diffMetrics(before, after) : null,
-    rafCallsDuringIdle: rafCalls,
-    note: rafCalls === null ? "CDP Performance domain unreachable while minimized on this machine" : null,
-    processesBefore: procBefore,
-    processesAfter: procAfter,
-  };
 }
 
 /** Same idle measurement as S1, but with prefers-reduced-motion forced via
@@ -1096,13 +1020,9 @@ async function main() {
           + "events, which this audit never triggers (no CS2 launches, per plan scope).",
       };
 
-      // I2 needs a visible window to minimize/restore, and every launch here is
-      // hidden (CSDM_E2E_BACKGROUND=1, so the harness never takes the screen
-      // from whoever is using the machine). Recorded as skipped, not run.
-      result.s1Minimized = {
-        status: "not_measured",
-        reason: "window is hidden (CSDM_E2E_BACKGROUND=1); nothing to minimize",
-      };
+      // The minimized-window scenario (I2) was removed: scripted runs use a
+      // hidden window (CSDM_E2E_BACKGROUND=1), so there is never a visible
+      // window to minimize/restore in the first place.
       runs.push(result);
       // Persist after every run: a later crash must not lose a finished pass.
       writeFileSync(path.join(OUTPUT_DIR, "perf-baseline.partial.json"), JSON.stringify({ db: dbInfo, runs }, null, 2));
@@ -1198,7 +1118,7 @@ async function main() {
   const output = {
     generatedAt: new Date().toISOString(),
     dryRun: DRY_RUN,
-    constants: { DATASET_LABELS, IDLE_MS, MINIMIZED_IDLE_MS, TAB_SWITCH_COUNT, PREVIEW_REPEATS, RUN_COUNT },
+    constants: { DATASET_LABELS, IDLE_MS, TAB_SWITCH_COUNT, PREVIEW_REPEATS, RUN_COUNT },
     db: dbInfo,
     isolatedProfile: ISOLATED_CONFIG_FILE,
     referenceSetError,
