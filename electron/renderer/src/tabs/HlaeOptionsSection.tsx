@@ -55,6 +55,7 @@ export default function HlaeOptionsSection() {
             mono
             value={fov === undefined || fov === null ? "90" : String(fov)}
             onChange={setFov}
+            tip="Camera field of view in degrees (default: 90, cinematic: 100-110, zoomed: 60)"
           />
           <span className="hlae-desc">90 = default | 100-110 = cinematic wide | 60 = zoomed</span>
         </div>
@@ -76,6 +77,7 @@ export default function HlaeOptionsSection() {
                 key={quick}
                 type="button"
                 className="chip"
+                title={`Set playback speed to ${quick}%`}
                 data-action="L6" onClick={() => setGameSpeed(quick)}
               >
                 {quick}

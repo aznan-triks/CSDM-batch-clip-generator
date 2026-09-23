@@ -30,13 +30,13 @@ import "./DemoSelectionSection.css";
 
 /** The window's own shortcuts (`_tab_capturer`'s `qr` row), in order. */
 const DATE_SHORTCUTS = [
-  { label: "Yesterday", kind: "yesterday" },
+  { label: "Yesterday", kind: "yesterday", title: "Set the date range to yesterday" },
   { label: "7d", kind: "days", days: 7, title: "Set the date range to the last 7 days" },
   { label: "30d", kind: "days", days: 30, title: "Set the date range to the last 30 days" },
-  { label: "This month", kind: "month" },
+  { label: "This month", kind: "month", title: "Set the date range to the current month" },
   { label: "3m", kind: "days", days: 90, title: "Set the date range to the last 3 months" },
   { label: "6m", kind: "days", days: 180, title: "Set the date range to the last 6 months" },
-  { label: "Year", kind: "year" },
+  { label: "Year", kind: "year", title: "Set the date range to the current year" },
   { label: "All", kind: "all", title: "Clear the date range and reset the demo list and picker selection" },
 ] as const;
 
@@ -163,12 +163,12 @@ export default function DemoSelectionSection() {
     <div className="demo-selection">
       <div className="row">
         <SettingControl settingKey="date_from">
-          <DateField id="date-from" label="From" value={dateFrom ?? ""} onChange={setDateFrom} />
+          <DateField id="date-from" label="From" tip="Filter demos played on or after this date (dd-mm-yyyy)" value={dateFrom ?? ""} onChange={setDateFrom} />
         </SettingControl>
         <SettingControl settingKey="date_to">
           <div className="ds-date-to">
-            <DateField id="date-to" label="To" value={dateTo ?? ""} onChange={setDateTo} dataAction="F2" />
-            <button type="button" className="chip" data-action="F5" onClick={setToday}>
+            <DateField id="date-to" label="To" tip="Filter demos played on or before this date (dd-mm-yyyy)" value={dateTo ?? ""} onChange={setDateTo} dataAction="F2" />
+            <button type="button" className="chip" data-action="F5" title="Set end date to today" onClick={setToday}>
               Today
             </button>
           </div>
@@ -182,13 +182,13 @@ export default function DemoSelectionSection() {
             key={shortcut.label}
             type="button"
             className="chip"
-            title={"title" in shortcut ? shortcut.title : undefined}
+            title={shortcut.title}
             data-action="F3" onClick={() => applyShortcut(shortcut)}
           >
             {shortcut.label}
           </button>
         ))}
-        <button type="button" className="chip" data-action="F4" onClick={clearAll}>
+        <button type="button" className="chip" data-action="F4" title="Clear date range and reset demo selection" onClick={clearAll}>
           Clear all
         </button>
       </div>
@@ -197,6 +197,7 @@ export default function DemoSelectionSection() {
         <span className="lab">Demo selection:</span>
         <Chip
           label="Manual mode (load ALL demos from DB)"
+          tip="Toggle between automated date range demo query and loading all demos from database"
           selected={manualMode}
           onToggle={() => setManualMode(!manualMode)}
         />

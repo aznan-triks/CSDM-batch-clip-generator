@@ -12,6 +12,7 @@ import Chip from "../components/Chip";
 import SettingControl from "./SettingControl";
 import type { FilterDef } from "./useTables";
 import { useSetting } from "./store";
+import { useAlwaysTooltips } from "./useAlwaysTooltips";
 import "./FilterRow.css";
 
 export default function FilterRow({
@@ -34,6 +35,7 @@ export default function FilterRow({
   const [enabled, setEnabled] = useSetting<boolean>(def.key);
   const [required, setRequired] = useSetting<boolean>(`${def.key}_req`);
   const [excluded, setExcluded] = useSetting<boolean>(`${def.key}_exclude`);
+  const alwaysShow = useAlwaysTooltips();
 
   // `_wire_enable_must` (mirror of the Tkinter window): arming ★ Must
   // auto-enables the filter (Enable is not a prerequisite), and switching
@@ -59,12 +61,18 @@ export default function FilterRow({
             uses: Chip does not forward a data-action, and every filter row's
             Enable chip is the same registry action (G1), not one per row. */}
         <div data-action="G1" style={{ display: "contents" }}>
-          <Chip label="Enable" selected={!!enabled} onToggle={toggleEnabled} />
+          <Chip
+            label="Enable"
+            tip={def.tip || `Enable ${def.label} filter`}
+            selected={!!enabled}
+            onToggle={toggleEnabled}
+          />
         </div>
       </SettingControl>
       <SettingControl settingKey={`${def.key}_req`}>
         <Chip
           label="★ Must"
+          tip={`Require ${def.label}: every captured clip must match this filter`}
           selected={!!required}
           onToggle={toggleRequired}
         />
@@ -72,11 +80,19 @@ export default function FilterRow({
       {hasExclude && (
         <SettingControl settingKey={`${def.key}_exclude`}>
           <div data-action="G2" style={{ display: "contents" }}>
-            <Chip label="Exclude" selected={!!excluded} onToggle={() => setExcluded(!excluded)} />
+            <Chip
+              label="Exclude"
+              tip={`Exclude ${def.label}: remove clips matching this filter from results`}
+              selected={!!excluded}
+              onToggle={() => setExcluded(!excluded)}
+            />
           </div>
         </SettingControl>
       )}
       {children}
+      {alwaysShow && def.tip && (
+        <div className="persistent-tip filter-row-tip">{def.tip}</div>
+      )}
     </div>
   );
 }

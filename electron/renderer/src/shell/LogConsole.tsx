@@ -288,6 +288,7 @@ export default function LogConsole() {
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="filter…"
+              title="Filter console output by text"
             />
           </label>
 
@@ -343,7 +344,7 @@ export default function LogConsole() {
             DEBUG
           </button>
 
-          <button type="button" className="chip" data-action="J12" onClick={copyAll}>
+          <button type="button" className="chip" title="Copy all console output to clipboard" data-action="J12" onClick={copyAll}>
             Copy all
           </button>
 

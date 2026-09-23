@@ -330,8 +330,8 @@ export default function TagsTab() {
         {dbError && <p className="tags-error">{dbError}</p>}
 
         <div className="tags-toolbar">
-          <Field id="tag-search" value={tagSearch} onChange={setTagSearch} placeholder="Filter tags…" />
-          <Segmented options={TAG_SORTS} value={tagSort} onChange={(next) => setTagSort(next as TagSort)} label="Sort tags" />
+          <Field id="tag-search" value={tagSearch} onChange={setTagSearch} placeholder="Filter tags…" tip="Filter displayed tags by name" />
+          <Segmented options={TAG_SORTS} value={tagSort} onChange={(next) => setTagSort(next as TagSort)} label="Sort tags" tip="Sort tags by name, color, or show active tags first" />
         </div>
 
         <div className="chips">
@@ -363,13 +363,13 @@ export default function TagsTab() {
         </div>
 
         <div className="row">
-          <button type="button" className="chip" data-action="I1" onClick={() => setCreating((v) => !v)}>
+          <button type="button" className="chip" data-action="I1" title="Open form to create a new tag" onClick={() => setCreating((v) => !v)}>
             + New tag
           </button>
-          <button type="button" className="chip" data-action="I17" onClick={reloadTags}>
+          <button type="button" className="chip" data-action="I17" title="Reload tags from database" onClick={reloadTags}>
             Reload
           </button>
-          <button type="button" className="chip push-right" data-action="I4" onClick={deselectAll}>
+          <button type="button" className="chip push-right" data-action="I4" title="Deselect all active tags" onClick={deselectAll}>
             Deselect all
           </button>
         </div>
@@ -422,22 +422,23 @@ export default function TagsTab() {
           dates as a filter in Capture.
         </p>
         <div className="row">
-          <button type="button" className="chip" data-action="I7" onClick={calcRange}>
+          <button type="button" className="chip" data-action="I7" title="Compute the earliest and latest demo dates for the selected tags" onClick={calcRange}>
             Calculate range
           </button>
         </div>
         {rangeStatus && <p className="tags-range-status">{rangeStatus}</p>}
         <div className="row">
-          <button type="button" className="chip" disabled={!range?.date_start} data-action="I8" onClick={applyStart}>
+          <button type="button" className="chip" disabled={!range?.date_start} data-action="I8" title="Set date_from in Capture to the earliest demo date of the selected tags" onClick={applyStart}>
             Apply start
           </button>
-          <button type="button" className="chip" disabled={!range?.date_end} data-action="I9" onClick={applyEnd}>
+          <button type="button" className="chip" disabled={!range?.date_end} data-action="I9" title="Set date_to in Capture to the latest demo date of the selected tags" onClick={applyEnd}>
             Apply end
           </button>
           <button
             type="button"
             className="chip"
             disabled={!range?.date_start || !range?.date_end}
+            title="Set both date_from and date_to in Capture to the range of the selected tags"
             data-action="I10" onClick={applyFullRange}
           >
             Apply full range
@@ -479,6 +480,7 @@ export default function TagsTab() {
           <button
             type="button"
             className="chip"
+            title="Apply the active tags to the selected demos"
             data-action="I12" onClick={() => tagDemos([...selectedPaths])}
           >
             Tag sel.
@@ -486,6 +488,7 @@ export default function TagsTab() {
           <button
             type="button"
             className="chip"
+            title="Apply the active tags to all found demos"
             data-action="I13" onClick={() => tagDemos(foundDemos.map((d) => d.path))}
           >
             Tag ALL
@@ -493,6 +496,7 @@ export default function TagsTab() {
           <button
             type="button"
             className="chip danger"
+            title="Remove the active tags from the selected demos"
             data-action="I14"
             onClick={() => setPendingRemove(true)}
           >

@@ -7,6 +7,7 @@ import { ICONS } from "../icons";
 import { markEditingViewed, useEngineState } from "../motion/useEngineState";
 import { useWindowActivity } from "../motion/useWindowActivity";
 import { useSetting } from "../settings/store";
+import { AlwaysTooltipsProvider } from "../settings/useAlwaysTooltips";
 import { DatabaseProvider } from "../settings/useDatabase";
 import CaptureTab from "../tabs/CaptureTab";
 import { EditingTab } from "../tabs/EditingTab";
@@ -53,6 +54,7 @@ export default function AppShell() {
   // soon as the store resolves, regardless of which tab the user has open.
   const [themeAccent] = useSetting<string>("theme_accent");
   const [themeBg] = useSetting<string>("theme_bg");
+  const [alwaysShowTooltips] = useSetting<boolean>("ui_always_show_tooltips");
   // The nav's status pills (the mock's `.navtools`). Read here, not in HudNav:
   // HudNav is presentational and is rendered bare by its own tests.
   const [database] = useSetting<string>("pg_db");
@@ -200,6 +202,7 @@ export default function AppShell() {
       label: tab.label,
       icon: <Icon />,
       badge: tab.id === "editing" ? engine.editingBadge : undefined,
+      tip: tab.tip,
     };
   });
 
@@ -247,79 +250,81 @@ export default function AppShell() {
       <Backdrop />
       <ClickSpark />
       <Reticle />
-      <div className="app">
-        <HudNav
-          tabs={hudTabs}
-          active={active}
-          onSelect={setActive}
-          database={database}
-          preset={preset}
-          version={version}
-        />
-        <div
-          className="shell shell-resizable"
-          ref={shellRef}
-          style={
-            {
-              "--split-left": currentSplit,
-              "--split-right": 100 - currentSplit,
-            } as CSSProperties
-          }
-        >
-          {/* Keep-alive (workspace-vivant §B.1, AUDIT_tabs-state.md #2): every
-              tab stays MOUNTED so its local state (tags selected, search, page,
-              sort, results) survives a switch; the inactive ones are hidden,
-              not unmounted. `hidden` = display:none, `inert` removes the
-              hidden panel from tab order and the accessibility tree, and the
-              `tabpanel` role sits on the visible panel only. The `data-tab`
-              backdrop attribute is driven by `active` above, unchanged. */}
-          <div className="scrollwrap">
-            {/* One connect_db for every tab: keep-alive mounts all of them, so
-                the provider must sit above the panels (CaptureTab's own
-                provider would leave TagsTab fetching a second time). */}
-            <DatabaseProvider>
-            {TABS.map((tab) => (
-              <div
-                key={tab.id}
-                hidden={active !== tab.id}
-                inert={active !== tab.id}
-                role={active === tab.id ? "tabpanel" : undefined}
-                aria-label={active === tab.id ? tab.label : undefined}
-              >
-                {tab.id === "capture" && <CaptureTab />}
-                {tab.id === "editing" && <EditingTab />}
-                {tab.id === "tags" && <TagsTab />}
-                {tab.id === "video" && <VideoTab />}
-                {tab.id === "settings" && <SettingsTab />}
-              </div>
-            ))}
-            </DatabaseProvider>
-          </div>
-          <div
-            className="split-handle"
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Resize console"
-            title="Drag to resize the workspace and console panes"
-            data-action="O2"
-            onMouseDown={startSplitDrag}
+      <AlwaysTooltipsProvider value={!!alwaysShowTooltips}>
+        <div className="app">
+          <HudNav
+            tabs={hudTabs}
+            active={active}
+            onSelect={setActive}
+            database={database}
+            preset={preset}
+            version={version}
           />
-          <LogConsole />
-        </div>
-        <EngineLostBanner onRegain={() => window.location.reload()} />
-        <ActionBar
-          registerButton={registerButton}
-          active={active}
-          onSetTab={setActive}
-          weapon={
-            <WeaponBand
-              status={engine.progress ?? (engine.busy ? "working…" : "idle")}
-              counter={engine.summary?.text ?? ""}
-              buttonRef={buttonRef}
+          <div
+            className="shell shell-resizable"
+            ref={shellRef}
+            style={
+              {
+                "--split-left": currentSplit,
+                "--split-right": 100 - currentSplit,
+              } as CSSProperties
+            }
+          >
+            {/* Keep-alive (workspace-vivant §B.1, AUDIT_tabs-state.md #2): every
+                tab stays MOUNTED so its local state (tags selected, search, page,
+                sort, results) survives a switch; the inactive ones are hidden,
+                not unmounted. `hidden` = display:none, `inert` removes the
+                hidden panel from tab order and the accessibility tree, and the
+                `tabpanel` role sits on the visible panel only. The `data-tab`
+                backdrop attribute is driven by `active` above, unchanged. */}
+            <div className="scrollwrap">
+              {/* One connect_db for every tab: keep-alive mounts all of them, so
+                  the provider must sit above the panels (CaptureTab's own
+                  provider would leave TagsTab fetching a second time). */}
+              <DatabaseProvider>
+              {TABS.map((tab) => (
+                <div
+                  key={tab.id}
+                  hidden={active !== tab.id}
+                  inert={active !== tab.id}
+                  role={active === tab.id ? "tabpanel" : undefined}
+                  aria-label={active === tab.id ? tab.label : undefined}
+                >
+                  {tab.id === "capture" && <CaptureTab />}
+                  {tab.id === "editing" && <EditingTab />}
+                  {tab.id === "tags" && <TagsTab />}
+                  {tab.id === "video" && <VideoTab />}
+                  {tab.id === "settings" && <SettingsTab />}
+                </div>
+              ))}
+              </DatabaseProvider>
+            </div>
+            <div
+              className="split-handle"
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize console"
+              title="Drag to resize the workspace and console panes"
+              data-action="O2"
+              onMouseDown={startSplitDrag}
             />
-          }
-        />
-      </div>
+            <LogConsole />
+          </div>
+          <EngineLostBanner onRegain={() => window.location.reload()} />
+          <ActionBar
+            registerButton={registerButton}
+            active={active}
+            onSetTab={setActive}
+            weapon={
+              <WeaponBand
+                status={engine.progress ?? (engine.busy ? "working…" : "idle")}
+                counter={engine.summary?.text ?? ""}
+                buttonRef={buttonRef}
+              />
+            }
+          />
+        </div>
+      </AlwaysTooltipsProvider>
     </>
   );
 }

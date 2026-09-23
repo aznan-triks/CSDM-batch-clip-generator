@@ -9,6 +9,7 @@ interface HudNavTab<T extends string> {
   label: string;
   icon: ReactNode;
   badge?: boolean;
+  tip?: string;
 }
 
 interface HudNavProps<T extends string> {
@@ -63,6 +64,7 @@ export default function HudNav<T extends string>({
               key={tab.id}
               label={tab.label}
               icon={tab.icon}
+              tip={tab.tip}
               active={tab.id === active}
               badge={tab.badge}
               badgeTip="This tab has an unsaved preview waiting to be generated"

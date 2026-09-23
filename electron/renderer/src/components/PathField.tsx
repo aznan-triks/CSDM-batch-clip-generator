@@ -1,4 +1,5 @@
 import { pickPath } from "../bridge";
+import { useAlwaysTooltips } from "../settings/useAlwaysTooltips";
 import "./Field.css";
 import "./PathField.css";
 
@@ -23,6 +24,7 @@ interface PathFieldProps {
  * whatever it resolves to -- `null` on Cancel leaves the typed value alone.
  */
 export default function PathField({ value, onChange, placeholder, id, label, mode = "dir", tip }: PathFieldProps) {
+  const alwaysShow = useAlwaysTooltips();
   async function browse() {
     const picked = await pickPath({ file: mode === "file" });
     if (picked !== null) onChange(picked);
@@ -54,6 +56,7 @@ export default function PathField({ value, onChange, placeholder, id, label, mod
           Browse…
         </button>
       </div>
+      {alwaysShow && tip && <span className="persistent-tip">{tip}</span>}
     </div>
   );
 }

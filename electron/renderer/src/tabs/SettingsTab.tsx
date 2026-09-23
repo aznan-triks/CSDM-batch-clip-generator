@@ -132,6 +132,7 @@ export default function SettingsTab() {
 
   const [cardBlockSize, setCardBlockSize] = useSetting<number>("ui_card_block_size");
   const [fontFamily, setFontFamily] = useSetting<string>("ui_font_family");
+  const [alwaysShowTooltips, setAlwaysShowTooltips] = useSetting<boolean>("ui_always_show_tooltips");
 
   // Configuration folder (v3.0.1): the active location plus a pending switch.
   const [, setConfigDir] = useSetting<string>("config_dir");
@@ -511,6 +512,7 @@ export default function SettingsTab() {
                       aria-checked={selected}
                       className={selected ? "settings-swatch settings-swatch-selected" : "settings-swatch"}
                       style={{ backgroundColor: preset.hex }}
+                      title={`Select ${preset.name} accent (${preset.hex})`}
                       data-action="M2"
                       onClick={() => chooseAccent(preset.hex)}
                     >
@@ -518,11 +520,12 @@ export default function SettingsTab() {
                     </button>
                   );
                 })}
-                <label className="settings-swatch-custom">
+                <label className="settings-swatch-custom" title="Pick a custom hex accent color">
                   <span>Custom…</span>
                   <input
                     type="color"
                     value={currentAccent}
+                    title="Pick a custom hex accent color"
                     data-action="M3"
                     onChange={(event) => chooseAccent(event.target.value)}
                   />
@@ -568,6 +571,7 @@ export default function SettingsTab() {
                 mono
                 value={String(currentW)}
                 onChange={(v) => setWindowW(asNumber(v, currentW))}
+                tip="Width of the application window in pixels (default 1600)"
               />
             </SettingControl>
             <SettingControl settingKey="ui_window_h">
@@ -577,6 +581,7 @@ export default function SettingsTab() {
                 mono
                 value={String(currentH)}
                 onChange={(v) => setWindowH(asNumber(v, currentH))}
+                tip="Height of the application window in pixels (default 900)"
               />
             </SettingControl>
             <SettingControl settingKey="ui_split_pct">
@@ -632,6 +637,14 @@ export default function SettingsTab() {
                 selected={!!rememberLayout}
                 onToggle={() => setRememberLayout(!rememberLayout)}
                 tip="Automatically saves window size and pane split whenever they change, without pressing Apply"
+              />
+            </SettingControl>
+            <SettingControl settingKey="ui_always_show_tooltips">
+              <Chip
+                label="Always show tooltips"
+                selected={!!alwaysShowTooltips}
+                onToggle={() => setAlwaysShowTooltips(!alwaysShowTooltips)}
+                tip="Keep tooltips and explanation hints constantly visible under controls instead of only on hover"
               />
             </SettingControl>
           </div>

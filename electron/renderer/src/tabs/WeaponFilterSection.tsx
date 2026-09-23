@@ -113,10 +113,10 @@ export default function WeaponFilterSection() {
       <div className="row">
         <span className="lab">empty = all</span>
         <div className="chips push-right">
-          <button type="button" className="chip" data-action="E1" onClick={() => { setWeapons([...allWeapons]); setLeaving([]); }}>
+          <button type="button" className="chip" data-action="E1" title="Select all available weapons" onClick={() => { setWeapons([...allWeapons]); setLeaving([]); }}>
             Select all
           </button>
-          <button type="button" className="chip" data-action="E2" onClick={() => { const s = selected.filter(w => allWeapons.includes(w)); if (s.length === 0) return; setWeapons([]); setLeaving(s); window.setTimeout(() => setLeaving([]), CASC_FADE_SECONDS * 1000); }}>
+          <button type="button" className="chip" data-action="E2" title="Clear weapon selection" onClick={() => { const s = selected.filter(w => allWeapons.includes(w)); if (s.length === 0) return; setWeapons([]); setLeaving(s); window.setTimeout(() => setLeaving([]), CASC_FADE_SECONDS * 1000); }}>
             Deselect all
           </button>
         </div>
@@ -130,6 +130,7 @@ export default function WeaponFilterSection() {
                   <Chip
                     key={name}
                     label={name}
+                    tip={`Filter clips with ${name}`}
                     selected={selected.includes(name)}
                     onToggle={() => toggle(name)}
                   />

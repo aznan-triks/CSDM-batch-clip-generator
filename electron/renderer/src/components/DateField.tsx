@@ -1,5 +1,6 @@
 import { useRef } from "react";
 
+import { useAlwaysTooltips } from "../settings/useAlwaysTooltips";
 import "../components/Field.css";
 import "./DateField.css";
 
@@ -11,6 +12,8 @@ interface DateFieldProps {
   onChange: (value: string) => void;
   /** The inventory code for the calendar button. Two call sites, two different actions (F1/F2). */
   dataAction?: string;
+  /** Hover explanation for what this date bound does. */
+  tip?: string;
 }
 
 /** `dd-mm-yyyy` -> `yyyy-mm-dd` (what `<input type="date">` wants), or `""` if unparsable. */
@@ -37,8 +40,9 @@ function fromIso(iso: string): string {
  * dark` on the hidden input is the equivalent fix here -- the one lever CSS
  * has over a browser-native popup that no token can reach into.
  */
-export default function DateField({ id, label, value, onChange, dataAction = "F1" }: DateFieldProps) {
+export default function DateField({ id, label, value, onChange, dataAction = "F1", tip }: DateFieldProps) {
   const pickerRef = useRef<HTMLInputElement>(null);
+  const alwaysShow = useAlwaysTooltips();
 
   function openCalendar() {
     const picker = pickerRef.current;
@@ -53,7 +57,7 @@ export default function DateField({ id, label, value, onChange, dataAction = "F1
   return (
     <div className="date-field-wrap">
       {label && (
-        <label className="lab" htmlFor={id}>
+        <label className="lab" htmlFor={id} title={tip}>
           {label}
         </label>
       )}
@@ -64,6 +68,7 @@ export default function DateField({ id, label, value, onChange, dataAction = "F1
           className="fld fld-mono date-field-text"
           placeholder="dd-mm-yyyy"
           value={value}
+          title={tip}
           onChange={(event) => onChange(event.target.value)}
         />
         <button
@@ -85,6 +90,7 @@ export default function DateField({ id, label, value, onChange, dataAction = "F1
           onChange={(event) => onChange(fromIso(event.target.value))}
         />
       </div>
+      {alwaysShow && tip && <span className="persistent-tip">{tip}</span>}
     </div>
   );
 }

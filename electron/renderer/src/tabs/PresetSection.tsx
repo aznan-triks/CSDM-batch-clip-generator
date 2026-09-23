@@ -158,6 +158,7 @@ export default function PresetSection({
           value={name}
           onChange={setName}
           placeholder="Preset name"
+          tip="Identifier name for this configuration preset"
         />
       </div>
 
@@ -171,6 +172,7 @@ export default function PresetSection({
           <Chip
             key={key}
             label={categoryLabel(key)}
+            tip={`Include ${categoryLabel(key)} settings in this preset`}
             selected={selectedCats.has(key)}
             onToggle={() => toggleCat(key)}
           />
@@ -178,7 +180,7 @@ export default function PresetSection({
       </div>
 
       <div className="row">
-        <button type="button" className="chip" data-action="C3" onClick={save}>
+        <button type="button" className="chip" data-action="C3" title="Save selected settings categories to this preset" onClick={save}>
           SAVE
         </button>
         {error && <span className="preset-message preset-message-error">{error}</span>}
@@ -206,6 +208,7 @@ export default function PresetSection({
             <button
               type="button"
               className="chip danger"
+              title="Permanently remove this preset"
               data-action="C5" onClick={() => setPendingDeletePreset(presetName)}
             >
               Delete

@@ -132,6 +132,7 @@ export default function VideoTab() {
           <SettingControl settingKey="assemble_after">
             <Chip
               label="Assemble all clips at the end"
+              tip="Concatenates all captured clips into a single video file upon job completion"
               selected={!!assembleAfter}
               onToggle={() => setAssembleAfter(!assembleAfter)}
             />
@@ -160,6 +161,7 @@ export default function VideoTab() {
                 value={assembleOutput ?? ""}
                 onChange={setAssembleOutput}
                 placeholder="assembled.mp4"
+                tip="Name of the final assembled video file (e.g. assembled.mp4)"
               />
             </SettingControl>
           </div>
@@ -180,6 +182,7 @@ export default function VideoTab() {
                 value={currentResolutionLabel}
                 onChange={chooseResolution}
                 label="Resolution"
+                tip="Presets for video resolution (width x height)"
                 optionActions={Object.fromEntries(tables.resolutions.map((r) => [r.label, "L3"]))}
               />
             </div>
@@ -192,6 +195,7 @@ export default function VideoTab() {
                 mono
                 value={String(currentWidth)}
                 onChange={(v) => setWidth(asNumber(v, currentWidth))}
+                tip="Video width in pixels"
               />
             </SettingControl>
             <SettingControl settingKey="height">
@@ -201,6 +205,7 @@ export default function VideoTab() {
                 mono
                 value={String(currentHeight)}
                 onChange={(v) => setHeight(asNumber(v, currentHeight))}
+                tip="Video height in pixels"
               />
             </SettingControl>
           </div>
@@ -216,6 +221,7 @@ export default function VideoTab() {
                 value={String(asNumber(framerate, 60))}
                 onChange={(v) => setFramerate(Number(v))}
                 label="FPS"
+                tip="Frames per second for recording (e.g. 60, 120, 240 for smooth slow-mo)"
               />
             </div>
           </SettingControl>
@@ -255,6 +261,7 @@ export default function VideoTab() {
                 value={recsys ?? RECSYS_OPTIONS[0]}
                 onChange={setRecsys}
                 label="System"
+                tip="Recording backend: HLAE (advanced features & effects) or CS native startmovie"
                 optionActions={{ HLAE: "L7", CS: "L7" }}
               />
             </div>
@@ -328,6 +335,7 @@ export default function VideoTab() {
           <SettingControl settingKey="close_game_after">
             <Chip
               label="Close CS2 after each demo"
+              tip="Automatically exits CS2 after each demo completes to free system resources"
               selected={!!closeGameAfter}
               onToggle={() => setCloseGameAfter(!closeGameAfter)}
             />
@@ -405,6 +413,7 @@ export default function VideoTab() {
                 value={videoContainer ?? VIDEO_CONTAINERS[0]}
                 onChange={setVideoContainer}
                 label="Container"
+                tip="Output video container format (MP4 recommended for broad compatibility)"
               />
             </SettingControl>
           </div>
@@ -437,6 +446,7 @@ export default function VideoTab() {
                 mono
                 value={String(asNumber(audioBitrate, 256))}
                 onChange={(v) => setAudioBitrate(asNumber(v, 256))}
+                tip="Audio bitrate in kilobits per second (e.g. 192, 256, 320)"
               />
             </SettingControl>
           </div>

@@ -54,8 +54,16 @@ const TOGGLE_FIELDS: { key: string; label: string; tip?: string }[] = [
     label: "Ragdoll physics",
     tip: "Enables ragdoll death physics; required for the gravity/scale values above to have any effect",
   },
-  { key: "phys_blood", label: "Blood on walls" },
-  { key: "phys_dynamic_lighting", label: "Dynamic lighting" },
+  {
+    key: "phys_blood",
+    label: "Blood on walls",
+    tip: "CS2 console command r_drawdecals: show blood and bullet impact decals on walls",
+  },
+  {
+    key: "phys_dynamic_lighting",
+    label: "Dynamic lighting",
+    tip: "CS2 dynamic lighting and shadows on models and environment",
+  },
 ];
 
 function NumericField({
@@ -81,6 +89,7 @@ function NumericField({
               key={quick}
               type="button"
               className="chip"
+              title={`Set ${label} to ${quick}`}
               onClick={() => setValue(quick)}
             >
               {quick}

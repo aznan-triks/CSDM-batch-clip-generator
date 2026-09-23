@@ -86,10 +86,10 @@ export default function DemoPicker({ demos, checked, onToggle, onSetAll, onSetSe
           {total === 0 ? "no demos loaded" : `${onCount}/${total} selected`}
         </span>
         <div className="dp-buttons">
-          <button type="button" className="chip" data-action="D1" onClick={() => onSetAll(true)}>
+          <button type="button" className="chip" data-action="D1" title="Include all listed demos for clip extraction" onClick={() => onSetAll(true)}>
             {MARK.on} Check all
           </button>
-          <button type="button" className="chip" data-action="D2" onClick={() => onSetAll(false)}>
+          <button type="button" className="chip" data-action="D2" title="Exclude all listed demos from clip extraction" onClick={() => onSetAll(false)}>
             {MARK.off} Uncheck all
           </button>
           <button

@@ -1,3 +1,4 @@
+import { useAlwaysTooltips } from "../settings/useAlwaysTooltips";
 import "./Field.css";
 
 interface FieldProps {
@@ -25,6 +26,7 @@ interface FieldProps {
  * panel.
  */
 export default function Field({ value, onChange, mono, placeholder, id, label, type, tip }: FieldProps) {
+  const alwaysShow = useAlwaysTooltips();
   return (
     <>
       {label && (
@@ -41,6 +43,7 @@ export default function Field({ value, onChange, mono, placeholder, id, label, t
         title={tip}
         onChange={(event) => onChange(event.target.value)}
       />
+      {alwaysShow && tip && <span className="persistent-tip">{tip}</span>}
     </>
   );
 }

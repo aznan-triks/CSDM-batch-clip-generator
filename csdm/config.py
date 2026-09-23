@@ -68,6 +68,7 @@ DEFAULT_CONFIG = {
     "ui_window_h": 900,
     "ui_split_pct": 60,
     "ui_remember_layout": True,
+    "ui_always_show_tooltips": False,
     # Reference card layout (LAYOUT_VERSION 4, sectionLayout.ts), redesigned
     # 2026-09-17 for the real column count a 1600x900 window measures today
     # (15 columns of `ui_card_block_size`, content pane ~902px), and again

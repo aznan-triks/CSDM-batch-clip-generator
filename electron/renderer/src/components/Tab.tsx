@@ -9,19 +9,22 @@ interface TabProps {
   badge?: boolean;
   /** Hover explanation for the badge dot; ignored if `badge` is not set. */
   badgeTip?: string;
+  /** Hover explanation for the tab. */
+  tip?: string;
   onSelect: () => void;
 }
 
 /**
  * One tab, extracted from the mock's `.tab` (mockup-v12-hologlass.html).
  */
-export function Tab({ label, icon, active, badge, badgeTip, onSelect }: TabProps) {
+export function Tab({ label, icon, active, badge, badgeTip, tip, onSelect }: TabProps) {
   const classes = active ? "tab active" : "tab";
   return (
     <button
       type="button"
       role="tab"
       className={classes}
+      title={tip}
       data-action="O1" onClick={onSelect}
       aria-selected={active ? "true" : "false"}
       aria-current={active ? "true" : undefined}

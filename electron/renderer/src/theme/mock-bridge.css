@@ -182,3 +182,28 @@ html {
   background: color-mix(in srgb, var(--gold) 82%, transparent);
   color: var(--on-gold);
 }
+
+/* ── Persistent tooltips (ui_always_show_tooltips) ──
+   Displayed under controls when the option is turned ON. Uses existing
+   typography tokens: quiet font, dimmed text, does not steal layout. */
+.persistent-tip {
+  display: block;
+  width: 100%;
+  flex-basis: 100%;
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--txt-lo);
+  margin-top: 2px;
+  margin-bottom: 2px;
+  font-family: var(--font-mono, monospace);
+  opacity: 0.85;
+}
+
+.filter-row-tip {
+  padding-left: 4px;
+  border-left: 2px solid color-mix(in srgb, var(--gold) 35%, transparent);
+  margin-top: 3px;
+  margin-bottom: 3px;
+  white-space: pre-line;
+}
+

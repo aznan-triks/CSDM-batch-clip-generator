@@ -280,6 +280,7 @@ export default function PlayerSection() {
                   type="button"
                   className="chip on"
                   aria-pressed="true"
+                  title={`Click to remove ${name} from active filter`}
                   onClick={() => toggle(steamId)}
                 >
                   <span className="d" aria-hidden="true" />
@@ -297,6 +298,7 @@ export default function PlayerSection() {
           value={search}
           onChange={search_}
           placeholder="Search by name or Steam ID…"
+          tip="Search players by name or Steam ID"
         />
       </div>
 
@@ -306,6 +308,7 @@ export default function PlayerSection() {
         <div className="row ps-controls">
           <Segmented
             label="Sort"
+            tip="Sort players alphabetically or by most recently seen"
             options={[...PLAYER_LIST.orders]}
             value={sortBy}
             onChange={(next) => {
@@ -321,6 +324,7 @@ export default function PlayerSection() {
             type="button"
             className="chip"
             aria-label="Previous page"
+            title="Go to previous page"
             disabled={currentPage === 0}
             data-action="N6" onClick={() => setPage((p) => Math.max(0, p - 1))}
           >
@@ -333,6 +337,7 @@ export default function PlayerSection() {
             type="button"
             className="chip"
             aria-label="Next page"
+            title="Go to next page"
             disabled={currentPage >= pageCount - 1}
             data-action="N7" onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
           >

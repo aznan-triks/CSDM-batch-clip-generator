@@ -1,3 +1,4 @@
+import { useAlwaysTooltips } from "../settings/useAlwaysTooltips";
 import NumberField from "./NumberField";
 import "./Slider.css";
 
@@ -41,6 +42,7 @@ export default function Slider({
   // progress of its own, and the mock's rail is filled lime-to-accent up to
   // the thumb -- so the value is handed to CSS as a custom property and the
   // gradient is drawn there. Painting only: nothing here moves a layout box.
+  const alwaysShow = useAlwaysTooltips();
   const span = max - min;
   const filled = span > 0 ? ((value - min) / span) * 100 : 0;
 
@@ -78,6 +80,7 @@ export default function Slider({
         step={step}
       />
       {readout && <span className="slider-readout">{readout}</span>}
+      {alwaysShow && tip && <span className="persistent-tip">{tip}</span>}
     </div>
   );
 }
