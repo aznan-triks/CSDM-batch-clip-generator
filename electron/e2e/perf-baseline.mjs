@@ -967,6 +967,12 @@ async function main() {
   const runs = [];
   for (let runIndex = 0; runIndex < RUN_COUNT; runIndex += 1) {
     console.log(`[perf-baseline] ── run ${runIndex + 1}/${RUN_COUNT} ──`);
+    // Every launch starts from the same seeded profile. The app saves settings
+    // 400 ms after a change and `close()` force-kills the tree, so the last
+    // toggle of a run (SPRAY TRANSFER back off) never reached the file: the
+    // next run inherited spray transfer ON, every preview returned 0 clips and
+    // the scenarios that open EDITING after a preview failed.
+    if (runIndex > 0) seedIsolatedProfile(realCfg);
     const { page, browser, mainPid, close } = await launchPackagedExe(cleanEnv);
     try {
       await page.setViewportSize({ width: 1600, height: 900 });
@@ -1043,6 +1049,7 @@ async function main() {
   // `safe()` above).
   let referenceSetError = null;
   let startupConsole = null;
+  seedIsolatedProfile(realCfg); // same reason as before each run
   const reference = await launchPackagedExe(cleanEnv);
   const { page: referencePage } = reference;
   try {
