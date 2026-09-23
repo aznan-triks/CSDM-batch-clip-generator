@@ -44,13 +44,15 @@ class Dp2CacheTests(unittest.TestCase):
             host._dp2_cache_put_locked("c", {})
         self.assertEqual(list(host._dp2_cache), ["b", "c"])
 
-    def test_eviction_also_drops_the_demo_player_positions(self):
+    def test_eviction_keeps_the_demo_player_positions(self):
         host = _Host({"dp2_cache_max_demos": 1})
-        host._player_positions_cache["a"] = object()
+        marker = object()
+        host._player_positions_cache["a"] = marker
         with host._dp2_cache_lock:
             host._dp2_cache_put_locked("a", {})
             host._dp2_cache_put_locked("b", {})
-        self.assertNotIn("a", host._player_positions_cache)
+        self.assertNotIn("a", host._dp2_cache)
+        self.assertIs(host._player_positions_cache.get("a"), marker)
 
 
 if __name__ == "__main__":

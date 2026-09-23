@@ -4673,8 +4673,11 @@ class EngineMixin:
         on a host: the bridge host had no copy, so every dp2 parse raised
         AttributeError in the Electron app. Eviction follows insertion order;
         rewriting a demo keeps its slot. The cap is `dp2_cache_max_demos`
-        (each demo holds 0.5-2 MB of parsed data), and an evicted demo also
-        drops its player positions, which are kept beside the cache.
+        (each demo holds 0.5-2 MB of parsed data). Player positions are kept
+        separately and are NOT evicted here: `_apply_shared_modifiers` reads
+        them with no re-parse fallback, so dropping them on eviction silently
+        loses positions on long (150+ demo) runs. `max(1, ...)` guards the
+        cap: a value of 0 or less would empty the cache on every write.
         """
         is_new = demo_path not in self._dp2_cache
         self._dp2_cache[demo_path] = data
@@ -4684,7 +4687,6 @@ class EngineMixin:
         while len(self._dp2_cache) > cap and self._dp2_cache_order:
             oldest = self._dp2_cache_order.pop(0)
             self._dp2_cache.pop(oldest, None)
-            self._player_positions_cache.pop(oldest, None)
 
     def _dp2_parse_demo(self, demo_path, required_sections=None):
         if required_sections is None:
