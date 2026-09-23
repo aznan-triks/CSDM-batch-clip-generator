@@ -20,6 +20,21 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## Unreleased
+
+### Fixed
+
+- demoparser2-based kill filters (spray transfer, one-tap, no-scope…) now work in the app: the
+  bridge used by Electron was missing the method that writes to the parser cache, so every such
+  filter silently failed to finish.
+
+### Changed
+
+- The Editing list shows clips 100 at a time, with page controls, instead of rendering every clip
+  at once. A very large preview no longer slows the app down.
+
+---
+
 ## 3.3.0 — 2026-09-18
 
 Kill Filters finally has siblings: two new cards let you pick non-lethal moments — damage and shots —
