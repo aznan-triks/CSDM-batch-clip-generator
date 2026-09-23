@@ -27,6 +27,12 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - demoparser2-based kill filters (spray transfer, one-tap, no-scope…) now work in the app: the
   bridge used by Electron was missing the method that writes to the parser cache, so every such
   filter silently failed to finish.
+- Saved date filters now actually apply. They were silently ignored before, so a preview with a
+  date range set may now return fewer clips than it used to, or none if the demos have no known
+  date — that's the filter finally working, not a new bug.
+- Recording in the app no longer fails on the very first line CSDM prints: the bridge was missing
+  the list of error markers the engine checks output against, so every recording run aborted
+  immediately.
 
 ### Changed
 
