@@ -199,6 +199,8 @@ _HAND_WRITTEN: list = [
        level="advanced"),
     _C("font", "I13", "Font", ("ui_font_family",),
        level="advanced"),
+    _C("tooltips", "I13", "Tooltips", ("ui_always_show_tooltips",),
+       level="advanced"),
     # ── I14 Diagnose ───────────────────────────────────────────────────────
     _C("engine_handshake", "I14", "Engine handshake", (),
        ("ping", "hello", "describe_filters"),
