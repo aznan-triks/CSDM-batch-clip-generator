@@ -33,7 +33,7 @@ export async function launchApp() {
     args: [ELECTRON_DIR],
     cwd: ELECTRON_DIR,
     timeout: CONFIG.launchTimeoutMs,
-    env: { ...process.env, VITE_DEV_SERVER_URL: url, CSDM_PYTHON_PATH: "csdm-e2e-no-engine" },
+    env: { ...process.env, VITE_DEV_SERVER_URL: url, CSDM_PYTHON_PATH: "csdm-e2e-no-engine", CSDM_E2E_BACKGROUND: "1" },
   });
 
   const page = await app.firstWindow({ timeout: CONFIG.launchTimeoutMs });

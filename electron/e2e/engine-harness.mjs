@@ -29,7 +29,7 @@ export async function launchWithEngine() {
   // PYTHONPATH or VIRTUAL_ENV from the launching shell makes the child import
   // a different tree than the one under test, and the resulting failure looks
   // exactly like a product bug.
-  const env = { ...process.env, VITE_DEV_SERVER_URL: url };
+  const env = { ...process.env, VITE_DEV_SERVER_URL: url, CSDM_E2E_BACKGROUND: "1" };
   delete env.PYTHONPATH;
   delete env.VIRTUAL_ENV;
 

@@ -248,16 +248,24 @@ function sendCommandToEngine(command) {
 }
 
 function createWindow() {
+  // Scripted runs (e2e, perf bench) set CSDM_E2E_BACKGROUND=1 so the window
+  // never appears over the user's work nor takes the keyboard focus. The page
+  // still renders unthrottled and answers CDP, screenshots included; GPU
+  // readings taken this way do not represent a visible window.
+  const background = process.env.CSDM_E2E_BACKGROUND === "1";
   mainWindow = new BrowserWindow({
     width: WINDOW_DEFAULT_W,
     height: WINDOW_DEFAULT_H,
     minWidth: WINDOW_MIN_W,
     minHeight: WINDOW_MIN_H,
+    show: !background,
+    paintWhenInitiallyHidden: true,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      backgroundThrottling: !background,
     },
   });
 

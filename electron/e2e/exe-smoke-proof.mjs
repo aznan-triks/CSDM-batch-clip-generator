@@ -63,6 +63,7 @@ delete cleanEnv.VIRTUAL_ENV;
 // candidate: an inherited value would pick an interpreter the user never
 // gets, which is the opposite of what this gate is for.
 delete cleanEnv.CSDM_PYTHON_PATH;
+cleanEnv.CSDM_E2E_BACKGROUND = "1"; // hidden window, no focus steal
 const child = spawn(EXE, [`--remote-debugging-port=${PORT}`], {
   cwd: ELECTRON_DIR,
   detached: true,
