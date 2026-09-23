@@ -40,6 +40,19 @@
   font-weight: var(--fw-bold);
 }
 
+/* The pager sits as one flex group at the header's trailing edge, same as
+   `.ps-controls` in PlayerSection -- `justify-content: space-between` on
+   `.editing-header` only has two children (summary, pager) to place. */
+.editing-pager {
+  flex-shrink: 0;
+}
+
+.editing-pager .lab {
+  min-width: 5ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
 .editing-empty {
   display: flex;
   align-items: center;

@@ -12,8 +12,19 @@
  * The composite key is `demoPath:startTick`, the same pair the engine uses to
  * address a clip uniquely (two clips in one demo can never share a start tick).
  */
+import { useEffect, useState } from "react";
+
+import Pager from "../components/Pager";
 import { toggleClipSelection, useEngineState } from "../motion/useEngineState";
 import "./EditingTab.css";
+
+/**
+ * How many clips reach the DOM at once. Measured: a 8 465-clip preview put
+ * 41 000 nodes in this always-mounted tab (+250 MB renderer) and froze the
+ * next PREVIEW (AUDIT_perf_ressources.md). Same remedy and same HC.1 status
+ * as PLAYER_LIST. A timeline redesign will replace this list later.
+ */
+export const EDITING_LIST = { pageSize: 100 } as const;
 
 /** Format a clip's length as M:SS.t, e.g. "0:03.4" or "1:45.0". */
 function formatDuration(seconds: number): string {
@@ -57,6 +68,14 @@ export const EditingTab: React.FC = () => {
   const totalDurationS = clips.reduce((sum, c) => sum + c.durationS, 0);
   const selectedCount = clips.filter((c) => c.selected).length;
 
+  const [page, setPage] = useState(0);
+  // A new PREVIEW starts on page 1; toggling a clip must not move the reader.
+  useEffect(() => setPage(0), [state.previewSerial]);
+  const pageCount = Math.max(1, Math.ceil(clips.length / EDITING_LIST.pageSize));
+  const currentPage = Math.min(page, pageCount - 1);
+  const start = currentPage * EDITING_LIST.pageSize;
+  const visible = clips.slice(start, start + EDITING_LIST.pageSize);
+
   /**
    * Include or exclude this clip.
    *
@@ -90,9 +109,15 @@ export const EditingTab: React.FC = () => {
           {" · "}
           <strong>{formatTotal(totalDurationS)}</strong>
         </span>
+        {pageCount > 1 && (
+          <div className="row editing-pager">
+            <Pager page={currentPage} pageCount={pageCount} onPage={setPage} />
+          </div>
+        )}
       </div>
       <div className="editing-list">
-        {clips.map((clip, idx) => {
+        {visible.map((clip, i) => {
+          const idx = start + i;
           const meta = eventTypeMeta(clip.eventType);
           return (
             <div

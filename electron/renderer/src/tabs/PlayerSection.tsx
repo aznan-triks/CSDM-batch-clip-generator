@@ -22,6 +22,7 @@
 import { useMemo, useRef, useState } from "react";
 
 import Field from "../components/Field";
+import Pager from "../components/Pager";
 import Segmented from "../components/Segmented";
 import SettingControl from "../settings/SettingControl";
 import { useSetting, useSettingsBatch } from "../settings/store";
@@ -320,29 +321,7 @@ export default function PlayerSection() {
           <span className="lab ps-count">
             {matching.length} player{matching.length === 1 ? "" : "s"}
           </span>
-          <button
-            type="button"
-            className="chip"
-            aria-label="Previous page"
-            title="Go to previous page"
-            disabled={currentPage === 0}
-            data-action="N6" onClick={() => setPage((p) => Math.max(0, p - 1))}
-          >
-            ‹
-          </button>
-          <span className="lab ps-page">
-            {currentPage + 1} / {pageCount}
-          </span>
-          <button
-            type="button"
-            className="chip"
-            aria-label="Next page"
-            title="Go to next page"
-            disabled={currentPage >= pageCount - 1}
-            data-action="N7" onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-          >
-            ›
-          </button>
+          <Pager page={currentPage} pageCount={pageCount} onPage={setPage} prevAction="N6" nextAction="N7" pageClassName="ps-page" />
         </div>
       )}
 
