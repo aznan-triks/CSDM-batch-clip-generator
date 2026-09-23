@@ -76,7 +76,8 @@ _HAND_WRITTEN: list = [
        level="expert"),
     _C("engine_internals", "I1", "Engine internals",
        ("encoder", "tickrate", "use_config_file_mode",
-        "process_exit_poll_interval", "process_exit_timeout", "cs2_process_name"),
+        "process_exit_poll_interval", "process_exit_timeout", "cs2_process_name",
+        "dp2_cache_max_demos"),
        level="expert"),
     # ── I2 Choose who ──────────────────────────────────────────────────────
     _C("player_selection", "I2", "Players",

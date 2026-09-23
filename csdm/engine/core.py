@@ -4658,6 +4658,26 @@ class EngineMixin:
             self.__filter_badge_defs_cache = self._get_filter_badge_defs()
             return self.__filter_badge_defs_cache
 
+    def _dp2_cache_put_locked(self, demo_path: str, data: dict):
+        """Store one demo's demoparser2 data and evict the oldest demos beyond the cap.
+
+        MUST be called with `_dp2_cache_lock` held. Lives on the engine, not
+        on a host: the bridge host had no copy, so every dp2 parse raised
+        AttributeError in the Electron app. Eviction follows insertion order;
+        rewriting a demo keeps its slot. The cap is `dp2_cache_max_demos`
+        (each demo holds 0.5-2 MB of parsed data), and an evicted demo also
+        drops its player positions, which are kept beside the cache.
+        """
+        is_new = demo_path not in self._dp2_cache
+        self._dp2_cache[demo_path] = data
+        if is_new:
+            self._dp2_cache_order.append(demo_path)
+        cap = max(1, int(self._host_cfg("dp2_cache_max_demos")))
+        while len(self._dp2_cache) > cap and self._dp2_cache_order:
+            oldest = self._dp2_cache_order.pop(0)
+            self._dp2_cache.pop(oldest, None)
+            self._player_positions_cache.pop(oldest, None)
+
     def _dp2_parse_demo(self, demo_path, required_sections=None):
         if required_sections is None:
             required_sections = {"fire", "death", "hurt", "names"}

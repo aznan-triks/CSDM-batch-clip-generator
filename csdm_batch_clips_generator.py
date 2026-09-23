@@ -287,7 +287,6 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         self.sel_weapons = {}
         for w in self.cfg.get("weapons", []):
             self.sel_weapons[w] = tk.BooleanVar(value=True)
-        self._dp2_cache_order: list = []           # LRU insertion order for eviction
         self._pending_restore_sid  = None   # steam_id to restore once DB is ready
         self._pending_restore_tags = []     # tag names to restore once DB is ready
         self._speed_feedback = None
@@ -4778,30 +4777,6 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
             pass
 
     _LOG_MAX_LINES = 8000   # trim oldest lines when the Text widget exceeds this
-
-    _DP2_CACHE_MAX = 150    # max demos kept in dp2 cache; oldest evicted beyond this
-
-    def _dp2_cache_put_locked(self, demo_path: str, data: dict):
-        """Write to _dp2_cache and evict the oldest entry if cache exceeds _DP2_CACHE_MAX.
-
-        MUST be called while _dp2_cache_lock is already held.
-
-        Each cached demo holds fire_detail, fire_ticks, view_angles, hurt_index, and
-        death_flags — typically 0.5–2 MB of Python objects per demo. Without eviction,
-        a long batch with many dp2 filters active can exhaust RAM and crash.
-
-        LRU policy: _dp2_cache_order tracks insertion order (oldest = front).
-        Re-writes of an existing entry retain their original slot (no re-promotion).
-        """
-        is_new = demo_path not in self._dp2_cache
-        self._dp2_cache[demo_path] = data
-        if is_new:
-            self._dp2_cache_order.append(demo_path)
-        while len(self._dp2_cache) > self._DP2_CACHE_MAX:
-            if not self._dp2_cache_order:
-                break
-            oldest = self._dp2_cache_order.pop(0)
-            self._dp2_cache.pop(oldest, None)
 
     def _clear_log(self):
         self.log_widget.configure(state="normal")

@@ -27,6 +27,7 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   kill_mod_logic_mods: "forced to 'mixed'; no ANY/ALL/MIXED selector exists",
   kill_mod_logic_dp2: "forced to 'mixed'; no ANY/ALL/MIXED selector exists",
   kill_mod_logic_db: "forced to 'mixed'; no ANY/ALL/MIXED selector exists",
+  dp2_cache_max_demos: "memory bound for the demoparser2 cache, a safety cap rather than a user choice",
   // Added in v213 with the confirmed process exit, after the inventory was
   // written. Read by the engine through _host_cfg; no widget was ever built.
   process_exit_poll_interval: "engine-only: how often the task list is polled",

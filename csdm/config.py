@@ -248,6 +248,7 @@ DEFAULT_CONFIG = {
     "cs2_send_to_back": False,
     # demoparser2 performance
     "dp2_threads": min(8, max(2, os.cpu_count() or 4)),  # auto-scaled to CPU count (1–8)
+    "dp2_cache_max_demos": 150,  # demos kept in the demoparser2 cache; oldest evicted beyond this
 
     # How long to wait for a killed process to actually disappear, and how
     # often to look. The UI detonates its charge on the real exit, never on a
