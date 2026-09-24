@@ -1475,7 +1475,16 @@ function backdropOffToggle(selector) {
 
 const ATTRIBUTION_STEPS = [
   ["normal", null],
-  ["noStarspin", () => document.querySelectorAll(".btn.primary .sb").forEach((el) => { el.style.animation = "none"; })],
+  // The ring now spins `.sb::before` (mock-bridge.css, task 3), not `.sb`
+  // itself -- setting `.sb`'s own inline style is inert against a build at or
+  // after that commit. A runtime stylesheet rule reaches both the pseudo-
+  // element (current) and `.sb` (older exes still measured with this script),
+  // so this stays a valid "ring stopped" control either way.
+  ["noStarspin", () => {
+    const style = document.createElement("style");
+    style.textContent = ".btn.primary .sb, .btn.primary .sb::before { animation: none !important; }";
+    document.head.appendChild(style);
+  }],
   ["noCssAnimations", () => document.getAnimations().forEach((a) => a.pause())],
   ["noRaf", () => { window.requestAnimationFrame = () => 0; }],
   ...[".sec", ".pcard", ".console", ".hud-nav", ".actbar"].map((sel) => [
