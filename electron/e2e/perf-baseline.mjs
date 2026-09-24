@@ -115,7 +115,10 @@ const OUTPUT_DIR = path.join(E2E_DIR, "output");
 // passes never overwrite each other. Default keeps the original flat layout.
 const OUTPUT_SUBDIR = process.env.PERF_OUTPUT_SUBDIR || "";
 const RUN_OUTPUT_DIR = OUTPUT_SUBDIR ? path.join(OUTPUT_DIR, OUTPUT_SUBDIR) : OUTPUT_DIR;
-const REFERENCE_DIR = OUTPUT_SUBDIR ? RUN_OUTPUT_DIR : path.join(OUTPUT_DIR, "perf-reference");
+// Same "perf-reference" nesting whether or not PERF_OUTPUT_SUBDIR is set --
+// screenshots always live one level under the JSON output, never flattened
+// into it, so before/hidden/offscreen passes stay structurally identical.
+const REFERENCE_DIR = path.join(RUN_OUTPUT_DIR, "perf-reference");
 // PERF_EXE targets a frozen exe copy (e.g. exe-before/) instead of the
 // worktree's own dist-app/ build, so a "before" measurement keeps working
 // after the source tree has moved on to the "after" fix.
@@ -462,8 +465,12 @@ async function connectMainProcessInspector(port) {
     }
   };
   await new Promise((resolve, reject) => {
-    ws.onopen = resolve;
-    ws.onerror = () => reject(new Error("main-process inspector socket failed"));
+    const timer = setTimeout(
+      () => reject(new Error("main-process inspector socket never opened")),
+      LAUNCH_TIMEOUT_MS,
+    );
+    ws.onopen = () => { clearTimeout(timer); resolve(); };
+    ws.onerror = () => { clearTimeout(timer); reject(new Error("main-process inspector socket failed")); };
   });
   function send(method, params) {
     return new Promise((resolve) => {
@@ -492,6 +499,15 @@ async function connectMainProcessInspector(port) {
 // a reference across eval() calls -- simpler than tracking a remote object id
 // over a WebSocket, and there is exactly one BrowserWindow in this app.
 const MAIN_WINDOW_EXPR = "require('electron').BrowserWindow.getAllWindows()[0]";
+
+// How far past the display union's edge to park the window, on top of the
+// window's own width/height -- generous enough that a rounding difference in
+// a future multi-monitor layout still clears every display.
+const OFFSCREEN_MARGIN_PX = 2000;
+
+function rectsIntersect(a, b) {
+  return a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
+}
 
 // ═══════════════════════════════════════════════════════════════════════
 //  Launching the packaged exe (renderer CDP; see file header for why there
@@ -550,19 +566,57 @@ async function launchPackagedExe(env) {
     null, { timeout: LAUNCH_TIMEOUT_MS },
   );
 
+  // Tears down everything this launch started -- shared by the returned
+  // close() and by the offscreen safety check below, which must be able to
+  // kill the tree and throw rather than ever hand back a launch that failed
+  // its own "never on the user's screen" guarantee.
+  async function killEverything() {
+    if (inspector) { try { inspector.close(); } catch { /* already gone */ } }
+    try { await browser.close(); } catch { /* already gone */ }
+    spawn("taskkill", ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+    await new Promise((resolve) => setTimeout(resolve, 500)); // let the tree actually die
+  }
+
   let inspector = null;
   if (offscreen) {
     inspector = await connectMainProcessInspector(inspectPort);
     // The window is created with show:false (CSDM_E2E_BACKGROUND=1 above), so
-    // nothing has ever painted on the user's real screen. Moving it fully off
-    // every display (screen.getAllDisplays() confirmed by hand: this machine's
-    // displays span x in [0, 3640]; -32000 clears any plausible multi-monitor
-    // layout) BEFORE the only `show*` call means the first and only paintable
-    // surface this window ever gets is a virtual-desktop region no monitor
-    // covers. `showInactive()` (never `show()`/`focus()`) so it never requests
-    // OS input focus either.
-    await inspector.eval(`${MAIN_WINDOW_EXPR}.setPosition(-32000, -32000)`);
+    // nothing has ever painted on the user's real screen. Position is derived
+    // from the LIVE display layout (never a hand-checked constant -- a future
+    // monitor arrangement must not silently place the window back on screen):
+    // fully left of and above the union of every display's bounds, so its x
+    // range alone guarantees no rectangle intersection regardless of y.
+    // `showInactive()` (never `show()`/`focus()`) so it never requests OS
+    // input focus either.
+    const displays = await inspector.eval(
+      `JSON.stringify(require('electron').screen.getAllDisplays().map((d) => d.bounds))`,
+    );
+    const displayBounds = JSON.parse(displays);
+    const unionMinX = Math.min(...displayBounds.map((d) => d.x));
+    const unionMinY = Math.min(...displayBounds.map((d) => d.y));
+    const currentBounds = JSON.parse(await inspector.eval(`JSON.stringify(${MAIN_WINDOW_EXPR}.getBounds())`));
+    const offscreenX = unionMinX - OFFSCREEN_MARGIN_PX - currentBounds.width;
+    const offscreenY = unionMinY - OFFSCREEN_MARGIN_PX - currentBounds.height;
+
+    await inspector.eval(`${MAIN_WINDOW_EXPR}.setPosition(${offscreenX}, ${offscreenY})`);
     await inspector.eval(`${MAIN_WINDOW_EXPR}.showInactive()`);
+
+    // Never trust the positioning blind: re-read the actual bounds and focus
+    // state after showing, and refuse to hand back a launch that could be on
+    // the user's screen or holding real input focus.
+    const afterBounds = JSON.parse(await inspector.eval(`JSON.stringify(${MAIN_WINDOW_EXPR}.getBounds())`));
+    const onAnyDisplay = displayBounds.some((d) => rectsIntersect(afterBounds, d));
+    const isOursFocused = await inspector.eval(
+      `require('electron').BrowserWindow.getFocusedWindow() === ${MAIN_WINDOW_EXPR}`,
+    );
+    if (onAnyDisplay || isOursFocused) {
+      await inspector.eval(`${MAIN_WINDOW_EXPR}.hide()`).catch(() => {});
+      await killEverything();
+      throw new Error(
+        `offscreen safety check failed: onAnyDisplay=${onAnyDisplay} isOursFocused=${isOursFocused} `
+        + `bounds=${JSON.stringify(afterBounds)} displays=${displays} -- refusing to measure`,
+      );
+    }
   }
 
   return {
@@ -571,10 +625,7 @@ async function launchPackagedExe(env) {
     mainPid: child.pid,
     inspector,
     async close() {
-      if (inspector) inspector.close();
-      try { await browser.close(); } catch { /* already gone */ }
-      spawn("taskkill", ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore" });
-      await new Promise((resolve) => setTimeout(resolve, 500)); // let the tree actually die
+      await killEverything();
     },
   };
 }
