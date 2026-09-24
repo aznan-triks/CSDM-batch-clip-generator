@@ -110,8 +110,16 @@ const TAB_LABELS = { capture: "CAPTURE", editing: "EDITING", tags: "TAGS", video
 
 const WORKTREE_ROOT = REPO_ROOT; // this script always runs from inside the throwaway worktree
 const OUTPUT_DIR = path.join(E2E_DIR, "output");
-const REFERENCE_DIR = path.join(OUTPUT_DIR, "perf-reference");
-const EXE_PATH = path.join(ELECTRON_DIR, "dist-app", "CSDM-Batch-Clips-Generator.exe");
+// Redirects both perf-baseline.json/attribution.json and the reference
+// screenshots into a subfolder (e.g. "perf-2/before-hidden") so before/after
+// passes never overwrite each other. Default keeps the original flat layout.
+const OUTPUT_SUBDIR = process.env.PERF_OUTPUT_SUBDIR || "";
+const RUN_OUTPUT_DIR = OUTPUT_SUBDIR ? path.join(OUTPUT_DIR, OUTPUT_SUBDIR) : OUTPUT_DIR;
+const REFERENCE_DIR = OUTPUT_SUBDIR ? RUN_OUTPUT_DIR : path.join(OUTPUT_DIR, "perf-reference");
+// PERF_EXE targets a frozen exe copy (e.g. exe-before/) instead of the
+// worktree's own dist-app/ build, so a "before" measurement keeps working
+// after the source tree has moved on to the "after" fix.
+const EXE_PATH = process.env.PERF_EXE || path.join(ELECTRON_DIR, "dist-app", "CSDM-Batch-Clips-Generator.exe");
 
 const CONFIG_SUBDIR = "CSDM-batch-clip_config"; // must mirror csdm/config.py::CONFIG_SUBDIR
 const ISOLATED_CONFIG_DIR = path.join(WORKTREE_ROOT, CONFIG_SUBDIR);
@@ -418,11 +426,14 @@ function sampleProcesses(rootPid) {
 // ═══════════════════════════════════════════════════════════════════════
 async function launchPackagedExe(env) {
   const cdpPort = 9223 + Math.floor(Math.random() * 500);
+  // Visible only on explicit request: GPU readings are meaningless on a hidden
+  // window, but a visible one steals the user's screen -- the caller decides.
+  const background = process.env.PERF_VISIBLE === "1" ? {} : { CSDM_E2E_BACKGROUND: "1" };
   const child = spawn(EXE_PATH, [`--remote-debugging-port=${cdpPort}`], {
     cwd: ELECTRON_DIR,
     detached: true,
     stdio: "ignore",
-    env: { ...env, CSDM_E2E_BACKGROUND: "1" }, // hidden window, no focus steal
+    env: { ...env, ...background },
   });
 
   const deadline = Date.now() + LAUNCH_TIMEOUT_MS;
@@ -1130,6 +1141,8 @@ async function main() {
   const output = {
     generatedAt: new Date().toISOString(),
     dryRun: DRY_RUN,
+    visible: process.env.PERF_VISIBLE === "1",
+    exePath: EXE_PATH,
     constants: { DATASET_LABELS, IDLE_MS, TAB_SWITCH_COUNT, PREVIEW_REPEATS, RUN_COUNT },
     db: dbInfo,
     isolatedProfile: ISOLATED_CONFIG_FILE,
@@ -1138,7 +1151,8 @@ async function main() {
     realProfileVerification: verification,
     runs,
   };
-  const outFile = path.join(OUTPUT_DIR, "perf-baseline.json");
+  mkdirSync(RUN_OUTPUT_DIR, { recursive: true });
+  const outFile = path.join(RUN_OUTPUT_DIR, "perf-baseline.json");
   writeFileSync(outFile, JSON.stringify(output, null, 2));
   console.log(`[perf-baseline] wrote ${outFile}`);
   console.log(`[perf-baseline] real profile untouched: ${verification.ok}`);
@@ -1159,6 +1173,70 @@ function gpuUtilForPids(pids, seconds) {
   return { avgPercent: avg, maxPercent: max };
 }
 
+/** Attributes every rAF callback REGISTRATION to its caller (one stack frame
+ * up from requestAnimationFrame itself), so several unrelated loops (e.g. one
+ * per always-mounted tab) show up as separate keys instead of one opaque
+ * total. Shared by probe() and attribution()'s minimized/unfocused steps. */
+async function installRafStackSpy(page) {
+  await page.evaluate(() => {
+    const orig = window.requestAnimationFrame.bind(window);
+    window.__rafBy = {};
+    window.__rafOrig = orig;
+    window.requestAnimationFrame = (cb) => {
+      const line = (new Error().stack || "").split("\n")[2] || "?";
+      const key = line.replace(/\?[^:)]*/, "").replace(/.*[\/]/, "").trim();
+      window.__rafBy[key] = (window.__rafBy[key] || 0) + 1;
+      return orig(cb);
+    };
+  });
+}
+
+async function readAndResetRafStackSpy(page) {
+  return page.evaluate(() => {
+    const by = window.__rafBy || {};
+    window.__rafBy = {};
+    return by;
+  });
+}
+
+async function runningAnimationNames(page) {
+  return page.evaluate(() => document.getAnimations()
+    .filter((a) => a.playState === "running")
+    .map((a) => a.animationName || a.effect?.getTiming?.()?.toString?.() || "?"));
+}
+
+/**
+ * "Minimized" and "unfocused" proxies -- confirmed by hand that neither
+ * `Browser.getWindowForTarget` nor `Browser.setWindowBounds` exists on this
+ * exe's `--remote-debugging-port` endpoint (page-level AND browser-level CDP
+ * session both answered "wasn't found"; probed directly before writing this).
+ * That is consistent with the file header: Electron's own BrowserWindow API
+ * is not reachable through this launch technique, and there is no window to
+ * minimize in the first place under CSDM_E2E_BACKGROUND=1 -- `createWindow()`
+ * (main.js) passes `show: false` AND `backgroundThrottling: false` for a
+ * hidden bench run, so even a real OS-level minimize would change nothing
+ * (that is the whole point of the hidden mode: unthrottled measurement).
+ *
+ * The closest reachable proxies, both confirmed to work over this same CDP
+ * connection:
+ *   - "minimized"  -> `Page.setWebLifecycleState({state: "frozen"})`, the
+ *     same lifecycle transition Chromium applies to a long-backgrounded tab
+ *     (pauses timers/rAF); CDP evaluation still reaches the page while frozen
+ *     (confirmed: `page.evaluate` does not throw under "frozen").
+ *   - "unfocused"  -> `Emulation.setFocusEmulationEnabled({enabled: false})`,
+ *     confirmed to flip `document.hasFocus()` to false, which is what
+ *     `window.blur()` cannot reliably do on a window that was never shown.
+ * Both are named accordingly in attribution.json/the audit -- they are
+ * proxies, not literal minimize/blur, and the audit says so.
+ */
+async function setPageLifecycleState(cdp, state) {
+  await cdp.send("Page.setWebLifecycleState", { state });
+}
+
+async function setFocusEmulation(cdp, focused) {
+  await cdp.send("Emulation.setFocusEmulationEnabled", { enabled: !focused });
+}
+
 async function probe() {
   const real = realProfilePaths();
   const before = { paths: real, csdmConfig: sha1(real.csdmConfig), profileConfig: sha1(real.profileConfig) };
@@ -1166,7 +1244,7 @@ async function probe() {
   const env = { ...process.env, CSDM_REPO_ROOT: WORKTREE_ROOT };
   delete env.PYTHONPATH; delete env.VIRTUAL_ENV; delete env.CSDM_PYTHON_PATH;
   const { page, mainPid, close } = await launchPackagedExe(env);
-  const out = {};
+  const out = { visible: process.env.PERF_VISIBLE === "1" };
   try {
     await page.setViewportSize({ width: 1600, height: 900 });
     await page.waitForTimeout(5000);
@@ -1185,19 +1263,9 @@ async function probe() {
     }
     const pids = [mainPid, ...getProcessTree(mainPid).map((p) => p.ProcessId)];
     // Attribute every rAF callback registration to its caller for 5 s.
-    await page.evaluate(() => {
-      const orig = window.requestAnimationFrame.bind(window);
-      window.__rafBy = {};
-      window.__rafOrig = orig;
-      window.requestAnimationFrame = (cb) => {
-        const line = (new Error().stack || "").split("\n")[2] || "?";
-        const key = line.replace(/\?[^:)]*/, "").replace(/.*[\/]/, "").trim();
-        window.__rafBy[key] = (window.__rafBy[key] || 0) + 1;
-        return orig(cb);
-      };
-    });
+    await installRafStackSpy(page);
     await page.waitForTimeout(5000);
-    out.rafCallers = await page.evaluate(() => window.__rafBy);
+    out.rafCallers = await readAndResetRafStackSpy(page);
     out.backdropCanvas = await page.evaluate(() => [...document.querySelectorAll("canvas")].map((c) => ({ w: c.width, h: c.height, cls: c.className, dpr: devicePixelRatio })));
     out.gpuIdleNormal = gpuUtilForPids(pids, 15);
     // Stop every future rAF: the idle loop dies after its current frame.
@@ -1214,8 +1282,184 @@ async function probe() {
   console.log(JSON.stringify(out, null, 2));
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+//  Attribution mode (Task 1, "fix perf 2/2"): idle cost broken down per
+//  source, on the CAPTURE tab -- cumulative toggles (S1's "Starspin" CSS
+//  animation, all CSS animations, rAF itself, then each backdrop-filter
+//  surface one selector at a time), plus three isolated window-state probes
+//  (minimized, unfocused, prefers-reduced-motion). PERF_ATTRIBUTION=1 runs
+//  only this. Reuses probe()'s isolation/spy/GPU helpers -- same isolated
+//  profile, same sha1 guard, same rAF-registration technique.
+// ═══════════════════════════════════════════════════════════════════════
+
+/** Builds a page.evaluate-able toggle whose selector is baked into the
+ * function's own source (via `new Function`) rather than closed over --
+ * Playwright serializes a function by `toString()`, so a normal arrow
+ * function capturing the loop's `sel` would reference an undefined variable
+ * once reconstructed in the page. */
+function backdropOffToggle(selector) {
+  return new Function(
+    `document.querySelectorAll(${JSON.stringify(selector)}).forEach((el) => { `
+    + `el.style.backdropFilter = "none"; el.style.webkitBackdropFilter = "none"; })`,
+  );
+}
+
+const ATTRIBUTION_STEPS = [
+  ["normal", null],
+  ["noStarspin", () => document.querySelectorAll(".btn.primary .sb").forEach((el) => { el.style.animation = "none"; })],
+  ["noCssAnimations", () => document.getAnimations().forEach((a) => a.pause())],
+  ["noRaf", () => { window.requestAnimationFrame = () => 0; }],
+  ...[".sec", ".pcard", ".console", ".hud-nav", ".actbar"].map((sel) => [
+    `noBlur${sel.replace(/\W/g, "")}`,
+    backdropOffToggle(sel),
+  ]),
+];
+
+const ATTRIBUTION_GPU_SECONDS = 15;
+const ATTRIBUTION_RAF_MS = 5000;
+const ATTRIBUTION_RECALC_MS = 15000;
+const ATTRIBUTION_WINDOW_STATE_MS = 5000;
+
+/** One cumulative step: apply its toggle (if any -- "normal" has none), then
+ * take the three measurements the plan asks for, in this order (each window
+ * is independent, so order does not bias the others). */
+async function measureAttributionStep(page, cdp, pids, effect) {
+  if (effect) await page.evaluate(effect);
+
+  const gpu = gpuUtilForPids(pids, ATTRIBUTION_GPU_SECONDS);
+
+  await installRafSpy(page);
+  await readAndResetRafSpy(page); // discard whatever the toggle itself triggered
+  await page.waitForTimeout(ATTRIBUTION_RAF_MS);
+  const rafCalls = await readAndResetRafSpy(page);
+
+  const recalcBefore = await metricsMap(cdp);
+  await page.waitForTimeout(ATTRIBUTION_RECALC_MS);
+  const recalcAfter = await metricsMap(cdp);
+  const recalcDelta = diffMetrics(recalcBefore, recalcAfter).RecalcStyleCount ?? null;
+
+  return {
+    gpuAvg: gpu.avgPercent,
+    gpuMax: gpu.maxPercent,
+    rafPerSec: rafCalls / (ATTRIBUTION_RAF_MS / 1000),
+    recalcPerSec: recalcDelta === null ? null : recalcDelta / (ATTRIBUTION_RECALC_MS / 1000),
+  };
+}
+
+/** Minimized/unfocused: rAF attribution by caller stack + which named CSS
+ * animations are still running, over a fixed window. Window state is reset
+ * to "normal" afterwards so the next probe starts from the same baseline. */
+async function measureWindowState(page, cdp, apply, restore) {
+  await apply();
+  await installRafStackSpy(page);
+  await readAndResetRafStackSpy(page);
+  await page.waitForTimeout(ATTRIBUTION_WINDOW_STATE_MS);
+  const rafBy = await readAndResetRafStackSpy(page);
+  const runningAnimations = await runningAnimationNames(page);
+  await restore();
+  return { rafBy, runningAnimations };
+}
+
+async function attribution() {
+  const real = realProfilePaths();
+  const beforeHashes = { paths: real, csdmConfig: sha1(real.csdmConfig), profileConfig: sha1(real.profileConfig) };
+  seedIsolatedProfile(JSON.parse(readFileSync(real.csdmConfig, "utf8")));
+  const env = { ...process.env, CSDM_REPO_ROOT: WORKTREE_ROOT };
+  delete env.PYTHONPATH; delete env.VIRTUAL_ENV; delete env.CSDM_PYTHON_PATH;
+
+  const out = {
+    generatedAt: new Date().toISOString(),
+    visible: process.env.PERF_VISIBLE === "1",
+    exePath: EXE_PATH,
+    windowStateNote: "minimized/unfocused are proxies, not a literal OS minimize/blur: "
+      + "Browser.getWindowForTarget/setWindowBounds are not exposed on this exe's "
+      + "--remote-debugging-port endpoint (confirmed by hand, page- and browser-level "
+      + "CDP sessions both answered \"wasn't found\"), and CSDM_E2E_BACKGROUND=1 never "
+      + "shows a window in the first place (main.js: show:false, backgroundThrottling:false) "
+      + "so there is nothing to minimize anyway. minimized = Page.setWebLifecycleState(\"frozen\"); "
+      + "unfocused = Emulation.setFocusEmulationEnabled(enabled:false).",
+  };
+
+  // ── Cumulative steps, one launch ──────────────────────────────────────
+  {
+    const { page, mainPid, close } = await launchPackagedExe(env);
+    try {
+      await page.setViewportSize({ width: 1600, height: 900 });
+      await switchTab(page, "capture");
+      await page.waitForTimeout(5000);
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Performance.enable");
+      const pids = [mainPid, ...getProcessTree(mainPid).map((p) => p.ProcessId)];
+
+      out.steps = [];
+      for (const [name, effect] of ATTRIBUTION_STEPS) {
+        console.log(`[perf-attribution] step ${name}`);
+        const measured = await measureAttributionStep(page, cdp, pids, effect);
+        out.steps.push({ name, ...measured });
+      }
+    } finally {
+      await close();
+    }
+  }
+
+  // ── Window-state probes, fresh launch ─────────────────────────────────
+  {
+    seedIsolatedProfile(JSON.parse(readFileSync(real.csdmConfig, "utf8")));
+    const { page, close } = await launchPackagedExe(env);
+    try {
+      await page.setViewportSize({ width: 1600, height: 900 });
+      await switchTab(page, "capture");
+      await page.waitForTimeout(5000);
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Page.enable");
+
+      console.log("[perf-attribution] minimized (proxy: Page.setWebLifecycleState)");
+      out.minimized = await measureWindowState(
+        page, cdp,
+        () => setPageLifecycleState(cdp, "frozen"),
+        () => setPageLifecycleState(cdp, "active"),
+      );
+
+      console.log("[perf-attribution] unfocused (proxy: Emulation.setFocusEmulationEnabled)");
+      out.unfocused = await measureWindowState(
+        page, cdp,
+        () => setFocusEmulation(cdp, false),
+        () => setFocusEmulation(cdp, true),
+      );
+
+      console.log("[perf-attribution] reduced motion");
+      await installRafSpy(page);
+      await readAndResetRafSpy(page);
+      await cdp.send("Emulation.setEmulatedMedia", {
+        features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+      });
+      await page.waitForTimeout(ATTRIBUTION_WINDOW_STATE_MS);
+      const rafOn = await readAndResetRafSpy(page);
+      await cdp.send("Emulation.setEmulatedMedia", { features: [] });
+      await page.waitForTimeout(ATTRIBUTION_WINDOW_STATE_MS);
+      const rafOff = await readAndResetRafSpy(page);
+      out.reducedMotion = { rafOn, rafOff };
+    } finally {
+      await close();
+    }
+  }
+
+  out.realProfileVerification = verifyRealProfileUntouched(beforeHashes);
+  mkdirSync(RUN_OUTPUT_DIR, { recursive: true });
+  const outFile = path.join(RUN_OUTPUT_DIR, "attribution.json");
+  writeFileSync(outFile, JSON.stringify(out, null, 2));
+  console.log(`[perf-attribution] wrote ${outFile}`);
+  console.log(`[perf-attribution] real profile untouched: ${out.realProfileVerification.ok}`);
+  if (!out.realProfileVerification.ok) {
+    console.error("[perf-attribution] REAL PROFILE CHANGED -- investigate before trusting any measurement above");
+    process.exitCode = 1;
+  }
+}
+
 if (process.env.PERF_PROBE === "1") {
   probe().catch((error) => { console.error("[perf-probe] FAILED:", error); process.exitCode = 1; });
+} else if (process.env.PERF_ATTRIBUTION === "1") {
+  attribution().catch((error) => { console.error("[perf-attribution] FAILED:", error); process.exitCode = 1; });
 } else main().catch((error) => {
   console.error("[perf-baseline] FAILED:", error);
   process.exitCode = 1;
