@@ -28,6 +28,20 @@ contextBridge.exposeInMainWorld("bridge", {
   pickSavePath(options) {
     return ipcRenderer.invoke("bridge:pick-save-path", options);
   },
+  // Main -> renderer: "the window is about to close, write what is pending".
+  // `handler` returns a promise that settles once the save has been
+  // answered; the acknowledgement carries the request id back so main knows
+  // which close it may now let through.
+  onFlushRequest(handler) {
+    const listener = (_event, requestId) => {
+      Promise.resolve()
+        .then(handler)
+        .catch(() => {})
+        .then(() => ipcRenderer.send("settings:flushed", requestId));
+    };
+    ipcRenderer.on("settings:flush-request", listener);
+    return () => ipcRenderer.removeListener("settings:flush-request", listener);
+  },
   restartEngine() {
     return ipcRenderer.invoke("bridge:restart-engine");
   },

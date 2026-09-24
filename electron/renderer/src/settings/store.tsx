@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
-import { runCommand } from "../bridge";
+import { onFlushRequest, runCommand } from "../bridge";
 
 /**
  * How long the store waits after the last edit before writing to disk.
@@ -92,18 +92,39 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((previous) => ({ ...previous, ...changes }));
   }, []);
 
+  // The save the debounce is currently holding back, if any. Kept apart from
+  // the timer so closing the window can send it NOW instead of losing it: an
+  // edit made less than SAVE_DEBOUNCE_MS before closing used to vanish.
+  const pendingSave = useRef<Settings | null>(null);
+
+  const writeNow = useCallback((): Promise<void> => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    const cfg = pendingSave.current;
+    if (!cfg) return Promise.resolve();
+    pendingSave.current = null;
+    return runCommand("save_config", { cfg }).then(
+      () => undefined,
+      (cause: Error) => {
+        setError(cause.message);
+      },
+    );
+  }, []);
+
   useEffect(() => {
     if (!dirty.current || !loaded.current) return;
+    pendingSave.current = settings;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      runCommand("save_config", { cfg: settings }).catch((cause: Error) => {
-        setError(cause.message);
-      });
+      void writeNow();
     }, SAVE_DEBOUNCE_MS);
-    return () => {
-      if (timer.current) clearTimeout(timer.current);
-    };
-  }, [settings]);
+  }, [settings, writeNow]);
+
+  // The main process asks for this on window close and on app quit, and waits
+  // for the answer (with a ceiling, main.js) before letting the window go.
+  useEffect(() => onFlushRequest(writeNow), [writeNow]);
 
   return (
     <SettingsContext.Provider value={{ settings, setSetting, setMany, loading, error }}>

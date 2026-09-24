@@ -50,6 +50,7 @@ vi.mock("../../bridge", () => ({
     });
   },
   onMessage: () => () => {},
+  onFlushRequest: () => () => {},
   send: () => {},
   sendCommand: () => "1",
 }));

@@ -11,6 +11,7 @@ import { AlwaysTooltipsProvider, useAlwaysTooltips } from "../useAlwaysTooltips"
 vi.mock("../../bridge", () => ({
   runCommand: () => Promise.resolve({ type: "result", id: "1", ok: true, data: {} }),
   onMessage: () => () => {},
+  onFlushRequest: () => () => {},
   send: () => {},
   sendCommand: () => "1",
   pickPath: () => Promise.resolve(null),

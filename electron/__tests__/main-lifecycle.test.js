@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { buildTreeKillArgs, engineIsBusy, noteEngineState, resetEngineState } from "../lifecycle.js";
+import { buildTreeKillArgs, engineIsBusy, noteEngineState, resetEngineState, settleWithin } from "../lifecycle.js";
 
 beforeEach(() => {
   resetEngineState();
@@ -38,5 +38,23 @@ describe("the shell knows whether a run is under way", () => {
     noteEngineState({ type: "state", name: "run_started", payload: {} });
     noteEngineState({ type: "log", message: "buttons_idle", level: "info" });
     expect(engineIsBusy()).toBe(true);
+  });
+});
+
+describe("waiting on the renderer before closing is bounded", () => {
+  it("resolves as soon as the work settles", async () => {
+    let finished = false;
+    await settleWithin(Promise.resolve().then(() => (finished = true)), 10_000);
+    expect(finished).toBe(true);
+  });
+
+  it("gives up after the timeout when the work never answers", async () => {
+    const started = Date.now();
+    await settleWithin(new Promise(() => {}), 20);
+    expect(Date.now() - started).toBeLessThan(5_000);
+  });
+
+  it("does not turn a failed flush into a failed close", async () => {
+    await expect(settleWithin(Promise.reject(new Error("engine gone")), 10_000)).resolves.toBeUndefined();
   });
 });

@@ -33,6 +33,7 @@ function installFakeBridge() {
     restartEngine() {
       return Promise.resolve();
     },
+    onFlushRequest: () => () => {},
     setWindowBounds() {
       return Promise.resolve();
     },

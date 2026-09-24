@@ -45,6 +45,7 @@ const FIXTURE = {
 vi.mock("../../bridge", () => ({
   runCommand: () => Promise.resolve({ type: "result", id: "1", ok: true, data: FIXTURE }),
   onMessage: () => () => {},
+  onFlushRequest: () => () => {},
   send: () => {},
   sendCommand: () => "1",
 }));

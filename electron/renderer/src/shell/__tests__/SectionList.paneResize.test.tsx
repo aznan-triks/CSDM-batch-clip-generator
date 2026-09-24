@@ -68,6 +68,7 @@ function installFakeBridge(initialConfig: Record<string, unknown>): void {
     pickPath: async () => null,
     pickSavePath: async () => null,
     restartEngine: async () => {},
+    onFlushRequest: () => () => {},
     setWindowBounds: async () => {},
   };
 }

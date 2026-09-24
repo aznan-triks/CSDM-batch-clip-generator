@@ -54,6 +54,7 @@ vi.mock("../../bridge", () => {
         ? Promise.resolve({ type: "result", id: "1", ok: true, data: tables })
         : Promise.resolve({ type: "result", id: "1", ok: true, data: {} }),
     onMessage: () => () => {},
+    onFlushRequest: () => () => {},
     send: () => {},
     // The shell greets the engine on mount; this test only cares about which
     // controls got rendered, so the greeting goes nowhere.

@@ -80,6 +80,8 @@ interface BridgeApi {
   onMessage(cb: (message: BridgeMessage) => void): () => void;
   pickPath(options?: { file?: boolean }): Promise<string | null>;
   pickSavePath(options?: { defaultName?: string }): Promise<string | null>;
+  /** Returns an unsubscribe function. */
+  onFlushRequest(handler: () => Promise<void>): () => void;
   restartEngine(): Promise<void>;
   setWindowBounds(width: number, height: number): Promise<void>;
 }
@@ -203,6 +205,15 @@ export function runCommand(
 /** Subscribe to engine messages. Returns an unsubscribe function for React effects. */
 export function onMessage(cb: (message: BridgeMessage) => void): () => void {
   return bridge()?.onMessage(cb) ?? (() => {});
+}
+
+/**
+ * Register what to do when the main process is about to close the window:
+ * write whatever is still pending. Main waits for `handler` to settle (with a
+ * ceiling) before letting the window go. No-op outside Electron.
+ */
+export function onFlushRequest(handler: () => Promise<void>): () => void {
+  return bridge()?.onFlushRequest(handler) ?? (() => {});
 }
 
 /** Open the native picker. Resolves to null outside Electron, where there is none. */

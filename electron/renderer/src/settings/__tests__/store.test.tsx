@@ -12,12 +12,21 @@ import { SAVE_DEBOUNCE_MS, SettingsProvider, useSetting } from "../store";
 
 const commands: { name: string; payload: Record<string, unknown> }[] = [];
 let loadResult: () => Promise<{ data: Record<string, unknown> }>;
+// The handler the store registers for the main process's "flush before
+// closing" request -- the test plays the main process by calling it.
+let flushHandler: (() => Promise<void>) | null = null;
 
 vi.mock("../../bridge", () => ({
   runCommand: (name: string, payload: Record<string, unknown> = {}) => {
     commands.push({ name, payload });
     if (name === "load_config") return loadResult();
     return Promise.resolve({ type: "result", id: "1", ok: true });
+  },
+  onFlushRequest: (handler: () => Promise<void>) => {
+    flushHandler = handler;
+    return () => {
+      if (flushHandler === handler) flushHandler = null;
+    };
   },
 }));
 
@@ -33,6 +42,7 @@ function Probe({ settingKey }: { settingKey: string }) {
 
 beforeEach(() => {
   commands.length = 0;
+  flushHandler = null;
   loadResult = () => Promise.resolve({ data: { crf: 18, framerate: 60 } });
   vi.useFakeTimers({ shouldAdvanceTime: true });
 });
@@ -120,5 +130,46 @@ describe("SettingsProvider", () => {
       </SettingsProvider>,
     );
     await waitFor(() => expect(screen.getByRole("button").textContent).toBe("undefined"));
+  });
+
+  it("writes a change still waiting on the debounce when the window is about to close", async () => {
+    render(
+      <SettingsProvider>
+        <Probe settingKey="crf" />
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(screen.getByRole("button").textContent).toBe("18"));
+
+    act(() => screen.getByRole("button").click());
+    // Closing lands inside the debounce window: no save has gone out yet.
+    expect(commands.filter((c) => c.name === "save_config")).toHaveLength(0);
+    expect(flushHandler).not.toBeNull();
+
+    await act(async () => {
+      await flushHandler!();
+    });
+
+    const saves = commands.filter((c) => c.name === "save_config");
+    expect(saves).toHaveLength(1);
+    expect((saves[0].payload.cfg as Record<string, unknown>).crf).toBe(19);
+
+    // The debounced timer must not fire a second, redundant write afterwards.
+    await act(async () => {
+      vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
+    });
+    expect(commands.filter((c) => c.name === "save_config")).toHaveLength(1);
+  });
+
+  it("answers a flush at once, without writing, when nothing is pending", async () => {
+    render(
+      <SettingsProvider>
+        <Probe settingKey="crf" />
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(screen.getByRole("button").textContent).toBe("18"));
+    await act(async () => {
+      await flushHandler!();
+    });
+    expect(commands.filter((c) => c.name === "save_config")).toHaveLength(0);
   });
 });

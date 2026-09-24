@@ -35,6 +35,8 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   immediately.
 - Previews using demoparser2-based filters (spray transfer, one-tap, no-scope…) no longer hang the
   app on Windows.
+- A setting changed right before closing the app is no longer lost: closing now waits for the
+  pending save to be written (a fraction of a second at most) before the window goes.
 
 ### Changed
 
