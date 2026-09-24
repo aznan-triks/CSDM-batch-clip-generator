@@ -197,17 +197,23 @@ export default function Backdrop() {
       frame = requestAnimationFrame(loop);
     }
 
+    /**
+     * The loop may be waiting out its idle timer: pull the next frame in now,
+     * so a change the user caused is painted at once rather than up to one
+     * idle period later. No-op when a frame is already due or motion is off.
+     */
+    function wake(): void {
+      if (!timer) return;
+      clearTimeout(timer);
+      timer = 0;
+      frame = requestAnimationFrame(loop);
+    }
+
     function onPointerMove(event: MouseEvent): void {
       cursorX = event.clientX;
       cursorY = event.clientY;
       lastMove = performance.now();
-      // The loop is waiting out its idle timer: answer the mouse right away
-      // instead of leaving it stalled until that timer fires on its own.
-      if (timer) {
-        clearTimeout(timer);
-        timer = 0;
-        frame = requestAnimationFrame(loop);
-      }
+      wake();
     }
 
     function onPointerLeave(): void {
@@ -217,7 +223,10 @@ export default function Backdrop() {
 
     function onResize(): void {
       layout();
+      // `layout()` resized the canvas, which clears it: repaint on the next
+      // frame, not after the idle timer, or the ground flashes blank.
       if (effectiveIntensity() === "none") draw(0, false);
+      else wake();
     }
 
     // A theme change swaps every token; the canvas holds concrete values, so
@@ -236,7 +245,9 @@ export default function Backdrop() {
       } else {
         field = next;
       }
+      // Same frame as the rest of the window, not one idle period behind it.
       if (effectiveIntensity() === "none") draw(0, false);
+      else wake();
     });
     // `style` as well as `data-mode`: theme/accent.ts writes the accent -- and
     // now `--holo`, the ground's own hue -- as inline custom properties on
