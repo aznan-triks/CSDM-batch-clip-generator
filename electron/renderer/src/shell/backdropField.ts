@@ -41,6 +41,11 @@ export interface BackdropField {
   visibleFloor: number;
   maxPixelRatio: number;
   /**
+   * Resting cadence: the drift is slow enough that 12 fps reads the same;
+   * full rate only while the cursor is being answered.
+   */
+  idle: { fps: number; settleMs: number };
+  /**
    * The mark stamped on an active plate, on top of its sheen.
    *
    * The ground used to carry nothing but plates and scanlines -- "pas d'icônes
@@ -83,6 +88,7 @@ export const BACKDROP: BackdropField = {
   visibleFloor: 0.02,
   /** Device pixel ratio is capped: beyond this the extra pixels buy nothing. */
   maxPixelRatio: 2,
+  idle: { fps: 12, settleMs: 1000 },
   motif: "crosshair",
 };
 

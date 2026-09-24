@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 // this is a real defect in the plan, not a Windows-only quirk. See the task
 // report for detail.
 import { BACKDROP, borderAlpha, cellIntensity, parseAlpha, valueNoise } from "../backdropField";
+import { nextFrameDelay } from "../Backdrop";
 
 describe("the noise field is deterministic", () => {
   it("returns the same value for the same coordinates", () => {
@@ -82,6 +83,14 @@ describe("the plate border reacts to the mode-dependent glow tokens", () => {
     const light = borderAlpha(0.16, 0.22, 0.5);
     const dark = borderAlpha(0.3, 0.46, 0.5);
     expect(dark).toBeGreaterThan(light);
+  });
+});
+
+describe("the idle cadence", () => {
+  it("runs at full rate while the cursor moved recently, then drops to the idle cadence", () => {
+    const idle = { fps: 12, settleMs: 1000 };
+    expect(nextFrameDelay(1000, 500, idle)).toBe(0); // moved 500 ms ago -> next rAF
+    expect(nextFrameDelay(3000, 500, idle)).toBe(1000 / 12); // settled -> idle timer
   });
 });
 

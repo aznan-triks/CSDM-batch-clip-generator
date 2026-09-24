@@ -43,6 +43,20 @@ function readPalette(): Palette {
   };
 }
 
+/**
+ * 0 = request the next animation frame right away; otherwise wait this many
+ * ms before requesting one. Pure, for tests: the loop below is the only
+ * caller, and it is what makes the resting backdrop 12 fps instead of
+ * whatever the display refreshes at, once the cursor has settled.
+ */
+export function nextFrameDelay(
+  now: number,
+  lastMove: number,
+  idle: BackdropField["idle"],
+): number {
+  return now - lastMove < idle.settleMs ? 0 : 1000 / idle.fps;
+}
+
 export default function Backdrop() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -61,6 +75,10 @@ export default function Backdrop() {
     let cursorX = -1e4;
     let cursorY = -1e4;
     let frame = 0;
+    // Idle cadence: -Infinity means "no recent move" so the very first frame
+    // after mount goes straight to the resting rate rather than a burst.
+    let lastMove = -Infinity;
+    let timer = 0;
 
     // The field is per TAB (`BACKDROP_BY_TAB`): a `let`, re-read whenever the
     // shell stamps a different `data-tab` on <html>. `plateSize` and `offset`
@@ -148,7 +166,16 @@ export default function Backdrop() {
 
     function loop(time: number): void {
       draw(time, true);
-      frame = requestAnimationFrame(loop);
+      frame = 0;
+      const delay = nextFrameDelay(performance.now(), lastMove, field.idle);
+      if (delay === 0) {
+        frame = requestAnimationFrame(loop);
+      } else {
+        timer = window.setTimeout(() => {
+          timer = 0;
+          frame = requestAnimationFrame(loop);
+        }, delay);
+      }
     }
 
     /**
@@ -158,7 +185,9 @@ export default function Backdrop() {
      */
     function applyIntensity(): void {
       cancelAnimationFrame(frame);
+      clearTimeout(timer);
       frame = 0;
+      timer = 0;
       if (effectiveIntensity() === "none") {
         cursorX = -1e4;
         cursorY = -1e4;
@@ -171,6 +200,14 @@ export default function Backdrop() {
     function onPointerMove(event: MouseEvent): void {
       cursorX = event.clientX;
       cursorY = event.clientY;
+      lastMove = performance.now();
+      // The loop is waiting out its idle timer: answer the mouse right away
+      // instead of leaving it stalled until that timer fires on its own.
+      if (timer) {
+        clearTimeout(timer);
+        timer = 0;
+        frame = requestAnimationFrame(loop);
+      }
     }
 
     function onPointerLeave(): void {
@@ -220,6 +257,7 @@ export default function Backdrop() {
 
     return () => {
       cancelAnimationFrame(frame);
+      clearTimeout(timer);
       themeWatcher.disconnect();
       stopIntensity();
       window.removeEventListener("mousemove", onPointerMove);
