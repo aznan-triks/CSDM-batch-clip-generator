@@ -17,7 +17,7 @@ function fakeContext(): CanvasRenderingContext2D {
   return new Proxy({} as CanvasRenderingContext2D, {
     get: (target, key) => (key in target ? target[key as keyof typeof target] : () => {}),
     set: (target, key, value) => {
-      (target as Record<string | symbol, unknown>)[key] = value;
+      (target as unknown as Record<string | symbol, unknown>)[key] = value;
       return true;
     },
   });
