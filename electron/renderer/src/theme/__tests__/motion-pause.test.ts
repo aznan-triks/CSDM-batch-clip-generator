@@ -46,3 +46,41 @@ describe("mock-bridge.css pauses every CSS animation under the motion gate", () 
     expect(infiniteAnimationNames.size).toBeGreaterThan(0);
   });
 });
+
+describe("the pause does not freeze an entrance at its hidden first frame", () => {
+  // `animation-play-state: paused` holds a one-shot `forwards` entrance at
+  // 0 %: an element whose base style is hidden (`.casc-g{opacity:0}`, the
+  // weapon silhouettes) would stay invisible for as long as the gate is shut
+  // -- for good under OS reduced motion. Each such entrance must be let
+  // through to its end state (duration 0) instead.
+  const allCss = globSync("**/*.css", { cwd: SRC_DIR })
+    .map((f) => readFileSync(path.join(SRC_DIR, f), "utf-8"))
+    .join("\n");
+
+  function keyframesEndVisible(name: string): boolean {
+    const start = allCss.search(new RegExp(`@keyframes\\s+${name}\\s*\\{`));
+    if (start < 0) return false;
+    const body = allCss.slice(start, start + 400);
+    const end = body.match(/(?:\bto|100%)\s*\{([^}]*)\}/);
+    const opacity = end?.[1].match(/opacity:\s*([\d.]+)/);
+    return opacity != null && Number(opacity[1]) > 0;
+  }
+
+  const entrances: string[] = [];
+  for (const rule of allCss.matchAll(/([^{}]+)\{[^{}]*animation:\s*([\w-]+)[^;{}]*forwards[^{}]*\}/g)) {
+    if (keyframesEndVisible(rule[2])) entrances.push(rule[1].trim());
+  }
+
+  it("finds the forwards entrances it guards (not vacuous)", () => {
+    expect(entrances).toContain(".casc-g.in");
+  });
+
+  it.each(entrances)("lets %s reach its end state when data-motion is none", (selector) => {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    expect(BRIDGE_CSS).toMatch(
+      new RegExp(
+        `html\\[data-motion=["']none["']\\]\\s+${escaped}\\s*[,{][^}]*animation-duration:\\s*0s\\s*!important`,
+      ),
+    );
+  });
+});

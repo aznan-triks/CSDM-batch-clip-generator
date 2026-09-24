@@ -216,6 +216,14 @@ html[data-motion="none"] *::before,
 html[data-motion="none"] *::after {
   animation-play-state: paused !important;
 }
+/* ...except a one-shot entrance from a hidden base (.casc-g{opacity:0}):
+   paused at 0 % it stays invisible while the gate is shut -- for good under
+   OS reduced motion. Duration 0 lands it on its `forwards` end state instead
+   (motion-pause.test.ts lists every such entrance). */
+html[data-motion="none"] .casc-g.in,
+html[data-motion="none"] .gun2.in {
+  animation-duration: 0s !important;
+}
 
 /* Primary button ring (.btn.primary .sb, mock-v12.css): starspin animated a
    registered custom property (--ang), forcing a style recalc every frame
