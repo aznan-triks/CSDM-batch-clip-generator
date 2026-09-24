@@ -190,6 +190,12 @@ export function isOverriddenBySystem(): boolean {
   return prefersReducedMotion() && intensity !== "none";
 }
 
+// The gate holds from load, not from the first `onIntensityChange` caller:
+// CSS reads `data-motion` whether or not any component subscribed, and the
+// only subscriber (the backdrop) bails out when it gets no 2D context.
+watchSystemPreference();
+syncMotionAttribute();
+
 function durationScale(value: Intensity): number {
   return value === "sober" ? MOTION.sober.durationFactor : 1;
 }
