@@ -207,3 +207,13 @@ html {
   white-space: pre-line;
 }
 
+/* Motion gate (motion/engine.ts): window inactive, minimised, reduced-motion
+   or intensity "none" -> every CSS animation holds still. Measured before:
+   starspin, caret and pulses kept running in a minimised window
+   (docs/audits/AUDIT_perf_ressources.md, fix 2/2 before). */
+html[data-motion="none"] *,
+html[data-motion="none"] *::before,
+html[data-motion="none"] *::after {
+  animation-play-state: paused !important;
+}
+

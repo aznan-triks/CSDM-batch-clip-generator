@@ -109,8 +109,36 @@ let windowActive = true;
 
 const listeners = new Set<(value: Intensity) => void>();
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+/** The live `matchMedia` subscription that follows the OS preference. A
+ *  module-level singleton: one listener for the whole app, not one per
+ *  `onIntensityChange` caller. */
+let systemWatcher: MediaQueryList | null = null;
+
+/** Mirror the gate on <html> so CSS animations obey it too (mock-bridge.css). */
+function syncMotionAttribute(): void {
+  if (typeof document === "undefined") return;
+  document.documentElement.dataset.motion = effectiveIntensity();
+}
+
 function notify(): void {
+  syncMotionAttribute();
   for (const listener of listeners) listener(effectiveIntensity());
+}
+
+/** The OS preference can change while the app runs; the gate must follow it live. */
+function watchSystemPreference(): void {
+  if (systemWatcher || typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return;
+  }
+  systemWatcher = window.matchMedia(REDUCED_MOTION_QUERY);
+  systemWatcher.addEventListener("change", notify);
+}
+
+/** Test seam only: forget the live subscription so a fresh matchMedia stub takes hold. */
+export function resetSystemWatcher(): void {
+  systemWatcher = null;
 }
 
 export function setIntensity(value: Intensity): void {
@@ -134,6 +162,8 @@ export function getIntensity(): Intensity {
 }
 
 export function onIntensityChange(listener: (value: Intensity) => void): () => void {
+  watchSystemPreference();
+  syncMotionAttribute();
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
@@ -141,7 +171,7 @@ export function onIntensityChange(listener: (value: Intensity) => void): () => v
 /** True when the system asks for reduced motion. Safe where matchMedia is absent. */
 export function prefersReducedMotion(): boolean {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
 }
 
 /**

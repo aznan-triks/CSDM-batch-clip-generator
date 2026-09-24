@@ -6,12 +6,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   effectiveIntensity,
+  getIntensity,
   isOverriddenBySystem,
+  onIntensityChange,
   play,
   registerSequence,
   registeredSequences,
   resetSequences,
+  resetSystemWatcher,
   setIntensity,
+  setWindowActive,
   type SequenceContext,
 } from "../engine";
 import { MOTION } from "../tokens";
@@ -43,6 +47,7 @@ function makeHost(): HTMLElement {
 
 beforeEach(() => {
   resetSequences();
+  resetSystemWatcher();
   setIntensity("full");
   vi.useFakeTimers();
 });
@@ -50,6 +55,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  setWindowActive(true);
 });
 
 describe("registry", () => {
@@ -216,6 +222,35 @@ describe("prefers-reduced-motion wins over the user setting", () => {
     stubMatchMedia(false);
     setIntensity("sober");
     expect(effectiveIntensity()).toBe("sober");
+  });
+
+  it("re-notifies when the system reduced-motion preference changes at run time", () => {
+    // jsdom here has no native matchMedia (it is `undefined` until stubbed),
+    // so `vi.spyOn` -- which requires an existing function -- cannot be used;
+    // `vi.stubGlobal` (same as `stubMatchMedia` above) installs one from
+    // scratch and is reverted by `vi.unstubAllGlobals()` in `afterEach`.
+    let changeHandler: (() => void) | undefined;
+    let matches = false;
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      get matches() { return matches; },
+      media: query,
+      addEventListener: (_: string, h: () => void) => { changeHandler = h; },
+      removeEventListener: () => {},
+    }));
+    const seen: string[] = [];
+    const stop = onIntensityChange((v) => seen.push(v));
+    matches = true;
+    changeHandler!();
+    expect(seen).toEqual(["none"]);
+    expect(document.documentElement.dataset.motion).toBe("none");
+    stop();
+  });
+
+  it("mirrors the effective intensity on <html data-motion>", () => {
+    setWindowActive(false);
+    expect(document.documentElement.dataset.motion).toBe("none");
+    setWindowActive(true);
+    expect(document.documentElement.dataset.motion).toBe(getIntensity());
   });
 
   it("does not throw when window.matchMedia is entirely absent", () => {
