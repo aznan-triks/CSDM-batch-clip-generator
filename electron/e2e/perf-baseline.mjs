@@ -421,15 +421,105 @@ function sampleProcesses(rootPid) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+//  Main-process inspector (PERF_OFFSCREEN=1 only): reaches the real
+//  BrowserWindow instead of CDP proxies. See launchPackagedExe for why this
+//  exists and connectMainProcessInspector for how it works.
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Talks to the packaged exe's own `--inspect=<port>` (Node/main-process
+ * debugger, NOT the renderer's `--remote-debugging-port`). Confirmed by hand
+ * this is NOT blocked by an Electron fuse on this build (the endpoint answers
+ * normally). `require` is reachable ONLY with `includeCommandLineAPI: true`:
+ * plain `Runtime.evaluate` reports "require is not defined" (confirmed) --
+ * `require` is not a real global, it is a per-module wrapper argument, and
+ * only the CommandLine-API evaluation path (the same one DevTools' own
+ * console uses) injects a working shim for it. This is what actually reaches
+ * `require('electron').BrowserWindow` -- the file header's older note about
+ * main-process RPC being unreachable was true for plain `Runtime.evaluate`
+ * and for Playwright's `_electron.launch()`, but not for this path.
+ */
+async function connectMainProcessInspector(port) {
+  let targets = null;
+  const deadline = Date.now() + LAUNCH_TIMEOUT_MS;
+  while (Date.now() < deadline && !targets) {
+    try {
+      targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
+  if (!targets || !targets[0]) throw new Error("main-process inspector never came up");
+
+  const ws = new WebSocket(targets[0].webSocketDebuggerUrl);
+  let nextId = 1;
+  const pending = new Map();
+  ws.onmessage = (event) => {
+    const message = JSON.parse(event.data);
+    if (message.id && pending.has(message.id)) {
+      pending.get(message.id)(message);
+      pending.delete(message.id);
+    }
+  };
+  await new Promise((resolve, reject) => {
+    ws.onopen = resolve;
+    ws.onerror = () => reject(new Error("main-process inspector socket failed"));
+  });
+  function send(method, params) {
+    return new Promise((resolve) => {
+      const id = nextId++;
+      pending.set(id, resolve);
+      ws.send(JSON.stringify({ id, method, params }));
+    });
+  }
+  await send("Runtime.enable", {});
+
+  return {
+    async eval(expression) {
+      const response = await send("Runtime.evaluate", {
+        expression, includeCommandLineAPI: true, awaitPromise: true, returnByValue: true,
+      });
+      if (response.result.exceptionDetails) {
+        throw new Error(`inspector eval failed: ${JSON.stringify(response.result.exceptionDetails)}`);
+      }
+      return response.result.result.value;
+    },
+    close() { ws.close(); },
+  };
+}
+
+// One shared expression prefix: always re-fetch the window rather than cache
+// a reference across eval() calls -- simpler than tracking a remote object id
+// over a WebSocket, and there is exactly one BrowserWindow in this app.
+const MAIN_WINDOW_EXPR = "require('electron').BrowserWindow.getAllWindows()[0]";
+
+// ═══════════════════════════════════════════════════════════════════════
 //  Launching the packaged exe (renderer CDP; see file header for why there
-//  is no main-process RPC)
+//  is no main-process RPC over the RENDERER's own CDP connection -- that
+//  constraint stands. PERF_OFFSCREEN=1 reaches the main process a different
+//  way, see connectMainProcessInspector above)
 // ═══════════════════════════════════════════════════════════════════════
 async function launchPackagedExe(env) {
   const cdpPort = 9223 + Math.floor(Math.random() * 500);
   // Visible only on explicit request: GPU readings are meaningless on a hidden
   // window, but a visible one steals the user's screen -- the caller decides.
   const background = process.env.PERF_VISIBLE === "1" ? {} : { CSDM_E2E_BACKGROUND: "1" };
-  const child = spawn(EXE_PATH, [`--remote-debugging-port=${cdpPort}`], {
+  const offscreen = process.env.PERF_OFFSCREEN === "1";
+  const inspectPort = offscreen ? 20000 + Math.floor(Math.random() * 2000) : null;
+  const args = [`--remote-debugging-port=${cdpPort}`];
+  if (offscreen) {
+    args.push(`--inspect=${inspectPort}`);
+    // A window positioned entirely off every display is still "occluded" as
+    // far as Windows' native occlusion tracking is concerned (no monitor
+    // shows any of its pixels), and Chromium throttles rAF to ~1 Hz for an
+    // occluded renderer exactly like it does for a truly hidden one --
+    // confirmed by hand: without this switch, an off-screen-but-shown window
+    // still measured ~1 rAF/s; with it, ~90-100/s. This is a Chromium
+    // command-line SWITCH (process-start-time, not `app.commandLine` from
+    // inside main.js -- no product code change).
+    args.push("--disable-features=CalculateNativeWinOcclusion");
+  }
+  const child = spawn(EXE_PATH, args, {
     cwd: ELECTRON_DIR,
     detached: true,
     stdio: "ignore",
@@ -460,11 +550,28 @@ async function launchPackagedExe(env) {
     null, { timeout: LAUNCH_TIMEOUT_MS },
   );
 
+  let inspector = null;
+  if (offscreen) {
+    inspector = await connectMainProcessInspector(inspectPort);
+    // The window is created with show:false (CSDM_E2E_BACKGROUND=1 above), so
+    // nothing has ever painted on the user's real screen. Moving it fully off
+    // every display (screen.getAllDisplays() confirmed by hand: this machine's
+    // displays span x in [0, 3640]; -32000 clears any plausible multi-monitor
+    // layout) BEFORE the only `show*` call means the first and only paintable
+    // surface this window ever gets is a virtual-desktop region no monitor
+    // covers. `showInactive()` (never `show()`/`focus()`) so it never requests
+    // OS input focus either.
+    await inspector.eval(`${MAIN_WINDOW_EXPR}.setPosition(-32000, -32000)`);
+    await inspector.eval(`${MAIN_WINDOW_EXPR}.showInactive()`);
+  }
+
   return {
     page,
     browser,
     mainPid: child.pid,
+    inspector,
     async close() {
+      if (inspector) inspector.close();
       try { await browser.close(); } catch { /* already gone */ }
       spawn("taskkill", ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore" });
       await new Promise((resolve) => setTimeout(resolve, 500)); // let the tree actually die
@@ -1142,6 +1249,7 @@ async function main() {
     generatedAt: new Date().toISOString(),
     dryRun: DRY_RUN,
     visible: process.env.PERF_VISIBLE === "1",
+    offscreen: process.env.PERF_OFFSCREEN === "1",
     exePath: EXE_PATH,
     constants: { DATASET_LABELS, IDLE_MS, TAB_SWITCH_COUNT, PREVIEW_REPEATS, RUN_COUNT },
     db: dbInfo,
@@ -1177,8 +1285,18 @@ function gpuUtilForPids(pids, seconds) {
  * up from requestAnimationFrame itself), so several unrelated loops (e.g. one
  * per always-mounted tab) show up as separate keys instead of one opaque
  * total. Shared by probe() and attribution()'s minimized/unfocused steps. */
+// Guarded like installRafSpy -- calling this twice in the same page session
+// (e.g. once for "minimized", again for "unfocused") without the guard
+// double-wraps requestAnimationFrame: every real call then recurses through
+// both wrappers and shows up as TWO entries with an identical count, one
+// under the real caller's stack and a phantom second one under whatever line
+// the first wrapper's own injected code sits on ("eval at evaluate...").
+// Confirmed by hand: this is exactly what produced the previously-unexplained
+// second key in before-hidden/attribution.json's `unfocused.rafBy`.
 async function installRafStackSpy(page) {
   await page.evaluate(() => {
+    if (window.__csdmRafStackSpyInstalled) return;
+    window.__csdmRafStackSpyInstalled = true;
     const orig = window.requestAnimationFrame.bind(window);
     window.__rafBy = {};
     window.__rafOrig = orig;
@@ -1367,17 +1485,25 @@ async function attribution() {
   const env = { ...process.env, CSDM_REPO_ROOT: WORKTREE_ROOT };
   delete env.PYTHONPATH; delete env.VIRTUAL_ENV; delete env.CSDM_PYTHON_PATH;
 
+  const offscreen = process.env.PERF_OFFSCREEN === "1";
   const out = {
     generatedAt: new Date().toISOString(),
     visible: process.env.PERF_VISIBLE === "1",
+    offscreen,
     exePath: EXE_PATH,
-    windowStateNote: "minimized/unfocused are proxies, not a literal OS minimize/blur: "
-      + "Browser.getWindowForTarget/setWindowBounds are not exposed on this exe's "
-      + "--remote-debugging-port endpoint (confirmed by hand, page- and browser-level "
-      + "CDP sessions both answered \"wasn't found\"), and CSDM_E2E_BACKGROUND=1 never "
-      + "shows a window in the first place (main.js: show:false, backgroundThrottling:false) "
-      + "so there is nothing to minimize anyway. minimized = Page.setWebLifecycleState(\"frozen\"); "
-      + "unfocused = Emulation.setFocusEmulationEnabled(enabled:false).",
+    windowStateNote: offscreen
+      ? "minimized/unfocused use the REAL BrowserWindow (require('electron').BrowserWindow via the "
+        + "exe's own --inspect main-process debugger, includeCommandLineAPI:true -- see "
+        + "connectMainProcessInspector). minimized = real .minimize()/.showInactive(); unfocused = "
+        + "real .blur() (no inverse called: .focus() could steal the user's real input focus, and "
+        + "blur() itself did not move document.hasFocus() either -- see the audit for why)."
+      : "minimized/unfocused are proxies, not a literal OS minimize/blur: "
+        + "Browser.getWindowForTarget/setWindowBounds are not exposed on this exe's "
+        + "--remote-debugging-port endpoint (confirmed by hand, page- and browser-level "
+        + "CDP sessions both answered \"wasn't found\"), and CSDM_E2E_BACKGROUND=1 never "
+        + "shows a window in the first place (main.js: show:false, backgroundThrottling:false) "
+        + "so there is nothing to minimize anyway. minimized = Page.setWebLifecycleState(\"frozen\"); "
+        + "unfocused = Emulation.setFocusEmulationEnabled(enabled:false).",
   };
 
   // ── Cumulative steps, one launch ──────────────────────────────────────
@@ -1405,7 +1531,7 @@ async function attribution() {
   // ── Window-state probes, fresh launch ─────────────────────────────────
   {
     seedIsolatedProfile(JSON.parse(readFileSync(real.csdmConfig, "utf8")));
-    const { page, close } = await launchPackagedExe(env);
+    const { page, inspector, close } = await launchPackagedExe(env);
     try {
       await page.setViewportSize({ width: 1600, height: 900 });
       await switchTab(page, "capture");
@@ -1413,18 +1539,28 @@ async function attribution() {
       const cdp = await page.context().newCDPSession(page);
       await cdp.send("Page.enable");
 
-      console.log("[perf-attribution] minimized (proxy: Page.setWebLifecycleState)");
+      // PERF_OFFSCREEN=1 gives a real BrowserWindow via the main-process
+      // inspector -- use the actual product methods instead of CDP proxies.
+      // `showInactive()` both un-minimizes AND restores visibility without
+      // ever requesting OS input focus (confirmed by hand: isMinimized()
+      // flips back to false, rAF resumes at full rate) -- `restore()`/
+      // `focus()` are deliberately never called, so this can never steal the
+      // user's real keyboard focus even though the window technically exists.
+      console.log(`[perf-attribution] minimized (${inspector ? "real BrowserWindow.minimize()" : "proxy: Page.setWebLifecycleState"})`);
       out.minimized = await measureWindowState(
         page, cdp,
-        () => setPageLifecycleState(cdp, "frozen"),
-        () => setPageLifecycleState(cdp, "active"),
+        () => (inspector ? inspector.eval(`${MAIN_WINDOW_EXPR}.minimize()`) : setPageLifecycleState(cdp, "frozen")),
+        () => (inspector ? inspector.eval(`${MAIN_WINDOW_EXPR}.showInactive()`) : setPageLifecycleState(cdp, "active")),
       );
 
-      console.log("[perf-attribution] unfocused (proxy: Emulation.setFocusEmulationEnabled)");
+      console.log(`[perf-attribution] unfocused (${inspector ? "real BrowserWindow.blur()" : "proxy: Emulation.setFocusEmulationEnabled"})`);
       out.unfocused = await measureWindowState(
         page, cdp,
-        () => setFocusEmulation(cdp, false),
-        () => setFocusEmulation(cdp, true),
+        () => (inspector ? inspector.eval(`${MAIN_WINDOW_EXPR}.blur()`) : setFocusEmulation(cdp, false)),
+        // blur() has no real inverse that cannot risk requesting focus back
+        // (focus() could pull OS input focus away from the user) -- nothing
+        // to undo, matching what blur() itself already does not do either.
+        () => (inspector ? Promise.resolve() : setFocusEmulation(cdp, true)),
       );
 
       console.log("[perf-attribution] reduced motion");
