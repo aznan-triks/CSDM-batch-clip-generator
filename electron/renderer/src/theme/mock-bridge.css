@@ -217,3 +217,44 @@ html[data-motion="none"] *::after {
   animation-play-state: paused !important;
 }
 
+/* Primary button ring (.btn.primary .sb, mock-v12.css): starspin animated a
+   registered custom property (--ang), forcing a style recalc every frame
+   even at rest -- attribution.json (fix 2/2, task 1): normal 7.16 % GPU /
+   99.9 recalc/s -> noStarspin 1.05 % / 15.1 recalc/s, ~85 % of idle GPU and
+   ~85 recalc/s attributed to this one animation. Rotating a conic gradient
+   around its own centre is the same picture as shifting its `from` angle,
+   so the ring now spins a ::before pseudo-element with `rotate` (compositor
+   only, no recalc) instead. The mask stays on .sb so the rotating square is
+   still clipped to the 2px ring; the square's side (300% of the button) is
+   far larger than the button's diagonal at any realistic aspect ratio
+   (buttons here are wider than tall), so it fully covers .sb at every
+   angle. */
+.btn.primary .sb {
+  background: none;
+  animation: none;
+  overflow: hidden;
+}
+.btn.primary .sb::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 300%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 66%,
+    var(--lime-glow) 80%,
+    #fff 86%,
+    var(--accent) 92%,
+    transparent 100%
+  );
+  animation: starspin-rotate 2.6s linear infinite;
+}
+@keyframes starspin-rotate {
+  to {
+    rotate: 360deg;
+  }
+}
+
