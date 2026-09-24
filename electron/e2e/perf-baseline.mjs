@@ -521,10 +521,14 @@ async function launchPackagedExe(env) {
   // window, but a visible one steals the user's screen -- the caller decides.
   const background = process.env.PERF_VISIBLE === "1" ? {} : { CSDM_E2E_BACKGROUND: "1" };
   const offscreen = process.env.PERF_OFFSCREEN === "1";
-  const inspectPort = offscreen ? 20000 + Math.floor(Math.random() * 2000) : null;
+  const visible = process.env.PERF_VISIBLE === "1";
+  // Both modes need the real BrowserWindow: offscreen to park and show the
+  // window, visible to give it real OS focus and to minimise / unfocus it
+  // for real (criterion 2) instead of through CDP proxies.
+  const inspectPort = offscreen || visible ? 20000 + Math.floor(Math.random() * 2000) : null;
   const args = [`--remote-debugging-port=${cdpPort}`];
+  if (inspectPort) args.push(`--inspect=${inspectPort}`);
   if (offscreen) {
-    args.push(`--inspect=${inspectPort}`);
     // A window positioned entirely off every display is still "occluded" as
     // far as Windows' native occlusion tracking is concerned (no monitor
     // shows any of its pixels), and Chromium throttles rAF to ~1 Hz for an
@@ -578,6 +582,22 @@ async function launchPackagedExe(env) {
   }
 
   let inspector = null;
+  if (visible && !offscreen) {
+    inspector = await connectMainProcessInspector(inspectPort);
+    // Criterion 1 is measured on a visible AND focused window. A detached
+    // child is not guaranteed the foreground on Windows, so ask for it; the
+    // callers record what the OS actually granted rather than assuming it.
+    await inspector.eval(`(() => { const w = ${MAIN_WINDOW_EXPR}; w.show(); w.focus(); })()`);
+    // Playwright's connectOverCDP turns focus emulation ON for the pages it
+    // attaches to: document.hasFocus() is pinned to true and the window's
+    // real blur/focus events never reach the page -- confirmed by hand: with
+    // another window focused in front, hasFocus stayed true and no blur
+    // fired until this was switched off. A visible run must see the real OS
+    // focus, or the motion gate (useWindowActivity) can never close.
+    const focusSession = await page.context().newCDPSession(page);
+    await focusSession.send("Emulation.setFocusEmulationEnabled", { enabled: false });
+    await page.waitForTimeout(500);
+  }
   if (offscreen) {
     inspector = await connectMainProcessInspector(inspectPort);
     // The window is created with show:false (CSDM_E2E_BACKGROUND=1 above), so
@@ -783,6 +803,38 @@ function fiberReadExpression() {
       }
       return null;
     }
+    // Builds after "fix perf 2/2" task 4 hold no whole-state hook any more:
+    // every reader subscribes to a slice (useEngineSelector). EditingTab's
+    // first two store subscriptions are exactly the two slices this bench
+    // needs -- previewClips (the store's own array) then previewSerial -- and
+    // it is the only component whose store hooks start [Array, number].
+    function checkSliceHooks(fiber) {
+      const values = [];
+      let hook = fiber.memoizedState;
+      let guard = 0;
+      while (hook && typeof hook === "object" && guard < 50 && values.length < 2) {
+        guard++;
+        if (hook.queue && typeof hook.queue.getSnapshot === "function") values.push(hook.memoizedState);
+        if (!("next" in hook)) break;
+        hook = hook.next;
+      }
+      if (values.length === 2 && Array.isArray(values[0]) && typeof values[1] === "number") {
+        return { previewClips: values[0], previewSerial: values[1], readFrom: "slices" };
+      }
+      return null;
+    }
+    function walkSlices(fiber, depth) {
+      if (!fiber || depth > 80) return null;
+      const found = checkSliceHooks(fiber);
+      if (found) return found;
+      let child = fiber.child;
+      while (child) {
+        const r = walkSlices(child, depth + 1);
+        if (r) return r;
+        child = child.sibling;
+      }
+      return null;
+    }
     function walk(fiber, depth) {
       if (!fiber || depth > 80) return null;
       const found = checkHooks(fiber);
@@ -799,7 +851,7 @@ function fiberReadExpression() {
     if (!root) return null;
     const key = Object.keys(root).find((k) => k.startsWith("__reactContainer$"));
     if (!key) return null;
-    return walk(root[key], 0);
+    return walk(root[key], 0) ?? walkSlices(root[key], 0);
   })()`;
 }
 
@@ -880,6 +932,7 @@ async function runS1(page, cdp, mainPid) {
     const rafCalls = await readAndResetRafSpy(page);
     perTab.push({
       tab: tabId,
+      hasFocus: await page.evaluate(() => document.hasFocus()),
       idleMs: IDLE_MS,
       metricsDelta: diffMetrics(before, after),
       rafCallsDuringIdle: rafCalls,
@@ -1368,6 +1421,17 @@ async function readAndResetRafStackSpy(page) {
   });
 }
 
+/** What the product's motion gate can see: focus, visibility, the gate's own
+ * verdict on <html>, and how many CSS animations are still playing. */
+async function windowGateState(page) {
+  return page.evaluate(() => ({
+    hasFocus: document.hasFocus(),
+    hidden: document.hidden,
+    dataMotion: document.documentElement.getAttribute("data-motion"),
+    runningAnimationCount: document.getAnimations().filter((a) => a.playState === "running").length,
+  }));
+}
+
 async function runningAnimationNames(page) {
   return page.evaluate(() => document.getAnimations()
     .filter((a) => a.playState === "running")
@@ -1517,6 +1581,7 @@ async function measureAttributionStep(page, cdp, pids, effect) {
   const recalcDelta = diffMetrics(recalcBefore, recalcAfter).RecalcStyleCount ?? null;
 
   return {
+    hasFocus: await page.evaluate(() => document.hasFocus()),
     gpuAvg: gpu.avgPercent,
     gpuMax: gpu.maxPercent,
     rafPerSec: rafCalls / (ATTRIBUTION_RAF_MS / 1000),
@@ -1534,8 +1599,9 @@ async function measureWindowState(page, cdp, apply, restore) {
   await page.waitForTimeout(ATTRIBUTION_WINDOW_STATE_MS);
   const rafBy = await readAndResetRafStackSpy(page);
   const runningAnimations = await runningAnimationNames(page);
+  const gate = await windowGateState(page);
   await restore();
-  return { rafBy, runningAnimations };
+  return { rafBy, rafTotal: Object.values(rafBy).reduce((a, b) => a + b, 0), runningAnimations, gate };
 }
 
 async function attribution() {
@@ -1577,6 +1643,28 @@ async function attribution() {
       await cdp.send("Performance.enable");
       const pids = [mainPid, ...getProcessTree(mainPid).map((p) => p.ProcessId)];
 
+      out.focusAtStart = await windowGateState(page);
+
+      // Criterion 1 is per tab: same GPU/rAF windows as the steps below, on
+      // each tab, before any toggle is applied.
+      out.perTab = [];
+      for (const tabId of TABS) {
+        await switchTab(page, tabId);
+        await page.waitForTimeout(1500); // past the Backdrop's idle settle delay
+        const gpu = gpuUtilForPids(pids, ATTRIBUTION_GPU_SECONDS);
+        await installRafSpy(page);
+        await readAndResetRafSpy(page);
+        await page.waitForTimeout(ATTRIBUTION_RAF_MS);
+        const rafPerSec = (await readAndResetRafSpy(page)) / (ATTRIBUTION_RAF_MS / 1000);
+        // A focus loss during the window would close the motion gate and fake
+        // a low reading on the "after" exe -- record it next to the number.
+        const { hasFocus } = await windowGateState(page);
+        out.perTab.push({ tab: tabId, gpuAvg: gpu.avgPercent, gpuMax: gpu.maxPercent, rafPerSec, hasFocus });
+        console.log(`[perf-attribution] tab ${tabId}: gpu ${gpu.avgPercent}% rAF/s ${rafPerSec}`);
+      }
+      await switchTab(page, "capture");
+      await page.waitForTimeout(1500);
+
       out.steps = [];
       for (const [name, effect] of ATTRIBUTION_STEPS) {
         console.log(`[perf-attribution] step ${name}`);
@@ -1606,22 +1694,42 @@ async function attribution() {
       // flips back to false, rAF resumes at full rate) -- `restore()`/
       // `focus()` are deliberately never called, so this can never steal the
       // user's real keyboard focus even though the window technically exists.
+      const visibleMode = out.visible && !offscreen;
+      out.focusAtStartWindowProbes = await windowGateState(page);
+      const refocus = async () => {
+        await inspector.eval(`(() => { const w = ${MAIN_WINDOW_EXPR}; if (w.isMinimized()) w.restore(); w.show(); w.focus(); })()`);
+        await page.waitForTimeout(1500);
+      };
+
       console.log(`[perf-attribution] minimized (${inspector ? "real BrowserWindow.minimize()" : "proxy: Page.setWebLifecycleState"})`);
       out.minimized = await measureWindowState(
         page, cdp,
         () => (inspector ? inspector.eval(`${MAIN_WINDOW_EXPR}.minimize()`) : setPageLifecycleState(cdp, "frozen")),
-        () => (inspector ? inspector.eval(`${MAIN_WINDOW_EXPR}.showInactive()`) : setPageLifecycleState(cdp, "active")),
+        () => (visibleMode ? refocus()
+          : inspector ? inspector.eval(`${MAIN_WINDOW_EXPR}.showInactive()`) : setPageLifecycleState(cdp, "active")),
       );
+      if (visibleMode) out.afterMinimizeRestore = await windowGateState(page);
 
-      console.log(`[perf-attribution] unfocused (${inspector ? "real BrowserWindow.blur()" : "proxy: Emulation.setFocusEmulationEnabled"})`);
+      // Visible mode: a real OS focus change -- a second, ordinary window is
+      // opened in front of the app and given focus, so the app window loses
+      // activation exactly as it would behind another program. Offscreen
+      // mode keeps blur(): it must never take the user's focus.
+      console.log(`[perf-attribution] unfocused (${visibleMode ? "real: another window focused in front" : inspector ? "real BrowserWindow.blur()" : "proxy: Emulation.setFocusEmulationEnabled"})`);
       out.unfocused = await measureWindowState(
         page, cdp,
-        () => (inspector ? inspector.eval(`${MAIN_WINDOW_EXPR}.blur()`) : setFocusEmulation(cdp, false)),
-        // blur() has no real inverse that cannot risk requesting focus back
-        // (focus() could pull OS input focus away from the user) -- nothing
-        // to undo, matching what blur() itself already does not do either.
-        () => (inspector ? Promise.resolve() : setFocusEmulation(cdp, true)),
+        () => (visibleMode
+          ? inspector.eval("(() => { const { BrowserWindow } = require('electron'); "
+            + "const w = new BrowserWindow({ width: 640, height: 400, show: true, title: 'perf-unfocus' }); "
+            + "w.loadURL('about:blank'); w.focus(); globalThis.__perfUnfocus = w; })()")
+            .then(() => page.waitForTimeout(1000))
+          : inspector ? inspector.eval(`${MAIN_WINDOW_EXPR}.blur()`) : setFocusEmulation(cdp, false)),
+        // Offscreen: blur() has no real inverse that cannot risk requesting
+        // focus back (focus() could pull OS input focus away from the user).
+        () => (visibleMode
+          ? inspector.eval("globalThis.__perfUnfocus.destroy()").then(refocus)
+          : inspector ? Promise.resolve() : setFocusEmulation(cdp, true)),
       );
+      if (visibleMode) out.afterRefocus = await windowGateState(page);
 
       console.log("[perf-attribution] reduced motion");
       await installRafSpy(page);
@@ -1652,8 +1760,104 @@ async function attribution() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+//  Variants mode (fix perf 2/2, task 5): idle cost of candidate stylesheets
+//  injected at RUNTIME only -- no source file is touched, nothing survives
+//  the launch. PERF_VARIANTS=<json file> runs only this. The file is an
+//  array of { id, css } (css null = the build as shipped). Each variant is
+//  measured on the CAPTURE tab with the same windows as attribution mode,
+//  PERF_VARIANT_PASSES times, and the primary button is photographed with
+//  every animation frozen at the same instants so variants compare pixel
+//  for pixel (the ring is a conic gradient: same angle = same picture).
+// ═══════════════════════════════════════════════════════════════════════
+const VARIANT_FREEZE_MS = [0, 1300]; // start and half of the 2.6 s ring period
+const VARIANT_PASSES = Number(process.env.PERF_VARIANT_PASSES || 2);
+
+async function freezeAnimationsAt(page, ms) {
+  await page.evaluate((t) => {
+    for (const a of document.getAnimations()) {
+      try { a.pause(); a.currentTime = t; } catch { /* finished one-shot */ }
+    }
+  }, ms);
+}
+
+async function variants() {
+  const variantList = JSON.parse(readFileSync(process.env.PERF_VARIANTS, "utf8"));
+  const real = realProfilePaths();
+  const beforeHashes = { paths: real, csdmConfig: sha1(real.csdmConfig), profileConfig: sha1(real.profileConfig) };
+  seedIsolatedProfile(JSON.parse(readFileSync(real.csdmConfig, "utf8")));
+  const env = { ...process.env, CSDM_REPO_ROOT: WORKTREE_ROOT };
+  delete env.PYTHONPATH; delete env.VIRTUAL_ENV; delete env.CSDM_PYTHON_PATH;
+  mkdirSync(RUN_OUTPUT_DIR, { recursive: true });
+
+  const out = {
+    generatedAt: new Date().toISOString(),
+    visible: process.env.PERF_VISIBLE === "1",
+    offscreen: process.env.PERF_OFFSCREEN === "1",
+    exePath: EXE_PATH,
+    passes: VARIANT_PASSES,
+    results: [],
+  };
+  const { page, mainPid, close } = await launchPackagedExe(env);
+  try {
+    await page.setViewportSize({ width: 1600, height: 900 });
+    await switchTab(page, "capture");
+    await page.waitForTimeout(5000);
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Performance.enable");
+    const pids = [mainPid, ...getProcessTree(mainPid).map((p) => p.ProcessId)];
+    out.focusAtStart = await windowGateState(page);
+    const button = page.locator(".btn.primary").first();
+
+    for (let pass = 0; pass < VARIANT_PASSES; pass += 1) {
+      for (const variant of variantList) {
+        console.log(`[perf-variants] pass ${pass + 1} ${variant.id}`);
+        const tag = variant.css ? await page.addStyleTag({ content: variant.css }) : null;
+        await page.mouse.move(5, 5); // cursor away from the button: rest state
+        await page.waitForTimeout(1500);
+        const measured = await measureAttributionStep(page, cdp, pids, null);
+        if (tag) await tag.evaluate((el) => el.remove()).catch(() => {});
+        out.results.push({ pass: pass + 1, id: variant.id, css: variant.css, ...measured });
+      }
+    }
+
+    // Photographs LAST: freezing goes through the Web Animations API, and once
+    // pause()/play() has been called on a CSS animation its CSS
+    // animation-play-state no longer applies -- a later "paused at rest"
+    // variant would be measured still spinning (seen in the first run).
+    out.shots = {};
+    for (const variant of variantList) {
+      const tag = variant.css ? await page.addStyleTag({ content: variant.css }) : null;
+      await page.waitForTimeout(300);
+      out.shots[variant.id] = [];
+      for (const ms of VARIANT_FREEZE_MS) {
+        await freezeAnimationsAt(page, ms);
+        const file = path.join(RUN_OUTPUT_DIR, `${variant.id}-t${ms}.png`);
+        await button.screenshot({ path: file, animations: "allow" });
+        // Same instant with the drifting Backdrop canvas hidden: the only
+        // pixels left to differ between variants are the button's own.
+        const hideBackdrop = await page.addStyleTag({ content: ".shell-backdrop { visibility: hidden !important; }" });
+        const bareFile = path.join(RUN_OUTPUT_DIR, `${variant.id}-t${ms}-nobg.png`);
+        await button.screenshot({ path: bareFile, animations: "allow" });
+        await hideBackdrop.evaluate((el) => el.remove()).catch(() => {});
+        out.shots[variant.id].push(path.basename(file), path.basename(bareFile));
+      }
+      if (tag) await tag.evaluate((el) => el.remove()).catch(() => {});
+    }
+  } finally {
+    await close();
+  }
+  out.realProfileVerification = verifyRealProfileUntouched(beforeHashes);
+  const outFile = path.join(RUN_OUTPUT_DIR, "variants.json");
+  writeFileSync(outFile, JSON.stringify(out, null, 2));
+  console.log(`[perf-variants] wrote ${outFile}; real profile untouched: ${out.realProfileVerification.ok}`);
+  if (!out.realProfileVerification.ok) process.exitCode = 1;
+}
+
 if (process.env.PERF_PROBE === "1") {
   probe().catch((error) => { console.error("[perf-probe] FAILED:", error); process.exitCode = 1; });
+} else if (process.env.PERF_VARIANTS) {
+  variants().catch((error) => { console.error("[perf-variants] FAILED:", error); process.exitCode = 1; });
 } else if (process.env.PERF_ATTRIBUTION === "1") {
   attribution().catch((error) => { console.error("[perf-attribution] FAILED:", error); process.exitCode = 1; });
 } else main().catch((error) => {
