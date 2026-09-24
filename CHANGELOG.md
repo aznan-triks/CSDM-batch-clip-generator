@@ -35,6 +35,13 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   immediately.
 - Previews using demoparser2-based filters (spray transfer, one-tap, no-scope…) no longer hang the
   app on Windows.
+- The app now rests when you are not using it: the animated background redraws about 10 times a
+  second once the mouse stops (it was redrawing at the screen's full refresh rate, 100 times a
+  second here), and every animation pauses while the window is minimised, behind another window,
+  or when Windows asks for reduced motion — which the app now follows live, without a restart.
+  The primary button's spinning ring is still animated at rest and remains the main idle cost;
+  how to calm it is a visual choice left open.
+- A progress update during a run no longer re-renders all five tabs, only the parts that show it.
 
 ### Changed
 
