@@ -11,6 +11,8 @@
  * These tests pin the property that made the detour necessary: two readers see
  * the same value, whether the change came from the pipe or from a click.
  */
+import { act, render } from "@testing-library/react";
+import { createElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -21,6 +23,7 @@ import {
   subscribeEngineState,
   toggleClipSelection,
 } from "../engineStore";
+import { useEngineSelector } from "../useEngineState";
 
 /** A `preview_ready` payload with `count` one-kill sequences in one demo. */
 function previewPayload(count: number) {
@@ -142,5 +145,24 @@ describe("the editing badge", () => {
     subscribeEngineState(listener);
     markEditingViewed();
     expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+describe("targeted subscriptions", () => {
+  it("a selector subscriber does not re-render on unrelated engine messages", () => {
+    let renders = 0;
+    function Probe() {
+      renders++;
+      useEngineSelector((s) => s.busy);
+      return null;
+    }
+    render(createElement(Probe));
+    const before = renders;
+    act(() => {
+      for (let i = 0; i < 100; i++) dispatchEngineMessage("progress", { text: `t${i}` });
+    });
+    expect(renders).toBe(before);
+    act(() => dispatchEngineMessage("buttons_busy", {}));
+    expect(renders).toBe(before + 1);
   });
 });

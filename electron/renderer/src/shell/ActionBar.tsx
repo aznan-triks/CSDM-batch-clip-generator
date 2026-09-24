@@ -8,14 +8,14 @@
  * command and nothing else. No handler here may call an animation or
  * sequence function -- that mapping lives in `weapon/controller.ts`, which
  * reacts to the engine's own events, never to a click. Enabled/disabled state
- * is read straight from `useEngineState()`, never guessed from the click.
+ * is read straight from the engine store, never guessed from the click.
  */
 import { type ReactNode, useCallback } from "react";
 
 import { runCommand } from "../bridge";
 import ActionButton from "../components/ActionButton";
 import { ICONS } from "../icons";
-import { useEngineState } from "../motion/useEngineState";
+import { useEngineSelector } from "../motion/useEngineState";
 import { useAllSettings } from "../settings/store";
 import type { TabSpec } from "./tabs";
 import "./ActionBar.css";
@@ -51,7 +51,13 @@ export default function ActionBar({
   active,
   onSetTab,
 }: ActionBarProps) {
-  const engine = useEngineState();
+  // One slice per field: a `progress` tick must not re-render the bar.
+  const previewClips = useEngineSelector((s) => s.previewClips);
+  const busy = useEngineSelector((s) => s.busy);
+  const stopLabel = useEngineSelector((s) => s.stopLabel);
+  const stopEnabled = useEngineSelector((s) => s.stopEnabled);
+  const killEnabled = useEngineSelector((s) => s.killEnabled);
+  const runEnabled = useEngineSelector((s) => s.runEnabled);
   const settings = useAllSettings();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,14 +83,14 @@ export default function ActionBar({
   // clip uniquely). Both GENERATE and SAVE send it; only GENERATE runs.
   const selectedClips = useCallback(
     () =>
-      engine.previewClips
+      previewClips
         .filter((clip) => clip.selected)
         .map((clip) => ({ demo_path: clip.demoPath, start_tick: clip.startTick })),
-    [engine.previewClips],
+    [previewClips],
   );
 
-  const hasPreview = engine.previewClips.length > 0;
-  const hasSelected = engine.previewClips.some((clip) => clip.selected);
+  const hasPreview = previewClips.length > 0;
+  const hasSelected = previewClips.some((clip) => clip.selected);
 
   // GENERATE is the editing tab's primary: like RUN it starts a real run,
   // but restricted to the clips the user checked on the editing checklist.
@@ -101,8 +107,6 @@ export default function ActionBar({
   const onCancel = useCallback(() => {
     onSetTab("capture");
   }, [onSetTab]);
-
-  const busy = engine.busy;
 
   // The editing tab swaps the whole capture action set: GENERATE / SAVE /
   // CANCEL replace RUN / PREVIEW / STOP / KILL. These are not registered with
@@ -164,10 +168,10 @@ export default function ActionBar({
       </span>
       <span className="action-bar-btn" ref={registerButton("stop")}>
         <ActionButton
-          label={engine.stopLabel.toLowerCase().includes("preview") ? "STOP PREVIEW" : "STOP"}
+          label={stopLabel.toLowerCase().includes("preview") ? "STOP PREVIEW" : "STOP"}
           icon={<ICONS.stop />}
           variant="stop"
-          disabled={!engine.stopEnabled}
+          disabled={!stopEnabled}
           title="Ask the current run to stop gracefully after the in-progress clip"
           data-action="A3"
           onClick={onStop}
@@ -178,7 +182,7 @@ export default function ActionBar({
           label="KILL"
           icon={<ICONS.kill />}
           variant="kill"
-          disabled={!engine.killEnabled}
+          disabled={!killEnabled}
           title="Force-terminate the run immediately, without a clean shutdown"
           data-action="A4"
           onClick={onKill}
@@ -189,7 +193,7 @@ export default function ActionBar({
           label="RUN"
           icon={<ICONS.run />}
           variant="run"
-          disabled={!engine.runEnabled}
+          disabled={!runEnabled}
           title="Start a full batch run using the current settings"
           data-action="A1"
           onClick={onRun}

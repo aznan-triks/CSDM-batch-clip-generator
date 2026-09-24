@@ -1,5 +1,5 @@
 /**
- * The engine's state, as the interface sees it.
+ * The engine's state, as the interface sees it -- one slice at a time.
  *
  * This subscribes to the `state` channel and nothing else. It deliberately
  * covers ONLY the events the Python engine actually raises today, verified by
@@ -31,12 +31,19 @@ export {
 import type { EngineState } from "./engineStore";
 
 /**
- * Read the engine's state.
+ * Read ONE slice of the engine state.
  *
  * `useSyncExternalStore` rather than a `useState` mirror: the store is the
- * truth and a mirror can be one render behind it. Every caller now reads the
- * SAME store -- see `engineStore.ts` for why that matters.
+ * truth and a mirror can be one render behind it. Every caller reads the
+ * SAME store -- see `engineStore.ts` for why that matters. There is no
+ * whole-state hook on purpose: a reader of the whole object re-renders on
+ * every `progress` line of a run: a `progress` tick replaces the state
+ * object, and a component that only needs `busy` must not re-render for it.
+ *
+ * The selector must return a primitive or a reference already held by the
+ * state -- a freshly built array/object would never compare equal.
  */
-export function useEngineState(): EngineState {
-  return useSyncExternalStore(subscribeEngineState, getEngineState, getEngineState);
+export function useEngineSelector<T>(selector: (state: EngineState) => T): T {
+  const read = () => selector(getEngineState());
+  return useSyncExternalStore(subscribeEngineState, read, read);
 }

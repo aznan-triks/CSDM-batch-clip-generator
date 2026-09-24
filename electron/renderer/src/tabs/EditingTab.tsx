@@ -15,7 +15,7 @@
 import { useEffect, useState } from "react";
 
 import Pager from "../components/Pager";
-import { toggleClipSelection, useEngineState } from "../motion/useEngineState";
+import { toggleClipSelection, useEngineSelector } from "../motion/useEngineState";
 import "./EditingTab.css";
 
 /**
@@ -62,15 +62,15 @@ export function eventTypeMeta(eventType: string): { label: string; kind: string 
 }
 
 export const EditingTab: React.FC = () => {
-  const state = useEngineState();
-  const clips = state.previewClips;
+  const clips = useEngineSelector((s) => s.previewClips);
+  const previewSerial = useEngineSelector((s) => s.previewSerial);
 
   const totalDurationS = clips.reduce((sum, c) => sum + c.durationS, 0);
   const selectedCount = clips.filter((c) => c.selected).length;
 
   const [page, setPage] = useState(0);
   // A new PREVIEW starts on page 1; toggling a clip must not move the reader.
-  useEffect(() => setPage(0), [state.previewSerial]);
+  useEffect(() => setPage(0), [previewSerial]);
   const pageCount = Math.max(1, Math.ceil(clips.length / EDITING_LIST.pageSize));
   const currentPage = Math.min(page, pageCount - 1);
   const start = currentPage * EDITING_LIST.pageSize;

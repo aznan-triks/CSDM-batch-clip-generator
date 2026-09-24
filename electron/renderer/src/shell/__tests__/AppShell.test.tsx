@@ -63,7 +63,7 @@ describe("AppShell", () => {
   it("feeds the engine's progress and summary lines into the weapon row", () => {
     // The real preload bridge (`electron/preload.js`) is `ipcRenderer.on`,
     // which keeps one listener per subscriber -- every independent
-    // `useEngineState()` call (AppShell, StatStrip, ActionBar, EditingTab)
+    // engine-store reader (AppShell, StatStrip, ActionBar, EditingTab)
     // gets its own and all of them hear every message. A single `deliver`
     // slot here would silently drop every subscriber but the last one,
     // making the test's outcome depend on incidental effect-mount order

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { memo, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { runCommand } from "../bridge";
 import Reticle from "../cursor/Reticle";
 import ClickSpark from "../effects/ClickSpark";
 import { ICONS } from "../icons";
-import { markEditingViewed, useEngineState } from "../motion/useEngineState";
+import { markEditingViewed, useEngineSelector } from "../motion/useEngineState";
 import { useWindowActivity } from "../motion/useWindowActivity";
 import { useSetting } from "../settings/store";
 import { AlwaysTooltipsProvider } from "../settings/useAlwaysTooltips";
@@ -16,9 +16,9 @@ import TagsTab from "../tabs/TagsTab";
 import VideoTab from "../tabs/VideoTab";
 import { applyAccent, resolveAccent } from "../theme/accent";
 import { applyMode } from "../theme/mode";
-import WeaponBand from "../weapon/WeaponBand";
 import ActionBar from "./ActionBar";
 import Backdrop from "./Backdrop";
+import EngineWeaponBand from "./EngineWeaponBand";
 import { EngineLostBanner } from "./EngineLostBanner";
 import HudNav from "./HudNav";
 import LogConsole from "./LogConsole";
@@ -26,6 +26,15 @@ import { clampSplitPct, SPLIT_PCT_DEFAULT } from "./splitPane";
 import { TABS } from "./tabs";
 import type { TabSpec } from "./tabs";
 import "./AppShell.css";
+
+// Every tab stays mounted (keep-alive, below). Memoised so that an AppShell
+// re-render -- a tab switch, a split drag -- does not re-render the four tabs
+// it did not concern. They take no props, so memo holds them still.
+const MemoCaptureTab = memo(CaptureTab);
+const MemoEditingTab = memo(EditingTab);
+const MemoTagsTab = memo(TagsTab);
+const MemoVideoTab = memo(VideoTab);
+const MemoSettingsTab = memo(SettingsTab);
 
 /**
  * The application's frame: tabs in the top HudNav band, the tab panel and log
@@ -38,7 +47,12 @@ import "./AppShell.css";
  */
 export default function AppShell() {
   const [active, setActive] = useState<TabSpec["id"]>(TABS[0].id);
-  const engine = useEngineState();
+  // Three slices, not the whole engine state: a `progress` tick replaces the
+  // state object, and reading all of it here re-rendered the whole shell --
+  // every kept-alive tab included -- for each line of a run.
+  const editingBadge = useEngineSelector((s) => s.editingBadge);
+  const previewSerial = useEngineSelector((s) => s.previewSerial);
+  const previewClipCount = useEngineSelector((s) => s.previewClips.length);
   // The running build, named by the engine's `hello` reply and shown beside
   // the brand in the top bar (HudNav). Undefined until the reply arrives.
   const [version, setVersion] = useState<string | undefined>(undefined);
@@ -201,7 +215,7 @@ export default function AppShell() {
       id: tab.id,
       label: tab.label,
       icon: <Icon />,
-      badge: tab.id === "editing" ? engine.editingBadge : undefined,
+      badge: tab.id === "editing" ? editingBadge : undefined,
       tip: tab.tip,
     };
   });
@@ -211,10 +225,10 @@ export default function AppShell() {
   // for an echo the engine never sent, so the badge stayed lit forever after
   // the first preview (AUDIT_retours_ui_8_points.md, ecart E2).
   useEffect(() => {
-    if (active === "editing" && engine.editingBadge) {
+    if (active === "editing" && editingBadge) {
       markEditingViewed();
     }
-  }, [active, engine.editingBadge]);
+  }, [active, editingBadge]);
 
   /**
    * A finished preview takes the user to its clips.
@@ -232,10 +246,10 @@ export default function AppShell() {
    */
   const lastPreviewSeen = useRef(0);
   useEffect(() => {
-    if (engine.previewSerial === lastPreviewSeen.current) return;
-    lastPreviewSeen.current = engine.previewSerial;
-    if (engine.previewClips.length > 0) setActive("editing");
-  }, [engine.previewSerial, engine.previewClips.length]);
+    if (previewSerial === lastPreviewSeen.current) return;
+    lastPreviewSeen.current = previewSerial;
+    if (previewClipCount > 0) setActive("editing");
+  }, [previewSerial, previewClipCount]);
 
   return (
     <>
@@ -290,11 +304,11 @@ export default function AppShell() {
                   role={active === tab.id ? "tabpanel" : undefined}
                   aria-label={active === tab.id ? tab.label : undefined}
                 >
-                  {tab.id === "capture" && <CaptureTab />}
-                  {tab.id === "editing" && <EditingTab />}
-                  {tab.id === "tags" && <TagsTab />}
-                  {tab.id === "video" && <VideoTab />}
-                  {tab.id === "settings" && <SettingsTab />}
+                  {tab.id === "capture" && <MemoCaptureTab />}
+                  {tab.id === "editing" && <MemoEditingTab />}
+                  {tab.id === "tags" && <MemoTagsTab />}
+                  {tab.id === "video" && <MemoVideoTab />}
+                  {tab.id === "settings" && <MemoSettingsTab />}
                 </div>
               ))}
               </DatabaseProvider>
@@ -315,13 +329,7 @@ export default function AppShell() {
             registerButton={registerButton}
             active={active}
             onSetTab={setActive}
-            weapon={
-              <WeaponBand
-                status={engine.progress ?? (engine.busy ? "working…" : "idle")}
-                counter={engine.summary?.text ?? ""}
-                buttonRef={buttonRef}
-              />
-            }
+            weapon={<EngineWeaponBand buttonRef={buttonRef} />}
           />
         </div>
       </AlwaysTooltipsProvider>

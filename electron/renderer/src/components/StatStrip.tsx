@@ -1,4 +1,4 @@
-import { useEngineState } from "../motion/useEngineState";
+import { useEngineSelector } from "../motion/useEngineState";
 import "./StatStrip.css";
 
 /**
@@ -38,7 +38,7 @@ export interface StatStripProps {
 }
 
 export default function StatStrip({ compact = false }: StatStripProps) {
-  const { summary } = useEngineState();
+  const summary = useEngineSelector((s) => s.summary);
 
   const cells: { key: string; value: string; tone?: "accent" | "ok"; tip?: string }[] = [
     {
