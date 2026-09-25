@@ -100,7 +100,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-@container (max-width: 420px) {
+@container (max-width: 300px) {
   .vk-tiles.three,
   .vk-tiles.four {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -109,7 +109,18 @@
 
 .vk-tiles .cs-tile {
   width: 100%;
-  min-height: 96px;
+  min-height: 84px;
+  padding: 10px 10px 9px;
+}
+
+.vk-tiles .cs-tile-ic {
+  width: 30px;
+  height: 30px;
+}
+
+.vk-tiles .cs-tile b {
+  margin-top: 6px;
+  font-size: 12.5px;
 }
 
 .vk-numtile {

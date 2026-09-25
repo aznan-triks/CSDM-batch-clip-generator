@@ -90,7 +90,7 @@
 }
 
 .rsys-pics .cs-pic-th {
-  aspect-ratio: 100 / 50;
+  aspect-ratio: 100 / 40;
 }
 
 .rsys-art-step {
@@ -101,4 +101,15 @@
 
 .rsys-art-hlae {
   fill: var(--c);
+}
+
+.rsys-art-word {
+  font-family: var(--mono);
+  font-size: 5.2px;
+  text-anchor: middle;
+  fill: var(--muted);
+}
+
+.rsys-art-word.on {
+  fill: #fff;
 }

@@ -258,8 +258,11 @@ function TilesView({ m }: { m: ResolutionModel }) {
         <BoolTile b={m.sendToBack} icon={GLYPHS.back} subtitle="CS2 opens behind" />
         <div className="rs-exact">
           <span className="vk-kick">Exact size</span>
-          <ExactBox n={m.width} id="rs-width-exact" label="W" />
-          <ExactBox n={m.height} id="rs-height-exact" label="H" />
+          <span className="rs-exact-row">
+            <ExactBox n={m.width} id="rs-width-exact" />
+            <i>x</i>
+            <ExactBox n={m.height} id="rs-height-exact" />
+          </span>
         </div>
       </div>
       <SettingControl settingKey={m.fps.key}>

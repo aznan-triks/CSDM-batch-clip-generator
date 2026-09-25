@@ -109,10 +109,17 @@ const PICTURES: readonly PictureOption<Recsys>[] = RECSYS_OPTIONS.map((system) =
   title: CHAINS[system].title,
   subtitle: system === "HLAE" ? "full options" : "no HLAE extras",
   art: (
-    <svg viewBox="0 0 100 66" aria-hidden="true">
+    <svg viewBox="0 12 100 40" aria-hidden="true">
       {CHAINS[system].steps.map((step, i, all) => {
-        const w = 84 / all.length;
-        return <rect key={step} x={8 + i * w} y={24} width={w - 6} height={18} rx={4} className={step === "HLAE" ? "rsys-art-hlae" : "rsys-art-step"} />;
+        const w = 88 / all.length;
+        return (
+          <g key={step}>
+            <rect x={6 + i * w} y={20} width={w - 3} height={24} rx={4} className={step === "HLAE" ? "rsys-art-hlae" : "rsys-art-step"} />
+            <text x={6 + i * w + (w - 3) / 2} y={33.8} className={step === "HLAE" ? "rsys-art-word on" : "rsys-art-word"}>
+              {step.replace(" startmovie", "")}
+            </text>
+          </g>
+        );
       })}
     </svg>
   ),
