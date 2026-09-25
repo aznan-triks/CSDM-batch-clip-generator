@@ -9,17 +9,13 @@ dans DEFAULT_CONFIG et honorée par le moteur, mais aucune case ne l'exposait
 Invariant gardé ici : toute clé `_exclude` générée par le registre doit avoir
 une case à cocher visible dans l'onglet Capture.
 
-Ignore automatiquement si aucun affichage Tk n'est disponible.
+Ignore automatiquement si Tk ne peut pas s'initialiser. Le test porte sur la
+construction de l'App elle-même : une sonde `tk.Tk()` séparée pouvait réussir
+puis l'App échouer à son tour (Tk intermittent sous charge), ce qui donnait 4
+erreurs au lieu d'un saut propre.
 """
+import tkinter
 import unittest
-
-try:
-    import tkinter as tk
-    _root = tk.Tk()
-    _root.destroy()
-    TK_AVAILABLE = True
-except Exception:
-    TK_AVAILABLE = False
 
 from csdm import static_data as sd
 
@@ -42,12 +38,14 @@ def _text_of(widget):
 _KNOWN_MISSING_EXCLUDE = {"kill_mod_high_velocity"}
 
 
-@unittest.skipUnless(TK_AVAILABLE, "aucun affichage Tk disponible")
 class FilterRowWiringTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from csdm_batch_clips_generator import App
-        cls.app = App()
+        try:
+            cls.app = App()
+        except tkinter.TclError as exc:
+            raise unittest.SkipTest(f"Tk ne peut pas s'initialiser : {exc}")
         cls.app.update_idletasks()
 
     @classmethod
@@ -95,6 +93,18 @@ class FilterRowWiringTests(unittest.TestCase):
     @unittest.skip("_on_trois_shot_exclude not yet wired in this branch")
     def test_trois_shot_exclude_clears_trois_tap(self):
         pass
+
+
+class TkStartupFailureSkipsTests(unittest.TestCase):
+    def test_app_that_cannot_start_tk_skips_instead_of_erroring(self):
+        from unittest import mock
+
+        def no_tk():
+            raise tkinter.TclError("Can't find a usable init.tcl")
+
+        with mock.patch("csdm_batch_clips_generator.App", side_effect=no_tk):
+            with self.assertRaises(unittest.SkipTest):
+                FilterRowWiringTests.setUpClass()
 
 
 if __name__ == "__main__":
