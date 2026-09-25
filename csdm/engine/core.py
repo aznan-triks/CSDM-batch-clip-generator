@@ -2572,6 +2572,21 @@ class EngineMixin:
         self.log(f"  ⚠ cfg '{key}' invalid ({raw}) — fallback {default}", "warn")
         return bool(default)
 
+    # Batch pacing keys (Timing & Retries card): whole, non-negative numbers.
+    _BATCH_PACING_KEYS = ("retry_count", "retry_delay", "delay_between_demos",
+                          "recording_timeout")
+
+    def _batch_pacing(self, cfg):
+        """Return the batch pacing settings as non-negative ints, keyed like cfg.
+
+        These are typed into free text boxes, so a saved config can hold "3"
+        (the Electron fields stored strings until 2026-09-25) or "2.5". Read
+        raw, `1 + "3"` or `range("15")` crashed the run on the first retry or
+        the first pause between demos.
+        """
+        return {k: self._cfg_int(cfg, k, DEFAULT_CONFIG[k], lo=0)
+                for k in self._BATCH_PACING_KEYS}
+
     def _common_cs2_injection(self, cfg):
         launch_args = []
         wm = cfg.get("cs2_window_mode", "none")
@@ -4435,13 +4450,14 @@ class EngineMixin:
             cmd = [cli, "video", "--config-file", tp]
             self.log(f"  CMD: {' '.join(cmd)}", "dim")
 
-            mx = 1 + cfg.get("retry_count", 2)
+            pacing = self._batch_pacing(cfg)
+            mx = 1 + pacing["retry_count"]
 
             # ── Per-demo smart timeout ─────────────────────────────────────────
             # Formula: max(content × 3, 60s minimum)
             #   • ×3 safety on content  (seek + render overhead per demo)
             #   • 60s minimum           (floor for very short content)
-            _user_timeout_s = max(0, int(cfg.get("recording_timeout", 0))) * 60
+            _user_timeout_s = pacing["recording_timeout"] * 60
             _tr = cfg.get("tickrate", 64) or 64
             _timescale = max(0.05,
                              (cfg.get("hlae_slow_motion", 100) or 100) / 100.0)
@@ -4475,7 +4491,7 @@ class EngineMixin:
                 att += 1
                 if att > 1:
                     retried += 1
-                    delay = cfg.get("retry_delay", 15)
+                    delay = pacing["retry_delay"]
                     self.log(f"  ↻ Retry {att - 1} — {delay}s...", "warn")
                     for _ in range(delay):
                         if not self._running:
@@ -4548,7 +4564,7 @@ class EngineMixin:
                 fail += 1
 
             if i < len(demo_list) and not self._stop_after_current:
-                delay = cfg.get("delay_between_demos", 3)
+                delay = pacing["delay_between_demos"]
                 if delay > 0:
                     self.log(f"  Pause {delay}s...", "dim")
                     for _ in range(delay):
