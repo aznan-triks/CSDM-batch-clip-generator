@@ -20,7 +20,11 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## Unreleased
+## 3.4.0 — 2026-09-25
+
+### Added
+
+- Card styles for the whole CAPTURE tab: every card (Player, Demo Selection, Weapon Filter, Capture & Timing, Timing & Retries, Kill / Damage / Shot Filters, Match Types, Map Filter) can be shown as Timeline (edit the data directly: drag a date range on a calendar strip, handles on the clip, a weapon rack…), Sentence (the card reads as plain English with clickable words) or Tiles (large illustrated tiles). Choose one style for all cards, or a style per card, in SETTINGS › UI Theme; it switches live.
 
 ### Fixed
 
