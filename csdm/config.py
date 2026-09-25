@@ -77,6 +77,10 @@ DEFAULT_CONFIG = {
     "ui_split_pct": 60,
     "ui_remember_layout": True,
     "ui_always_show_tooltips": False,
+    # How cards that offer variants draw their settings: "timeline" (a clip
+    # you drag), "sentence" (a sentence with fill-in words) or "tiles" (big
+    # picture tiles). One global choice; every variant writes the same keys.
+    "ui_card_style": "timeline",
     # Reference card layout (LAYOUT_VERSION 4, sectionLayout.ts), redesigned
     # 2026-09-17 for the real column count a 1600x900 window measures today
     # (15 columns of `ui_card_block_size`, content pane ~902px), and again
