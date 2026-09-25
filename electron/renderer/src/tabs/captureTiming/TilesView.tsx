@@ -273,7 +273,7 @@ export default function TilesView({ m }: { m: CaptureTimingModel }) {
             <FeedName m={m} />
           </div>
         </div>
-        <span className="kick cc-kick">Length</span>
+        <span className="ct-kick cc-kick">Length</span>
         <ClipBar variant="labelled" parts={parts} moment={clip.before} />
         <div className="cc-sub">
           <SettingControl settingKey={m.before.key}>

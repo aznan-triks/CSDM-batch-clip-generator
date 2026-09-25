@@ -62,8 +62,25 @@
   margin: 16px 0 4px;
 }
 
-.ct-tlhead .kick {
+/* The concepts' `.kick`: a small blue caption over a drawn clip. */
+.ct-kick {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 70%, var(--muted));
+}
+
+.ct-tlhead .ct-kick {
   flex: 1;
+}
+
+/* The concepts draw Mate POV's pair as small chips. */
+.ct-foot .chip,
+.cb-foot .chip,
+.cc-sub .chips .chip {
+  padding: 5px 10px;
+  font-size: 11px;
 }
 
 .ct-cam .seg span {
@@ -150,7 +167,7 @@
   color: var(--txt);
 }
 
-.cb-sent p {
+.cb-line {
   margin: 0 0 6px;
 }
 
@@ -281,7 +298,7 @@
 /* ================= C: two panels ================= */
 .ct-c {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   align-items: start;
   gap: 12px;
 }

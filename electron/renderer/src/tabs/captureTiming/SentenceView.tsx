@@ -110,7 +110,7 @@ export default function SentenceView({ m }: { m: CaptureTimingModel }) {
   return (
     <div className="ct-b">
       <div className="cb-sent">
-        <p>
+        <div className="cb-line">
           <span className="w">Capture my</span>{" "}
           <ChoiceToken
             label="What to capture"
@@ -156,9 +156,9 @@ export default function SentenceView({ m }: { m: CaptureTimingModel }) {
             </ChoiceToken>
             .
           </span>
-        </p>
+        </div>
         {both && m.victimView ? (
-          <p>
+          <div className="cb-line">
             <span className="w">Film from</span> {cameraToken} <span className="w">for</span>{" "}
             <NumberWord n={m.before} label="Seconds before" />
             <span className="w">, then</span> <NumberWord n={m.victimView} label="Victim view" tone="alt" />{" "}
@@ -167,16 +167,16 @@ export default function SentenceView({ m }: { m: CaptureTimingModel }) {
             <span className="nw">
               <NumberWord n={m.after} label="Seconds after" /> <span className="w">after the kill.</span>
             </span>
-          </p>
+          </div>
         ) : (
-          <p>
+          <div className="cb-line">
             <span className="w">Film from</span> {cameraToken}
             <span className="w">, starting</span> <NumberWord n={m.before} label="Seconds before" />{" "}
             <span className="w">before and ending</span>{" "}
             <span className="nw">
               <NumberWord n={m.after} label="Seconds after" /> <span className="w">after.</span>
             </span>
-          </p>
+          </div>
         )}
       </div>
 

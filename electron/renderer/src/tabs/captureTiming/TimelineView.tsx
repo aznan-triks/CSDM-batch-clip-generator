@@ -136,7 +136,7 @@ export default function TimelineView({ m }: { m: CaptureTimingModel }) {
       </div>
 
       <div className="ct-tlhead">
-        <span className="kick">Clip · drag the handles</span>
+        <span className="ct-kick">Clip · drag the handles</span>
         <SettingControl settingKey={m.perspective.key}>
           <div className="ct-cam">
             <Segmented
