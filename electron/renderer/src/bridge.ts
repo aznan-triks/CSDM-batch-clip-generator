@@ -196,11 +196,43 @@ export function runCommand(
     return Promise.reject(new Error(`no engine bridge on this page: ${name} cannot run`));
   }
   installResultRouter();
-  return new Promise((resolve, reject) => {
+  const key = SHARED_WHILE_IN_FLIGHT.has(name) ? `${name} ${JSON.stringify(payload)}` : null;
+  const twin = key === null ? undefined : inFlightReads.get(key);
+  if (twin) return twin;
+  const promise = new Promise<ResultMessage>((resolve, reject) => {
     const id = sendCommand(name, payload);
     pending.set(id, { resolve, reject });
   });
+  if (key !== null) {
+    inFlightReads.set(key, promise);
+    const forget = () => inFlightReads.delete(key);
+    promise.then(forget, forget);
+  }
+  return promise;
 }
+
+/**
+ * Reads the window fires on MOUNT, answered once while an identical one is
+ * still in flight.
+ *
+ * React's StrictMode mounts every effect twice in development, so each of
+ * these went to the engine twice -- and the engine answers some of them on the
+ * log socket (`hello`'s banner) or with a failed result the console narrates
+ * (`connect_db`'s PostgreSQL error): every such line showed twice outside the
+ * packaged exe. Sharing the in-flight promise makes the mount idempotent at
+ * the one place every caller goes through, instead of guarding each effect.
+ * Only side-effect-free reads belong here: a second RUN click must still send.
+ */
+const SHARED_WHILE_IN_FLIGHT = new Set([
+  "hello",
+  "load_config",
+  "connect_db",
+  "describe_filters",
+  "list_demos",
+  "list_presets",
+  "probe_config_dir",
+]);
+const inFlightReads = new Map<string, Promise<ResultMessage>>();
 
 /** Subscribe to engine messages. Returns an unsubscribe function for React effects. */
 export function onMessage(cb: (message: BridgeMessage) => void): () => void {
