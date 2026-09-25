@@ -14,12 +14,14 @@ import { useMatchTypes } from "./useMatchTypes";
 import "../../components/cardstyle/SmallCard.css";
 import "../setFilter/SetFilter.css";
 import "./MatchTypes.css";
+import type { GridProps } from "../../components/cardstyle/gridProps";
 
-export default function MatchTypesCard() {
+export default function MatchTypesCard({ className, ...grid }: GridProps) {
   const m = useMatchTypes();
   const style = useCardStyle("match-types");
   return (
-    <Card title="Match Types" icon={<ICONS.matchTypes />} className={`mt-card sc-narrow mt-${style}`} count={keptWords(m)}>
+    <Card title="Match Types" icon={<ICONS.matchTypes />} className={`mt-card sc-narrow mt-${style}${className ? ` ${className}` : ""}`}
+      {...grid} count={keptWords(m)}>
       {style === "timeline" && <MatchTypesTimeline m={m} />}
       {style === "sentence" && <SetFilterSentence m={m} />}
       {style === "tiles" && <SetFilterTiles m={m} switchLabel="Filter by type" />}

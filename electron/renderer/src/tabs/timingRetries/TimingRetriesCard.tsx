@@ -2,6 +2,7 @@
  * The Timing & Retries card: one model, drawn in its card style (read live).
  */
 import type { ComponentType } from "react";
+import type { GridProps } from "../../components/cardstyle/gridProps";
 
 import Card from "../../components/Card";
 import type { CardStyle } from "../../components/cardstyle/cardStyle";
@@ -20,7 +21,7 @@ const VIEWS: Record<CardStyle, ComponentType<{ m: TimingRetriesModel }>> = {
   tiles: TilesView,
 };
 
-export default function TimingRetriesCard() {
+export default function TimingRetriesCard({ className, ...grid }: GridProps) {
   const m = useTimingRetries();
   const style = useCardStyle("timing-retries");
   const View = VIEWS[style];
@@ -28,7 +29,8 @@ export default function TimingRetriesCard() {
     <Card
       title="Timing &amp; Retries"
       icon={<ICONS.captureTiming />}
-      className={`tr-card sc-narrow tr-${style}`}
+      className={`tr-card sc-narrow tr-${style}${className ? ` ${className}` : ""}`}
+      {...grid}
     >
       <View m={m} />
     </Card>

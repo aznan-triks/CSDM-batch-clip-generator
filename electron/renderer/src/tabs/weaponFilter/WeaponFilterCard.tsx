@@ -23,7 +23,7 @@ import SettingControl from "../../settings/SettingControl";
 import { gunWidth, useWeaponFilter, type WeaponFilterModel, type WeaponModel } from "./useWeaponFilter";
 import "../WeaponFilterSection.css";
 
-type GridProps = Omit<ComponentProps<typeof Card>, "title" | "children">;
+import type { GridProps } from "../../components/cardstyle/gridProps";
 
 /** The game's silhouette of one weapon, as a CSS mask so it takes the text colour. */
 function Gun({ w, height, className = "" }: { w: Pick<WeaponModel, "name" | "art">; height: number; className?: string }) {

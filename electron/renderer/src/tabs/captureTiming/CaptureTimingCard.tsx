@@ -5,6 +5,7 @@
  * at once; the model -- and so every key written -- is the same in all three.
  */
 import type { ComponentType } from "react";
+import type { GridProps } from "../../components/cardstyle/gridProps";
 
 import Card from "../../components/Card";
 import type { CardStyle } from "../../components/cardstyle/cardStyle";
@@ -22,7 +23,7 @@ const VIEWS: Record<CardStyle, ComponentType<{ m: CaptureTimingModel }>> = {
   tiles: TilesView,
 };
 
-export default function CaptureTimingCard() {
+export default function CaptureTimingCard({ className, ...grid }: GridProps) {
   const m = useCaptureTiming();
   const style = useCardStyle("capture-timing");
   const View = VIEWS[style];
@@ -30,7 +31,8 @@ export default function CaptureTimingCard() {
     <Card
       title="Capture &amp; Timing"
       icon={<ICONS.captureTiming />}
-      className={`ct-card ct-${style}`}
+      className={`ct-card ct-${style}${className ? ` ${className}` : ""}`}
+      {...grid}
       count={`${m.clip.total} s clip`}
     >
       <View m={m} />

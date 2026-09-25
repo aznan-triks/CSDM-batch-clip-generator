@@ -14,12 +14,14 @@ import { useMapFilter } from "./useMapFilter";
 import "../../components/cardstyle/SmallCard.css";
 import "../setFilter/SetFilter.css";
 import "./MapFilter.css";
+import type { GridProps } from "../../components/cardstyle/gridProps";
 
-export default function MapFilterCard() {
+export default function MapFilterCard({ className, ...grid }: GridProps) {
   const m = useMapFilter();
   const style = useCardStyle("map-filter");
   return (
-    <Card title="Map Filter" icon={<ICONS.mapFilter />} className={`mf-card sc-narrow mf-${style}`} count={keptWords(m)}>
+    <Card title="Map Filter" icon={<ICONS.mapFilter />} className={`mf-card sc-narrow mf-${style}${className ? ` ${className}` : ""}`}
+      {...grid} count={keptWords(m)}>
       {style === "timeline" && <MapFilterTimeline m={m} />}
       {style === "sentence" && <SetFilterSentence m={m} />}
       {style === "tiles" && <SetFilterTiles m={m} switchLabel="Filter by map" />}

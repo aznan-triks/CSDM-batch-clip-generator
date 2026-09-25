@@ -20,7 +20,7 @@ import { useEventFilters, type EventFiltersModel, type EventFilterCategory } fro
 import { useKillFilters, type KillFiltersModel } from "./useKillFilters";
 
 /** What SectionList hands every card: layout props, forwarded untouched. */
-type GridProps = Omit<ComponentProps<typeof Card>, "title" | "children">;
+import type { GridProps } from "../../components/cardstyle/gridProps";
 
 const KILL_VIEWS: Record<CardStyle, ComponentType<{ m: KillFiltersModel }>> = {
   timeline: KillTimeline,
