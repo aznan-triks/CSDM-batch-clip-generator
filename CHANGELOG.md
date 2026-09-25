@@ -49,7 +49,8 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-- Capture & Timing is reorganised into three titled groups (What to capture, Camera, Clip length) with a bar drawing the clip and one plain sentence summing it up; Timing & Retries into two (If a recording fails, Between demos). Both cards are sized to their content.
+- Capture & Timing is remade: by default it is a clip timeline you edit directly (drag the before / victim view / after handles; the camera colours the bar; a ghost second moment shows when two moments share a clip). SETTINGS › UI Theme › Card style also offers Sentence (the card reads as one sentence with clickable words) and Tiles (Moments tiles + Clip panel with camera previews), switched live.
+- (superseded by the remake above) Capture & Timing is reorganised into three titled groups (What to capture, Camera, Clip length) with a bar drawing the clip and one plain sentence summing it up; Timing & Retries into two (If a recording fails, Between demos). Both cards are sized to their content.
 - Capture & Timing and Timing & Retries say what they do: a live line sums up what one clip
   holds and which events share a clip, clearer labels (Camera, Victim view, Kill-feed name, Retry
   delay, Demo order) and three tooltips that described the wrong behaviour are corrected.
