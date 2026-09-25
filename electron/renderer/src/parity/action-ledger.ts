@@ -45,7 +45,7 @@ export const NO_PORT_BY_DESIGN: Record<string, string> = {
 
   /* ─── Absorbées par un contrôle générique du registre ─── */
   D6: "Changer de mode de sélection : pas de sélecteur — clic / Ctrl+clic / Maj+clic sur les lignes du DemoPicker (D5) donnent simple / étendu / plage",
-  G4: "Bascule « high velocity » : absorbé par le registre — FERRARI PEEK est une ligne FilterRow ordinaire (G1)",
+  G4: "Bascule « high velocity » : absorbé par le registre — FERRARI PEEK est une ligne de filtre ordinaire (G1)",
   G5: "Bascule « no trois shot » : absorbé par le registre — l'exclusion de TROIS SHOT est la case Exclure générique (G2), v208",
   G6: "Changement de logique ET/OU : retiré en v124 — un modèle fixe, imposé par le moteur (build_run_cfg, fix B)",
   N0: "Ouvrir le sélecteur de joueurs : pas de sélecteur à ouvrir — la liste des joueurs est toujours affichée (Capture › Player)",
@@ -103,13 +103,13 @@ export const PORTED_BEHIND_STATE: Record<string, string> = {
   D5: "DemoPicker.tsx — ligne de démo ; aucune ligne sans liste de démos",
 
   /* ── E. Filtres d'armes ── */
-  E1: "WeaponFilterSection.tsx — Select all ; le composant retourne tôt tant que useTables() n'a pas répondu",
-  E2: "WeaponFilterSection.tsx — Deselect all ; même garde que E1",
+  E1: "weaponFilter/WeaponFilterCard.tsx — Select all, dans les trois styles ; la carte attend useTables() et la base",
+  E2: "weaponFilter/WeaponFilterCard.tsx — Deselect all ; même garde que E1",
 
   /* ── G. Filtres de kills ── */
-  G1: "settings/FilterRow.tsx — puce Enable ; montée via KillFiltersSection, qui retourne tôt tant que useTables() n'a pas répondu",
-  G2: "settings/FilterRow.tsx — puce Exclude ; même garde que G1",
-  G3: "KillFiltersSection.tsx — bouton Clear ; même garde tables que G1/G2",
+  G1: "components/cardstyle/Filter{Matrix,Sentence,Tiles}.tsx — Enable d'une ligne de filtre, dans les trois styles ; la carte attend useTables()",
+  G2: "components/cardstyle/Filter{Matrix,Sentence,Tiles}.tsx — Exclude d'une ligne de filtre ; même garde que G1",
+  G3: "filterCards/shared.tsx — bouton Clear de Kill Filters ; même garde tables que G1/G2",
 
   /* ── H. Filtres de match ── */
   H1: "MatchTypesSection.tsx — puce d'un type de match ; le composant retourne tôt tant que useTables() n'a pas répondu",

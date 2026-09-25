@@ -114,8 +114,8 @@ const CHIP_GATE_KEYS = ["kill_mod_high_velocity", "clutch_enabled"];
 /**
  * Click each gate's own Chip, once, if it is not already open.
  *
- * `data-config-key` wraps the Chip directly for both gates (`FilterRow.tsx`,
- * `KillFiltersSection.tsx`'s `ClutchBlock`), so scoping the query to that
+ * `data-config-key` wraps the gate's button directly for both gates (a filter
+ * row's Enable cell, Kill Filters' CLUTCH chip), so scoping the query to that
  * wrapper reaches the right button without depending on its visible label.
  */
 function openChipGates(container: HTMLElement): void {

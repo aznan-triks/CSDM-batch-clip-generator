@@ -19,12 +19,13 @@
 }
 
 
-.casc .gun {
+.weapon-filter .gun {
   flex: 0 0 auto;
   /* Width is driven by inline style (silhouetteWidth) so each weapon fills
      its own proportions. 96px is the fallback when no SVG ratio is known. */
   width: 96px;
   height: 44px;
+  display: block;
   background: currentColor;
   -webkit-mask: var(--gun-art) center / contain no-repeat;
   mask: var(--gun-art) center / contain no-repeat;
@@ -45,4 +46,231 @@
 @keyframes casc-out {
   from { opacity: 0.9; transform: translateX(0); }
   to   { opacity: 0;   transform: translateX(22px); }
+}
+
+/* ---------- timeline: the weapon rack ---------- */
+.wf-summary {
+  font-size: var(--fs-xs);
+  color: var(--dim);
+}
+
+.wf-summary b,
+.wf-summary-strong {
+  color: var(--accent);
+}
+
+.wf-rack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wf-shelf {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: stretch;
+  gap: var(--sp-3);
+  padding: 6px 8px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, transparent 72%, color-mix(in srgb, var(--accent) 7%, transparent) 72% 76%, transparent 76%);
+}
+
+.wf-shelf-name {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--faint);
+  cursor: pointer;
+}
+
+.wf-shelf-name small {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+.wf-shelf-name.on {
+  color: var(--accent);
+}
+
+.wf-shelf-guns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px 6px;
+}
+
+.wf-rackgun {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 44px;
+  padding: 5px 6px 3px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: none;
+  font: inherit;
+  color: color-mix(in srgb, var(--faint) 55%, transparent);
+  cursor: pointer;
+  transition: color var(--dur-base) var(--ease), background var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease);
+}
+
+.wf-rackgun small {
+  font-size: 9.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--faint);
+}
+
+.wf-rackgun:hover {
+  color: var(--dim);
+  border-color: var(--hair);
+}
+
+.wf-rackgun.on {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.wf-rackgun.on small {
+  color: var(--accent);
+}
+
+.wf-noart {
+  width: 30px;
+  border-radius: 4px;
+  background: currentColor;
+  opacity: 0.3;
+}
+
+/* ---------- sentence ---------- */
+.wf-pickline .cs-tokwrap {
+  margin-right: 5px;
+}
+
+.wf-tokcount {
+  margin-left: 3px;
+  padding: 0 5px;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 16px;
+  color: #fff;
+  background: var(--cam-k);
+}
+
+.cs-tok.open .wf-tokcount {
+  color: var(--cam-k);
+  background: #fff;
+}
+
+/* ---------- tiles ---------- */
+.wf-tilecat {
+  display: flex;
+  flex-direction: column;
+}
+
+.wf-catall {
+  appearance: none;
+  margin-left: 8px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  font: inherit;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.wf-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 7px;
+}
+
+.wf-tile {
+  appearance: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 10px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  text-align: left;
+  color: var(--faint);
+  cursor: pointer;
+  transition: border-color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+}
+
+.wf-tile:hover {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.wf-tile-art {
+  display: flex;
+  align-items: center;
+  height: 34px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.wf-tile b {
+  font-size: 11.5px;
+  color: var(--txt);
+}
+
+.wf-tile-ck {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  border: 1.5px solid var(--hair);
+  background: var(--solid);
+  font-size: 10px;
+  font-weight: 900;
+  color: transparent;
+}
+
+.wf-tile.on {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--lime) 30%, var(--solid)), var(--lime) 140%);
+  border-color: var(--lime-glow);
+  color: var(--lime-ink);
+}
+
+.wf-tile.on .wf-tile-ck {
+  background: var(--lime-ink);
+  border-color: var(--lime-ink);
+  color: var(--lime);
+}
+
+.wf-tile:focus-visible,
+.wf-rackgun:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring, var(--accent));
+  outline-offset: 2px;
 }
