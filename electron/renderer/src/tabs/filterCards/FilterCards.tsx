@@ -34,7 +34,7 @@ export function KillFiltersCard(props: GridProps) {
   const View = KILL_VIEWS[style];
   return (
     <Card title="Kill Filters" icon={<ICONS.killFilters />} count={m.ready ? m.count : undefined} {...props}>
-      <div className={`cf-card cf-${style}`}>{m.ready ? <View m={m} /> : <FiltersLoading />}</div>
+      <div className={`cf-card cf-style-${style}`}>{m.ready ? <View m={m} /> : <FiltersLoading />}</div>
     </Card>
   );
 }
@@ -90,7 +90,7 @@ export function EventFiltersCard({ category, ...props }: GridProps & { category:
   const Icon = ICONS[card.icon];
   return (
     <Card title={card.title} icon={<Icon />} count={m.ready ? m.count : undefined} {...props}>
-      <div className={`cf-card cf-${style}`}>{m.ready ? <View m={m} /> : <FiltersLoading />}</div>
+      <div className={`cf-card cf-style-${style}`}>{m.ready ? <View m={m} /> : <FiltersLoading />}</div>
     </Card>
   );
 }

@@ -274,3 +274,28 @@
   outline: var(--focus-ring-width, 2px) solid var(--focus-ring, var(--accent));
   outline-offset: 2px;
 }
+
+/* The V12 `.gun` paints in the accent; in the rack and the tiles a silhouette
+   takes its button's colour instead, so an unpicked weapon reads as off. */
+.wf-rackgun .gun,
+.wf-tile .gun {
+  color: inherit;
+  opacity: 1;
+}
+
+.wf-tile .gun {
+  color: var(--dim);
+}
+
+.wf-tile.on .gun {
+  color: var(--lime-ink);
+}
+
+.wf-tile.on b {
+  color: var(--lime-ink);
+}
+
+/* Keep a long rifle clear of the tile's check box. */
+.wf-tile-art {
+  max-width: calc(100% - 22px);
+}

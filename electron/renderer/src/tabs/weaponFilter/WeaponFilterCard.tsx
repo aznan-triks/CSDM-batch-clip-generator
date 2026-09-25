@@ -226,7 +226,7 @@ export default function WeaponFilterCard(props: GridProps) {
         <DatabasePending />
       ) : (
         <SettingControl settingKey={m.key}>
-          <div className={`weapon-filter wf-${style}`}>
+          <div className={`weapon-filter wf-style-${style}`}>
             <View m={m} />
           </div>
         </SettingControl>

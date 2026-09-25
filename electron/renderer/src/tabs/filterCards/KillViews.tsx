@@ -77,9 +77,6 @@ export function KillTimeline({ m }: { m: KillFiltersModel }) {
       <div className="row">
         <ChoiceControl choice={m.suicides} />
         <ChoiceControl choice={m.headshots} />
-      </div>
-      <div className="row">
-        <span className="lab">Mods + demoparser2</span>
         <ClearButton clear={m.clear} />
       </div>
       <div className="cf-matrices">

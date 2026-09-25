@@ -197,7 +197,7 @@ describe("filter card style resolution", () => {
       ui_card_style: "timeline",
       ui_card_style_overrides: { "kill-filters": "tiles" },
     });
-    expect(container.querySelector(".cf-tiles")).not.toBeNull();
+    expect(container.querySelector(".cf-style-tiles")).not.toBeNull();
   });
 
   it("shows a registry default in its field", async () => {
