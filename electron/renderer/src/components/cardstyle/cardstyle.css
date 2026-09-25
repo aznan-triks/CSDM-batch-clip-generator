@@ -1,0 +1,805 @@
+/*
+ * Card-style primitives (ClipTimeline, ClipBar, SentenceToken, IconTile,
+ * PictureChoice, ToggleGroup, ToggleSwitch), ported from the capture-remake
+ * concepts (docs/ui-restyle-mockups/capture-remake/concept-*.html).
+ *
+ * Every class is `cs-` prefixed: the V12 mock owns the global namespace
+ * (`.bar`, `.tile`, `.pov`, `.slider`...), and an unprefixed name would
+ * inherit its rules (context_guide §10).
+ *
+ * Colours are tokens only, so every ground and accent carries them; the
+ * concepts' white faces are `--solid`. NO :hover rule here may translate or
+ * scale anything (D13/D16): the concepts' hover lifts are dropped on purpose.
+ */
+
+/* ---------- ToggleGroup: multi-select segmented tray ---------- */
+.cs-mseg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--hair);
+  background: color-mix(in srgb, var(--hair) 55%, transparent);
+}
+
+.cs-mseg-opt {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background var(--dur-base) var(--ease), color var(--dur-base) var(--ease);
+}
+
+.cs-mseg-opt::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+  border: 1.5px solid currentColor;
+  opacity: 0.55;
+}
+
+.cs-mseg-opt:hover:not(.on) {
+  background: color-mix(in srgb, var(--solid) 70%, transparent);
+}
+
+.cs-mseg-opt.on {
+  background: var(--lime);
+  color: var(--lime-ink);
+  box-shadow: inset 0 0 0 1px var(--lime-glow);
+}
+
+.cs-mseg-opt.on::before {
+  background: var(--lime-ink);
+  border-color: var(--lime-ink);
+  opacity: 1;
+}
+
+.cs-mseg-opt[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cs-mseg-opt:focus-visible,
+.cs-tok:focus-visible,
+.cs-tile:focus-visible,
+.cs-pic:focus-visible,
+.cs-switch:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ---------- ClipTimeline: the draggable clip ---------- */
+.cs-tl {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--solid) 62%, transparent),
+    color-mix(in srgb, var(--solid) 40%, var(--hair-2))
+  );
+}
+
+/* One faint line per second, lined up with the ticks. */
+.cs-tl::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(var(--pps) - 1px),
+    color-mix(in srgb, var(--accent) 5%, transparent) calc(var(--pps) - 1px) var(--pps)
+  );
+  background-position: var(--x0) 0;
+}
+
+.cs-tl-axis {
+  position: relative;
+  height: 176px;
+  touch-action: none;
+}
+
+.cs-tl-bar {
+  position: absolute;
+  top: 44px;
+  height: 36px;
+  display: flex;
+  overflow: hidden;
+  border-radius: 9px;
+  box-shadow: 0 6px 14px -8px var(--shadow-tint, rgba(30, 50, 90, 0.35));
+}
+
+.cs-tl-span {
+  flex: none;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+
+.cs-tl-span small {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.cs-tl-span.primary,
+.cs-bar-part.primary {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cam-k) 80%, #fff), var(--cam-k));
+}
+
+.cs-tl-span.alt,
+.cs-bar-part.alt {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cam-v) 85%, #fff), var(--cam-v));
+}
+
+.cs-tl-span.rest,
+.cs-bar-part.rest {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 10%, transparent) 0 6px,
+      color-mix(in srgb, var(--accent) 18%, transparent) 6px 12px
+    ),
+    color-mix(in srgb, var(--accent) 6%, var(--solid));
+  color: var(--accent);
+}
+
+.cs-tl-ghost {
+  position: absolute;
+  top: 44px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+  border-radius: 9px;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 4%, transparent) 0 6px,
+    color-mix(in srgb, var(--accent) 9%, transparent) 6px 12px
+  );
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--accent) 70%, var(--muted));
+}
+
+.cs-tl-link {
+  position: absolute;
+  top: 60px;
+  height: 4px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 35%, transparent) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+.cs-tl-mark {
+  position: absolute;
+  top: 26px;
+  width: 0;
+  height: 66px;
+  border-left: 2px solid var(--txt);
+}
+
+.cs-tl-mark.ghost {
+  border-left-style: dashed;
+  border-left-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.cs-tl-badge {
+  position: absolute;
+  top: 6px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px 3px 5px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  color: var(--solid);
+  background: var(--txt);
+}
+
+.cs-tl-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.cs-tl-badge.ghost {
+  background: var(--solid);
+  color: var(--accent);
+  border: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent);
+  font-weight: 700;
+}
+
+.cs-tl-handle {
+  position: absolute;
+  top: 38px;
+  z-index: 3;
+  width: 14px;
+  height: 48px;
+  margin-left: -7px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  border: 2px solid var(--cam-k);
+  background: var(--solid);
+  box-shadow: 0 4px 10px -4px rgba(30, 50, 90, 0.45);
+  cursor: ew-resize;
+  outline: none;
+  transition: box-shadow var(--dur-fast) var(--ease);
+}
+
+.cs-tl-handle::after {
+  content: "";
+  width: 3px;
+  height: 16px;
+  border-left: 1.5px solid color-mix(in srgb, var(--cam-k) 60%, transparent);
+  border-right: 1.5px solid color-mix(in srgb, var(--cam-k) 60%, transparent);
+}
+
+.cs-tl-handle.alt {
+  border-color: var(--cam-v);
+}
+
+.cs-tl-handle.alt::after {
+  border-color: color-mix(in srgb, var(--cam-v) 70%, transparent);
+}
+
+.cs-tl-handle:hover,
+.cs-tl-handle:focus-visible,
+.cs-tl-handle.drag {
+  box-shadow: 0 0 0 4px var(--accent-soft), 0 4px 10px -4px rgba(30, 50, 90, 0.45);
+}
+
+.cs-tl-readout {
+  position: absolute;
+  top: 90px;
+  transform: translateX(-50%);
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--cam-k);
+}
+
+.cs-tl-readout.alt {
+  color: var(--cam-v);
+}
+
+.cs-tl-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 116px;
+  height: 1px;
+  background: color-mix(in srgb, var(--txt) 14%, transparent);
+}
+
+.cs-tl-tick {
+  position: absolute;
+  top: 112px;
+  width: 1px;
+  height: 5px;
+  background: color-mix(in srgb, var(--txt) 25%, transparent);
+}
+
+.cs-tl-tick.major {
+  top: 110px;
+  height: 9px;
+  background: color-mix(in srgb, var(--txt) 35%, transparent);
+}
+
+.cs-tl-ticklab {
+  position: absolute;
+  top: 122px;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--faint);
+}
+
+.cs-tl-bracket {
+  position: absolute;
+  top: 144px;
+  height: 10px;
+  border: 1.5px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+}
+
+.cs-tl-bracketlab {
+  position: absolute;
+  top: 156px;
+  transform: translateX(-50%);
+  font-size: 10.5px;
+  white-space: nowrap;
+  color: var(--muted);
+}
+
+.cs-tl-bracketlab b {
+  color: var(--accent);
+}
+
+/* ---------- ClipBar: the clip as a picture ---------- */
+.cs-bar {
+  position: relative;
+  display: flex;
+  gap: 2px;
+}
+
+.cs-bar.thin {
+  height: 6px;
+  margin: 12px 0 2px;
+  overflow: hidden;
+  border-radius: 3px;
+}
+
+.cs-bar.labelled {
+  height: 26px;
+  border-radius: 8px;
+}
+
+.cs-bar-part {
+  flex-basis: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.cs-bar.labelled .cs-bar-part {
+  border-radius: 7px;
+}
+
+.cs-bar.thin .cs-bar-part.rest {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.cs-bar-mark {
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--txt);
+}
+
+.cs-bar-mark::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: -4px;
+  width: 10px;
+  height: 6px;
+  background: var(--txt);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.cs-bar-caps {
+  display: flex;
+  gap: 2px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--faint);
+}
+
+.cs-bar-caps > span {
+  flex-basis: 0;
+}
+
+.cs-bar-caps-after {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 2px;
+}
+
+.cs-bar-caps b {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* ---------- SentenceToken ---------- */
+.cs-tokwrap {
+  position: relative;
+  display: inline-block;
+}
+
+.cs-tok {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px 0 9px;
+  vertical-align: 1px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--cam-k) 22%, transparent);
+  background: var(--solid);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--cam-k) 18%, transparent),
+    0 3px 8px -5px rgba(30, 50, 90, 0.35);
+  font: inherit;
+  font-weight: 700;
+  line-height: 28px;
+  white-space: nowrap;
+  color: var(--cam-k);
+  cursor: pointer;
+  user-select: none;
+  transition: box-shadow var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+}
+
+.cs-tok:hover {
+  box-shadow:
+    0 0 0 3px var(--accent-soft),
+    0 3px 8px -5px rgba(30, 50, 90, 0.35);
+}
+
+.cs-tok-cv {
+  margin-left: 1px;
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+.cs-tok.open {
+  background: var(--cam-k);
+  border-color: var(--cam-k);
+  color: #fff;
+}
+
+.cs-tok.num {
+  gap: 3px;
+  padding: 0 7px;
+  font-family: var(--mono);
+  font-size: 14px;
+  cursor: ew-resize;
+  touch-action: none;
+  background: linear-gradient(180deg, var(--solid), color-mix(in srgb, var(--cam-k) 5%, var(--solid)));
+}
+
+.cs-tok.num::before {
+  content: "‹";
+  font-size: 12px;
+  opacity: 0.35;
+}
+
+.cs-tok.num::after {
+  content: "›";
+  font-size: 12px;
+  opacity: 0.35;
+}
+
+.cs-tok.alt {
+  color: var(--cam-v);
+  border-color: color-mix(in srgb, var(--cam-v) 28%, transparent);
+  background: linear-gradient(180deg, var(--solid), color-mix(in srgb, var(--cam-v) 7%, var(--solid)));
+}
+
+.cs-tok.alt.open {
+  background: var(--cam-v);
+  color: #fff;
+}
+
+.cs-pop {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: -10px;
+  width: 262px;
+  padding: 12px 13px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: color-mix(in srgb, var(--solid) 96%, transparent);
+  box-shadow:
+    0 18px 40px -14px rgba(30, 50, 90, 0.35),
+    0 3px 8px -4px rgba(30, 50, 90, 0.18);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0;
+  white-space: normal;
+  color: var(--txt);
+}
+
+.cs-pop::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  left: var(--ax, 22px);
+  width: 11px;
+  height: 11px;
+  background: var(--solid);
+  border-left: 1px solid var(--hair);
+  border-top: 1px solid var(--hair);
+  transform: rotate(45deg);
+}
+
+.cs-pop h5 {
+  margin: 0 0 6px;
+  font-size: 9.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.cs-pop .chips {
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.cs-pop .row {
+  flex-wrap: nowrap;
+}
+
+/* ---------- IconTile ---------- */
+.cs-tile {
+  appearance: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 112px;
+  padding: 12px 12px 11px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+}
+
+.cs-tile:hover {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.cs-tile-ic {
+  display: block;
+  width: 38px;
+  height: 38px;
+  color: var(--faint);
+  transition: color var(--dur-base) var(--ease);
+}
+
+.cs-tile-ic svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cs-tile b {
+  margin-top: 8px;
+  font-size: 13.5px;
+  color: var(--txt);
+}
+
+.cs-tile small {
+  margin-top: 2px;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--faint);
+}
+
+.cs-tile-ck {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  border: 1.5px solid var(--hair);
+  background: var(--solid);
+  font-size: 11px;
+  font-weight: 900;
+  color: transparent;
+}
+
+.cs-tile-code {
+  position: absolute;
+  right: 10px;
+  bottom: 9px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+  opacity: 0.8;
+}
+
+.cs-tile.on {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--lime) 30%, var(--solid)), var(--lime) 140%);
+  border-color: var(--lime-glow);
+}
+
+.cs-tile.on .cs-tile-ic {
+  color: var(--lime-ink);
+}
+
+.cs-tile.on small {
+  color: color-mix(in srgb, var(--lime-ink) 80%, var(--solid));
+}
+
+.cs-tile.on .cs-tile-ck {
+  background: var(--lime-ink);
+  border-color: var(--lime-ink);
+  color: var(--lime);
+}
+
+.cs-tile.warn small {
+  color: var(--amber);
+}
+
+.cs-tile[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* ---------- PictureChoice ---------- */
+.cs-pics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.cs-pic {
+  appearance: none;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+}
+
+.cs-pic-th {
+  position: relative;
+  display: block;
+  aspect-ratio: 100 / 66;
+  overflow: hidden;
+  border-radius: 11px;
+  border: 2px solid transparent;
+  box-shadow: 0 0 0 1px var(--hair), var(--shadow-sm);
+  transition: border-color var(--dur-base) var(--ease), box-shadow var(--dur-base) var(--ease);
+}
+
+.cs-pic-th svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.cs-pic b {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.cs-pic small {
+  display: block;
+  font-size: 10px;
+  color: var(--faint);
+}
+
+.cs-pic.on .cs-pic-th {
+  border-color: var(--c);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent),
+    var(--shadow-sm);
+}
+
+.cs-pic.on b {
+  color: var(--c);
+}
+
+.cs-pic-tick {
+  position: absolute;
+  z-index: 1;
+  top: 5px;
+  right: 5px;
+  width: 16px;
+  height: 16px;
+  display: none;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--c);
+  font-size: 10px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.cs-pic.on .cs-pic-tick {
+  display: grid;
+}
+
+/* ---------- ToggleSwitch ---------- */
+.cs-switch {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.cs-switch i {
+  position: relative;
+  width: 26px;
+  height: 15px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--txt) 20%, transparent);
+  transition: background var(--dur-base) var(--ease);
+}
+
+.cs-switch i::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: left var(--dur-base) var(--ease);
+}
+
+.cs-switch.on {
+  color: var(--lime-ink);
+}
+
+.cs-switch.on i {
+  background: linear-gradient(90deg, var(--lime-glow), color-mix(in srgb, var(--lime-ink) 45%, var(--lime-glow)));
+}
+
+.cs-switch.on i::after {
+  left: 13px;
+}

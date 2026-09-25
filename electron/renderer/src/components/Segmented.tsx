@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import "./Segmented.css";
 
 interface SegmentedProps {
@@ -18,6 +20,8 @@ interface SegmentedProps {
   tip?: string;
   /** The inventory code for each option, when one exists. option value -> id. */
   optionActions?: Record<string, string>;
+  /** A small mark drawn before an option's word -- an `<i>`, since the mock styles every `.seg span`. */
+  optionMarks?: Partial<Record<string, ReactNode>>;
 }
 
 /**
@@ -29,7 +33,16 @@ interface SegmentedProps {
  * the screen reader keep working, and the mock's segment styling is not
  * copied out to reach a different element.
  */
-export default function Segmented({ options, value, onChange, label, disabled, tip, optionActions }: SegmentedProps) {
+export default function Segmented({
+  options,
+  value,
+  onChange,
+  label,
+  disabled,
+  tip,
+  optionActions,
+  optionMarks,
+}: SegmentedProps) {
   return (
     <div className="seg" role="radiogroup" aria-label={label} title={tip}>
       {options.map((option) => {
@@ -46,7 +59,10 @@ export default function Segmented({ options, value, onChange, label, disabled, t
               if (!disabled) onChange(option);
             }}
           >
-            <span className={checked ? "on" : undefined}>{option}</span>
+            <span className={checked ? "on" : undefined}>
+              {optionMarks?.[option]}
+              {option}
+            </span>
           </button>
         );
       })}

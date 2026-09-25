@@ -199,6 +199,8 @@ _HAND_WRITTEN: list = [
     _C("card_layout", "I13", "Card layout",
        ("ui_sections", "ui_card_block_size", "ui_card_row_height", "ui_card_collapsed_rows"),
        level="advanced"),
+    _C("card_style", "I13", "Card style", ("ui_card_style",),
+       level="advanced"),
     _C("font", "I13", "Font", ("ui_font_family",),
        level="advanced"),
     _C("tooltips", "I13", "Tooltips", ("ui_always_show_tooltips",),

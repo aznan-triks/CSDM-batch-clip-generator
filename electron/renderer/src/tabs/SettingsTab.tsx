@@ -18,6 +18,7 @@ import Chip from "../components/Chip";
 import Field from "../components/Field";
 import PathField from "../components/PathField";
 import Segmented from "../components/Segmented";
+import { CARD_STYLES, useCardStyle } from "../components/cardstyle/cardStyle";
 import Slider from "../components/Slider";
 import { pickPath, runCommand, setWindowBounds } from "../bridge";
 import SectionList, { type SectionSpec } from "../shell/SectionList";
@@ -132,6 +133,8 @@ export default function SettingsTab() {
 
   const [cardBlockSize, setCardBlockSize] = useSetting<number>("ui_card_block_size");
   const [fontFamily, setFontFamily] = useSetting<string>("ui_font_family");
+  const [, setCardStyle] = useSetting<string>("ui_card_style");
+  const cardStyle = useCardStyle();
   const [alwaysShowTooltips, setAlwaysShowTooltips] = useSetting<boolean>("ui_always_show_tooltips");
 
   // Configuration folder (v3.0.1): the active location plus a pending switch.
@@ -565,6 +568,18 @@ export default function SettingsTab() {
                 label="Ground"
                 tip="Dark variants: amoled = pure black (OLED), deepblue = blue-tinted, terminal = green-on-black"
                 optionActions={Object.fromEntries(GROUND_OPTIONS.map((g) => [g, "M1"]))}
+              />
+            </div>
+          </SettingControl>
+          <SettingControl settingKey="ui_card_style">
+            <div className="row">
+              <span className="lab">Card style</span>
+              <Segmented
+                options={CARD_STYLES}
+                value={cardStyle}
+                onChange={setCardStyle}
+                label="Card style"
+                tip="How cards with variants draw their settings: timeline = a clip you drag, sentence = a sentence with fill-in words, tiles = big picture tiles. Every style changes the same settings"
               />
             </div>
           </SettingControl>
