@@ -95,6 +95,13 @@ _CS2_DEMO_BREAKS = [
 ]
 
 
+class _BlankFormat(dict):
+    """`str.format_map` source: an unset or empty setting reads as "…"."""
+
+    def __getitem__(self, key):
+        return super().get(key) or "…"
+
+
 class EngineMixin:
     """The engine half of App. See module docstring for the three sockets."""
 
@@ -3853,6 +3860,87 @@ class EngineMixin:
         # "any" — OR
         return _union(active, evts)
 
+    # ── Why a query came back empty ──────────────────────────────────────
+    # The database query's own stages, in the order `_query_events` applies
+    # them: (label, settings that switch the stage off). `{key}` in a label
+    # reads the current setting. Only consulted when a result is empty.
+    _EMPTY_RESULT_QUERY_STAGES = (
+        ("date range {date_from} → {date_to} (Demo Selection)",
+         {"date_from": "", "date_to": ""}),
+        ("Ally / Enemy (Capture & Timing > Event Type)",
+         {"event_ally": True, "event_enemy": True}),
+        ("Weapon Filter", {"weapons": []}),
+        ("headshots setting (Kill Filters)", {"headshots_mode": "all"}),
+        ("suicides setting (Kill Filters)", {"suicides_mode": "include"}),
+        ("Match Types", {"match_type_filter_enabled": False}),
+        ("Map Filter", {"map_filter_enabled": False}),
+        ("Kill / Damage / Shot Filters",
+         {k: False for f in KILL_FILTER_REGISTRY
+          for k in (f.key, f"{f.key}_req", f"{f.key}_exclude")}),
+        ("clutch filter (Kill Filters)", {"clutch_enabled": False}),
+    )
+    _EMPTY_RESULT_BASE_LABEL = "events for this player and event types (any date, no filter)"
+    _EMPTY_RESULT_REST_LABEL = "the remaining settings combined"
+
+    def _count_query_events(self, cfg):
+        """How many events `_query_events` returns for `cfg` (a raw settings dict)."""
+        return sum(len(v) for v in self._query_events(self.build_run_cfg(cfg)).values())
+
+    def _query_stage_counts(self, cfg):
+        """[(label, count)] of the database query, its stages re-added one by one.
+
+        Starts from every stage switched off, then puts back the user's own
+        value of each stage that is on, in pipeline order, and stops at the
+        first one that leaves nothing. A stage that is already off costs no
+        query.
+        """
+        current = dict(cfg)
+        for _label, neutral in self._EMPTY_RESULT_QUERY_STAGES:
+            current.update(neutral)
+        rows = [(self._EMPTY_RESULT_BASE_LABEL, self._count_query_events(current))]
+        if rows[-1][1] == 0:
+            return rows
+        for label, neutral in self._EMPTY_RESULT_QUERY_STAGES:
+            if all(cfg.get(k, v) == v for k, v in neutral.items()):
+                continue
+            current.update({k: cfg[k] for k in neutral if k in cfg})
+            rows.append((label.format_map(_BlankFormat(cfg)),
+                         self._count_query_events(current)))
+            if rows[-1][1] == 0:
+                return rows
+        # Every stage alone kept something: what is left is a setting outside
+        # the list above, or the date filter meeting demos of unknown date.
+        rows.append((self._EMPTY_RESULT_REST_LABEL, 0))
+        return rows
+
+    def explain_empty_result(self, cfg, counts):
+        """Say which stage emptied a preview or run, and what to loosen.
+
+        `counts` is the caller's own pipeline as [(label, events left)], the
+        database query first. When the query itself returned nothing it is
+        split into its stages (`_query_stage_counts`) -- extra queries paid
+        only by an empty result. Logs the funnel, raises it as the summary,
+        and returns {"headline", "hint", "stages": [{"label", "count"}]}.
+        """
+        stages = self._query_stage_counts(cfg) if counts[0][1] == 0 else list(counts)
+        zero = next((i for i, (_l, n) in enumerate(stages) if n == 0), len(stages) - 1)
+        label = stages[zero][0]
+        if zero == 0:
+            headline = "No clips: the database holds no event for this player with these event types."
+            hint = ("Check the selected player, or tick other event types "
+                    "(Capture & Timing > Event Type).")
+        else:
+            headline = f"No clips: {label} removed the last {stages[zero - 1][1]} events."
+            hint = f"Loosen {label} to get clips."
+        stages = stages[:zero + 1]
+        self.log("  No clips. Events left after each step:", "warn")
+        for step, n in stages:
+            self.log(f"    {n:>6}  {step}", "dim")
+        self.log(f"  → {hint}", "info")
+        self.state("summary", {"text": headline, "level": "muted"})
+        return {"headline": headline, "hint": hint,
+                "stages": [{"label": s, "count": n} for s, n in stages]}
+
     def _preview_worker(self, cfg):
         """Compute a preview and hand the result over the state channel.
 
@@ -3863,11 +3951,15 @@ class EngineMixin:
         self.state("buttons_busy")
         t0_total = time.time()
         try:
+            def _n(d):
+                return sum(len(v) for v in d.values())
+
             t0 = time.time()
             evts = self._query_events(cfg)
             t_query = time.time() - t0
             if self._preview_cancel.is_set():
                 return
+            funnel = [("database query", _n(evts))]
             # ── Signature-based DP2 pre-parse (cache preserved if same demo set) ──
             t0 = time.time()
             self._preparse_dp2(cfg, list(evts.keys()))
@@ -3877,7 +3969,9 @@ class EngineMixin:
             # Apply demoparser2 modifiers before preview.
             t0 = time.time()
             evts = self._apply_dp2_filters_to_events(evts, cfg)
+            funnel.append(("Kill Filters checked in the demo files", _n(evts)))
             evts = self._apply_global_filter_gate_dict(evts, cfg)
+            funnel.append(("★ Must / optional filter rules", _n(evts)))
             t_filters = time.time() - t0
             t0 = time.time()
             seqs = {}
@@ -3896,11 +3990,17 @@ class EngineMixin:
                 "seqs":     t_seq,
                 "total":    time.time() - t0_total,
             }
+            # An empty preview says why, never just nothing (audit 2026-09-25, A).
+            empty_reason = (None if any(seqs.values())
+                            else self.explain_empty_result(cfg, funnel))
+            if self._preview_cancel.is_set():
+                return
             self.state("preview_ready", {
                 "events": evts,
                 "sequences": seqs,
                 "cfg": cfg,
                 "timings": timings,
+                "empty_reason": empty_reason,
             })
         except Exception as e:
             import traceback
@@ -3971,14 +4071,114 @@ class EngineMixin:
         fixed = {k: DEFAULT_CONFIG[k] for k in self._FIXED_FILTER_LOGIC_KEYS}
         return {**cfg, **fixed, **self.derive_event_flags_v2(cfg)}
 
+    # ── Settings that can only ever produce zero results ─────────────────
+    # One place for every "certain zero" combination: `run_inputs_problem`
+    # walks these checks in order and refuses the run / preview / search with
+    # the first sentence it gets. Anything that can only be known by asking
+    # the database is explained after the fact by `explain_empty_result`.
+
+    # Filters that can never match an event, given the rest of the settings:
+    # {filter key: (predicate(cfg, flags) -> True when dead, why)}.
+    _NEVER_MATCHING_FILTERS = {
+        "dmg_mod_team_damage": (
+            lambda cfg, flags: not flags["_events_ally"],
+            "TEAM DAMAGE only matches damage to a teammate, and Ally is unticked "
+            "(Capture & Timing > Event Type): tick Ally or turn TEAM DAMAGE off "
+            "(Damage Filters)."),
+    }
+
+    @staticmethod
+    def _dead_filter_reason(cfg, flags, category):
+        """Why the active filters let no `category` event through, or None.
+
+        Mirrors `_apply_global_filter_gate_events`: an event must match every
+        required filter that applies to it, and at least one optional one. A
+        filter in `_NEVER_MATCHING_FILTERS` matches nothing, so one required
+        dead filter, or optional filters that are all dead, empty the category.
+        """
+        applies = {f.key: f.applies_to for f in KILL_FILTER_REGISTRY}
+        active = [k for k in applies if cfg.get(k) and category in applies[k]]
+        required, optional = EngineMixin._split_required_optional(cfg, active)
+        dead = {k: why for k, (is_dead, why) in EngineMixin._NEVER_MATCHING_FILTERS.items()
+                if is_dead(cfg, flags)}
+        for key in required:
+            if key in dead:
+                return dead[key]
+        if optional and all(k in dead for k in optional):
+            return dead[optional[0]]
+        return None
+
+    @staticmethod
+    def _event_source_blockers(cfg):
+        """{source: reason} for each event source the settings turn on.
+
+        A reason of None means the source can produce events. A source that is
+        off is absent. Sources and flags are the ones `_query_events` reads.
+        """
+        flags = EngineMixin.derive_event_flags_v2(cfg)
+        if "event_actor" in cfg or "event_target" in cfg:
+            perspective = flags["_events_actor"] or flags["_events_target"]
+        else:
+            # Pre-2-axis config: its `events` list is what names a perspective.
+            # (A current config still carries a stale `events`; it must not
+            # stand in for unticked Actor / Target.)
+            legacy = cfg.get("events") or []
+            perspective = "Kills" in legacy or "Deaths" in legacy
+        teams_off = not (flags["_events_ally"] or flags["_events_enemy"])
+        teams_why = ("Ally and Enemy are both unticked (Capture & Timing > Event Type), "
+                     "so no kill or damage can match: tick Ally, Enemy or both.")
+        persp_why = "Select at least one perspective (Actor / Target) or enable Rounds."
+        shot_why = ("Other (shots) only captures your own shots: tick Actor "
+                    "(Capture & Timing > Event Type).")
+        # (source, switched on, structural reason it is empty or None)
+        candidates = (
+            ("kill", cfg.get("event_lethal", True),
+             persp_why if not perspective else teams_why if teams_off else None),
+            ("damage", flags["_events_non_lethal"],
+             persp_why if not perspective else teams_why if teams_off else None),
+            ("shot", flags["_events_other"],
+             None if flags["_events_actor"] else shot_why),
+            ("round", flags["_events_rounds"], None),
+        )
+        return {
+            source: why or EngineMixin._dead_filter_reason(cfg, flags, source)
+            for source, on, why in candidates if on
+        }
+
+    @staticmethod
+    def _problem_no_account(cfg):
+        if not cfg.get("steam_ids"):
+            return "Check at least one registered account."
+        return None
+
+    @staticmethod
+    def _problem_no_live_source(cfg):
+        blockers = EngineMixin._event_source_blockers(cfg)
+        if not blockers:
+            return ("No event type is ticked (Capture & Timing > Event Type): "
+                    "tick Lethal, Non-lethal or Other, or enable Rounds.")
+        if any(why is None for why in blockers.values()):
+            return None
+        return " ".join(dict.fromkeys(blockers.values()))
+
+    @staticmethod
+    def _problem_empty_date_range(cfg):
+        ts_from, ts_to = EngineMixin._qe_epoch_bounds(cfg)
+        if ts_from is not None and ts_to is not None and ts_from > ts_to:
+            return (f"The date range is empty: From {cfg.get('date_from')} is after "
+                    f"To {cfg.get('date_to')}. Fix the dates in Demo Selection.")
+        return None
+
+    _RUN_INPUT_CHECKS = ("_problem_no_account", "_problem_no_live_source",
+                         "_problem_empty_date_range")
+
     @staticmethod
     def run_inputs_problem(cfg):
         """Why `cfg` cannot run, preview or search, in the user's words; None when it can."""
-        if not cfg.get("steam_ids"):
-            return "Check at least one registered account."
-        if not (cfg.get("event_actor") or cfg.get("event_target") or (cfg.get("events") or [])):
-            # Rounds is independent of the perspective axis.
-            return "Select at least one perspective (Actor / Target) or enable Rounds."
+        for name in EngineMixin._RUN_INPUT_CHECKS:
+            problem = getattr(EngineMixin, name)(cfg)
+            if problem:
+                return problem
         return None
 
     def validate_run_inputs(self, cfg):
@@ -4196,8 +4396,10 @@ class EngineMixin:
             return
         t_query = time.time() - t0_query
         if not all_events:
-            self.log("No events.", "warn")
-            self.state("summary", {"text": "  No clips found.", "level": "muted"})
+            try:
+                self.explain_empty_result(cfg, [("database query", 0)])
+            except Exception as e:
+                self.log(f"Error: {e}", "err")
             self.state("buttons_idle")
             return
         te = sum(len(e) for e in all_events.values())
