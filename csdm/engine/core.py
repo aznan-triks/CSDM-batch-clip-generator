@@ -1377,7 +1377,7 @@ class EngineMixin:
 
         # Position-derived modifiers — need the per-demo player_positions frame.
         if key == "kill_mod_airborne":
-            return self._event_airborne(event, player_positions_df)
+            return self._event_airborne(event, player_positions_df, cfg)
         if key == "kill_mod_no_scope":
             for col in (f.sql_cols or []):
                 if event.get(col) is not None:
@@ -1520,7 +1520,7 @@ class EngineMixin:
                 prev = r
         return out
 
-    def _event_airborne(self, event, positions_df):
+    def _event_airborne(self, event, positions_df, cfg=None):
         """True when the event's actor was airborne at the event tick.
 
         Reads the attacker's Z coordinate around the event tick from the
@@ -1530,10 +1530,12 @@ class EngineMixin:
         """
         # A shot carries its own vertical velocity (shots.player_velocity_z):
         # on the ground it is 0, any climb or fall means the shooter is airborne.
+        cfg = cfg or {}
         vz = event.get("player_velocity_z")
         if vz is not None:
             try:
-                return abs(float(vz)) > 1.0
+                return abs(float(vz)) > self._cfg_float(
+                    cfg, "airborne_shot_speed_z", DEFAULT_CONFIG["airborne_shot_speed_z"], lo=0)
             except (TypeError, ValueError):
                 return False
         tick = event.get("tick")
@@ -1567,7 +1569,9 @@ class EngineMixin:
             z = window[col_z].to_numpy(dtype=float)
             if len(z) >= 2:
                 # Net vertical displacement across the window.
-                if abs(float(z[-1]) - float(z[0])) > 8.0:
+                if abs(float(z[-1]) - float(z[0])) > self._cfg_float(
+                        cfg, "airborne_position_delta_z",
+                        DEFAULT_CONFIG["airborne_position_delta_z"], lo=0):
                     return True
         except Exception:
             return False
@@ -2591,6 +2595,14 @@ class EngineMixin:
         """
         return {k: self._cfg_int(cfg, k, DEFAULT_CONFIG[k], lo=0)
                 for k in self._BATCH_PACING_KEYS}
+
+    def _auto_recording_timeout_s(self, cfg, content_s):
+        """The automatic per-demo timeout for `content_s` seconds of game time."""
+        factor = self._cfg_float(cfg, "recording_timeout_auto_factor",
+                                 DEFAULT_CONFIG["recording_timeout_auto_factor"], lo=1)
+        floor = self._cfg_int(cfg, "recording_timeout_auto_floor_s",
+                              DEFAULT_CONFIG["recording_timeout_auto_floor_s"], lo=1)
+        return max(int(content_s * factor), floor)
 
     def _common_cs2_injection(self, cfg):
         launch_args = []
@@ -4732,16 +4744,14 @@ class EngineMixin:
             mx = 1 + pacing["retry_count"]
 
             # ── Per-demo smart timeout ─────────────────────────────────────────
-            # Formula: max(content × 3, 60s minimum)
-            #   • ×3 safety on content  (seek + render overhead per demo)
-            #   • 60s minimum           (floor for very short content)
+            # max(content × auto factor, auto floor): see DEFAULT_CONFIG.
             _user_timeout_s = pacing["recording_timeout"] * 60
             _tr = cfg.get("tickrate", 64) or 64
             _timescale = max(0.05,
                              (cfg.get("hlae_slow_motion", 100) or 100) / 100.0)
             _sum_clip_s = sum(
                 (s["end_tick"] - s["start_tick"]) / _tr for s in seqs)
-            _auto_timeout_s = max(int((_sum_clip_s / _timescale) * 3), 60)
+            _auto_timeout_s = self._auto_recording_timeout_s(cfg, _sum_clip_s / _timescale)
             if _user_timeout_s > 0:
                 _rec_timeout_s = max(_user_timeout_s, _auto_timeout_s)
             else:

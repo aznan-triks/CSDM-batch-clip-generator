@@ -192,6 +192,11 @@ DEFAULT_CONFIG = {
     "ui_card_collapsed_rows": 2,
     "retry_count": 2, "retry_delay": 15, "delay_between_demos": 3,
     "recording_timeout": 0,   # minutes; 0 = disabled (kill CS2 + retry if exceeded)
+    # The automatic per-demo timeout, always armed: the demo's clip time
+    # (slow motion included) times this factor, never under the floor. The
+    # factor covers seeking and rendering; the floor covers very short clips.
+    "recording_timeout_auto_factor": 3,
+    "recording_timeout_auto_floor_s": 60,
     # Final assembly of all clips after batch
     "assemble_after": False,      # concatenate all clips after batch
     "delete_after_assemble": False,  # delete source clips after assembly
@@ -258,6 +263,11 @@ DEFAULT_CONFIG = {
     "dp2_threads": min(8, max(2, os.cpu_count() or 4)),  # auto-scaled to CPU count (1–8)
     # demos kept from EARLIER queries; the current query's demos are never evicted (core._dp2_cache_pin)
     "dp2_cache_max_demos": 150,
+    # AIRBORNE: a shot's own vertical speed above this (units/s) is a jump or
+    # a fall; on the ground it reads 0. Without a speed, the Z change across
+    # the few position samples around the tick above this (units) counts.
+    "airborne_shot_speed_z": 1.0,
+    "airborne_position_delta_z": 8.0,
 
     # How long to wait for a killed process to actually disappear, and how
     # often to look. The UI detonates its charge on the real exit, never on a

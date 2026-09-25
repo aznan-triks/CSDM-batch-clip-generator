@@ -77,7 +77,7 @@ _HAND_WRITTEN: list = [
     _C("engine_internals", "I1", "Engine internals",
        ("encoder", "tickrate", "use_config_file_mode",
         "process_exit_poll_interval", "process_exit_timeout", "cs2_process_name",
-        "dp2_cache_max_demos"),
+        "dp2_cache_max_demos", "airborne_shot_speed_z", "airborne_position_delta_z"),
        level="expert"),
     # ── I2 Choose who ──────────────────────────────────────────────────────
     _C("player_selection", "I2", "Players",
@@ -142,7 +142,9 @@ _HAND_WRITTEN: list = [
     # ── I6 Make the batch reliable ─────────────────────────────────────────
     _C("retries", "I6", "Retries", ("retry_count", "retry_delay"),
        level="advanced"),
-    _C("batch_pacing", "I6", "Pacing and timeout", ("delay_between_demos", "recording_timeout"),
+    _C("batch_pacing", "I6", "Pacing and timeout",
+       ("delay_between_demos", "recording_timeout",
+        "recording_timeout_auto_factor", "recording_timeout_auto_floor_s"),
        level="advanced"),
     _C("close_game_between_demos", "I6", "Close CS2 after each demo", ("close_game_after",),
        level="advanced"),

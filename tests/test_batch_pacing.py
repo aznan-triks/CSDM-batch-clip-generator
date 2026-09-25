@@ -44,3 +44,33 @@ def test_batch_loop_never_reads_pacing_keys_raw():
     raw = [k for k in EngineMixin._BATCH_PACING_KEYS
            if re.search(r'cfg(?:\.get\(|\[)\s*"%s"' % k, src)]
     assert raw == [], f"read without _batch_pacing: {raw}"
+
+
+# ── automatic timeout (HC.1: factor and floor live in DEFAULT_CONFIG) ────────
+
+def test_auto_timeout_defaults_keep_the_old_formula():
+    host = _Host()
+    assert host._auto_recording_timeout_s({}, 100) == 300   # 100 s x 3
+    assert host._auto_recording_timeout_s({}, 5) == 60      # floor
+
+
+def test_auto_timeout_follows_its_settings():
+    host = _Host()
+    cfg = {"recording_timeout_auto_factor": 2, "recording_timeout_auto_floor_s": 30}
+    assert host._auto_recording_timeout_s(cfg, 100) == 200
+    assert host._auto_recording_timeout_s(cfg, 5) == 30
+
+
+def test_no_timeout_literal_left_in_the_batch_loop():
+    src = CORE.read_text(encoding="utf-8")
+    assert "* 3), 60)" not in src
+
+
+# ── AIRBORNE threshold (HC.1) ────────────────────────────────────────────────
+
+def test_airborne_shot_uses_the_configured_vertical_speed():
+    host = _Host()
+    shot = {"player_velocity_z": 5.0}
+    assert host._event_airborne(shot, None) is True                  # default 1.0
+    assert host._event_airborne({"player_velocity_z": 0.0}, None) is False
+    assert host._event_airborne(shot, None, {"airborne_shot_speed_z": 10}) is False
