@@ -3,7 +3,7 @@
  *
  *   - timeline: the window drawn to its proportions, the split as a bar you
  *     drag, the width and height on its edges;
- *   - sentence: "Open the window at <1600> × <900> px, <60>% for the video
+ *   - sentence: "Open the window at <1600> by <900> px, <60>% for the video
  *     panel. …";
  *   - tiles: one tile per setting and one per layout action.
  *
@@ -309,7 +309,7 @@ function SentenceView({ m }: { m: UiLayoutModel }) {
     <div className="ul-b">
       <div className="sc-prose">
         <div className="sc-line">
-          <span className="w">Open the window at</span> <NumberWord n={m.w} unit="" /> <span className="w">×</span>{" "}
+          <span className="w">Open the window at</span> <NumberWord n={m.w} unit="" /> <span className="w">by</span>{" "}
           <NumberWord n={m.h} unit=" px" />
           <span className="w">, with</span> <NumberWord n={m.split} unit="%" tone="alt" /> <span className="w">for the video panel.</span>{" "}
           <ApplyButton m={m} className="sx-act">
@@ -356,9 +356,9 @@ function TilesView({ m }: { m: UiLayoutModel }) {
   return (
     <div className="ul-c">
       <div className="sx-tiles">
-        <BigTile icon={<Glyph g="window" />} title="Window" caption={`${m.w.value} × ${m.h.value} px`}>
+        <BigTile icon={<Glyph g="window" />} title="Window" caption={`${m.w.value} by ${m.h.value} px`}>
           <NumberBox n={m.w} bare />
-          <span className="ul-x">×</span>
+          <span className="ul-x">by</span>
           <NumberBox n={m.h} bare />
         </BigTile>
         <BigTile icon={<Glyph g="window" />} title="Video panel" caption="share of the width" tone="alt">
@@ -387,7 +387,7 @@ function TilesView({ m }: { m: UiLayoutModel }) {
         <ResetButton m={m} className="ul-act">
           <b>Reset default</b>
           <small>
-            {WINDOW_DEFAULTS.w} × {WINDOW_DEFAULTS.h}
+            {WINDOW_DEFAULTS.w} by {WINDOW_DEFAULTS.h}
           </small>
         </ResetButton>
         <ResetCardsButton m={m} className="ul-act">
@@ -404,6 +404,6 @@ const VIEWS: CardViews<UiLayoutModel> = { timeline: TimelineView, sentence: Sent
 export default function UiLayoutCard(grid: GridProps) {
   const m = useUiLayout();
   return (
-    <StyledCard cardId="ui-layout" title="UI Layout" icon={<ICONS.uiLayout />} prefix="ul" m={m} views={VIEWS} grid={grid} count={`${m.w.value}×${m.h.value}`} />
+    <StyledCard cardId="ui-layout" title="UI Layout" icon={<ICONS.uiLayout />} prefix="ul" m={m} views={VIEWS} grid={grid} count={`${m.w.value} by ${m.h.value}`} />
   );
 }

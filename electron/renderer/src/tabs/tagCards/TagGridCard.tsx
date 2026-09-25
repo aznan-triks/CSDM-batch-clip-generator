@@ -30,6 +30,19 @@ function Toolbar({ m }: { m: TagGridModel }) {
   );
 }
 
+/** Every visible tag; picking one writes the persisted selection. */
+function Palette({ m }: { m: TagGridModel }) {
+  return (
+    <SettingControl settingKey="ui_active_tags">
+      <div className="chips tg-palette">
+        {m.visible.map((tag) => (
+          <TagChip key={String(tag[0])} m={m} tag={tag} />
+        ))}
+      </div>
+    </SettingControl>
+  );
+}
+
 function AutoTag({ m }: { m: TagGridModel }) {
   return (
     <SettingControl settingKey={m.autoTag.key}>
@@ -64,7 +77,7 @@ function TimelineView({ m }: { m: TagGridModel }) {
             <button key={String(id)} type="button" className="tg-pill" style={{ ["--tag" as string]: color }} title="Stop using this tag" onClick={() => m.toggle(id)}>
               <i aria-hidden="true" />
               {name}
-              <span aria-hidden="true">×</span>
+              <span className="tg-pill-ck" aria-hidden="true">✓</span>
             </button>
           ))
         ) : (
@@ -75,11 +88,7 @@ function TimelineView({ m }: { m: TagGridModel }) {
         </span>
       </div>
       <Toolbar m={m} />
-      <div className="chips tg-palette">
-        {m.visible.map((tag) => (
-          <TagChip key={String(tag[0])} m={m} tag={tag} />
-        ))}
-      </div>
+      <Palette m={m} />
       <EmptyTags m={m} />
       <div className="tg-foot">
         <NewTagButton m={m} />
@@ -111,29 +120,23 @@ function SentenceView({ m }: { m: TagGridModel }) {
       <div className="sc-prose">
         <div className="sc-line">
           <span className="w">Work with</span>{" "}
-          <SettingControl settingKey="ui_active_tags">
-            <ChoiceToken
-              label="Active tags"
-              tip={TIPS.tag}
-              popover={
-                <>
-                  <h5>Tags in use</h5>
-                  <Toolbar m={m} />
-                  <div className="chips tg-palette">
-                    {m.visible.map((tag) => (
-                      <TagChip key={String(tag[0])} m={m} tag={tag} />
-                    ))}
-                  </div>
-                  <EmptyTags m={m} />
-                  <div className="row">
-                    <DeselectAllButton m={m} />
-                  </div>
-                </>
-              }
-            >
-              {selectionWords(m.activeNames)}
-            </ChoiceToken>
-          </SettingControl>
+          <ChoiceToken
+            label="Active tags"
+            tip={TIPS.tag}
+            popover={
+              <>
+                <h5>Tags in use</h5>
+                <Toolbar m={m} />
+                <Palette m={m} />
+                <EmptyTags m={m} />
+                <div className="row">
+                  <DeselectAllButton m={m} />
+                </div>
+              </>
+            }
+          >
+            {selectionWords(m.activeNames)}
+          </ChoiceToken>
           <span className="w">
             {" "}
             ({m.activeNames.length} of {m.tags.length} tags).
@@ -183,15 +186,17 @@ function TilesView({ m }: { m: TagGridModel }) {
   return (
     <div className="tg-c">
       <Toolbar m={m} />
-      <div className="tg-tiles">
-        {m.visible.map((tag) => (
-          <TagTile key={String(tag[0])} m={m} tag={tag} />
-        ))}
-        <NewTagButton m={m} className={m.form.open ? "tg-tile-new on" : "tg-tile-new"}>
-          <span aria-hidden="true">+</span>
-          <b>New tag</b>
-        </NewTagButton>
-      </div>
+      <SettingControl settingKey="ui_active_tags">
+        <div className="tg-tiles">
+          {m.visible.map((tag) => (
+            <TagTile key={String(tag[0])} m={m} tag={tag} />
+          ))}
+          <NewTagButton m={m} className={m.form.open ? "tg-tile-new on" : "tg-tile-new"}>
+            <span aria-hidden="true">+</span>
+            <b>New tag</b>
+          </NewTagButton>
+        </div>
+      </SettingControl>
       <EmptyTags m={m} />
       {m.form.open && <NewTagForm m={m} />}
       <div className="tg-foot">

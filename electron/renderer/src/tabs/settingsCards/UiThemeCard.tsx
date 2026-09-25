@@ -229,25 +229,27 @@ function SentenceView({ m }: { m: UiThemeModel }) {
             {accentName(m.accent)}
           </ChoiceToken>{" "}
           <span className="w">on a</span>{" "}
-          <ChoiceToken
-            label="Ground"
-            tone="alt"
-            tip={GROUND_TIP}
-            popover={(close) => (
-              <>
-                <h5>Ground</h5>
-                <WordOptions
-                  label="Ground"
-                  options={GROUNDS.map((g) => ({ value: g, words: g, sub: GROUND_MODES[g] === "light" ? "light mode" : "dark mode" }))}
-                  value={m.ground}
-                  onChange={m.chooseGround}
-                  close={close}
-                />
-              </>
-            )}
-          >
-            {m.ground}
-          </ChoiceToken>{" "}
+          <SettingControl settingKey="theme_bg">
+            <ChoiceToken
+              label="Ground"
+              tone="alt"
+              tip={GROUND_TIP}
+              popover={(close) => (
+                <>
+                  <h5>Ground</h5>
+                  <WordOptions
+                    label="Ground"
+                    options={GROUNDS.map((g) => ({ value: g, words: g, sub: GROUND_MODES[g] === "light" ? "light mode" : "dark mode" }))}
+                    value={m.ground}
+                    onChange={m.chooseGround}
+                    close={close}
+                  />
+                </>
+              )}
+            >
+              {m.ground}
+            </ChoiceToken>
+          </SettingControl>{" "}
           <span className="w">ground, in the</span>{" "}
           <SettingControl settingKey="ui_font_family">
             <TextWord label="Font family" shown={m.font === "auto" ? "" : m.font} empty="built-in" tip={FONT_TIP}>

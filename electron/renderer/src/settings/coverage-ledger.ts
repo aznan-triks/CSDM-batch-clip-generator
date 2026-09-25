@@ -39,7 +39,6 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   airborne_shot_speed_z: "engine-only: AIRBORNE vertical-speed threshold for shots",
   airborne_position_delta_z: "engine-only: AIRBORNE height-change threshold from positions",
   ui_sections: "driven by drag-and-drop and the card header toggle, not a form field",
-  ui_active_tags: "driven by the tag-chip grid's selection, not a form field",
   ui_card_row_height: "card grid row step; changed via config, never a widget",
   ui_card_collapsed_rows: "collapsed card height; changed via config, never a widget",
   // Superseded, not forgotten: Ally / Enemy (Event Type) is the one team model.
