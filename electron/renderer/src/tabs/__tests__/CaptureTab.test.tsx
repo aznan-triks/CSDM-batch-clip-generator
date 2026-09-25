@@ -4,10 +4,10 @@
  * These are the rules no coverage count can check: a control can be mounted
  * and still appear in the wrong state. Each test names the rule it guards.
  */
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { SettingsProvider } from "../../settings/store";
+import { SettingsProvider, useSetting } from "../../settings/store";
 import CaptureTab from "../CaptureTab";
 import { DatabaseProvider } from "../../settings/useDatabase";
 
@@ -46,7 +46,18 @@ vi.mock("../../bridge", () => ({
       type: "result",
       id: "1",
       ok: true,
-      data: { perspective: "killer", events: ["Kills"], before: 3, after: 5, victim_pre_s: 2 },
+      // `retry_count` as a string: what the old free text box saved.
+      data: {
+        perspective: "killer",
+        events: ["Kills"],
+        before: 3,
+        after: 5,
+        victim_pre_s: 2,
+        retry_count: "3",
+        retry_delay: 15,
+        delay_between_demos: 3,
+        recording_timeout: 0,
+      },
     });
   },
   onMessage: () => () => {},
@@ -211,5 +222,55 @@ describe("CaptureTab conditional rows", () => {
       orphans.map((f) => f.id || f.className),
       "these fields sit outside a row and will stretch to the card's width",
     ).toEqual([]);
+  });
+});
+
+/** Shows the stored retry count and its type, as the store holds it. */
+function RetryProbe() {
+  const [value] = useSetting<unknown>("retry_count");
+  return <output data-testid="retry-probe">{`${typeof value}:${String(value)}`}</output>;
+}
+
+describe("CaptureTab timing, in words and in numbers", () => {
+  it("says what one clip holds and when events share a clip", async () => {
+    // Engine `_build_sequences`: events merge when t2 - t1 <= after + 2 * before.
+    await renderTab();
+    const summary = () => screen.getByTestId("clip-window-summary").textContent;
+    expect(summary()).toBe(
+      "Each clip: 3s before → event → 5s after. Events up to 11s apart share one clip.",
+    );
+
+    // `both` adds the victim view to the seconds before (`_effective_before`).
+    choosePerspective("both");
+    expect(summary()).toBe(
+      "Each clip: 5s before → event → 5s after. Events up to 15s apart share one clip.",
+    );
+  });
+
+  it("stores the retry count as a number, whatever the box holds", async () => {
+    // The batch loop did `1 + retry_count`: a typed "4" crashed the run.
+    render(
+      <SettingsProvider>
+        <DatabaseProvider>
+          <CaptureTab />
+          <RetryProbe />
+        </DatabaseProvider>
+      </SettingsProvider>,
+    );
+    await act(async () => {});
+    // A legacy string still reads as its number.
+    const box = document.getElementById("retry-count") as HTMLInputElement;
+    expect(box.value).toBe("3");
+
+    fireEvent.change(box, { target: { value: "4" } });
+    expect(screen.getByTestId("retry-probe").textContent).toBe("number:4");
+    expect(screen.getByTestId("pacing-summary").textContent).toContain(
+      "retried up to 4× (15s apart)",
+    );
+
+    // A negative never reaches the engine.
+    fireEvent.change(box, { target: { value: "-2" } });
+    expect(screen.getByTestId("retry-probe").textContent).toBe("number:0");
+    expect(screen.getByTestId("pacing-summary").textContent).toContain("is not retried");
   });
 });

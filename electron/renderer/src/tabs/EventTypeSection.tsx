@@ -46,8 +46,8 @@ export default function EventTypeSection() {
     <div className="evt">
       <div className="row">
         {/* "Event role", not "Perspective": the Capture & Timing card has a
-            setting of its own called Perspective (killer / victim / both, the
-            camera POV). Two unrelated notions under one word had the user
+            setting of its own for the camera POV (killer / victim / both,
+            config key `perspective`, labelled "Camera" since 2026-09-25). Two unrelated notions under one word had the user
             asking which was which and why one had no "both" -- the answer
             being that ticking both boxes here IS the both
             (AUDIT_retours_ui_8_points.md, ecart E9). */}
