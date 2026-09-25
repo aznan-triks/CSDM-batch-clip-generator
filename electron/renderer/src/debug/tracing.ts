@@ -18,6 +18,7 @@
  * recorder never forms.
  */
 import { onMessage, runCommand } from "../bridge";
+import { downloadFile } from "../download";
 import type { BridgeMessage } from "../bridge";
 import {
   clearTrace,
@@ -94,23 +95,10 @@ export function setTracing(on: boolean): void {
 }
 
 /**
- * Hand the recorded trace to the user as a file.
- *
- * Same mechanism the console export already uses (`LogConsole.tsx`): a Blob
- * behind an `<a download>`. Reusing it rather than adding a `pickSavePath`
- * round trip keeps this instrument free of new IPC surface -- the audit is
- * supposed to observe the app, not enlarge it.
+ * Hand the recorded trace to the user as a file, through the one download
+ * mechanism every console export shares (`download.ts`) -- no new IPC surface:
+ * the audit is supposed to observe the app, not enlarge it.
  */
 export function exportTrace(): void {
-  if (typeof URL === "undefined" || typeof URL.createObjectURL !== "function") {
-    console.warn("trace export unavailable: no Blob/URL support in this environment");
-    return;
-  }
-  const blob = new Blob([traceToText()], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = TRACING.exportName;
-  anchor.click();
-  URL.revokeObjectURL(url);
+  downloadFile(TRACING.exportName, traceToText(), "text/plain");
 }
