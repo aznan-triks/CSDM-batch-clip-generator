@@ -152,6 +152,17 @@ DEFAULT_CONFIG = {
             },
             "collapsed": [],
         },
+        # Card remake 2c (2026-09-25): the Tags tab moved onto the card grid;
+        # sizes from e2e/card-remake-2c-proof.mjs (each style's rows printed).
+        "tags": {
+            "v": 4,
+            "cards": {
+                "tag-grid": {"x": 0, "y": 0, "w": 15, "h": 10},
+                "tag-range": {"x": 0, "y": 10, "w": 5, "h": 10},
+                "operations": {"x": 5, "y": 10, "w": 10, "h": 12},
+            },
+            "collapsed": [],
+        },
         "settings": {
             "v": 4,
             "cards": {

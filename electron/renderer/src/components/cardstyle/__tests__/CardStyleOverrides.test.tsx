@@ -44,10 +44,27 @@ async function renderList(config: Record<string, unknown>) {
 }
 
 describe("Per-card style", () => {
-  it("lists every styled card, including the ten CAPTURE cards", async () => {
+  it("lists every styled card: the ten CAPTURE cards first, then TAGS and SETTINGS", async () => {
     await renderList({ ui_card_style: "timeline", ui_card_style_overrides: {} });
     for (const card of STYLED_CARDS) expect(screen.getByLabelText(card.title)).toBeTruthy();
-    expect(STYLED_CARDS.map((c) => c.id)).toEqual([
+    const ids = STYLED_CARDS.map((c) => c.id);
+    expect(new Set(ids).size, "a card id is its override key: no two cards may share one").toBe(ids.length);
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "tag-grid",
+        "tag-range",
+        "operations",
+        "postgresql",
+        "paths",
+        "config-folder",
+        "presets",
+        "ui-theme",
+        "ui-layout",
+        "performance",
+        "injection-preview",
+      ]),
+    );
+    expect(ids.slice(0, 10)).toEqual([
       "player",
       "demo-selection",
       "weapon-filter",

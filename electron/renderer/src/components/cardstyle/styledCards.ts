@@ -15,4 +15,17 @@ export const STYLED_CARDS: ReadonlyArray<{ id: string; title: string }> = [
   { id: "shot-filters", title: "Shot Filters" },
   { id: "match-types", title: "Match Types" },
   { id: "map-filter", title: "Map Filter" },
+  // TAGS
+  { id: "tag-grid", title: "Tags" },
+  { id: "tag-range", title: "Tag Range" },
+  { id: "operations", title: "Operations" },
+  // SETTINGS
+  { id: "postgresql", title: "PostgreSQL Connection" },
+  { id: "paths", title: "Paths" },
+  { id: "config-folder", title: "Configuration Folder" },
+  { id: "presets", title: "Presets" },
+  { id: "ui-theme", title: "UI Theme" },
+  { id: "ui-layout", title: "UI Layout" },
+  { id: "performance", title: "Performance" },
+  { id: "injection-preview", title: "Injection Preview" },
 ];

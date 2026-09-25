@@ -1,0 +1,590 @@
+/*
+ * The SETTINGS cards in their three styles. Prefixes: st- (pieces several
+ * cards share), pg- PostgreSQL, pa- Paths, cf- Configuration Folder,
+ * ps- Presets, ut- UI Theme, ul- UI Layout, pf- Performance, ip- Injection.
+ * Colours from theme/tokens.css. No :hover rule translates or scales (D13/D16).
+ */
+
+/* ---------- shared: an icon chip, a node, a link ---------- */
+.st-ic {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--cam-k) 10%, var(--solid));
+  color: var(--cam-k);
+}
+
+.st-ic svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The connection light: grey until tested, green, red, pulsing while busy. */
+.st-light {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--hair);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--hair) 40%, transparent);
+}
+
+.st-light.ok {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent);
+}
+
+.st-light.bad {
+  background: var(--blood);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blood) 25%, transparent);
+}
+
+.st-light.busy {
+  background: var(--amber);
+}
+
+.settings-db-status.st-ok {
+  color: var(--ok-t);
+}
+
+.settings-db-status.st-bad {
+  color: var(--blood-t);
+}
+
+/* ---------- PostgreSQL, timeline: you → server → database ---------- */
+.st-chain {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) 28px minmax(0, 0.8fr);
+  align-items: stretch;
+  margin-bottom: 8px;
+}
+
+.st-node {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 9px 10px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+}
+
+.st-node-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--txt);
+}
+
+.st-node-h .st-light {
+  margin-left: auto;
+}
+
+.st-link {
+  align-self: center;
+  height: 2px;
+  margin: 0 3px;
+  background: repeating-linear-gradient(90deg, var(--cam-k) 0 5px, transparent 5px 9px);
+  position: relative;
+}
+
+.st-link::after {
+  content: "";
+  position: absolute;
+  right: -2px;
+  top: -4px;
+  border: 5px solid transparent;
+  border-left-color: var(--cam-k);
+}
+
+.pg-b .settings-db-row,
+.pg-c .settings-db-row {
+  align-items: center;
+  margin-top: 8px;
+}
+
+/* ---------- Paths, timeline: the files' journey ---------- */
+.st-flow {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* The thread that links the stops. */
+.st-flow::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 14px;
+  bottom: 14px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--cam-k), var(--cam-v));
+  opacity: 0.35;
+}
+
+.st-stop {
+  position: relative;
+  display: grid;
+  grid-template-columns: 26px 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.st-step {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.st-stop-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.st-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.st-sub-eg {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+/* Paths, tiles: two wide columns, a path needs the room. */
+.st-tiles-2 {
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.st-tiles-2 .sx-tile-body > .setting,
+.st-tiles-2 .path-field {
+  flex: 1 1 100%;
+}
+
+/* ---------- Configuration Folder ---------- */
+.cf-move {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.3fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.cf-from {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cf-arrow {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--cam-k);
+  white-space: nowrap;
+}
+
+.cf-to {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cf-dest,
+.cf-tile {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 10px 5px 5px;
+  border-radius: 12px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--txt);
+  cursor: pointer;
+}
+
+.cf-dest.on,
+.cf-tile.on {
+  border-color: color-mix(in srgb, var(--cam-k) 55%, transparent);
+  box-shadow:
+    0 0 0 3px var(--accent-soft),
+    var(--shadow-sm);
+  color: var(--cam-k);
+}
+
+.cf-dest:disabled,
+.cf-tile:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cf-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cf-tile {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 10px;
+}
+
+.cf-tile-art {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--cam-k) 10%, var(--solid));
+  color: var(--cam-k);
+}
+
+.cf-tile-art svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cf-tile small {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--faint);
+}
+
+.cf-b .sx-opt:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cf-b .settings-folder-path {
+  display: inline;
+}
+
+/* ---------- Presets ---------- */
+.ps-lane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 9px 10px;
+  border-radius: 14px;
+  border: 1px dashed color-mix(in srgb, var(--cam-k) 35%, transparent);
+  background: color-mix(in srgb, var(--cam-k) 4%, var(--solid));
+}
+
+.ps-name {
+  display: inline-block;
+  width: 12ch;
+  vertical-align: middle;
+}
+
+/* ---------- UI Theme ---------- */
+.ut-styles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 9px 10px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--cam-k) 30%, transparent);
+  background: color-mix(in srgb, var(--cam-k) 5%, var(--solid));
+}
+
+.ut-look {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  margin-bottom: 8px;
+}
+
+.ut-look-ctl {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ut-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+
+.ut-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 2px;
+  border-radius: 50%;
+}
+
+.ut-dot.big {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.ut-aa {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ut-grounds {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.ut-ground {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 4px 5px;
+  border-radius: 11px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  font: inherit;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.ut-ground.on {
+  border-color: var(--cam-k);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  color: var(--cam-k);
+}
+
+/* ---------- UI Layout ---------- */
+.ul-stage {
+  margin-bottom: 8px;
+}
+
+.ul-top {
+  max-width: 180px;
+  margin-bottom: 6px;
+}
+
+.ul-mid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  gap: 10px;
+  align-items: start;
+}
+
+.ul-side {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ul-win {
+  position: relative;
+  display: flex;
+  max-height: 150px;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1.5px solid color-mix(in srgb, var(--cam-k) 40%, transparent);
+  background: var(--surface-2);
+}
+
+.ul-pane {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.ul-pane.video {
+  background: color-mix(in srgb, var(--cam-k) 12%, var(--solid));
+  color: var(--cam-k);
+}
+
+.ul-pane.cards {
+  flex: 1;
+  background:
+    linear-gradient(90deg, var(--hair) 1px, transparent 1px) 0 0 / 14px 100%,
+    var(--solid);
+}
+
+.ul-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  margin-left: -6px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.ul-bar::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--cam-k);
+}
+
+.ul-bar:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+}
+
+.ul-x {
+  font-weight: 700;
+  color: var(--faint);
+}
+
+.ul-c .sx-tile-body .fld {
+  width: 72px;
+}
+
+.ul-acts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.ul-act {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ul-act b {
+  font-size: 12.5px;
+  color: var(--txt);
+}
+
+.ul-act small {
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.ul-act.on {
+  border-color: color-mix(in srgb, var(--cam-k) 50%, transparent);
+  background: color-mix(in srgb, var(--cam-k) 8%, var(--solid));
+}
+
+.ul-act.on b {
+  color: var(--cam-k);
+}
+
+/* ---------- Performance ---------- */
+.pf-cores {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.pf-core {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0 5px;
+  border-radius: 9px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  font: inherit;
+  color: var(--faint);
+  cursor: pointer;
+}
+
+.pf-core svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+}
+
+.pf-core b {
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.pf-core.on {
+  border-color: color-mix(in srgb, var(--cam-k) 45%, transparent);
+  background: color-mix(in srgb, var(--cam-k) 12%, var(--solid));
+  color: var(--cam-k);
+}
+
+.pf-read {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pf-read b {
+  font-family: var(--mono);
+  color: var(--cam-k);
+}
+
+.pf-c .sc-count {
+  max-width: 220px;
+}
+
+.cf-dest:focus-visible,
+.cf-tile:focus-visible,
+.ut-ground:focus-visible,
+.ul-act:focus-visible,
+.pf-core:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
