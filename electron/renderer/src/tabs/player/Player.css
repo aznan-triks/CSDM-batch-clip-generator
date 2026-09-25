@@ -1,0 +1,399 @@
+/*
+ * The Player card's three styles. PlayerSection.css keeps the shared
+ * structure (the flex chain down to `.ps-list`, rows, ★); this file only draws
+ * the looks (`pc-pill`, `pc-tile`) and places them per style (`pc-a/b/c`).
+ * `pc-` prefixed: the V12 mock owns the plain names.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+/* ---------- shared: avatar, kicker, looks ---------- */
+.pc-av {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  --h: var(--accent);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--h) 62%, #fff), var(--h));
+}
+
+.pc-av[data-hue="1"] {
+  --h: var(--rose);
+}
+
+.pc-av[data-hue="2"] {
+  --h: var(--emerald);
+}
+
+.pc-av[data-hue="3"] {
+  --h: var(--amber);
+}
+
+.pc-av[data-hue="4"] {
+  --h: var(--steel);
+}
+
+/* The concepts' small blue caption over a group. */
+.pc-kick {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 70%, var(--muted));
+}
+
+.pc-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.pc-who b,
+.pc-who .ps-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--txt);
+}
+
+.pc-who small {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--faint);
+}
+
+.pc-grip {
+  margin-left: 2px;
+  font-size: 10px;
+  letter-spacing: -2px;
+  color: var(--faint);
+  cursor: grab;
+}
+
+.pc-x {
+  margin-left: 2px;
+  font-weight: 700;
+  opacity: 0.55;
+}
+
+/* The V12 player pill (`.pl`): avatar, name, on a solid face. */
+.player-section .chip.pc-pill {
+  gap: 8px;
+  padding: 3px 12px 3px 3px;
+  background: var(--solid);
+  border-color: var(--hair);
+  box-shadow: var(--shadow-sm);
+  color: var(--txt);
+}
+
+.player-section .chip.pc-pill.on {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--lime) 55%, var(--solid)), var(--lime));
+  border-color: var(--lime-glow);
+  color: var(--lime-ink);
+}
+
+.player-section .chip-pair > .chip.pc-pill:first-child {
+  border-radius: var(--r-pill) 0 0 var(--r-pill);
+}
+
+.player-section .chip-pair > .chip.pc-pill + .close-btn {
+  border-radius: 0 var(--r-pill) var(--r-pill) 0;
+  align-self: stretch;
+  background: var(--solid);
+}
+
+.player-section .ps-active-chips .chip.pc-pill {
+  border-radius: var(--r-pill);
+}
+
+/* Rows drawn as pills: avatar, name and short id. */
+.pc-list-pill .ps-row,
+.pc-list-tile .ps-row {
+  gap: 9px;
+  padding: 5px 10px 5px 5px;
+  border-color: var(--hair);
+  background: var(--solid);
+}
+
+.pc-list-pill .ps-row {
+  border-radius: var(--r-pill);
+}
+
+.pc-list-pill .ps-row-active,
+.pc-list-tile .ps-row-active {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--lime) 45%, var(--solid)), var(--lime));
+  border-color: var(--lime-glow);
+}
+
+.pc-list-pill .ps-row-active .pc-who b,
+.pc-list-tile .ps-row-active .pc-who b {
+  color: var(--lime-ink);
+}
+
+/* ---------- A: roster board ---------- */
+.pc-a,
+.pc-b,
+.pc-c {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.pc-a {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.pc-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 14px;
+  border-right: 1px solid var(--hair);
+}
+
+.pc-lineup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--solid) 62%, transparent),
+    color-mix(in srgb, var(--solid) 40%, var(--hair-2))
+  );
+}
+
+.pc-a .ps-registered {
+  margin: 0;
+  padding: 0;
+  border-bottom: none;
+}
+
+.pc-a .ps-registered-chips.dragging .chip {
+  cursor: grabbing;
+}
+
+.pc-find {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Search, sort, count and pager on one line. */
+.pc-findbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.pc-findbar > .row {
+  display: contents;
+}
+
+.pc-find .ps-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  align-content: start;
+  gap: 6px;
+}
+
+/* ---------- B: sentence ---------- */
+.pc-b {
+  font-size: 14.5px;
+  line-height: 1.9;
+  color: var(--muted);
+}
+
+.pc-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pc-line > span:first-child {
+  font-size: 15px;
+  color: var(--txt);
+}
+
+.pc-b .ps-active {
+  flex-direction: row;
+}
+
+.pc-b .ps-active-chips {
+  align-items: center;
+  gap: 6px;
+}
+
+.pc-activewrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pc-joiner {
+  color: var(--muted);
+}
+
+.pc-line-s {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.pc-b .ps-registered {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  background: var(--solid);
+  line-height: 1.4;
+}
+
+.pc-findline .pc-search {
+  flex: none;
+}
+
+.pc-findline > .ps-controls {
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.pc-b .ps-list {
+  line-height: 1.4;
+}
+
+/* ---------- C: tiles ---------- */
+.pc-c .ps-registered {
+  margin: 0;
+}
+
+.pc-reg-tile .ps-registered-chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  padding: 7px 7px 0 0;
+}
+
+.pc-reg-tile .chip-pair {
+  position: relative;
+  display: flex;
+}
+
+.player-section .chip-pair > .chip.pc-tile {
+  flex: 1;
+  position: relative;
+  gap: 10px;
+  min-height: 58px;
+  padding: 9px 36px 9px 10px;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+  color: var(--txt);
+  text-align: left;
+}
+
+.chip.pc-tile .pc-av {
+  width: 34px;
+  height: 34px;
+  font-size: 14px;
+}
+
+.chip.pc-tile .pc-who {
+  max-width: 100%;
+}
+
+/* The tile's check box, bottom right (the × owns the top corner). */
+.chip.pc-tile::after {
+  content: "✓";
+  position: absolute;
+  right: 10px;
+  top: calc(50% - 9px);
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  border: 1.5px solid var(--hair);
+  font-size: 11px;
+  font-weight: 900;
+  color: transparent;
+}
+
+.player-section .chip-pair > .chip.pc-tile.on {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--lime) 30%, var(--solid)), var(--lime) 140%);
+  border-color: var(--lime-glow);
+}
+
+.chip.pc-tile.on .pc-who small {
+  color: var(--lime-ink);
+}
+
+.chip.pc-tile.on::after {
+  background: var(--lime-ink);
+  border-color: var(--lime-ink);
+  color: var(--lime);
+}
+
+.player-section .pc-reg-tile .chip-pair > .close-btn {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  justify-content: center;
+  border: 1px solid var(--hair);
+  border-radius: 50%;
+  background: var(--solid);
+}
+
+.pc-c .ps-active {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.pc-c .ps-active .lab {
+  min-width: 0;
+}
+
+.pc-list-tile {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  align-content: start;
+  gap: 6px;
+}
+
+.pc-list-tile .ps-row {
+  border-radius: 12px;
+}
+
+.pc-c .ps-list.pc-list-tile {
+  display: grid;
+}
