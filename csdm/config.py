@@ -192,6 +192,11 @@ DEFAULT_CONFIG = {
     "ui_card_collapsed_rows": 2,
     "retry_count": 2, "retry_delay": 15, "delay_between_demos": 3,
     "recording_timeout": 0,   # minutes; 0 = disabled (kill CS2 + retry if exceeded)
+    # The automatic per-demo timeout, always armed: the demo's clip time
+    # (slow motion included) times this factor, never under the floor. The
+    # factor covers seeking and rendering; the floor covers very short clips.
+    "recording_timeout_auto_factor": 3,
+    "recording_timeout_auto_floor_s": 60,
     # Final assembly of all clips after batch
     "assemble_after": False,      # concatenate all clips after batch
     "delete_after_assemble": False,  # delete source clips after assembly
@@ -258,6 +263,11 @@ DEFAULT_CONFIG = {
     "dp2_threads": min(8, max(2, os.cpu_count() or 4)),  # auto-scaled to CPU count (1–8)
     # demos kept from EARLIER queries; the current query's demos are never evicted (core._dp2_cache_pin)
     "dp2_cache_max_demos": 150,
+    # AIRBORNE: a shot's own vertical speed above this (units/s) is a jump or
+    # a fall; on the ground it reads 0. Without a speed, the Z change across
+    # the few position samples around the tick above this (units) counts.
+    "airborne_shot_speed_z": 1.0,
+    "airborne_position_delta_z": 8.0,
 
     # How long to wait for a killed process to actually disappear, and how
     # often to look. The UI detonates its charge on the real exit, never on a
@@ -829,13 +839,62 @@ def load_config():
     active = _bootstrap_dir()
     global _ACTIVE_DIR
     _ACTIVE_DIR = active
-    saved = _load_json(str(active / "csdm_config.json"))
+    saved = _read_saved_config(active / "csdm_config.json")
     if not saved:
         return DEFAULT_CONFIG.copy()
     cfg = DEFAULT_CONFIG.copy()
     cfg.update(saved)
     _migrate_config(saved, cfg)
     return cfg
+
+
+# Messages about the settings file that no command asked for (a damaged file
+# was set aside). The bridge's greeting writes them to the log at startup.
+_CONFIG_NOTICES = []
+
+
+def take_config_notices():
+    """Return and forget the pending settings-file notices."""
+    notices = list(_CONFIG_NOTICES)
+    _CONFIG_NOTICES.clear()
+    return notices
+
+
+def _read_saved_config(path):
+    """The saved settings as a dict; {} when there are none or they are unreadable.
+
+    A damaged file (invalid JSON, or JSON that is not an object) must not
+    stop the app, and must not vanish either: the next save would overwrite
+    the only copy of the user's settings. It is renamed aside with a
+    timestamp -- once, so later loads do not stack copies -- and a notice
+    says where it went.
+    """
+    if not path.exists():
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            saved = json.load(f)
+    except OSError:
+        return {}
+    except ValueError:
+        saved = None
+    if isinstance(saved, dict):
+        return saved
+    backup = path.with_name(f"{path.stem}.broken-{time.strftime('%Y%m%d-%H%M%S')}{path.suffix}")
+    try:
+        path.replace(backup)
+    except OSError as exc:
+        notice = (f"Your settings file {path} is damaged and could not be read, so the default "
+                  f"settings were loaded. It could not be set aside ({exc.strerror or exc}): "
+                  f"copy it somewhere safe now if you want to recover it, the next change "
+                  f"overwrites it.")
+        if notice not in _CONFIG_NOTICES:  # every load retries; say it once
+            _CONFIG_NOTICES.append(notice)
+        return {}
+    _CONFIG_NOTICES.append(
+        f"Your settings file was damaged and could not be read, so the default settings "
+        f"were loaded. The damaged file was kept as {backup}.")
+    return {}
 
 
 def save_config(cfg):

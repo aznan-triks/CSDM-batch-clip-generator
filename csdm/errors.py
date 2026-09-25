@@ -43,7 +43,61 @@ ERROR_LOG = {
 WHERE = {
     "db": "SETTINGS › PostgreSQL Connection, then click Test & Reload",
     "paths": "SETTINGS › Paths",
+    "recsys": "VIDEO › Recording System",
+    # Tools CS Demo Manager locates itself: fixed in ITS settings, not ours.
+    "csdm_video": "CS Demo Manager's own Settings › Video",
+    "csdm_playback": "CS Demo Manager's own Settings › Playback",
 }
+
+_NO_HLAE = (f"CS Demo Manager cannot find HLAE. Install HLAE from {WHERE['csdm_video']}, "
+            f"or switch {WHERE['recsys']} to CS to record without it.")
+_NO_FFMPEG = f"CS Demo Manager cannot find FFmpeg. Install it from {WHERE['csdm_video']}."
+
+# Lines the CS Demo Manager CLI prints for failures a user can fix
+# (its src/cli/get-error-code-message.ts, plus older builds' wording), matched
+# in lower case: (every fragment the line must contain, the sentence to show).
+# First match wins, so the specific rows come before the general ones.
+_CSDM_CLI_RULES = (
+    (("hlae", "not installed"), _NO_HLAE),
+    (("hlae", "not found"), _NO_HLAE),
+    (("hlae", "invalid"),
+     f"The HLAE executable CS Demo Manager uses is invalid. Reinstall HLAE or fix its path "
+     f"in {WHERE['csdm_video']}, or switch {WHERE['recsys']} to CS."),
+    (("ffmpeg", "not installed"), _NO_FFMPEG),
+    (("ffmpeg", "not found"), _NO_FFMPEG),
+    (("ffmpeg", "invalid"),
+     f"The FFmpeg executable CS Demo Manager uses is invalid. Reinstall FFmpeg or fix its "
+     f"path in {WHERE['csdm_video']}."),
+    (("virtualdub", "not installed"),
+     f"CS Demo Manager cannot find VirtualDub. Install it from {WHERE['csdm_video']}."),
+    (("counter-strike executable not found",),
+     f"CS Demo Manager cannot find CS2. Check that CS2 is installed through Steam, "
+     f"or fix the custom game path in {WHERE['csdm_playback']}."),
+    (("steam is not running",),
+     "Steam is not running. Start Steam, sign in, then run again."),
+    (("make sure steam is running",),
+     "CS2 could not start. Start Steam, sign in, then run again."),
+    (("counter-strike is already running",),
+     "CS2 is already running. Close it, then run again."),
+    (("match not found in the database",),
+     "CS Demo Manager has not analyzed this demo. Analyze it in CS Demo Manager, then run again."),
+    (("database schema is outdated",),
+     "CS Demo Manager's database is out of date. Open CS Demo Manager once so it updates "
+     "the database, then run again."),
+)
+
+
+def csdm_cli_message(line):
+    """The sentence to show for one CS Demo Manager CLI line, or None if unknown.
+
+    Unknown lines stay as CS Demo Manager wrote them: the caller shows the raw
+    line, which is still more useful than a guess.
+    """
+    low = line.lower()
+    for fragments, sentence in _CSDM_CLI_RULES:
+        if all(f in low for f in fragments):
+            return sentence
+    return None
 
 _LOGGER_LOCK = threading.Lock()
 _LOGGER = {"logger": None, "path": None}

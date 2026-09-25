@@ -325,3 +325,49 @@ def test_presets_follow_active_dir(isolated):
     c.save_presets({"beta": {"cats": ["full"], "data": {}}})
     assert (isolated["appdata"] / c.CONFIG_SUBDIR / "csdm_presets.json").exists()
     assert c.load_presets() == {"beta": {"cats": ["full"], "data": {}}}
+
+
+# ── damaged settings file ───────────────────────────────────────────────────
+
+@pytest.mark.parametrize("content", ["{not json", "[1, 2]", ""])
+def test_damaged_config_loads_defaults_and_is_set_aside_once(isolated, content):
+    c.take_config_notices()
+    cfg_path = c._default_dir() / "csdm_config.json"
+    cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    cfg_path.write_text(content, encoding="utf-8")
+
+    assert c.load_config() == c.DEFAULT_CONFIG
+    backups = list(cfg_path.parent.glob("csdm_config.broken-*.json"))
+    assert len(backups) == 1 and backups[0].read_text(encoding="utf-8") == content
+    assert not cfg_path.exists()
+    notices = c.take_config_notices()
+    assert len(notices) == 1 and str(backups[0]) in notices[0]
+
+    c.load_config()  # the next load finds no file: no second copy, no second notice
+    assert len(list(cfg_path.parent.glob("csdm_config.broken-*.json"))) == 1
+    assert c.take_config_notices() == []
+
+
+def test_valid_config_leaves_no_notice(isolated):
+    c.take_config_notices()
+    _write(c._default_dir() / "csdm_config.json", {"pg_host": "h"})
+    assert c.load_config()["pg_host"] == "h"
+    assert c.take_config_notices() == []
+
+
+def test_hello_writes_the_damaged_config_notice_to_the_log(isolated):
+    from csdm.bridge.host import _cmd_hello
+    c.take_config_notices()
+    cfg_path = c._default_dir() / "csdm_config.json"
+    cfg_path.parent.mkdir(parents=True, exist_ok=True)
+    cfg_path.write_text("{broken", encoding="utf-8")
+
+    logged = []
+
+    class _Host:
+        def log(self, msg, level="info"):
+            logged.append((msg, level))
+
+    _cmd_hello(_Host(), {})
+    warns = [m for m, lvl in logged if lvl == "warn"]
+    assert len(warns) == 1 and "default settings were loaded" in warns[0]

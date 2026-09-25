@@ -33,6 +33,11 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   process_exit_poll_interval: "engine-only: how often the task list is polled",
   process_exit_timeout: "engine-only: how long the engine waits for cs2.exe to go",
   cs2_process_name: "engine-only: the image name the exit watcher looks for",
+  // Moved out of engine literals (HC.1, 2026-09-25); tuning values, no widget.
+  recording_timeout_auto_factor: "engine-only: automatic timeout = clip time times this factor",
+  recording_timeout_auto_floor_s: "engine-only: the automatic timeout never goes under this",
+  airborne_shot_speed_z: "engine-only: AIRBORNE vertical-speed threshold for shots",
+  airborne_position_delta_z: "engine-only: AIRBORNE height-change threshold from positions",
   ui_sections: "driven by drag-and-drop and the card header toggle, not a form field",
   ui_active_tags: "driven by the tag-chip grid's selection, not a form field",
   ui_card_row_height: "card grid row step; changed via config, never a widget",

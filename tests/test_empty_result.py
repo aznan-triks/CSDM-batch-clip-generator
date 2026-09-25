@@ -91,6 +91,29 @@ def test_inverted_date_range_is_refused_naming_both_dates(date_from, date_to):
     assert msg and date_from in msg and date_to in msg
 
 
+def test_match_types_on_with_none_ticked_is_refused_naming_the_card():
+    msg = problem(match_type_filter_enabled=True)
+    assert msg and "Match Types" in msg
+
+
+def test_match_types_on_with_one_ticked_runs():
+    assert problem(match_type_filter_enabled=True, match_type_premier=True) is None
+
+
+def test_map_filter_on_with_no_map_is_refused_naming_the_card():
+    msg = problem(map_filter_enabled=True, map_filter=[])
+    assert msg and "Map Filter" in msg
+
+
+def test_map_filter_on_with_a_map_runs():
+    assert problem(map_filter_enabled=True, map_filter=["mirage"]) is None
+
+
+def test_empty_selections_are_ignored_while_their_filter_is_off():
+    assert problem(match_type_filter_enabled=False, map_filter_enabled=False,
+                   map_filter=[]) is None
+
+
 def test_same_day_range_is_accepted():
     assert problem(date_from="25-09-2026", date_to="25-09-2026") is None
 

@@ -8,6 +8,7 @@ Every boundary -- bridge command, preview thread, run thread -- goes through
 import io
 import json
 import re
+import sys
 from pathlib import Path
 from unittest import mock
 
@@ -275,3 +276,42 @@ def test_no_engine_or_bridge_code_formats_a_traceback_for_the_screen():
                  if re.search(r"traceback\.(format_exc|print_exc|format_exception)",
                               p.read_text(encoding="utf-8"))]
     assert offenders == []
+
+
+# -- CS Demo Manager CLI lines -------------------------------------------------
+
+@pytest.mark.parametrize("line,names", [
+    ("HLAE is not installed.", ["HLAE", "VIDEO › Recording System"]),
+    ("HLAE executable not found", ["HLAE", "VIDEO › Recording System"]),
+    ("The HLAE executable is invalid.", ["HLAE", "Settings › Video"]),
+    ("FFmpeg is not installed.", ["FFmpeg", "Settings › Video"]),
+    ("Counter-Strike executable not found, check your app playback settings.",
+     ["CS2", "Settings › Playback"]),
+    ("Steam is not running.", ["Start Steam"]),
+    ("Match not found in the database, make sure the demo has been analyzed.",
+     ["Analyze it"]),
+])
+def test_known_csdm_cli_errors_name_the_setting_to_fix(line, names):
+    from csdm.errors import csdm_cli_message
+    msg = csdm_cli_message(line)
+    assert msg and all(n in msg for n in names)
+
+
+def test_unknown_csdm_cli_lines_pass_through_unchanged():
+    from csdm.errors import csdm_cli_message
+    assert csdm_cli_message("Error: something CSDM never said before") is None
+    host, ports = _host()
+    cmd = [sys.executable, "-c", "print('Error: something new'); raise SystemExit(1)"]
+    ok, rc, errs, _ = host._exec(cmd, {})
+    assert not ok and errs == ["Error: something new"]
+
+
+def test_exec_reports_a_known_cli_failure_as_its_fix():
+    """CSDM prints 'HLAE is not installed.', which no marker caught: 'code 1'."""
+    host, ports = _host()
+    cmd = [sys.executable, "-c",
+           "print('Error while generating the video'); print('HLAE is not installed.');"
+           " raise SystemExit(1)"]
+    ok, rc, errs, retryable = host._exec(cmd, {})
+    assert not ok and rc == 1 and not retryable
+    assert len(errs) == 1 and "VIDEO › Recording System" in errs[0]
