@@ -2,12 +2,12 @@
  * First-run audit (2026-09-25): a new user with no database, or an empty
  * one, must be told what to do -- not left on "Waiting for DB…" forever.
  */
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import DatabasePending, { DB_UNREACHABLE_HINT } from "../../settings/DatabasePending";
 import HudNav from "../../shell/HudNav";
-import PlayerSection from "../PlayerSection";
+import PlayerSection, { FIND_STEAM_ID_HINT } from "../PlayerSection";
 
 const db = vi.hoisted(() => ({ value: { database: null as unknown, error: null as string | null } }));
 
@@ -50,7 +50,25 @@ describe("an empty database", () => {
     db.value = { database: { weapons: [], maps: [], players: [], tags: [] }, error: null };
     render(<PlayerSection />);
     expect(screen.getByText(/No player in this database yet/)).toBeTruthy();
-    expect(screen.queryByText("No player matches.")).toBeNull();
+    expect(screen.queryByText(/No player matches/)).toBeNull();
+  });
+});
+
+describe("finding one's own Steam ID", () => {
+  const oneRow = { weapons: [], maps: [], players: [["Alice", "76561198000000001", "Alice"]], tags: [] };
+
+  it("is explained on the search field's tip", () => {
+    db.value = { database: oneRow, error: null };
+    render(<PlayerSection />);
+    expect(screen.getByPlaceholderText(/Search by name or Steam ID/).getAttribute("title")).toContain(FIND_STEAM_ID_HINT);
+  });
+
+  it("is explained again when a search matches nobody", () => {
+    db.value = { database: oneRow, error: null };
+    render(<PlayerSection />);
+    fireEvent.change(screen.getByPlaceholderText(/Search by name or Steam ID/), { target: { value: "zzz" } });
+    expect(screen.getByText(/No player matches/).textContent).toContain(FIND_STEAM_ID_HINT);
+    expect(FIND_STEAM_ID_HINT).toMatch(/CS Demo Manager/);
   });
 });
 

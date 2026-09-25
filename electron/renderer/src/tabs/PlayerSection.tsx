@@ -53,6 +53,15 @@ export const PLAYER_LIST = {
 
 type Order = (typeof PLAYER_LIST.orders)[number];
 
+/**
+ * Where a user finds their OWN Steam ID -- the one thing a first run needs and
+ * nothing on screen said. Shown on the search field's tip and under a search
+ * that matches nobody (the moment someone is looking for themselves).
+ */
+export const FIND_STEAM_ID_HINT =
+  "Your Steam ID (17 digits, 7656119…) is on your player page in CS Demo Manager, " +
+  "or at the end of your Steam profile URL (steamcommunity.com/profiles/…).";
+
 /** One registered account, persisted under the `saved_players` config key. */
 export type SavedPlayer = { steam_id: string; name: string };
 
@@ -300,7 +309,7 @@ export default function PlayerSection() {
           value={search}
           onChange={search_}
           placeholder="Search by name or Steam ID…"
-          tip="Search players by name or Steam ID"
+          tip={`Search players by name or Steam ID. ${FIND_STEAM_ID_HINT}`}
         />
       </div>
 
@@ -337,7 +346,7 @@ export default function PlayerSection() {
                 <p className="capture-hint">
                   {rows.length === 0
                     ? "No player in this database yet: analyze your demos in CS Demo Manager first, then press Test & Reload in SETTINGS."
-                    : "No player matches."}
+                    : `No player matches. ${FIND_STEAM_ID_HINT}`}
                 </p>
               )}
               {visible.map((row) => {

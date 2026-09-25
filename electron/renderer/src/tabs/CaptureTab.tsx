@@ -19,6 +19,7 @@ import Segmented from "../components/Segmented";
 import Slider from "../components/Slider";
 import SectionList, { type SectionSpec } from "../shell/SectionList";
 import SettingControl from "../settings/SettingControl";
+import { asNumber } from "../settings/asNumber";
 import { useSetting } from "../settings/store";
 import { TablesProvider } from "../settings/useTables";
 import DemoSelectionSection from "./DemoSelectionSection";
@@ -49,12 +50,6 @@ const CLIP_ORDERS = ["chrono", "random"] as const;
 const BEFORE_RANGE = { min: 1, max: 15 };
 const AFTER_RANGE = { min: 1, max: 15 };
 const SWITCH_DELAY_RANGE = { min: 0, max: 10 };
-
-/** Read a setting that should be a number, tolerating the string a text field leaves behind. */
-function asNumber(value: unknown, fallback: number): number {
-  const parsed = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
 
 /**
  * A whole, non-negative number: a count of retries, seconds or minutes.

@@ -192,15 +192,56 @@ export function runCommand(
   // promise would stay pending for the life of the page. Say so at once, the
   // way a dead engine already does, so a caller can show the reason instead of
   // waiting on a result that cannot arrive.
-  if (!bridge()) {
+  const pipe = bridge();
+  if (!pipe) {
     return Promise.reject(new Error(`no engine bridge on this page: ${name} cannot run`));
   }
   installResultRouter();
-  return new Promise((resolve, reject) => {
+  const key = SHARED_WHILE_IN_FLIGHT.has(name) ? `${name} ${JSON.stringify(payload)}` : null;
+  let reads = inFlightReads.get(pipe);
+  if (!reads) inFlightReads.set(pipe, (reads = new Map()));
+  const twin = key === null ? undefined : reads.get(key);
+  if (twin) return twin;
+  const promise = new Promise<ResultMessage>((resolve, reject) => {
     const id = sendCommand(name, payload);
     pending.set(id, { resolve, reject });
   });
+  if (key !== null) {
+    const shared = reads;
+    shared.set(key, promise);
+    const forget = () => shared.delete(key);
+    promise.then(forget, forget);
+  }
+  return promise;
 }
+
+/**
+ * Reads the window fires on MOUNT, answered once while an identical one is
+ * still in flight.
+ *
+ * React's StrictMode mounts every effect twice in development, so each of
+ * these went to the engine twice -- and the engine answers some of them on the
+ * log socket (`hello`'s banner) or with a failed result the console narrates
+ * (`connect_db`'s PostgreSQL error): every such line showed twice outside the
+ * packaged exe. Sharing the in-flight promise makes the mount idempotent at
+ * the one place every caller goes through, instead of guarding each effect.
+ * Only side-effect-free reads belong here: a second RUN click must still send.
+ */
+const SHARED_WHILE_IN_FLIGHT = new Set([
+  "hello",
+  "load_config",
+  "connect_db",
+  "describe_filters",
+  "list_demos",
+  "list_presets",
+  "probe_config_dir",
+]);
+/**
+ * Per pipe: a read in flight on one bridge has not been asked of another. A
+ * page (or a test) that installs a new `window.bridge` must reach it, not wait
+ * on a twin sent down a pipe nobody reads any more.
+ */
+const inFlightReads = new WeakMap<object, Map<string, Promise<ResultMessage>>>();
 
 /** Subscribe to engine messages. Returns an unsubscribe function for React effects. */
 export function onMessage(cb: (message: BridgeMessage) => void): () => void {

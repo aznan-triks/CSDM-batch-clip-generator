@@ -165,7 +165,7 @@ _HAND_WRITTEN: list = [
        ("assemble_after", "assemble_output", "delete_after_assemble"),
        level="advanced"),
     # ── I8 Check before running ────────────────────────────────────────────
-    _C("preview", "I8", "Preview", (), ("start_preview", "cancel_preview"),
+    _C("preview", "I8", "Preview", (), ("start_preview", "cancel_preview", "run_inputs_problem"),
        level="essential"),
     # ── I9 Run and control ─────────────────────────────────────────────────
     _C("batch_run", "I9", "Run, stop, kill", (), ("start_run", "request_stop", "request_kill"),

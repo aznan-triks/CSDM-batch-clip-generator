@@ -421,6 +421,20 @@ def _cmd_start_preview(host, command):
     return {"started": host.start_preview(host.build_run_cfg(cfg))}
 
 
+def _cmd_run_inputs_problem(host, command):
+    """Why RUN / PREVIEW would refuse the renderer's settings, before any click.
+
+    The same rule `start_run` / `start_preview` apply (`run_inputs_problem`,
+    read through `build_run_cfg` exactly as they do), so the buttons can grey
+    themselves out with the engine's own sentence instead of a copy in
+    TypeScript. `problem` is None when the settings can run.
+    """
+    cfg = command.get("cfg")
+    if not isinstance(cfg, dict):
+        raise ValueError("run_inputs_problem needs a `cfg` object")
+    return {"problem": host.run_inputs_problem(host.build_run_cfg(cfg))}
+
+
 COMMANDS = {
     "ping": _cmd_ping,
     "set_debug": _cmd_set_debug,
@@ -428,6 +442,7 @@ COMMANDS = {
     "describe_filters": _cmd_describe_filters,
     "start_run": _cmd_start_run,
     "start_preview": _cmd_start_preview,
+    "run_inputs_problem": _cmd_run_inputs_problem,
     "load_config": _cmd_load_config,
     "save_config": _cmd_save_config,
     "probe_config_dir": _cmd_probe_config_dir,
@@ -465,6 +480,7 @@ COMMAND_ACTIONS = {
     "list_demos": "loading the demo list",
     "start_run": "starting the run",
     "start_preview": "starting the preview",
+    "run_inputs_problem": "checking the run settings",
     "load_config": "loading your settings",
     "save_config": "saving your settings",
     "probe_config_dir": "checking the configuration folder",

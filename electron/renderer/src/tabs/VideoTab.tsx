@@ -23,6 +23,7 @@ import Field from "../components/Field";
 import Segmented from "../components/Segmented";
 import SectionList, { type SectionSpec } from "../shell/SectionList";
 import SettingControl from "../settings/SettingControl";
+import { asNumber } from "../settings/asNumber";
 import { useSetting, useSettingsBatch } from "../settings/store";
 import { useTables } from "../settings/useTables";
 import Cs2EffectsSection from "./Cs2EffectsSection";
@@ -50,12 +51,6 @@ const VIDEO_CONTAINERS = ["mp4", "avi", "mkv", "mov", "webm"] as const;
 
 /** `cs2_window_mode` values, exactly as the engine reads them; label kept identical to the value. */
 const WINDOW_MODES = ["none", "fullscreen", "windowed", "noborder"] as const;
-
-/** Read a setting that should be a number, tolerating the string a text field leaves behind. */
-function asNumber(value: unknown, fallback: number): number {
-  const parsed = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
 
 export default function VideoTab() {
   const { tables } = useTables();

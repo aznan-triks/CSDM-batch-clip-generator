@@ -18,6 +18,7 @@ import { ICONS } from "../icons";
 import { useEngineSelector } from "../motion/useEngineState";
 import { useAllSettings } from "../settings/store";
 import type { TabSpec } from "./tabs";
+import { useRunInputsProblem } from "./useRunInputsProblem";
 import "./ActionBar.css";
 
 export interface ActionBarProps {
@@ -59,6 +60,9 @@ export default function ActionBar({
   const killEnabled = useEngineSelector((s) => s.killEnabled);
   const runEnabled = useEngineSelector((s) => s.runEnabled);
   const settings = useAllSettings();
+  // The engine's own refusal, known before the click: RUN, PREVIEW and
+  // GENERATE grey out and say why instead of opening a dialog afterwards.
+  const inputsProblem = useRunInputsProblem(settings);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const onRun = useCallback(() => {
@@ -102,7 +106,7 @@ export default function ActionBar({
       ? noPreviewTip
       : !hasSelected
         ? "Check at least one clip below"
-        : "Run only the clips checked below, not a full batch";
+        : (inputsProblem ?? "Run only the clips checked below, not a full batch");
   const saveTip = busy
     ? busyTip
     : !hasPreview
@@ -139,7 +143,7 @@ export default function ActionBar({
             label="GENERATE"
             icon={<ICONS.run />}
             variant="run"
-            disabled={!hasSelected || busy}
+            disabled={!hasSelected || busy || inputsProblem !== null}
             title={generateTip}
             data-action="Q1"
             onClick={onGenerate}
@@ -178,7 +182,8 @@ export default function ActionBar({
           label="PREVIEW"
           icon={<ICONS.preview />}
           variant="preview"
-          title="Scan and list candidate clips for review, without recording video yet"
+          disabled={inputsProblem !== null}
+          title={inputsProblem ?? "Scan and list candidate clips for review, without recording video yet"}
           data-action="A2"
           onClick={onPreview}
         />
@@ -210,8 +215,8 @@ export default function ActionBar({
           label="RUN"
           icon={<ICONS.run />}
           variant="run"
-          disabled={!runEnabled}
-          title="Start a full batch run using the current settings"
+          disabled={!runEnabled || inputsProblem !== null}
+          title={inputsProblem ?? "Start a full batch run using the current settings"}
           data-action="A1"
           onClick={onRun}
         />

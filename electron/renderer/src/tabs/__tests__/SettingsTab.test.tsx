@@ -136,6 +136,20 @@ describe("SettingsTab", () => {
     }
   });
 
+  it("keeps the PostgreSQL help beside Test & Reload, not on a line of its own", async () => {
+    // A help line under the button cost the card a row its reference height
+    // does not have: it scrolled (round-2 UI, e2e/round2-ui-proof.mjs).
+    const { container } = await renderTab();
+    const row = container.querySelector(".settings-db-row");
+    expect(row?.querySelector('[data-action="B1"]')).not.toBeNull();
+    expect(row?.querySelector(".capture-hint")?.textContent).toMatch(/CS Demo Manager › Settings › Database/);
+    expect(container.querySelector("p.capture-hint")).toBeNull();
+
+    await act(async () => (row?.querySelector('[data-action="B1"]') as HTMLButtonElement).click());
+    expect(row?.querySelector(".settings-db-status")?.textContent).toBe("Connected");
+    expect(row?.querySelector(".capture-hint")).toBeNull();
+  });
+
   it("never shows the password in clear", async () => {
     const { container } = await renderTab();
     const field = container.querySelector<HTMLInputElement>('[data-config-key="pg_pass"] input');

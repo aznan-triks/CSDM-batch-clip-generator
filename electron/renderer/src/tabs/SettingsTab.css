@@ -48,6 +48,16 @@
   color: var(--fire-t);
 }
 
+/* The message beside Test & Reload takes the rest of the row and wraps
+   inside it. Without a zero basis, `.row`'s flex-wrap pushes the whole
+   sentence onto a line of its own -- the extra line that made the card
+   scroll. */
+.settings-db-row > .capture-hint,
+.settings-db-row > .settings-db-status {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .settings-injection-preview {
   background: var(--raise);
   color: var(--dim);

@@ -13,9 +13,10 @@
  * `buttons` event, never from the click itself.
  */
 import { act, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { BridgeMessage } from "../../bridge";
+import { resetEngineState } from "../../motion/engineStore";
 import ActionBar from "../ActionBar";
 
 interface SentCommand {
@@ -25,11 +26,14 @@ interface SentCommand {
 
 const sent: SentCommand[] = [];
 const listeners = new Set<(message: BridgeMessage) => void>();
+// What the engine answers to `run_inputs_problem`: null = the settings can run.
+let inputsProblem: string | null = null;
 
 vi.mock("../../bridge", () => ({
   runCommand: (name: string, payload: Record<string, unknown> = {}) => {
     sent.push({ name, ...payload });
-    return Promise.resolve({ type: "result", id: "1", ok: true });
+    const extra = name === "run_inputs_problem" ? { problem: inputsProblem } : {};
+    return Promise.resolve({ type: "result", id: "1", ok: true, ...extra });
   },
   onMessage: (cb: (message: BridgeMessage) => void) => {
     listeners.add(cb);
@@ -45,8 +49,14 @@ function emit(message: BridgeMessage): void {
   for (const cb of listeners) cb(message);
 }
 
-async function renderBar(active = "capture" as "capture" | "editing") {
+/**
+ * Mounts the bar and lets its settings check (`run_inputs_problem`, asked on
+ * mount, not on a click) answer, then empties `sent`: what a test reads after
+ * that is only what its own click sent.
+ */
+async function renderBar(active = "capture" as "capture" | "editing", problem: string | null = null) {
   sent.length = 0;
+  inputsProblem = problem;
   const setTab = vi.fn();
   const utils = render(
     <ActionBar
@@ -55,10 +65,54 @@ async function renderBar(active = "capture" as "capture" | "editing") {
       onSetTab={setTab}
     />,
   );
+  await act(async () => {});
+  sent.length = 0;
   return { ...utils, sent, emit, setTab };
 }
 
 describe("ActionBar", () => {
+  describe("settings that cannot run", () => {
+    afterEach(() => resetEngineState()); // the preview below must not leak into the next test
+    const why = "Pick at least one player: CAPTURE › Player, search your name or Steam ID, then click the row.";
+
+    it("asks the engine, with the current settings, before any click", async () => {
+      sent.length = 0;
+      inputsProblem = null;
+      render(<ActionBar registerButton={() => () => {}} active="capture" onSetTab={() => {}} />);
+      await act(async () => {});
+      expect(sent).toEqual([{ name: "run_inputs_problem", cfg: { steam_ids: ["1"], events: ["Kills"] } }]);
+    });
+
+    it("greys RUN and PREVIEW out and shows the engine's own sentence as their tip", async () => {
+      await renderBar("capture", why);
+      for (const name of [/RUN/, /PREVIEW/]) {
+        const button = screen.getByRole("button", { name });
+        expect(button).toHaveProperty("disabled", true);
+        expect(button.getAttribute("title")).toBe(why);
+      }
+    });
+
+    it("greys GENERATE out with the same sentence once a preview is there", async () => {
+      const { emit } = await renderBar("editing", why);
+      act(() =>
+        emit({
+          type: "state",
+          name: "preview_ready",
+          payload: { cfg: { tickrate: 64 }, sequences: { demo1: [{ start_tick: 1, end_tick: 2, events: [] }] } },
+        }),
+      );
+      const generate = screen.getByRole("button", { name: /GENERATE/ });
+      expect(generate).toHaveProperty("disabled", true);
+      expect(generate.getAttribute("title")).toBe(why);
+    });
+
+    it("keeps RUN and PREVIEW usable with their normal tips when the engine has no objection", async () => {
+      await renderBar("capture", null);
+      expect(screen.getByRole("button", { name: /PREVIEW/ })).toHaveProperty("disabled", false);
+      expect(screen.getByRole("button", { name: /RUN/ }).getAttribute("title")).toMatch(/full batch run/);
+    });
+  });
+
   it("sends start_run and nothing else when RUN is clicked", async () => {
     const { sent } = await renderBar();
     act(() => screen.getByRole("button", { name: /RUN/ }).click());
