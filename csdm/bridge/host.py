@@ -435,6 +435,30 @@ def _cmd_run_inputs_problem(host, command):
     return {"problem": host.run_inputs_problem(host.build_run_cfg(cfg))}
 
 
+def _cmd_export_preview(host, command):
+    """The last preview's clip list as an HTML / text / JSON file's content.
+
+    The window saves it (the Tkinter "Export ▾" menu wrote the same file).
+    """
+    fmt = command.get("format")
+    if not isinstance(fmt, str):
+        raise ValueError("export_preview needs a `format` string")
+    return {"data": host.preview_export(fmt)}
+
+
+def _cmd_injection_preview(host, command):
+    """What a run with the renderer's settings would inject into CS2.
+
+    Read-only: the same arguments a run builds, read through `build_run_cfg`
+    exactly as `start_run` reads them, returned as [text, kind] lines.
+    """
+    cfg = command.get("cfg")
+    if not isinstance(cfg, dict):
+        raise ValueError("injection_preview needs a `cfg` object")
+    lines = host.injection_preview_lines(host.build_run_cfg(cfg))
+    return {"lines": [[text, kind] for text, kind in lines]}
+
+
 COMMANDS = {
     "ping": _cmd_ping,
     "set_debug": _cmd_set_debug,
@@ -469,6 +493,8 @@ COMMANDS = {
     "tags_export": _cmd_tags_export,
     "tags_import_scan": _cmd_tags_import_scan,
     "tags_import_apply": _cmd_tags_import_apply,
+    "export_preview": _cmd_export_preview,
+    "injection_preview": _cmd_injection_preview,
 }
 
 
@@ -498,6 +524,8 @@ COMMAND_ACTIONS = {
     "tags_export": "exporting tags",
     "tags_import_scan": "reading the tags file",
     "tags_import_apply": "importing tags",
+    "export_preview": "exporting the preview",
+    "injection_preview": "building the injection preview",
 }
 
 

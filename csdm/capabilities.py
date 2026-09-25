@@ -167,6 +167,10 @@ _HAND_WRITTEN: list = [
     # ── I8 Check before running ────────────────────────────────────────────
     _C("preview", "I8", "Preview", (), ("start_preview", "cancel_preview", "run_inputs_problem"),
        level="essential"),
+    _C("preview_export", "I8", "Export the preview clip list", (), ("export_preview",),
+       level="advanced"),
+    _C("injection_preview", "I8", "CS2 injection preview", (), ("injection_preview",),
+       level="expert"),
     # ── I9 Run and control ─────────────────────────────────────────────────
     _C("batch_run", "I9", "Run, stop, kill", (), ("start_run", "request_stop", "request_kill"),
        level="essential"),
