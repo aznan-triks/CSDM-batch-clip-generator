@@ -46,7 +46,7 @@ def test_validation_refuses_a_run_with_no_account():
     host = Host()
     assert host.validate_run_inputs({"steam_ids": [], "events": ["Kills"]}) is False
     assert host.asked[0][0] == "error"
-    assert "account" in host.asked[0][1]
+    assert "player" in host.asked[0][1]
 
 
 def test_validation_refuses_a_run_with_no_perspective():
