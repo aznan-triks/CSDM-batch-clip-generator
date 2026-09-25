@@ -698,17 +698,6 @@ class EngineMixin:
         "kill_mod_assisted_flash",
     )
 
-    def _mods_dp2_global_any_union_enabled(self, cfg):
-        if cfg.get("kill_mod_logic_mods", "any") != "any":
-            return False
-        if cfg.get("kill_mod_logic_dp2", "any") != "any":
-            return False
-        if not any(cfg.get(k) for k in self._SQL_MOD_KEYS):
-            return False
-        if cfg.get("kill_mod_trois_tap"):
-            return False
-        return any(cfg.get(k) for k, *_ in self._DP2_FILTER_DEFS)
-
     @staticmethod
     def _qe_suicide_sql(cfg, weapon_col, alias="k"):
         """Suicide WHERE fragment (params = SUICIDE_WEAPONS appended by caller)."""
@@ -776,14 +765,13 @@ class EngineMixin:
         """SQL-mod filter fragment.
 
         Returns (modsql, active_mods, return_empty) — return_empty is True when
-        every checked modifier is absent from the DB and no dp2 OR-union can
-        rescue the query (caller must return no results rather than all clips).
+        every checked modifier is absent from the DB (caller must return no
+        results rather than all clips).
         """
         _MOD_COLS = KILL_FILTER_SQL_COLS  # derived from KILL_FILTER_REGISTRY
         active_mods   = [k for k in _MOD_COLS if cfg.get(k, False)]
         excluded_mods = [k for k in _MOD_COLS if cfg.get(f"{k}_exclude", False)]
         modsql = ""
-        _mods_dp2_or_any = self._mods_dp2_global_any_union_enabled(cfg)
 
         # Build exclusion SQL first — these are always AND NOT
         excl_clauses = []
@@ -799,7 +787,8 @@ class EngineMixin:
             for mod_key in active_mods:
                 col = self._find_col("kills", _MOD_COLS[mod_key])
                 if col:
-                    mod_clauses.append(self._mod_sql_expr(mod_key, col, positive=True))
+                    mod_clauses.append(
+                        (mod_key, self._mod_sql_expr(mod_key, col, positive=True)))
                 else:
                     missing_mods.append(mod_key)
             if missing_mods:
@@ -816,8 +805,7 @@ class EngineMixin:
                             f"No clips returned — uncheck these modifiers or check the schema.",
                             "err")
                         self._warned_missing_mods = missing_set
-                    if not _mods_dp2_or_any:
-                        return "", active_mods, True
+                    return "", active_mods, True
                 else:
                     # Some columns absent — warn once per unique missing set
                     if missing_set != self._warned_missing_mods:
@@ -829,24 +817,11 @@ class EngineMixin:
                             f"Only the others are applied.",
                             "warn")
                         self._warned_missing_mods = missing_set
-            if mod_clauses:
-                if not _mods_dp2_or_any:
-                    _mods_logic = cfg.get("kill_mod_logic_mods", "any")
-                    if _mods_logic == "all":
-                        modsql = " AND (" + " AND ".join(mod_clauses) + ")"
-                    elif _mods_logic == "mixed":
-                        _key_clause = []
-                        _mi = 0
-                        for mod_key in active_mods:
-                            col = self._find_col("kills", _MOD_COLS[mod_key])
-                            if col:
-                                _key_clause.append((mod_key, mod_clauses[_mi]))
-                                _mi += 1
-                        req_clauses = [c for k, c in _key_clause if cfg.get(f"{k}_req", False)]
-                        if req_clauses:
-                            modsql = " AND (" + " AND ".join(req_clauses) + ")"
-                    else:
-                        modsql = " AND (" + " OR ".join(mod_clauses) + ")"
+            # Fixed filter model: required (★) modifiers are AND-ed in SQL;
+            # optional ones never narrow the query, they only tag kills.
+            req_clauses = [c for k, c in mod_clauses if cfg.get(f"{k}_req", False)]
+            if req_clauses:
+                modsql = " AND (" + " AND ".join(req_clauses) + ")"
 
         modsql += excl_sql   # excluded mods are always AND NOT, appended last
         return modsql, active_mods, False
@@ -1645,9 +1620,8 @@ class EngineMixin:
         Called after the main query and date filter — results is a dict
         {demo_path: [event_dict, ...]}. Returns a filtered copy.
 
-        Logic mode (cfg["kill_mod_logic_db"]):
-          "any" (default) — OR: a kill qualifies if it matches at least one active modifier.
-          "all"           — AND: a kill must match every active modifier simultaneously.
+        Fixed filter model: a kill must match every required (★) active
+        modifier; optional ones only tag the kills they match (`_mf`).
 
         If none of the relevant modifiers are active, returns results unchanged.
         """
@@ -1668,8 +1642,6 @@ class EngineMixin:
         excl_flags   = [excl_entry, excl_ace, excl_multi, excl_bul, excl_eco]
         if not any(active_flags) and not any(excl_flags):
             return results
-
-        logic_and   = cfg.get("kill_mod_logic_db", "any") == "all"
 
         multi_n = max(2, int(cfg.get("kill_mod_multi_kill_n", 3)))
         multi_s = max(1, int(cfg.get("kill_mod_multi_kill_s", 12)))
@@ -1854,26 +1826,13 @@ class EngineMixin:
                 # Exclusion-only: start with all kill sigs, exclusions will strip below
                 keep_sigs = set(_all_kill_sigs)
             else:
-                logic_mode = cfg.get("kill_mod_logic_db", "any")
-                if logic_mode == "mixed":
-                    active_db_keys = [k for k, _ in per_mod_sigs]
-                    req_keys, opt_keys = self._split_required_optional(cfg, active_db_keys)
-                    req_sets = [s for k, s in per_mod_sigs if k in req_keys]
-                    if req_sets:
-                        req_sigs = req_sets[0].intersection(*req_sets[1:]) if len(req_sets) > 1 else set(req_sets[0])
-                    else:
-                        req_sigs = None
-                    if req_sigs is not None:
-                        keep_sigs = req_sigs
-                    else:
-                        keep_sigs = set(_all_kill_sigs)
-                elif logic_and and len(per_mod_sigs) > 1:
-                    sig_sets = [s for _, s in per_mod_sigs]
-                    keep_sigs = sig_sets[0].intersection(*sig_sets[1:])
+                active_db_keys = [k for k, _ in per_mod_sigs]
+                req_keys, _opt_keys = self._split_required_optional(cfg, active_db_keys)
+                req_sets = [s for k, s in per_mod_sigs if k in req_keys]
+                if req_sets:
+                    keep_sigs = set(req_sets[0]).intersection(*req_sets[1:])
                 else:
-                    keep_sigs: set = set()
-                    for _, s in per_mod_sigs:
-                        keep_sigs |= s
+                    keep_sigs = set(_all_kill_sigs)
 
             # ── Build exclusion sigs (reuse builders, always stripped) ──────
             exclude_sigs: set = set()
@@ -3574,11 +3533,8 @@ class EngineMixin:
     def _apply_dp2_modifiers(self, dp, events, cfg):
         """Apply active demoparser2 kill modifiers for one demo (batch worker path).
 
-        Logic mode (cfg["kill_mod_logic_dp2"]):
-          "any"   (OR):    a kill passes if it satisfies at least one active filter.
-          "all"   (AND):   a kill must pass every active filter.
-          "mixed":         required filters must ALL match AND at least one optional matches.
-        TROIS TAP always exclusive. Derived from _DP2_FILTER_DEFS.
+        Fixed filter model: required (★) filters must ALL match; optional
+        ones only tag the kills they match (`_mf`). TROIS TAP always exclusive. Derived from _DP2_FILTER_DEFS.
         Returns filtered events or None if no kills remain.
         """
 
@@ -3620,20 +3576,6 @@ class EngineMixin:
             # when no dp2 modifier is active (the most common case).
             return events
 
-        logic = cfg.get("kill_mod_logic_dp2", "any")
-
-        if logic == "all":
-            for cfg_key, filter_fn, log_label, result_label, skip_label in active:
-                n_before = _count_kills(events)
-                events   = filter_fn(dp, events, cfg)
-                n_after  = _count_kills(events)
-                self.log(f"  {log_label} : {n_before} kills → {n_after} {result_label}", "info")
-                if not events:
-                    self.log(f"  ⏭ SKIP: {skip_label} in this demo", "dim")
-                    return None
-                self._stamp_mf(events, cfg_key)
-            return events
-
         def _run_or(filters):
             """Run filters independently on original events, return sig→keys union."""
             non_kill = [e for e in events if e.get("type") != "kill"]
@@ -3663,95 +3605,57 @@ class EngineMixin:
                 self._stamp_mf(evts, cfg_key)
             return evts
 
-        if logic == "mixed":
-            active_keys = [k for k, *_ in active]
-            req_keys, opt_keys = self._split_required_optional(cfg, active_keys)
-            req_active = [(k, fn, ll, rl, sl) for k, fn, ll, rl, sl in active if k in req_keys]
-            opt_active = [(k, fn, ll, rl, sl) for k, fn, ll, rl, sl in active if k in opt_keys]
+        active_keys = [k for k, *_ in active]
+        req_keys, opt_keys = self._split_required_optional(cfg, active_keys)
+        req_active = [(k, fn, ll, rl, sl) for k, fn, ll, rl, sl in active if k in req_keys]
+        opt_active = [(k, fn, ll, rl, sl) for k, fn, ll, rl, sl in active if k in opt_keys]
 
-            # Required: all must pass → AND chain
-            if req_active:
-                req_events = _run_and(req_active)
-                if req_events is None:
-                    return None
-                req_sigs = frozenset((e["tick"], str(e.get("killer_sid", "")))
-                                     for e in req_events if e.get("type") == "kill")
-            else:
-                req_sigs = None
-
-            # Optional: collect matches for global OR gate; do not narrow here
-            if opt_active:
-                opt_s2k, non_kill = _run_or(opt_active)
-            else:
-                opt_s2k, non_kill = {}, [e for e in events if e.get("type") != "kill"]
-            if req_sigs is not None:
-                keep_sigs = req_sigs
-            else:
-                keep_sigs = frozenset(
-                    (e["tick"], str(e.get("killer_sid", "")))
-                    for e in events if e.get("type") == "kill"
-                )
-
-            # Build merged _mf: stamp req keys + optional matched keys
-            kept_kills = []
-            for e in events:
-                if e.get("type") != "kill":
-                    continue
-                sig = (e["tick"], str(e.get("killer_sid", "")))
-                if sig in keep_sigs:
-                    all_matched = set(req_keys)
-                    all_matched |= opt_s2k.get(sig, set())
-                    mf = e.get("_mf")
-                    e["_mf"] = (mf | all_matched) if mf else set(all_matched)
-                    kept_kills.append(e)
-            result = kept_kills + non_kill
-            if not result:
-                self.log("  ⏭ SKIP: 0 kills after dp2 required filters in this demo", "dim")
+        # Required: all must pass → AND chain
+        if req_active:
+            req_events = _run_and(req_active)
+            if req_events is None:
                 return None
-            return result
+            req_sigs = frozenset((e["tick"], str(e.get("killer_sid", "")))
+                                 for e in req_events if e.get("type") == "kill")
+        else:
+            req_sigs = None
 
-        else:  # "any" — OR
-            s2k, non_kill = _run_or(active)
-            include_mod_or = self._mods_dp2_global_any_union_enabled(cfg)
-            mod_sig_to_keys = {}
-            if include_mod_or:
-                mod_keys = set(self._SQL_MOD_KEYS)
-                for e in events:
-                    if e.get("type") != "kill":
-                        continue
-                    matched_mods = (e.get("_mf") or set()) & mod_keys
-                    if not matched_mods:
-                        continue
-                    sig = (e["tick"], str(e.get("killer_sid", "")))
-                    ex = mod_sig_to_keys.get(sig)
-                    mod_sig_to_keys[sig] = (ex | matched_mods) if ex else set(matched_mods)
-            kill_sigs_union = set(s2k.keys())
-            if mod_sig_to_keys:
-                kill_sigs_union |= set(mod_sig_to_keys.keys())
-            kept_kills = []
-            for e in events:
-                if e.get("type") != "kill":
-                    continue
-                sig = (e["tick"], str(e.get("killer_sid", "")))
-                if sig in kill_sigs_union:
-                    matched = set(s2k.get(sig, set()))
-                    if mod_sig_to_keys:
-                        matched |= mod_sig_to_keys.get(sig, set())
-                    if matched:
-                        mf = e.get("_mf")
-                        e["_mf"] = (mf | matched) if mf else set(matched)
-                    kept_kills.append(e)
-            result = kept_kills + non_kill
-            if not result:
-                self.log("  ⏭ SKIP: 0 kills after dp2 OR filters in this demo", "dim")
-                return None
-            return result
+        # Optional: collect matches for global OR gate; do not narrow here
+        if opt_active:
+            opt_s2k, non_kill = _run_or(opt_active)
+        else:
+            opt_s2k, non_kill = {}, [e for e in events if e.get("type") != "kill"]
+        if req_sigs is not None:
+            keep_sigs = req_sigs
+        else:
+            keep_sigs = frozenset(
+                (e["tick"], str(e.get("killer_sid", "")))
+                for e in events if e.get("type") == "kill"
+            )
+
+        # Build merged _mf: stamp req keys + optional matched keys
+        kept_kills = []
+        for e in events:
+            if e.get("type") != "kill":
+                continue
+            sig = (e["tick"], str(e.get("killer_sid", "")))
+            if sig in keep_sigs:
+                all_matched = set(req_keys)
+                all_matched |= opt_s2k.get(sig, set())
+                mf = e.get("_mf")
+                e["_mf"] = (mf | all_matched) if mf else set(all_matched)
+                kept_kills.append(e)
+        result = kept_kills + non_kill
+        if not result:
+            self.log("  ⏭ SKIP: 0 kills after dp2 required filters in this demo", "dim")
+            return None
+        return result
 
     def _apply_dp2_filters_to_events(self, evts, cfg):
         """Apply active dp2 modifiers to a full {demo_path: events} dict (preview/redo path).
 
-        Logic mode (cfg["kill_mod_logic_dp2"]): "any" | "all" | "mixed".
-        TROIS TAP always exclusive. Derived from _DP2_FILTER_DEFS.
+        Fixed filter model: required (★) filters AND-chained, optional ones
+        only tag (`_mf`). TROIS TAP always exclusive. Derived from _DP2_FILTER_DEFS.
         _mf stamped on all surviving kill events via _apply_filter_to_events.
         Returns a new dict with empty-demo entries removed.
         """
@@ -3790,9 +3694,6 @@ class EngineMixin:
         if not active:
             return evts
 
-        logic = cfg.get("kill_mod_logic_dp2", "any")
-        include_mod_or = self._mods_dp2_global_any_union_enabled(cfg)
-
         def _chain(filters, src):
             """AND-chain: each apply_fn narrows the dict further."""
             result = src
@@ -3811,23 +3712,10 @@ class EngineMixin:
             all_demos: set = set()
             for _, r in per:
                 all_demos |= set(r.keys())
-            if include_mod_or:
-                all_demos |= set(src.keys())
 
             merged = {}
             for dp in all_demos:
                 sig_to_mf: dict = {}
-                if include_mod_or:
-                    mod_keys = set(self._SQL_MOD_KEYS)
-                    for e in src.get(dp, []):
-                        if e.get("type") != "kill":
-                            continue
-                        matched_mods = (e.get("_mf") or set()) & mod_keys
-                        if not matched_mods:
-                            continue
-                        sig = (e["tick"], str(e.get("killer_sid", "")))
-                        ex = sig_to_mf.get(sig)
-                        sig_to_mf[sig] = (ex | matched_mods) if ex else set(matched_mods)
                 for _, r in per:
                     for e in r.get(dp, []):
                         if e.get("type") == "kill":
@@ -3851,46 +3739,39 @@ class EngineMixin:
                     merged[dp] = kept + non_kill
             return merged
 
-        if logic == "all":
-            return _chain(active, evts)
+        active_keys = [k for k, *_ in active]
+        req_keys, opt_keys = self._split_required_optional(cfg, active_keys)
+        req_active = [(k, fn, ll) for k, fn, ll in active if k in req_keys]
+        opt_active = [(k, fn, ll) for k, fn, ll in active if k in opt_keys]
 
-        if logic == "mixed":
-            active_keys = [k for k, *_ in active]
-            req_keys, opt_keys = self._split_required_optional(cfg, active_keys)
-            req_active = [(k, fn, ll) for k, fn, ll in active if k in req_keys]
-            opt_active = [(k, fn, ll) for k, fn, ll in active if k in opt_keys]
+        req_result = _chain(req_active, evts) if req_active else None
+        opt_result = _union(opt_active, evts) if opt_active else None
 
-            req_result = _chain(req_active, evts) if req_active else None
-            opt_result = _union(opt_active, evts) if opt_active else None
-
-            if req_result is None and opt_result is None:
-                return evts
-            base = req_result if req_result is not None else evts
-            if opt_result is None:
-                return base
-            merged = {}
-            for dp, original in base.items():
-                non_kill = [e for e in original if e.get("type") != "kill"]
-                kept = []
-                opt_sig_mf = {
-                    (e["tick"], str(e.get("killer_sid", ""))): e.get("_mf") or set()
-                    for e in opt_result.get(dp, []) if e.get("type") == "kill"
-                }
-                for e in original:
-                    if e.get("type") != "kill":
-                        continue
-                    sig = (e["tick"], str(e.get("killer_sid", "")))
-                    combined_mf = set(req_keys)
-                    combined_mf |= opt_sig_mf.get(sig, set())
-                    if combined_mf:
-                        e["_mf"] = (e["_mf"] | combined_mf) if e.get("_mf") else combined_mf
-                    kept.append(e)
-                if kept or non_kill:
-                    merged[dp] = kept + non_kill
-            return merged
-
-        # "any" — OR
-        return _union(active, evts)
+        if req_result is None and opt_result is None:
+            return evts
+        base = req_result if req_result is not None else evts
+        if opt_result is None:
+            return base
+        merged = {}
+        for dp, original in base.items():
+            non_kill = [e for e in original if e.get("type") != "kill"]
+            kept = []
+            opt_sig_mf = {
+                (e["tick"], str(e.get("killer_sid", ""))): e.get("_mf") or set()
+                for e in opt_result.get(dp, []) if e.get("type") == "kill"
+            }
+            for e in original:
+                if e.get("type") != "kill":
+                    continue
+                sig = (e["tick"], str(e.get("killer_sid", "")))
+                combined_mf = set(req_keys)
+                combined_mf |= opt_sig_mf.get(sig, set())
+                if combined_mf:
+                    e["_mf"] = (e["_mf"] | combined_mf) if e.get("_mf") else combined_mf
+                kept.append(e)
+            if kept or non_kill:
+                merged[dp] = kept + non_kill
+        return merged
 
     # ── Why a query came back empty ──────────────────────────────────────
     # The database query's own stages, in the order `_query_events` applies

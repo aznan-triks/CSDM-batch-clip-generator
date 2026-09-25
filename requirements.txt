@@ -7,8 +7,9 @@
 # Database connectivity
 psycopg2-binary>=2.9.11
 
-# CS2 demo parsing (weapon-fire detail)
-demoparser2>=0.41.1
+# CS2 demo parsing (weapon-fire detail). 0.41.4 is the oldest release verified to
+# read demos recorded after the May 2026 CS2 update (build 10772+).
+demoparser2>=0.41.4
 
 # Direct import in csdm/engine/core.py (weapon-fire fallback). demoparser2
 # pulls it in transitively; declared here because the code imports it.

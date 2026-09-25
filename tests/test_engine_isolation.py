@@ -30,7 +30,6 @@ ENGINE_METHODS = [
     "_worker",
     "_find_col", "_pg", "_pg_fresh", "_resolve_cli", "_qe_epoch_bounds",
     "_qe_match_type_sql", "_qe_headshot_sql",
-    "_mods_dp2_global_any_union_enabled",
     # chantier 1.5, task 4 — kill filters and their dp2 cascade
     "_non_kill_only", "_stamp_mf", "_split_required_optional",
     "_get_filter_badge_defs", "_FILTER_BADGE_DEFS", "_dp2_parse_demo",
