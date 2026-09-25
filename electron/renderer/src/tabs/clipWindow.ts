@@ -80,7 +80,9 @@ export function clipWindowSummary(input: ClipWindowInput): string {
     w.victimView > 0
       ? `${w.lead}s on the killer, ${w.victimView}s on ${input.matePov ? "the best-placed teammate" : "the victim"}, ${w.after}s after`
       : `${w.before}s on ${leadCamera(input)} before, ${w.after}s after`;
-  return `Each moment becomes a ${w.total}s clip (${parts}). A second moment within ${w.mergeWithin}s joins the same clip.`;
+  // "an 8s", "an 11s", "an 18s": the article follows how the number is said.
+  const article = /^(8|11$|18$)/.test(String(w.total)) ? "an" : "a";
+  return `Each moment becomes ${article} ${w.total}s clip (${parts}). A second moment within ${w.mergeWithin}s joins the same clip.`;
 }
 
 /** The three handles of a drawn clip: its start, the camera switch, its end. */

@@ -200,33 +200,13 @@ describe("CaptureTab conditional rows", () => {
     expect(nonLethal.getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("draws the victim view inside the seconds before, added, not maxed", async () => {
-    // before 3 + victim view 2: the bar shows both parts of the lead-in, and
-    // only `both` has a victim part at all.
-    await renderTab();
-    const segments = () =>
-      [...screen.getByTestId("clip-timeline").children].map((seg) => seg.textContent);
-    expect(segments()).toEqual(["3s before", "5s after"]);
+  // The Capture & Timing card's own drawing (bar, handles, groups) is tested
+  // per card style in captureTiming/__tests__/CaptureTimingCard.test.tsx.
 
-    choosePerspective("both");
-    expect(segments()).toEqual(["3s killer", "2s victim", "5s after"]);
-  });
-
-  it("groups the card's rows under What to capture / Camera / Clip length", async () => {
-    // One flat list of eleven unrelated rows was the complaint; each group's
-    // settings must sit under its own caption.
+  it("groups Timing & Retries under If a recording fails / Between demos", async () => {
     const { container } = await renderTab();
-    choosePerspective("both");
     const groupOf = (key: string) =>
       container.querySelector(`[data-config-key="${key}"]`)?.closest(".fgroup")?.getAttribute("aria-label");
-    expect(groupOf("event_actor")).toBe("What to capture");
-    expect(groupOf("events")).toBe("What to capture");
-    expect(groupOf("perspective")).toBe("Camera");
-    expect(groupOf("victim_pre_s")).toBe("Camera");
-    expect(groupOf("kill_mod_mate_pov")).toBe("Camera");
-    expect(groupOf("player_name_override")).toBe("Camera");
-    expect(groupOf("before")).toBe("Clip length");
-    expect(groupOf("after")).toBe("Clip length");
     expect(groupOf("retry_count")).toBe("If a recording fails");
     expect(groupOf("retry_delay")).toBe("If a recording fails");
     expect(groupOf("recording_timeout")).toBe("If a recording fails");
@@ -263,14 +243,14 @@ describe("CaptureTab timing, in words and in numbers", () => {
     await renderTab();
     const summary = () => screen.getByTestId("clip-window-summary").textContent;
     expect(summary()).toBe(
-      "Each moment becomes a clip of 8s (3s before, 5s after), and moments up to 11s apart are joined into one clip.",
+      "Each moment becomes an 8s clip (3s on the killer before, 5s after). A second moment within 11s joins the same clip.",
     );
 
     // `both` adds the victim view to the seconds before (`_effective_before`).
     choosePerspective("both");
     expect(summary()).toBe(
-      "Each moment becomes a clip of 10s (3s on the killer, 2s on the victim, 5s after), " +
-        "and moments up to 15s apart are joined into one clip.",
+      "Each moment becomes a 10s clip (3s on the killer, 2s on the victim, 5s after). " +
+        "A second moment within 15s joins the same clip.",
     );
   });
 
