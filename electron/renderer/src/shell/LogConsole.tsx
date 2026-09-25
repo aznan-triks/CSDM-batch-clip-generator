@@ -459,45 +459,6 @@ export default function LogConsole() {
             />
           </label>
 
-          {searching && (
-            <span className="log-search-nav">
-              <span className="log-search-count" aria-live="polite">
-                {matchCount ? `${current + 1}/${matchCount}` : "0 results"}
-              </span>
-              <button
-                type="button"
-                className="chip"
-                aria-label="Previous match"
-                title="Previous match (Shift+Enter)"
-                data-action="J6"
-                disabled={!matchCount}
-                onClick={() => stepSearch(-1)}
-              >
-                ▲
-              </button>
-              <button
-                type="button"
-                className="chip"
-                aria-label="Next match"
-                title="Next match (Enter)"
-                data-action="J5"
-                disabled={!matchCount}
-                onClick={() => stepSearch(1)}
-              >
-                ▼
-              </button>
-              <button
-                type="button"
-                className="chip"
-                aria-label="Close search"
-                title="Close the search (Esc)"
-                data-action="J7"
-                onClick={closeSearch}
-              >
-                Esc
-              </button>
-            </span>
-          )}
 
           <button
             type="button"
@@ -650,6 +611,50 @@ export default function LogConsole() {
           </div>
         </div>
       </div>
+
+      {/* The Tkinter search bar was its own row under the toolbar, and so is
+          this: the walk's count and arrows do not fit beside six chips in
+          the console header, where they squeezed the search box to nothing
+          and pushed Export off the column (hidden-window proof). */}
+      {searching && (
+        <div className="log-search-bar" role="search" aria-label="Search results">
+          <span className="log-search-count" aria-live="polite">
+            {matchCount ? `${current + 1}/${matchCount}` : "0 results"}
+          </span>
+          <button
+            type="button"
+            className="chip"
+            aria-label="Previous match"
+            title="Previous match (Shift+Enter)"
+            data-action="J6"
+            disabled={!matchCount}
+            onClick={() => stepSearch(-1)}
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            className="chip"
+            aria-label="Next match"
+            title="Next match (Enter)"
+            data-action="J5"
+            disabled={!matchCount}
+            onClick={() => stepSearch(1)}
+          >
+            ▼
+          </button>
+          <button
+            type="button"
+            className="chip"
+            aria-label="Close search"
+            title="Close the search (Esc)"
+            data-action="J7"
+            onClick={closeSearch}
+          >
+            Esc
+          </button>
+        </div>
+      )}
 
       {ask && (
         <div id="ask-panel" role="alertdialog" aria-label={ask.title}>

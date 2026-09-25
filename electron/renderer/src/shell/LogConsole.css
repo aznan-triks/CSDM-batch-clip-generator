@@ -233,13 +233,21 @@
 }
 
 /* ── Search walk (J4–J7) ──
-   The counter and ▲ ▼ × only exist while a search is open, so the idle
-   toolbar keeps its measured width. */
-.log-search-nav {
+   Its own strip under the header, only while a search is open (the Tkinter
+   search bar row): the header keeps its measured width. */
+.log-search-bar {
   display: flex;
   align-items: center;
-  gap: var(--sp-1);
-  flex: none;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-4);
+  border-bottom: var(--bw) solid var(--line);
+}
+
+.log-search-bar .chip {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-snug);
+  padding: var(--sp-1) var(--sp-3);
 }
 
 .log-search-count {

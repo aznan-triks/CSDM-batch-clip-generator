@@ -85,6 +85,8 @@ class InjectionPreviewTests(unittest.TestCase):
         lines = COMMANDS["injection_preview"](_host(), {"cfg": cfg})["lines"]
         self.assertEqual(lines[0], ["HLAE extraArgs:", "key"])
         self.assertIn(["  -novid", "val"], lines)
+        # A console command keeps its argument on its own line.
+        self.assertIn(["  +sv_gravity 800", "val"], lines)
 
     def test_native_lists_launch_args_and_console_commands(self):
         cfg = dict(DEFAULT_CONFIG, recsys="CS")

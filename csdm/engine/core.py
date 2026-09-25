@@ -2782,7 +2782,15 @@ class EngineMixin:
             extra = self._inject_hlae_extra_args(cfg, shared).get("extraArgs", "")
             lines.append(("HLAE extraArgs:", "key"))
             if extra:
-                lines.extend(("  " + tok, "val") for tok in extra.split())
+                # One line per switch or console command, with its arguments:
+                # "+sv_gravity 800", not "+sv_gravity" then "800".
+                groups = []
+                for tok in extra.split():
+                    if not groups or tok[:1] in "+-":
+                        groups.append(tok)
+                    else:
+                        groups[-1] += " " + tok
+                lines.extend(("  " + group, "val") for group in groups)
             else:
                 lines.append(("  (none)", "dim"))
         else:
