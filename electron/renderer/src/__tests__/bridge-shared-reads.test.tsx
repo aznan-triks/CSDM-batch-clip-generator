@@ -83,6 +83,15 @@ describe("mount-time reads under StrictMode", () => {
     expect(fake.names()).toEqual(["start_run", "start_run"]);
   });
 
+  it("asks a newly installed bridge even while the old one never answered", async () => {
+    installFakeBridge();
+    const { runCommand } = await freshBridge();
+    void runCommand("hello").catch(() => {});
+    const next = installFakeBridge();
+    void runCommand("hello").catch(() => {});
+    expect(next.names()).toEqual(["hello"]);
+  });
+
   it("keeps reads with different arguments apart", async () => {
     const fake = installFakeBridge();
     const { runCommand } = await freshBridge();
