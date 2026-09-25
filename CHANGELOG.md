@@ -24,6 +24,41 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- A preview never ends on an empty list without a reason any more. Settings that can only ever
+  give nothing (no event type, Ally and Enemy both off, Actor and Target both off, From date after
+  To date, an enabled Match Types or Map filter with nothing selected…) are refused before running,
+  with a sentence naming the card to fix. When a preview legitimately finds nothing, EDITING and
+  the console show how many events were left after each step and which setting removed the last
+  ones.
+- PREVIEW, RUN and GENERATE are greyed out before you click when they cannot work, and their
+  tooltip says why.
+- Changing Retries, Retry delay, Demo pause or Timeout no longer crashes the next run.
+- Errors are one clear sentence saying what to do (database fields, paths, CS Demo Manager's own
+  messages such as HLAE or FFmpeg missing); the technical detail goes to `csdm_errors.log` in the
+  settings folder instead of a Python trace on screen.
+- A failed or cancelled preview no longer leaves "Computing…" on screen; an error during a run is
+  reported and the app is ready to run again without a restart.
+- The database password is no longer sent to the window with each preview.
+- A damaged settings file is kept as `csdm_config.broken-<date>.json` and you are told your
+  settings were reset, instead of losing them silently.
+- On a new PC: CS Demo Manager is found at its standard install location and clips go to
+  `Videos\CSDM Batch Clips` by default (the defaults pointed to the author's own folders). Cards
+  that need the database say where to connect it instead of "Waiting for DB…" forever.
+- Console lines no longer appear twice.
+- The date fields show the full year, and the date shortcut matching the current range is lit.
+
+### Changed
+
+- Capture & Timing and Timing & Retries say what they do: a live line sums up what one clip
+  holds and which events share a clip, clearer labels (Camera, Victim view, Kill-feed name, Retry
+  delay, Demo order) and three tooltips that described the wrong behaviour are corrected.
+- AIRBORNE (shots) and RUN & GUN are marked UNTESTED: their thresholds are not yet validated in
+  game.
+- Help added where a new user gets stuck: finding your Steam ID, where CS Demo Manager shows the
+  database credentials, the path an empty path setting will use.
+
+### Fixed
+
 - demoparser2-based kill filters (spray transfer, one-tap, no-scope…) now work in the app: the
   bridge used by Electron was missing the method that writes to the parser cache, so every such
   filter silently failed to finish.
