@@ -284,6 +284,11 @@
   --emerald: var(--ok);
   --amber: var(--fire);
   --rose: var(--blood);
+  /* Camera colours of a drawn clip (card styles): the killer's seconds wear
+     the accent, the victim's the success green. Aliases, so every ground
+     and every accent the user picks carries them. */
+  --cam-k: var(--accent);
+  --cam-v: var(--emerald);
 }
 
 /* ==================== DARK MODE (night) ====================

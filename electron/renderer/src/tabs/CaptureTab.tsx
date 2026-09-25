@@ -6,22 +6,16 @@
  * the coverage guard can see it; a control rendered without one counts as
  * missing, which is the point.
  *
- * Capture & Timing is split into three titled groups (What to capture /
- * Camera / Clip length) and Timing & Retries into two (If a recording fails /
- * Between demos), each ending in plain words drawn from the values.
- *
- * The three conditional rows are the window's own rules, not new behaviour:
- *   - the switch delay exists only in `both` perspective;
- *   - Mate POV exists in `victim` and `both`;
- *   - Mate POV's "Must" box follows its Enable box (`_wire_enable_must`).
+ * Capture & Timing is its own component (captureTiming/CaptureTimingCard):
+ * one data model drawn in three card styles. Timing & Retries is split into
+ * two titled groups (If a recording fails / Between demos), ending in plain
+ * words drawn from the values.
  */
 import Card from "../components/Card";
-import Chip from "../components/Chip";
 import Field from "../components/Field";
 import FormGroup from "../components/FormGroup";
 import { ICONS } from "../icons";
 import Segmented from "../components/Segmented";
-import Slider from "../components/Slider";
 import SectionList, { type SectionSpec } from "../shell/SectionList";
 import SettingControl from "../settings/SettingControl";
 import { asNumber } from "../settings/asNumber";
@@ -29,33 +23,17 @@ import { useSetting } from "../settings/store";
 import { TablesProvider } from "../settings/useTables";
 import DemoSelectionSection from "./DemoSelectionSection";
 import EventFiltersSection from "./EventFiltersSection";
-import EventTypeSection from "./EventTypeSection";
 import KillFiltersSection from "./KillFiltersSection";
 import MapFilterSection from "./MapFilterSection";
 import MatchTypesSection from "./MatchTypesSection";
 import PlayerSection from "./PlayerSection";
 import WeaponFilterSection from "./WeaponFilterSection";
-import ClipTimeline from "./ClipTimeline";
-import { clipWindow, clipWindowSummary, pacingSummary } from "./clipWindow";
+import CaptureTimingCard from "./captureTiming/CaptureTimingCard";
+import { pacingSummary } from "./clipWindow";
 import "./CaptureTab.css";
-
-/**
- * Perspective values, exactly as the engine reads them.
- */
-const PERSPECTIVES = ["killer", "victim", "both"] as const;
 
 /** Demo processing order, exactly as the engine reads them. */
 const CLIP_ORDERS = ["chrono", "random"] as const;
-
-/**
- * Slider bounds, copied from the window's own `tk.Scale` calls.
- *
- * Not configuration: they are the widget's range, the same category as a
- * field's width, and the engine clamps nothing on its own.
- */
-const BEFORE_RANGE = { min: 1, max: 15 };
-const AFTER_RANGE = { min: 1, max: 15 };
-const SWITCH_DELAY_RANGE = { min: 0, max: 10 };
 
 /**
  * A whole, non-negative number: a count of retries, seconds or minutes.
@@ -67,14 +45,6 @@ function asCount(value: unknown, fallback: number): number {
 }
 
 export default function CaptureTab() {
-  const [events, setEvents] = useSetting<string[]>("events");
-  const [perspective, setPerspective] = useSetting<string>("perspective");
-  const [victimPre, setVictimPre] = useSetting<number>("victim_pre_s");
-  const [matePov, setMatePov] = useSetting<boolean>("kill_mod_mate_pov");
-  const [matePovReq, setMatePovReq] = useSetting<boolean>("kill_mod_mate_pov_req");
-  const [nameOverride, setNameOverride] = useSetting<string>("player_name_override");
-  const [before, setBefore] = useSetting<number>("before");
-  const [after, setAfter] = useSetting<number>("after");
   // Numbers, not the typed text: the batch loop counts and sleeps with them.
   const [retryCount, setRetryCount] = useSetting<number>("retry_count");
   const [retryDelay, setRetryDelay] = useSetting<number>("retry_delay");
@@ -88,21 +58,10 @@ export default function CaptureTab() {
   const steamIds = Array.isArray(steamIdsRaw) ? steamIdsRaw : [];
   const weapons = Array.isArray(weaponsRaw) ? weaponsRaw : [];
 
-  const selectedEvents = Array.isArray(events) ? events : [];
-  const beforeSeconds = asNumber(before, BEFORE_RANGE.min);
-  const afterSeconds = asNumber(after, AFTER_RANGE.min);
-  const switchDelay = asNumber(victimPre, SWITCH_DELAY_RANGE.min);
   const retries = asCount(retryCount, 0);
   const retrySeconds = asCount(retryDelay, 0);
   const demoPauseSeconds = asCount(demoPause, 0);
   const timeoutMinutes = asCount(recordingTimeout, 0);
-  const clipInput = {
-    before: beforeSeconds,
-    after: afterSeconds,
-    perspective: perspective ?? PERSPECTIVES[0],
-    switchDelay,
-  };
-  const clip = clipWindow(clipInput);
   const pacing = {
     retries,
     retryDelay: retrySeconds,
@@ -110,29 +69,6 @@ export default function CaptureTab() {
     timeoutMin: timeoutMinutes,
     order: clipOrder ?? CLIP_ORDERS[0],
   };
-
-  function toggleEvent(kind: string) {
-    setEvents(
-      selectedEvents.includes(kind)
-        ? selectedEvents.filter((e) => e !== kind)
-        : [...selectedEvents, kind],
-    );
-  }
-
-  // The window switches the Must box off with its Enable box, never the other
-  // way round: a Must left armed under a disabled filter silently drops clips.
-  // Arming ★ Must auto-enables Enable (`_wire_enable_must` mirror).
-  function toggleMatePov() {
-    const next = !matePov;
-    setMatePov(next);
-    if (!next) setMatePovReq(false);
-  }
-
-  function toggleMatePovReq() {
-    const next = !matePovReq;
-    setMatePovReq(next);
-    if (next && !matePov) setMatePov(true);
-  }
 
   const SECTIONS: SectionSpec[] = [
     {
@@ -164,146 +100,8 @@ export default function CaptureTab() {
         </Card>
       ),
     },
-    {
-      id: "capture-timing",
-      element: (
-        <Card title="Capture &amp; Timing" icon={<ICONS.captureTiming />} count={perspective ?? PERSPECTIVES[0]}>
-          {/* Three groups in reading order: WHAT ends up in a clip, whose
-              eyes film it, how long it lasts. They used to be one flat list
-              of eleven rows mixing the three. */}
-          <FormGroup title="What to capture">
-            <EventTypeSection />
-
-            {/* Rounds is independent of the perspective/action-type axes; the
-                engine still reads it from the legacy `events` list. */}
-            <SettingControl settingKey="events">
-              <div className="row">
-                <span className="lab">Also</span>
-                <div className="chips">
-                  <Chip
-                    label="Full rounds"
-                    tip="Also capture full-round clips, separate from the kill/death event filters above"
-                    selected={selectedEvents.includes("Rounds")}
-                    onToggle={() => toggleEvent("Rounds")}
-                  />
-                </div>
-              </div>
-            </SettingControl>
-          </FormGroup>
-
-          <FormGroup title="Camera">
-            {/* "Film from", under "Camera": the setting picks whose eyes the
-                clip is filmed through, and Event role above already answers
-                "who acts". */}
-            <SettingControl settingKey="perspective">
-              <div className="row">
-                <span className="lab">Film from</span>
-                <Segmented
-                  options={PERSPECTIVES}
-                  value={perspective ?? PERSPECTIVES[0]}
-                  onChange={setPerspective}
-                  label="Camera"
-                  tip="Whose eyes the clip is filmed through: the killer, the victim, or the killer then the victim (both)"
-                  optionActions={Object.fromEntries(PERSPECTIVES.map((p) => [p, "L5"]))}
-                />
-              </div>
-            </SettingControl>
-
-            {/* Mate POV replaces the victim camera, so it is meaningless on the killer. */}
-            {(perspective === "victim" || perspective === "both") && (
-              <div className="row">
-                <span className="lab">Mate POV</span>
-                <div className="chips">
-                  <SettingControl settingKey="kill_mod_mate_pov">
-                    <Chip
-                      label="Enable"
-                      tip="Film the victim's side from the teammate with the best view of the kill, instead of the victim"
-                      selected={!!matePov}
-                      onToggle={toggleMatePov}
-                    />
-                  </SettingControl>
-                  <SettingControl settingKey="kill_mod_mate_pov_req">
-                    <Chip
-                      label="★ Must"
-                      tip="Skip the clip when no teammate has a clear view of the kill"
-                      selected={!!matePovReq}
-                      onToggle={toggleMatePovReq}
-                    />
-                  </SettingControl>
-                </div>
-              </div>
-            )}
-
-            <div className="row">
-              <SettingControl settingKey="player_name_override">
-                <Field
-                  id="player-name-override"
-                  label="Feed name"
-                  value={nameOverride ?? ""}
-                  onChange={setNameOverride}
-                  placeholder="name from the demo"
-                  tip="Name shown for your player in the clips' kill feed. Empty = the name stored in the demo"
-                />
-              </SettingControl>
-            </div>
-
-            {/* Only `both` switches camera, so only `both` has a delay to set.
-                Last in its group on purpose: it sits right above "Before",
-                the seconds it is added to (the bar below shows the sum). */}
-            {perspective === "both" && (
-              <SettingControl settingKey="victim_pre_s">
-                <Slider
-                  id="victim-pre-s"
-                  label="Victim view"
-                  unit="s"
-                  min={SWITCH_DELAY_RANGE.min}
-                  max={SWITCH_DELAY_RANGE.max}
-                  value={switchDelay}
-                  onChange={setVictimPre}
-                  tip="Both: the camera follows the killer, then switches to the victim this many seconds before the kill. These seconds are added to the seconds before"
-                />
-              </SettingControl>
-            )}
-          </FormGroup>
-
-          <FormGroup title="Clip length">
-            {/* Each slider is a row of its own (mock `.row`: label, rail,
-                box). They are not columns in a grid: in a half-width card
-                that left each rail 92px long against the mock's 202px, and a
-                rail that short cannot be aimed. */}
-            <SettingControl settingKey="before">
-              <Slider
-                id="seconds-before"
-                label="Before"
-                unit="s"
-                min={BEFORE_RANGE.min}
-                max={BEFORE_RANGE.max}
-                value={beforeSeconds}
-                onChange={setBefore}
-                tip="Seconds of footage recorded before each event. Also sets how close two events must be to share one clip"
-              />
-            </SettingControl>
-            <SettingControl settingKey="after">
-              <Slider
-                id="seconds-after"
-                label="After"
-                unit="s"
-                min={AFTER_RANGE.min}
-                max={AFTER_RANGE.max}
-                value={afterSeconds}
-                onChange={setAfter}
-                tip="Seconds of footage recorded after each event"
-              />
-            </SettingControl>
-            {/* What one clip will hold, drawn then said, from the values above. */}
-            <ClipTimeline window={clip} />
-            <p className="capture-hint" data-testid="clip-window-summary">
-              {clipWindowSummary(clipInput)}
-            </p>
-          </FormGroup>
-        </Card>
-      ),
-    },
+    // One data model drawn in the user's card style (Settings > UI Theme).
+    { id: "capture-timing", element: <CaptureTimingCard /> },
     {
       id: "timing-retries",
       element: (

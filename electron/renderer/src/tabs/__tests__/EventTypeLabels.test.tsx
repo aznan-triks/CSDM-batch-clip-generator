@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { SettingsProvider } from "../../settings/store";
 import { eventTypeMeta } from "../EditingTab";
-import EventTypeSection from "../EventTypeSection";
+import CaptureTimingCard from "../captureTiming/CaptureTimingCard";
 
 vi.mock("../../bridge", () => ({
   runCommand: () => Promise.resolve({ type: "result", id: "1", ok: true, data: {} }),
@@ -32,9 +32,11 @@ describe("Editing badges", () => {
 
 describe("Event Type Other tooltip", () => {
   it("names shots and knife swings, never jumps", async () => {
+    // Every card style reads its tooltips from the one model; the timeline
+    // style (the default) is enough to see the one the user hovers.
     render(
       <SettingsProvider>
-        <EventTypeSection />
+        <CaptureTimingCard />
       </SettingsProvider>,
     );
     await act(async () => {});

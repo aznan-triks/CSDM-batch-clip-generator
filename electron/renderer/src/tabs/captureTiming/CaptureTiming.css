@@ -1,0 +1,489 @@
+/*
+ * Capture & Timing's three styles (concepts A, B, C in
+ * docs/ui-restyle-mockups/capture-remake/). The shared pieces -- the timeline,
+ * the tokens, the tiles -- are in components/cardstyle/cardstyle.css; this
+ * file only places them. `ct-` prefixed for the same reason as `cs-`: the V12
+ * mock owns the plain names.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+/* Camera dots, inside the camera segments and the sentence's camera word. */
+.ct-dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.ct-dot.k {
+  background: var(--cam-k);
+}
+
+.ct-dot.v {
+  background: var(--cam-v);
+}
+
+.ct-dot.b {
+  background: linear-gradient(90deg, var(--cam-k) 50%, var(--cam-v) 50%);
+}
+
+/* ================= A: timeline ================= */
+.ct-what {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 8px;
+}
+
+.ct-what .cs-mseg {
+  justify-self: start;
+}
+
+.ct-k {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.ct-k.r {
+  justify-self: end;
+  margin-left: 6px;
+}
+
+.ct-tlhead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0 4px;
+}
+
+.ct-tlhead .kick {
+  flex: 1;
+}
+
+.ct-cam .seg span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: capitalize;
+}
+
+.ct-hint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 5px 0 0;
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.ct-hint kbd {
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted);
+}
+
+.ct-foot {
+  margin-top: 12px;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+.ct-mate {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-right: auto;
+}
+
+.ct-foot .lab,
+.ct-mate .lab {
+  min-width: 0;
+}
+
+.ct-foot > .setting:last-child .lab {
+  margin-left: auto;
+}
+
+.ct-foot .fld {
+  max-width: 170px;
+}
+
+.ct-sum {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 11px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.ct-tot {
+  flex: none;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: var(--accent-soft);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ================= B: sentence ================= */
+.cb-sent {
+  padding: 2px 2px 4px;
+  font-size: 16.5px;
+  font-weight: 500;
+  line-height: 2.15;
+  letter-spacing: -0.005em;
+  color: var(--txt);
+}
+
+.cb-sent p {
+  margin: 0 0 6px;
+}
+
+.cb-sent .w {
+  color: var(--muted);
+}
+
+.cb-sent .nw {
+  white-space: nowrap;
+}
+
+.cb-sent .cs-tok .ct-dot {
+  margin-right: 2px;
+}
+
+.cb-pv {
+  padding: 7px 9px;
+  border-radius: 9px;
+  border: 1px dashed var(--hair);
+  background: var(--surface-2);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.cb-pv b {
+  color: var(--accent);
+}
+
+.cb-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cb-opt {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  color: var(--txt);
+  cursor: pointer;
+}
+
+.cb-opt .ct-dot {
+  width: 10px;
+  height: 10px;
+}
+
+.cb-opt small {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--faint);
+}
+
+.cb-opt:hover,
+.cb-opt.on {
+  background: var(--accent-soft);
+}
+
+.cb-opt.on {
+  color: var(--accent);
+}
+
+.cb-merge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 9px 11px;
+  border-radius: 11px;
+  border: 1px solid var(--hair-2);
+  background: var(--surface-2);
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.cb-merge svg {
+  flex: none;
+  width: 26px;
+  height: 14px;
+  color: var(--accent);
+}
+
+.cb-merge b {
+  color: var(--txt);
+}
+
+.cb-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px -15px -14px;
+  padding: 10px 15px 12px;
+  border-top: 1px solid var(--hair);
+  background: color-mix(in srgb, var(--solid) 45%, transparent);
+}
+
+.cb-foot .row {
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.cb-foot .lab {
+  min-width: 66px;
+  font-size: 10.5px;
+}
+
+.cb-foot .row:first-child .lab {
+  min-width: 0;
+}
+
+.cb-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--hair);
+}
+
+/* ================= C: two panels ================= */
+.ct-c {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  align-items: start;
+  gap: 12px;
+}
+
+.cc-panel {
+  min-width: 0;
+  padding: 2px 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: color-mix(in srgb, var(--solid) 35%, transparent);
+}
+
+.cc-ph {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.cc-gl {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+}
+
+.cc-t {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--txt);
+}
+
+.cc-cnt {
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.cc-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cc-dock {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 7px 10px;
+  margin-top: 10px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--hair-2);
+  background: var(--surface-2);
+}
+
+.cc-dock .lab {
+  min-width: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.cc-dock .chips {
+  gap: 5px;
+}
+
+.cc-dock .chip {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+
+.cc-tally {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.cc-tally b {
+  color: var(--txt);
+}
+
+.cc-sub {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 12px;
+}
+
+.cc-sub .row {
+  flex-wrap: nowrap;
+}
+
+.cc-sub .lab {
+  min-width: 74px;
+}
+
+.cc-kick {
+  display: block;
+  margin: 14px 0 8px;
+}
+
+.cc-merge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.cc-merge svg {
+  flex: none;
+}
+
+.cc-merge b {
+  color: var(--accent);
+}
+
+/* The camera pictures' scenery, on tokens so a night ground dims them too. */
+.cc-sky {
+  fill: color-mix(in srgb, var(--txt) 7%, var(--solid));
+}
+
+.cc-sky.k {
+  fill: color-mix(in srgb, var(--cam-k) 14%, var(--solid));
+}
+
+.cc-sky.v {
+  fill: color-mix(in srgb, var(--cam-v) 12%, var(--solid));
+}
+
+.cc-floor {
+  fill: color-mix(in srgb, var(--txt) 16%, var(--solid));
+}
+
+.cc-floor.v {
+  fill: color-mix(in srgb, var(--cam-v) 18%, var(--solid));
+}
+
+.cc-box {
+  fill: color-mix(in srgb, var(--txt) 24%, var(--solid));
+}
+
+.cc-box.lo {
+  fill: color-mix(in srgb, var(--txt) 19%, var(--solid));
+}
+
+.cc-fig {
+  fill: color-mix(in srgb, var(--txt) 85%, var(--solid));
+}
+
+.cc-aim {
+  stroke: var(--cam-k);
+  stroke-width: 1.2;
+}
+
+.cc-hit {
+  fill: none;
+  stroke: var(--rose);
+  stroke-width: 3;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+
+.cc-vignette {
+  fill: none;
+  stroke: color-mix(in srgb, var(--rose) 30%, transparent);
+  stroke-width: 14;
+}
+
+.cc-hud {
+  fill: var(--solid);
+  opacity: 0.85;
+}
+
+.cc-hud-k {
+  fill: var(--cam-k);
+}
+
+.cc-hud-v {
+  fill: var(--rose);
+}
+
+.cc-cut {
+  stroke: var(--solid);
+  stroke-width: 2.5;
+}
+
+.cc-arrow {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.8;
+}
