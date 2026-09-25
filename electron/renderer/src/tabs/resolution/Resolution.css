@@ -1,0 +1,166 @@
+/*
+ * Resolution, Framerate & Window: the frame drawing, the film second, the
+ * pictures. Shared pieces live in videoKit/VideoKit.css. `rs-` prefixed.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+.rs-a .vk-lane-h .seg span {
+  padding: 4px 9px;
+  font-size: 11px;
+}
+
+.rs-stage {
+  display: flex;
+  justify-content: center;
+  padding: 20px 56px 6px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--hair);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 11px, color-mix(in srgb, var(--hair) 60%, transparent) 11px 12px),
+    var(--surface-2);
+}
+
+.rs-frame {
+  position: relative;
+  height: 76px;
+  max-width: 100%;
+  border-radius: 6px;
+  border: 2px solid var(--cam-k);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--cam-k) 14%, var(--solid)), color-mix(in srgb, var(--cam-k) 4%, var(--solid)));
+  box-shadow: var(--shadow-sm);
+}
+
+.rs-w {
+  position: absolute;
+  left: 50%;
+  top: -16px;
+  transform: translateX(-50%);
+}
+
+.rs-h {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 6px);
+  transform: translateY(-50%);
+}
+
+.rs-w .cs-tok.num,
+.rs-h .cs-tok.num {
+  height: 24px;
+  line-height: 24px;
+  font-size: 12.5px;
+}
+
+.rs-in {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  pointer-events: none;
+}
+
+.rs-in b {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--cam-k);
+}
+
+.rs-in small {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.rs-film {
+  display: flex;
+  gap: 3px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--txt) 80%, var(--solid));
+}
+
+.rs-film i {
+  flex: 1;
+  height: 18px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--cam-v) 70%, var(--solid));
+}
+
+.rs-wm {
+  margin-right: 4px;
+  font-style: normal;
+  opacity: 0.7;
+}
+
+/* ---------- tiles ---------- */
+.rs-pics .cs-pics {
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+}
+
+.rs-pics .cs-pic-th {
+  aspect-ratio: 100 / 44;
+}
+
+.rs-art-screen {
+  fill: color-mix(in srgb, var(--c) 18%, var(--solid));
+  stroke: var(--c);
+  stroke-width: 2;
+}
+
+.rs-art-ghost {
+  fill: none;
+  stroke: var(--faint);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.rs-art-desk {
+  fill: var(--solid);
+  stroke: var(--hair);
+  stroke-width: 1.2;
+}
+
+.rs-art-bar {
+  fill: var(--c);
+}
+
+.rs-art-word {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-anchor: middle;
+  fill: var(--faint);
+}
+
+.rs-art-frame {
+  fill: color-mix(in srgb, var(--c) 55%, var(--solid));
+}
+
+.rs-exact {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 9px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+}
+
+.rs-exact-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rs-exact-row i {
+  font-style: normal;
+  color: var(--faint);
+}
+
+.rs-exact .fld {
+  width: 100%;
+  min-width: 0;
+  font-family: var(--mono);
+}

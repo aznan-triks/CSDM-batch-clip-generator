@@ -1,0 +1,78 @@
+/*
+ * HLAE Options: the FOV cone and the stretched match second. `hl-` prefixed.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+.hl-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@container (max-width: 420px) {
+  .hl-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.hl-speedrow {
+  display: contents;
+}
+
+.hl-fov {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hl-fov small {
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.hl-cone {
+  flex: none;
+  width: 64px;
+  height: 58px;
+}
+
+.hl-cone-fill {
+  fill: color-mix(in srgb, var(--cam-k) 22%, transparent);
+  stroke: var(--cam-k);
+  stroke-width: 1.8;
+  stroke-linejoin: round;
+}
+
+.hl-cone-eye {
+  fill: var(--cam-k);
+}
+
+.hl-speed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hl-sec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hl-sec i {
+  flex: none;
+  height: 10px;
+  min-width: 4px;
+  border-radius: 5px;
+  background: var(--cam-k);
+}
+
+.hl-sec.rec i {
+  background: var(--cam-v);
+}
+
+.hl-sec small {
+  font-size: 10.5px;
+  white-space: nowrap;
+  color: var(--faint);
+}

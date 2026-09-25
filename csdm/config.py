@@ -142,13 +142,20 @@ DEFAULT_CONFIG = {
         "video": {
             "v": 4,
             "cards": {
-                "final-assembly": {"x": 0, "y": 0, "w": 7, "h": 8},
-                "recording-system": {"x": 7, "y": 0, "w": 8, "h": 6},
-                "resolution": {"x": 0, "y": 8, "w": 15, "h": 9},
-                "hlae-options": {"x": 0, "y": 17, "w": 7, "h": 13},
-                "in-game-options": {"x": 7, "y": 17, "w": 8, "h": 9},
-                "cs2-effects": {"x": 0, "y": 30, "w": 15, "h": 13},
-                "encoding": {"x": 0, "y": 43, "w": 15, "h": 12},
+                # Card remake 2b (2026-09-26): every VIDEO card sized so its
+                # three styles fit with no scroll at 1600x900
+                # (e2e/card-remake-2b-video-proof.mjs prints each overflow).
+                # recording-system +3 (tiles), final-assembly +1 to line up
+                # with it, resolution +4 (tiles; timeline needed +2),
+                # in-game-options +4 to line up with hlae-options (tiles needed
+                # +2), encoding +2 (tiles).
+                "final-assembly": {"x": 0, "y": 0, "w": 7, "h": 9},
+                "recording-system": {"x": 7, "y": 0, "w": 8, "h": 9},
+                "resolution": {"x": 0, "y": 9, "w": 15, "h": 13},
+                "hlae-options": {"x": 0, "y": 22, "w": 7, "h": 13},
+                "in-game-options": {"x": 7, "y": 22, "w": 8, "h": 13},
+                "cs2-effects": {"x": 0, "y": 35, "w": 15, "h": 13},
+                "encoding": {"x": 0, "y": 48, "w": 15, "h": 14},
             },
             "collapsed": [],
         },
