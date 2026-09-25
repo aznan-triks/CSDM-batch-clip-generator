@@ -10,7 +10,7 @@
  * `weapons` is ONE list key, so ONE `SettingControl` wraps the whole body in
  * every style: Select all / Deselect all write it too.
  */
-import type { ComponentProps, ComponentType } from "react";
+import type { ComponentType } from "react";
 
 import Card from "../../components/Card";
 import Chip from "../../components/Chip";

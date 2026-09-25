@@ -3,7 +3,7 @@
  * style (`useCardStyle`, read live). The style never changes which keys a card
  * writes; the grid's own props (collapse, drag handle) pass straight to Card.
  */
-import type { ComponentProps, ComponentType } from "react";
+import type { ComponentType } from "react";
 
 import Card from "../../components/Card";
 import { FilterClause, UntestedNote } from "../../components/cardstyle/FilterSentence";
