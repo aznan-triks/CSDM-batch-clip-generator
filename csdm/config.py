@@ -109,7 +109,7 @@ DEFAULT_CONFIG = {
             "v": 4,
             "cards": {
                 "player": {"x": 0, "y": 0, "w": 15, "h": 9},
-                "demo-selection": {"x": 0, "y": 9, "w": 5, "h": 19},
+                "demo-selection": {"x": 0, "y": 9, "w": 5, "h": 22},
                 # The two timing cards were re-measured after their regrouping
                 # (2026-09-25, e2e/capture-timing-proof.mjs prints the rows):
                 # capture-timing is sized for the `both` camera, its tallest
@@ -125,14 +125,17 @@ DEFAULT_CONFIG = {
                 # timing-retries grow 1-2 rows each so their tiles style fits
                 # (e2e/card-remake-2a-settings-proof.mjs prints the overflow);
                 # the right column still ends above damage-filters' row.
-                "capture-timing": {"x": 5, "y": 9, "w": 10, "h": 19},
-                "timing-retries": {"x": 10, "y": 71, "w": 5, "h": 12},
-                "weapon-filter": {"x": 0, "y": 28, "w": 15, "h": 17},
-                "kill-filters": {"x": 0, "y": 45, "w": 10, "h": 39},
-                "match-types": {"x": 10, "y": 45, "w": 5, "h": 14},
-                "map-filter": {"x": 10, "y": 59, "w": 5, "h": 12},
-                "damage-filters": {"x": 0, "y": 84, "w": 10, "h": 14},
-                "shot-filters": {"x": 0, "y": 98, "w": 10, "h": 11},
+                # Card remake 2a: demo-selection's timeline/tiles styles need 22
+                # rows (19 scrolled); its row mate capture-timing follows and
+                # everything below moves down 3.
+                "capture-timing": {"x": 5, "y": 9, "w": 10, "h": 22},
+                "timing-retries": {"x": 10, "y": 74, "w": 5, "h": 12},
+                "weapon-filter": {"x": 0, "y": 31, "w": 15, "h": 17},
+                "kill-filters": {"x": 0, "y": 48, "w": 10, "h": 39},
+                "match-types": {"x": 10, "y": 48, "w": 5, "h": 14},
+                "map-filter": {"x": 10, "y": 62, "w": 5, "h": 12},
+                "damage-filters": {"x": 0, "y": 87, "w": 10, "h": 14},
+                "shot-filters": {"x": 0, "y": 101, "w": 10, "h": 11},
             },
             "collapsed": [],
         },
