@@ -4,10 +4,10 @@
  * These are the rules no coverage count can check: a control can be mounted
  * and still appear in the wrong state. Each test names the rule it guards.
  */
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { SettingsProvider, useSetting } from "../../settings/store";
+import { SettingsProvider } from "../../settings/store";
 import CaptureTab from "../CaptureTab";
 import { DatabaseProvider } from "../../settings/useDatabase";
 
@@ -203,17 +203,6 @@ describe("CaptureTab conditional rows", () => {
   // The Capture & Timing card's own drawing (bar, handles, groups) is tested
   // per card style in captureTiming/__tests__/CaptureTimingCard.test.tsx.
 
-  it("groups Timing & Retries under If a recording fails / Between demos", async () => {
-    const { container } = await renderTab();
-    const groupOf = (key: string) =>
-      container.querySelector(`[data-config-key="${key}"]`)?.closest(".fgroup")?.getAttribute("aria-label");
-    expect(groupOf("retry_count")).toBe("If a recording fails");
-    expect(groupOf("retry_delay")).toBe("If a recording fails");
-    expect(groupOf("recording_timeout")).toBe("If a recording fails");
-    expect(groupOf("delay_between_demos")).toBe("Between demos");
-    expect(groupOf("clip_order")).toBe("Between demos");
-  });
-
   it("keeps every field inside a row, never as a full-width block", async () => {
     // jsdom lays nothing out, so this asserts the STRUCTURE that produces the
     // width: the mock shares a row out with `.fld { flex: 1; min-width: 90px }`
@@ -230,12 +219,6 @@ describe("CaptureTab conditional rows", () => {
     ).toEqual([]);
   });
 });
-
-/** Shows the stored retry count and its type, as the store holds it. */
-function RetryProbe() {
-  const [value] = useSetting<unknown>("retry_count");
-  return <output data-testid="retry-probe">{`${typeof value}:${String(value)}`}</output>;
-}
 
 describe("CaptureTab timing, in words and in numbers", () => {
   it("says what one clip holds and when events share a clip", async () => {
@@ -254,30 +237,6 @@ describe("CaptureTab timing, in words and in numbers", () => {
     );
   });
 
-  it("stores the retry count as a number, whatever the box holds", async () => {
-    // The batch loop did `1 + retry_count`: a typed "4" crashed the run.
-    render(
-      <SettingsProvider>
-        <DatabaseProvider>
-          <CaptureTab />
-          <RetryProbe />
-        </DatabaseProvider>
-      </SettingsProvider>,
-    );
-    await act(async () => {});
-    // A legacy string still reads as its number.
-    const box = document.getElementById("retry-count") as HTMLInputElement;
-    expect(box.value).toBe("3");
-
-    fireEvent.change(box, { target: { value: "4" } });
-    expect(screen.getByTestId("retry-probe").textContent).toBe("number:4");
-    expect(screen.getByTestId("pacing-summary").textContent).toContain(
-      "tried again up to 4 times, 15s apart",
-    );
-
-    // A negative never reaches the engine.
-    fireEvent.change(box, { target: { value: "-2" } });
-    expect(screen.getByTestId("retry-probe").textContent).toBe("number:0");
-    expect(screen.getByTestId("pacing-summary").textContent).toContain("is not tried again");
-  });
+  // Timing & Retries (numbers stored as numbers, the summary) is tested per
+  // card style in timingRetries/__tests__/TimingRetriesCard.test.tsx.
 });
