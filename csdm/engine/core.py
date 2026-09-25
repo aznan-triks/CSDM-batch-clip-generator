@@ -39,6 +39,7 @@ except ImportError:
 
 from csdm.static_data import (
     SUICIDE_WEAPONS, DELAYED_EFFECT_WEAPONS, KILL_FILTER_REGISTRY, GUN_WEAPONS_LOWER,
+    DAMAGE_HITGROUPS,
     KILL_FILTER_SQL_COLS, CPU_VIDEO_CODECS,
     CSDM_RUNTIME_CFG_NAME, CSDM_RUNTIME_BLOCK_START, CSDM_RUNTIME_BLOCK_END,
     _NO_AUTO_EXCLUDE, PERSP_LABELS, _MATCH_TYPE_KEY_TO_DB, _MATCH_TYPE_CFG_KEYS,
@@ -1405,8 +1406,20 @@ class EngineMixin:
         except (TypeError, ValueError):
             return None
 
+    def _hit_zone(self, e, zone):
+        return self._num(e.get("hitgroup")) in DAMAGE_HITGROUPS[zone]
+
     def _rule_headshot_hit(self, e, n):
-        return self._num(e.get("hitgroup")) == 1
+        return self._hit_zone(e, "head")
+
+    def _rule_body_hit(self, e, n):
+        return self._hit_zone(e, "body")
+
+    def _rule_arm_hit(self, e, n):
+        return self._hit_zone(e, "arm")
+
+    def _rule_leg_hit(self, e, n):
+        return self._hit_zone(e, "leg")
 
     def _rule_big_hit(self, e, n):
         hp = self._num(e.get("health_damage"))
@@ -1434,6 +1447,9 @@ class EngineMixin:
 
     _EVENT_RULES = {
         "dmg_mod_headshot_hit": _rule_headshot_hit,
+        "dmg_mod_body_hit":     _rule_body_hit,
+        "dmg_mod_arm_hit":      _rule_arm_hit,
+        "dmg_mod_leg_hit":      _rule_leg_hit,
         "dmg_mod_big_hit":      _rule_big_hit,
         "dmg_mod_low_hp":       _rule_low_hp,
         "dmg_mod_team_damage":  _rule_team_damage,

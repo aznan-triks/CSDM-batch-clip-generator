@@ -20,6 +20,9 @@ ENEMY3 = "76561198000000005"
 
 EXPECTED = {
     "dmg_mod_headshot_hit": (("damage",), {}),
+    "dmg_mod_body_hit": (("damage",), {}),
+    "dmg_mod_arm_hit": (("damage",), {}),
+    "dmg_mod_leg_hit": (("damage",), {}),
     "dmg_mod_big_hit": (("damage",), {"dmg_mod_big_hit_min": 90}),
     "dmg_mod_low_hp": (("damage",), {"dmg_mod_low_hp_max": 5}),
     "dmg_mod_multi_nade": (("damage",), {"dmg_mod_multi_nade_min": 3}),
@@ -124,6 +127,29 @@ class QueryColumnsTests(_Base):
         e = results["d.dem"][0]
         self.assertEqual((e["player_velocity_x"], e["player_velocity_y"],
                           e["recoil_index"]), (150.0, 120.0, 7.0))
+
+
+class HitZoneTests(_Base):
+    """E1 hit zone: head, body, arm, leg -- one filter each, on damages.hitgroup."""
+    # One hit per hitgroup the database holds: generic (grenade), head, chest,
+    # stomach, left/right arm, left/right leg, neck.
+    EVENTS = [dmg(tick, hitgroup=tick) for tick in range(0, 9)]
+
+    def test_each_zone_keeps_only_its_hitgroups(self):
+        for key, ticks in (("dmg_mod_body_hit", [2, 3]),
+                           ("dmg_mod_arm_hit", [4, 5]),
+                           ("dmg_mod_leg_hit", [6, 7])):
+            with self.subTest(key):
+                self.assertEqual(self.run_filters(self.EVENTS, **{key: True, f"{key}_req": True}),
+                                 ticks)
+
+    def test_zones_ticked_together_keep_any_of_them(self):
+        self.assertEqual(self.run_filters(self.EVENTS, dmg_mod_arm_hit=True,
+                                          dmg_mod_leg_hit=True), [4, 5, 6, 7])
+
+    def test_exclude_drops_the_zone(self):
+        self.assertEqual(self.run_filters(self.EVENTS, dmg_mod_leg_hit_exclude=True),
+                         [0, 1, 2, 3, 4, 5, 8])
 
 
 class HeadshotHitTests(_Base):
