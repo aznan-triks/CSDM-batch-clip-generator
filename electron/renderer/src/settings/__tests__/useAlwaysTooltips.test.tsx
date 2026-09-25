@@ -4,7 +4,8 @@ import { describe, expect, it, vi } from "vitest";
 import Field from "../../components/Field";
 import Slider from "../../components/Slider";
 import PathField from "../../components/PathField";
-import FilterRow from "../FilterRow";
+import { FilterMatrixRow } from "../../components/cardstyle/FilterMatrix";
+import { buildFilterRows } from "../../components/cardstyle/filterRows";
 import { SettingsProvider } from "../store";
 import { AlwaysTooltipsProvider, useAlwaysTooltips } from "../useAlwaysTooltips";
 
@@ -79,11 +80,12 @@ describe("useAlwaysTooltips", () => {
     expect(screen.getByText("Where clips are saved")).toBeTruthy();
   });
 
-  it("renders filter row tip on FilterRow when alwaysShow is true", () => {
+  it("renders a filter row's tip when alwaysShow is true", () => {
+    const [row] = buildFilterRows([DEF], { settings: {}, write: () => {} });
     render(
       <SettingsProvider>
         <AlwaysTooltipsProvider value={true}>
-          <FilterRow def={DEF} />
+          <FilterMatrixRow row={row} />
         </AlwaysTooltipsProvider>
       </SettingsProvider>
     );

@@ -1,0 +1,102 @@
+/*
+ * Kill / Damage / Shot Filters: the card-level layout of each style. The
+ * rows themselves are the shared primitives (components/cardstyle/
+ * filterstyle.css). Colours come from tokens only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+/* timeline: the switchboards flow into as many columns as the card allows */
+.cf-matrices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: var(--sp-4) var(--sp-5);
+  align-items: start;
+}
+
+/* the clutch ladder: 1v1 short .. 1v5 tall */
+.kf-ladder {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 84px;
+  padding: 0 2px;
+}
+
+.kf-rung {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  width: 46px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--dim);
+  cursor: pointer;
+}
+
+.kf-rung i {
+  display: block;
+  width: 100%;
+  height: var(--h, 36px);
+  border-radius: 8px 8px 4px 4px;
+  border: 1.5px solid var(--hair);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 6%, var(--solid)) 0 6px,
+    var(--solid) 6px 12px
+  );
+  transition: background var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease);
+}
+
+.kf-rung:hover i {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.kf-rung.on {
+  color: var(--accent);
+}
+
+.kf-rung.on i {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 70%, #fff), var(--accent));
+}
+
+/* sentence */
+.cf-sentence {
+  gap: var(--sp-3);
+}
+
+.cf-sentence > .row {
+  margin-top: var(--sp-2);
+}
+
+/* tiles */
+.cf-tiles-card {
+  gap: var(--sp-5);
+}
+
+.cf-modes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3) var(--sp-5);
+}
+
+.cf-tiles-card .cs-tile {
+  min-height: 96px;
+  width: 100%;
+}
+
+.cf-emoji {
+  display: block;
+  font-size: 30px;
+  line-height: 38px;
+}

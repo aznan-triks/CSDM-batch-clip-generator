@@ -17,23 +17,20 @@ import SectionList, { type SectionSpec } from "../shell/SectionList";
 import { useSetting } from "../settings/store";
 import { TablesProvider } from "../settings/useTables";
 import DemoSelectionSection from "./DemoSelectionSection";
-import EventFiltersSection from "./EventFiltersSection";
-import KillFiltersSection from "./KillFiltersSection";
 import PlayerSection from "./PlayerSection";
-import WeaponFilterSection from "./WeaponFilterSection";
 import CaptureTimingCard from "./captureTiming/CaptureTimingCard";
 import TimingRetriesCard from "./timingRetries/TimingRetriesCard";
 import MapFilterCard from "./mapFilter/MapFilterCard";
 import MatchTypesCard from "./matchTypes/MatchTypesCard";
+import { EventFiltersCard, KillFiltersCard } from "./filterCards/FilterCards";
+import WeaponFilterCard from "./weaponFilter/WeaponFilterCard";
 import "./CaptureTab.css";
 
 export default function CaptureTab() {
   // Header counters (the mock's `.sh .cnt`). Read-only: they summarise what
   // the section already holds, they never become a second source of truth.
   const [steamIdsRaw] = useSetting<string[]>("steam_ids");
-  const [weaponsRaw] = useSetting<string[]>("weapons");
   const steamIds = Array.isArray(steamIdsRaw) ? steamIdsRaw : [];
-  const weapons = Array.isArray(weaponsRaw) ? weaponsRaw : [];
 
 
   const SECTIONS: SectionSpec[] = [
@@ -53,46 +50,14 @@ export default function CaptureTab() {
         </Card>
       ),
     },
-    {
-      id: "weapon-filter",
-      element: (
-        <Card
-          title="Weapon Filter"
-          icon={<ICONS.weaponFilter />}
-          className="wide"
-          count={weapons.length ? `${weapons.length} active` : "all"}
-        >
-          <WeaponFilterSection />
-        </Card>
-      ),
-    },
+    // The filter cards: one data model each, drawn in the card's own style.
+    { id: "weapon-filter", element: <WeaponFilterCard className="wide" /> },
     // One data model drawn in the user's card style (Settings > UI Theme).
     { id: "capture-timing", element: <CaptureTimingCard /> },
     { id: "timing-retries", element: <TimingRetriesCard /> },
-    {
-      id: "kill-filters",
-      element: (
-        <Card title="Kill Filters" icon={<ICONS.killFilters />}>
-          <KillFiltersSection />
-        </Card>
-      ),
-    },
-    {
-      id: "damage-filters",
-      element: (
-        <Card title="Damage Filters" icon={<ICONS.damageFilters />}>
-          <EventFiltersSection category="damage" />
-        </Card>
-      ),
-    },
-    {
-      id: "shot-filters",
-      element: (
-        <Card title="Shot Filters" icon={<ICONS.shotFilters />}>
-          <EventFiltersSection category="shot" />
-        </Card>
-      ),
-    },
+    { id: "kill-filters", element: <KillFiltersCard /> },
+    { id: "damage-filters", element: <EventFiltersCard category="damage" /> },
+    { id: "shot-filters", element: <EventFiltersCard category="shot" /> },
     { id: "match-types", element: <MatchTypesCard /> },
     { id: "map-filter", element: <MapFilterCard /> },
   ];
