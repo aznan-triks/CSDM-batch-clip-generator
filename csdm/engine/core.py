@@ -51,6 +51,9 @@ from csdm.core_utils import (
     process_is_running, ensure_csdm_dirs, _generate_id_for_type, display_to_iso,
 )
 
+# First bytes of a CS:GO (Source 1) demo; demoparser2 reads only CS2 demos.
+_SOURCE1_DEMO_MAGIC = b"HL2DEMO"
+
 # Tables probed when reading the CSDM schema, in probe order.
 DISCOVERY_TABLES = ("kills", "matches", "demos", "rounds", "players", "tags",
                     "checksum_tags", "match_tags", "damages", "shots", "clutches")
@@ -4717,6 +4720,47 @@ class EngineMixin:
                 survivors.append(path)
         self._dp2_cache_order[:] = survivors
 
+    @staticmethod
+    def _is_source1_demo(demo_path) -> bool:
+        """True for a CS:GO (Source 1) demo, which demoparser2 cannot read.
+
+        The file magic is a format invariant: CS:GO demos start with
+        ``HL2DEMO``, CS2 demos with ``PBDEMS2``.
+        """
+        with open(demo_path, "rb") as f:
+            return f.read(len(_SOURCE1_DEMO_MAGIC)) == _SOURCE1_DEMO_MAGIC
+
+    def _dp2_mark_unreadable(self, demo_path, required_sections):
+        """Cache empty dp2 sections so an unreadable demo is not re-parsed each preview."""
+        with self._dp2_cache_lock:
+            cur = self._dp2_cache.get(demo_path, {})
+            if not isinstance(cur, dict):
+                cur = {}
+            for key in ("fire_detail", "fire_ticks", "view_angles",
+                        "hurt_index", "death_flags"):
+                cur.setdefault(key, {})
+            cur["_sections"] = set(cur.get("_sections", set())) | set(required_sections)
+            self._dp2_cache_put_locked(demo_path, cur)
+
+    @staticmethod
+    def _dp2_error_message(demo_path, error, sections=None) -> str:
+        """Actionable log line for a CS2 demo demoparser2 fails to read.
+
+        On this machine every such failure (EntityNotFound, ClassNotFound,
+        IllegalPathOp, VectorResizeFailure) came from a demoparser2 older
+        than the CS2 build that recorded the demo; see
+        docs/audits/AUDIT_dp2_demos_illisibles.md.
+        """
+        try:
+            from importlib.metadata import version
+            installed = version("demoparser2")
+        except Exception:
+            installed = "?"
+        where = f" [{', '.join(sections)}]" if sections else ""
+        return (f"  ⚠ dp2 parse error ({Path(demo_path).name}){where}: {error} — "
+                f"demoparser2 {installed} may be older than this CS2 demo; "
+                "update it: pip install -U demoparser2")
+
     def _dp2_parse_demo(self, demo_path, required_sections=None):
         if required_sections is None:
             required_sections = {"fire", "death", "hurt", "names"}
@@ -4730,17 +4774,13 @@ class EngineMixin:
         if not needed:
             return True
         if not os.path.isfile(demo_path):
-            with self._dp2_cache_lock:
-                cur = self._dp2_cache.get(demo_path, {})
-                if not isinstance(cur, dict):
-                    cur = {}
-                cur.setdefault("fire_detail", {})
-                cur.setdefault("fire_ticks", {})
-                cur.setdefault("view_angles", {})
-                cur.setdefault("hurt_index", {})
-                cur.setdefault("death_flags", {})
-                cur["_sections"] = set(cur.get("_sections", set())) | required_sections
-                self._dp2_cache_put_locked(demo_path, cur)
+            self._dp2_mark_unreadable(demo_path, required_sections)
+            return False
+        if self._is_source1_demo(demo_path):
+            self.log(
+                f"  ⚠ {Path(demo_path).name}: CS:GO demo (Source 1 format) — "
+                "demoparser2 only reads CS2 demos, dp2 filters skip it", "warn")
+            self._dp2_mark_unreadable(demo_path, required_sections)
             return False
         try:
             from demoparser2 import DemoParser
@@ -4752,7 +4792,8 @@ class EngineMixin:
         try:
             parser = DemoParser(demo_path)
         except Exception as e:
-            self.log(f"  ⚠ dp2 parse error ({Path(demo_path).name}): {e}", "warn")
+            self.log(self._dp2_error_message(demo_path, e), "warn")
+            self._dp2_mark_unreadable(demo_path, required_sections)
             return False
 
         fire_detail = dict(existing.get("fire_detail") or {})
@@ -4762,6 +4803,9 @@ class EngineMixin:
         death_flags = dict(existing.get("death_flags") or {})
         demo_names = dict(existing.get("demo_names") or {})
 
+        # One log line per demo: a silent per-section `pass` hid every
+        # failure of an outdated demoparser2 (filters simply found nothing).
+        section_errors = {}
         if "fire" in needed:
             try:
                 fire_df = parser.parse_event(
@@ -4821,7 +4865,7 @@ class EngineMixin:
                                 grp["scoped"].tolist(), grp["vel"].tolist()))
                             fire_ticks[key] = t
             except Exception as e:
-                self.log(f"  ⚠ dp2 parse error ({Path(demo_path).name}): {e}", "warn")
+                section_errors["fire"] = e
                 fire_detail = {}
                 fire_ticks = {}
 
@@ -4890,8 +4934,8 @@ class EngineMixin:
                                 death_flags[(t, sid)] = flags
                 for k in view_angles:
                     view_angles[k].sort(key=lambda r: r[0])
-            except Exception:
-                pass
+            except Exception as e:
+                section_errors["death"] = e
 
         if "hurt" in needed:
             hurt_index = {}
@@ -4917,8 +4961,8 @@ class EngineMixin:
                         for vic, grp in hdf.groupby("vic", sort=False):
                             hurt_index[vic] = list(zip(
                                 grp["tick"].tolist(), grp["atk"].tolist()))
-            except Exception:
-                pass
+            except Exception as e:
+                section_errors["hurt"] = e
 
         if "names" in needed:
             try:
@@ -4935,8 +4979,8 @@ class EngineMixin:
                         ):
                             if sid and nm:
                                 demo_names[sid] = nm
-            except Exception:
-                pass
+            except Exception as e:
+                section_errors["names"] = e
 
         if "positions" in needed:
             # Lazy player_positions for the shared modifier layer. Parsed once per
@@ -4953,8 +4997,13 @@ class EngineMixin:
                 if pos_df is not None and len(pos_df) > 0:
                     with self._dp2_cache_lock:
                         self._player_positions_cache[demo_path] = pos_df
-            except Exception:
-                pass
+            except Exception as e:
+                section_errors["positions"] = e
+
+        if section_errors:
+            first = next(iter(section_errors.values()))
+            self.log(self._dp2_error_message(
+                demo_path, first, sections=list(section_errors)), "warn")
 
         with self._dp2_cache_lock:
             merged = self._dp2_cache.get(demo_path, {})
