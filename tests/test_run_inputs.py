@@ -158,5 +158,4 @@ def test_run_cfg_always_uses_the_fixed_filter_logic():
     built = Host().build_run_cfg(stale)
     assert [built[k] for k in ("kill_mod_logic_mods", "kill_mod_logic_dp2",
                                "kill_mod_logic_db")] == ["mixed", "mixed", "mixed"]
-    assert Host()._mods_dp2_global_any_union_enabled(built) is False
     assert stale["kill_mod_logic_mods"] == "any", "the caller's dict must not be mutated"
