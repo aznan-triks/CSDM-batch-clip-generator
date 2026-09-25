@@ -46,6 +46,7 @@ from csdm.static_data import (
     SPRAY_TRANSFER_WEAPONS_LOWER, SPRAY_MAX_GAP_TICKS,
 )
 from csdm.config import DEFAULT_CONFIG
+from csdm.errors import WHERE as ERROR_WHERE, UserError, db_connect_message, report
 from csdm.core_utils import (
     build_camera_ticks, safe_folder_name, _count_kills, fmt_duration, progress_bar,
     process_is_running, ensure_csdm_dirs, _generate_id_for_type, display_to_iso,
@@ -497,9 +498,9 @@ class EngineMixin:
         """
         missing = [k for k in PG_PARAM_KEYS if k not in params]
         if missing:
-            raise ValueError(
+            raise UserError(
                 "Missing database connection setting(s): " + ", ".join(missing) +
-                ". Check pg_host, pg_port, pg_user, pg_pass and pg_db.")
+                f". Fill them in {ERROR_WHERE['db']}.")
         self._pg_params = {k: params[k] for k in PG_PARAM_KEYS}
 
     def _pg_connect(self):
@@ -512,27 +513,22 @@ class EngineMixin:
         """
         missing = [k for k in PG_PARAM_KEYS if k not in self._pg_params]
         if missing:
-            raise ValueError(
-                "Missing database connection setting(s): " + ", ".join(missing) +
-                ". Connect to the database (set pg_host, pg_port, pg_user, "
-                "pg_pass, pg_db) before running a discovery.")
+            raise UserError(
+                "Not connected to the database yet (missing: " + ", ".join(missing) +
+                f"). Fill in the connection in {ERROR_WHERE['db']}.")
         p = self._pg_params
         try:
             port = int(p["pg_port"])
         except (TypeError, ValueError):
-            raise ValueError(
+            raise UserError(
                 f"The database port {p['pg_port']!r} is not a number. "
-                "Check pg_port in the configuration.") from None
+                f"Fix Port in {ERROR_WHERE['db']}.") from None
         try:
             return psycopg2.connect(
                 host=p["pg_host"], port=port, user=p["pg_user"],
                 password=p["pg_pass"], dbname=p["pg_db"], connect_timeout=5)
         except psycopg2.OperationalError as exc:
-            reason = next((ln for ln in str(exc).splitlines() if ln.strip()),
-                          "connection refused")
-            raise ConnectionError(
-                f"Could not connect to PostgreSQL at {p['pg_host']}:{p['pg_port']} "
-                f"(database '{p['pg_db']}'): {reason}") from exc
+            raise UserError(db_connect_message(p, exc)) from exc
 
     def _pg(self):
         """Return a live psycopg2 connection, reusing the existing one when possible.
@@ -1987,7 +1983,7 @@ class EngineMixin:
                         "round_num": rn_val,
                     })
         except Exception as e:
-            self.log(f"  ⚠ Clutch: DB fetch error — {e}", "warn")
+            self.log(f"  ⚠ Clutch: {report(e, 'reading clutches')}", "warn")
             return {}
 
         # ── Fetch per-match team sizes from the players table ─────────────────
@@ -2086,7 +2082,7 @@ class EngineMixin:
                 cur.execute(sql, keys)
                 rows = cur.fetchall()
         except Exception as e:
-            self.log(f"  ⚠ Clutch: clutches table unreadable — {e}", "warn")
+            self.log(f"  ⚠ Clutch: {report(e, 'reading the clutches table')}", "warn")
             return None
 
         sids_set = set(str(s) for s in sids)
@@ -2658,7 +2654,7 @@ class EngineMixin:
             Path(runtime_cfg_path).write_text("\n".join(runtime_cmds) + "\n",
                                               encoding="utf-8")
         except Exception as e:
-            self.log(f"  ⚠ CS injection: failed to write runtime cfg: {e}", "warn")
+            self.log(f"  ⚠ CS injection: {report(e, 'writing the CS2 runtime cfg')}", "warn")
             return False
 
         autoexec_path = os.path.join(cfg_dir, "autoexec.cfg")
@@ -2679,7 +2675,7 @@ class EngineMixin:
                 updated = f"{current}{sep}{block}"
             Path(autoexec_path).write_text(updated, encoding="utf-8")
         except Exception as e:
-            self.log(f"  ⚠ CS injection: failed to update autoexec.cfg: {e}", "warn")
+            self.log(f"  ⚠ CS injection: {report(e, 'updating autoexec.cfg')}", "warn")
             return False
 
         self.log(f"  🎮 CS injection ready: {runtime_cfg_path}", "dim")
@@ -3211,7 +3207,7 @@ class EngineMixin:
             rc = self._proc.wait()
         except Exception as e:
             _done_event.set()
-            return False, -1, [str(e)], False
+            return False, -1, [report(e, "starting CS Demo Manager")], False
         finally:
             _done_event.set()
         # A timeout is always retryable
@@ -3397,7 +3393,7 @@ class EngineMixin:
             lst.close()
             lst_path = lst.name
         except Exception as e:
-            self.log(f"  Assembly: list error — {e}", "err")
+            self.log(f"  Assembly: {report(e, 'listing the clips to assemble')}", "err")
             return
 
         # The # in out_name causes issues with FFmpeg on the command line.
@@ -3438,7 +3434,7 @@ class EngineMixin:
                         os.remove(out_name)
                     os.rename(tmp_out, out_name)
                 except Exception as e:
-                    self.log(f"  ⚠ Assembled but rename failed: {e}\n  File: {tmp_out}", "warn")
+                    self.log(f"  ⚠ Assembled but not renamed: {report(e, 'renaming the assembled file')}\n  File: {tmp_out}", "warn")
                     out_name = tmp_out
             self.log(f"  ✓ Assembled: {out_name}", "ok")
             if cfg.get("delete_after_assemble"):
@@ -3853,6 +3849,12 @@ class EngineMixin:
         # "any" — OR
         return _union(active, evts)
 
+    def _preview_sequences(self, evts, cfg):
+        """The clip sequences a preview shows, per demo (demos with no event left out)."""
+        return {dp: self._build_sequences(events, cfg["tickrate"],
+                                          self._effective_before(cfg), cfg["after"])
+                for dp, events in evts.items() if events}
+
     def _preview_worker(self, cfg):
         """Compute a preview and hand the result over the state channel.
 
@@ -3880,12 +3882,7 @@ class EngineMixin:
             evts = self._apply_global_filter_gate_dict(evts, cfg)
             t_filters = time.time() - t0
             t0 = time.time()
-            seqs = {}
-            for dp, events in evts.items():
-                if events:
-                    seqs[dp] = self._build_sequences(
-                        events, cfg["tickrate"],
-                        self._effective_before(cfg), cfg["after"])
+            seqs = self._preview_sequences(evts, cfg)
             t_seq = time.time() - t0
             if self._preview_cancel.is_set():
                 return
@@ -3896,18 +3893,35 @@ class EngineMixin:
                 "seqs":     t_seq,
                 "total":    time.time() - t0_total,
             }
+            nb_clips, total_sec, avg_sec = self._sequence_totals(seqs, cfg["tickrate"])
+            if nb_clips:
+                nb_demos = sum(1 for s in seqs.values() if s)
+                self.state("summary", {
+                    "text": self._fmt_summary(nb_demos, nb_clips, total_sec, avg_sec),
+                    "level": "ok",
+                    **self._summary_counts(nb_demos, nb_clips, total_sec, avg_sec)})
+            else:
+                # Said out loud: a preview that matched nothing otherwise leaves
+                # "Computing…" on screen for good, and the user in front of the
+                # filters with no sign that it ended.
+                self.log("No events match these filters.", "warn")
+                self.state("summary", {"text": "  No clips found.", "level": "muted"})
             self.state("preview_ready", {
                 "events": evts,
                 "sequences": seqs,
                 "cfg": cfg,
                 "timings": timings,
             })
-        except Exception as e:
-            import traceback
-            self.log(f"Preview error: {e}\n{traceback.format_exc()}", "err")
+        except Exception as e:  # noqa: BLE001 -- fail fast inside, report clean outside
+            self.log(f"✗ Preview failed: {report(e, 'computing the preview')}", "err")
+            self.state("summary", {"text": "  Preview failed — see the console.", "level": "err"})
         finally:
             self._previewing = False
             self.state("buttons", {"stop": False, "stop_label": "⏸ Stop"})
+            # Every exit -- done, failed, cancelled -- ends the busy state it
+            # raised at the top. A run in progress keeps its own.
+            if not self._running:
+                self.state("buttons_idle")
 
     @staticmethod
     def derive_event_flags_v2(cfg):
@@ -4042,6 +4056,7 @@ class EngineMixin:
         self._preview_cancel.set()
         self._previewing = False
         self.log("\n⏸ Preview cancelled.", "warn")
+        self.state("summary", {"text": "  Preview cancelled.", "level": "muted"})
         self.state("buttons", {"stop": False, "stop_label": "⏸ Stop"})
 
     def _stop_graceful(self):
@@ -4105,6 +4120,26 @@ class EngineMixin:
         self.state("buttons_idle")
 
     def _worker(self, cfg):
+        """Run-thread entry: the batch, and the one place its failures surface.
+
+        Without this, an exception anywhere in the batch (an output folder on
+        a missing drive, say) killed the thread silently: the traceback went
+        to stderr, which no user sees, and the window stayed "running" for
+        good with no way to start again.
+        """
+        try:
+            self._run_batch(cfg)
+        except Exception as e:  # noqa: BLE001 -- fail fast inside, report clean outside
+            self.log(f"\n✗ Run stopped: {report(e, 'running the batch')}", "err")
+            self.state("summary", {"text": "  Run failed — see the console.", "level": "err"})
+            self.state("buttons_idle")
+        finally:
+            # The run is over whichever way it ended. Nothing else resets this
+            # on the Electron host (only the Tk window's button reset did), so
+            # STOP kept aiming at a finished run.
+            self._running = False
+
+    def _run_batch(self, cfg):
         self.state("run_started")
         self.state("buttons_busy")
         cli = self._resolve_cli(cfg["csdm_exe"])
@@ -4114,7 +4149,9 @@ class EngineMixin:
             if w:
                 cli = w
             else:
-                self.log(f"CLI not found: {cli}", "err")
+                self.log(f"CS Demo Manager's command-line tool was not found at {cli}. "
+                         f"Set CSDM Executable in {ERROR_WHERE['paths']}.", "err")
+                self.state("summary", {"text": "  CSDM executable not found.", "level": "err"})
                 self.state("buttons_idle")
                 return
         player_str = self._player_str(cfg)
@@ -4188,12 +4225,8 @@ class EngineMixin:
             self.log(f"Date filter: {_df or '∞'}  →  {_dt or '∞'}", "info" if self._date_col else "warn")
         self.log("Querying DB...", "info")
         t0_query = time.time()
-        try:
-            all_events = self._query_events(cfg)
-        except Exception as e:
-            self.log(f"Error: {e}", "err")
-            self.state("buttons_idle")
-            return
+        # A failure here surfaces through `_worker`, like any other in the run.
+        all_events = self._query_events(cfg)
         t_query = time.time() - t0_query
         if not all_events:
             self.log("No events.", "warn")
@@ -4300,11 +4333,19 @@ class EngineMixin:
 
                     def _bg():
                         nonlocal _fe
-                        self._preparse_dp2(cfg, list(_fe.keys()))
-                        _fe = self._apply_dp2_filters_to_events(_fe, cfg)
-                        _fe = self._apply_global_filter_gate_dict(_fe, cfg)
-                        self.state("preview_ready", {"events": _fe, "cfg": cfg,
-                                                     "timings": None})
+                        try:
+                            self._preparse_dp2(cfg, list(_fe.keys()))
+                            _fe = self._apply_dp2_filters_to_events(_fe, cfg)
+                            _fe = self._apply_global_filter_gate_dict(_fe, cfg)
+                            # `sequences` too: the Electron checklist is built
+                            # from them, and without them this preview showed
+                            # no clip at all.
+                            self.state("preview_ready", {
+                                "events": _fe, "cfg": cfg, "timings": None,
+                                "sequences": self._preview_sequences(_fe, cfg)})
+                        except Exception as e:  # noqa: BLE001 -- clean message outside
+                            self.log(f"✗ Preview failed: {report(e, 'computing the preview')}",
+                                     "err")
 
                     threading.Thread(target=_bg, daemon=True).start()
                     self.state("buttons_idle")
@@ -4427,7 +4468,7 @@ class EngineMixin:
                 tmp.close()
                 tp = tmp.name
             except Exception as e:
-                summary.append((dn, "FAIL", 0, 0, str(e)))
+                summary.append((dn, "FAIL", 0, 0, report(e, "writing the clip job file")))
                 fail += 1
                 continue
 
@@ -4511,7 +4552,7 @@ class EngineMixin:
                     else:
                         d_err = errs_tv[0] if errs_tv else d_err
                 except Exception as _tv_e:
-                    self.log(f"  ⚠ TrueView-OFF retry error: {_tv_e}", "warn")
+                    self.log(f"  ⚠ TrueView-OFF retry: {report(_tv_e, 'retrying with TrueView off')}", "warn")
 
             dur = time.time() - t0
             threading.Thread(
@@ -4586,7 +4627,7 @@ class EngineMixin:
             try:
                 self._assemble_clips(cfg, produced_dirs)
             except Exception as e:
-                self.log(f"  Assembly error: {e}", "err")
+                self.log(f"  Assembly: {report(e, 'assembling the clips')}", "err")
         elif self._kill_triggered and cfg.get("assemble_after"):
             self.log("\n⏭ Assembly skipped (batch killed).", "warn")
 
@@ -5402,7 +5443,7 @@ class EngineMixin:
             parser = DemoParser(demo_path)
             df = parser.parse_ticks(["X", "Y", "Z", "pitch", "yaw", "team_num", "health"], ticks=needed)
         except Exception as e:
-            self.log(f"  ⚠ Mate POV parse_ticks error: {e}", "warn")
+            self.log(f"  ⚠ Mate POV: {report(e, 'reading teammate positions')}", "warn")
             return cached
 
         try:
@@ -5486,7 +5527,7 @@ class EngineMixin:
                     "health": int(_fv(row[health_i])) if health_i is not None else -1,
                 }
         except Exception as e:
-            self.log(f"  ⚠ Mate POV: position parse failed: {e}", "warn")
+            self.log(f"  ⚠ Mate POV: {report(e, 'reading teammate positions')}", "warn")
 
         with self._dp2_cache_lock:
             merged = self._dp2_cache.get(demo_path, {})
@@ -6387,7 +6428,7 @@ class EngineMixin:
         precondition as `_find_col` everywhere else in this class.
         """
         if not self._db_schema:
-            raise ValueError("Connect to the database before loading the demo list.")
+            raise UserError("Connect to the database before loading the demo list.")
         dc = self._find_col("matches", ["demo_path", "demo_file_path",
                                         "demo_filepath", "share_code"])
         if not dc:
@@ -6550,7 +6591,7 @@ class EngineMixin:
             conn.close()
             return True, ""
         except Exception as e:
-            return False, str(e)
+            return False, report(e, "updating demo tags")
 
     def _untag_demo(self, demo_path, tag_name):
         """Remove one tag from one demo. Pure DB logic, ported from
@@ -6600,7 +6641,7 @@ class EngineMixin:
             conn.close()
             return True, ""
         except Exception as e:
-            return False, str(e)
+            return False, report(e, "updating demo tags")
 
     def _tag_by_checksum(self, checksum, tag_id):
         """Apply a tag using a checksum directly (no demo_path -> checksum
@@ -6626,7 +6667,7 @@ class EngineMixin:
             conn.close()
             return True, ""
         except Exception as e:
-            return False, str(e)
+            return False, report(e, "updating demo tags")
 
     def _checksum_in_db(self, checksum, mkm_col):
         """Return True if the given checksum exists in the matches table.
@@ -6674,14 +6715,14 @@ class EngineMixin:
 
         if cfg is None:
             if not tag_ids:
-                raise ValueError("Select at least one tag.")
+                raise UserError("Select at least one tag.")
             ts = self._tags_schema
             jt = ts.get("junction_table")
             jt_tag = ts.get("jt_tag_col")
             jt_match = ts.get("jt_match_col")
             dc, mkm = self._tags_dc_mkm()
             if not jt or not dc or not mkm:
-                raise ValueError("Insufficient DB schema for tags.")
+                raise UserError("Insufficient DB schema for tags.")
 
             conn = self._pg_fresh()
             try:
@@ -6710,14 +6751,14 @@ class EngineMixin:
         cfg = self.build_run_cfg(cfg)
         problem = self.run_inputs_problem(cfg)
         if problem:
-            raise ValueError(problem)
+            raise UserError(problem)
 
         ts = self._tags_schema
         jt = ts.get("junction_table")
         jt_tag = ts.get("jt_tag_col")
         jt_match = ts.get("jt_match_col")
         if tag_ids and (not jt or not jt_tag or not jt_match):
-            raise ValueError("Insufficient DB schema for tag filter.")
+            raise UserError("Insufficient DB schema for tag filter.")
 
         self._demo_checksums = {}
 
@@ -6762,7 +6803,7 @@ class EngineMixin:
         """
         tag_ids = list(tag_ids or [])
         if not tag_ids:
-            raise ValueError("Select at least one tag.")
+            raise UserError("Select at least one tag.")
         ts = self._tags_schema
         jt = ts.get("junction_table")
         jt_tag = ts.get("jt_tag_col")
@@ -6770,7 +6811,7 @@ class EngineMixin:
         dc, mkm = self._tags_dc_mkm()
         date_col = self._date_col
         if not jt or not jt_tag or not jt_match or not mkm or not dc:
-            raise ValueError("Insufficient DB schema for tags.")
+            raise UserError("Insufficient DB schema for tags.")
 
         conn = self._pg_fresh()
         try:
@@ -6863,9 +6904,9 @@ class EngineMixin:
         demo_paths = list(demo_paths or [])
         tag_names = list(tag_names or [])
         if not demo_paths:
-            raise ValueError("Select at least one demo.")
+            raise UserError("Select at least one demo.")
         if not tag_names:
-            raise ValueError("Select at least one tag.")
+            raise UserError("Select at least one tag.")
 
         ok_count = 0
         first_error = ""
@@ -6895,9 +6936,9 @@ class EngineMixin:
         demo_paths = list(demo_paths or [])
         tag_names = list(tag_names or [])
         if not demo_paths:
-            raise ValueError("Select at least one demo.")
+            raise UserError("Select at least one demo.")
         if not tag_names:
-            raise ValueError("Select at least one tag.")
+            raise UserError("Select at least one tag.")
 
         ok_count = 0
         first_error = ""
@@ -6922,10 +6963,10 @@ class EngineMixin:
         """
         name = (name or "").strip()
         if not name:
-            raise ValueError("A tag needs a name.")
+            raise UserError("A tag needs a name.")
         ts = self._tags_schema
         if not ts.get("name_col"):
-            raise ValueError("Tag schema not detected.")
+            raise UserError("Tag schema not detected.")
 
         conn = self._pg_fresh()
         try:
@@ -6954,10 +6995,10 @@ class EngineMixin:
         than carried along unused.
         """
         if tag_id is None:
-            raise ValueError("A tag id is required.")
+            raise UserError("A tag id is required.")
         ts = self._tags_schema
         if not ts.get("id_col"):
-            raise ValueError("Tag schema not detected.")
+            raise UserError("Tag schema not detected.")
 
         conn = self._pg_fresh()
         try:
@@ -6994,7 +7035,7 @@ class EngineMixin:
         name_col = ts.get("name_col")
         color_col = ts.get("color_col", "")
         if not jt or not jt_tag or not jt_match or not id_col or not name_col:
-            raise ValueError("Tag schema not detected.")
+            raise UserError("Tag schema not detected.")
         mkm = self._find_col("matches", ["checksum", "id", "match_id"])
         dc = self._find_col("matches", [
             "demo_path", "demo_file_path", "demo_filepath", "file_path", "path"])
@@ -7061,10 +7102,14 @@ class EngineMixin:
         carry parsed state between the two round trips."""
         try:
             data = json.loads(Path(path).read_text(encoding="utf-8"))
-        except Exception as e:
-            raise ValueError(f"Could not read file: {e}") from e
+        except OSError as e:
+            raise UserError(f"Could not read {path}: {e.strerror or e}. "
+                            "Pick an existing tags export file.") from e
+        except ValueError as e:
+            raise UserError(f"{path} is not a tags export file (it is not valid JSON). "
+                            "Pick a file made with Export.") from e
         if not isinstance(data, dict) or "assignments" not in data:
-            raise ValueError("Invalid tags export file.")
+            raise UserError(f"{path} is not a tags export file. Pick a file made with Export.")
         return data
 
     def scan_tag_import(self, path):
@@ -7112,7 +7157,7 @@ class EngineMixin:
 
         mkm = self._find_col("matches", ["checksum", "id", "match_id"])
         if not mkm:
-            raise ValueError("Cannot find checksum column in matches table.")
+            raise UserError("Cannot find checksum column in matches table.")
 
         ok_count = skip_count = fail_count = 0
         for asgn in data.get("assignments", []):
@@ -7138,17 +7183,23 @@ class EngineMixin:
         tickrate = cfg.get("tickrate", 64)
         before_s = self._effective_before(cfg)
         after_s = cfg.get("after", 5)
-        nb_demos = len(all_events)
+        seqs_by_demo = {dp: self._build_sequences(events, tickrate, before_s, after_s)
+                        for dp, events in all_events.items()}
+        nb_clips, total_sec, avg_sec = self._sequence_totals(seqs_by_demo, tickrate)
+        return len(all_events), nb_clips, total_sec, avg_sec
+
+    @staticmethod
+    def _sequence_totals(seqs_by_demo, tickrate):
+        """(nb_clips, total_sec, avg_sec) of sequences already built, per demo."""
         nb_clips = 0
         total_ticks = 0
-        for events in all_events.values():
-            seqs = self._build_sequences(events, tickrate, before_s, after_s)
+        for seqs in seqs_by_demo.values():
             nb_clips += len(seqs)
             for s in seqs:
                 total_ticks += s["end_tick"] - s["start_tick"]
         total_sec = total_ticks / tickrate if tickrate else 0
         avg_sec = (total_sec / nb_clips) if nb_clips else 0
-        return nb_demos, nb_clips, total_sec, avg_sec
+        return nb_clips, total_sec, avg_sec
 
     def _summary_counts(self, nb_demos, nb_clips, total_sec, avg_sec):
         """The summary's numbers, unformatted.

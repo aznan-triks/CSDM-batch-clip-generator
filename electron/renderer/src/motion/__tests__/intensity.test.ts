@@ -333,6 +333,17 @@ describe("useEngineState's reducer", () => {
     expect(state.busy).toBe(false);
   });
 
+  it("buttons_idle puts RUN back and STOP/KILL away after a run or a failed launch", () => {
+    const running = reduceEngineState(INITIAL_ENGINE_STATE, "buttons", {
+      run: false, stop: true, kill: true, stop_label: "⏸ Stop Preview",
+    });
+    const state = reduceEngineState(running, "buttons_idle", {});
+    expect(state.runEnabled).toBe(true);
+    expect(state.stopEnabled).toBe(false);
+    expect(state.killEnabled).toBe(false);
+    expect(state.stopLabel).toBe(INITIAL_ENGINE_STATE.stopLabel);
+  });
+
   it("buttons_busy sets busy", () => {
     const state = reduceEngineState(INITIAL_ENGINE_STATE, "buttons_busy", {});
     expect(state.busy).toBe(true);

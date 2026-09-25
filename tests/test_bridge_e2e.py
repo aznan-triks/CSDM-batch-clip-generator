@@ -1,23 +1,49 @@
 """Drive the bridge as a real subprocess -- the only honest way to test a pipe."""
 import json
+import os
+import tempfile
 import subprocess
+from pathlib import Path
 import sys
 import unittest
 
 import pytest
 
 
+_PROFILE = tempfile.mkdtemp(prefix="csdm-bridge-e2e-")
+
+
 def _run(commands, timeout=30):
-    """Feed JSON lines in, collect JSON messages out."""
+    """Feed JSON lines in, collect JSON messages out.
+
+    The bridge runs on a throwaway profile (CSDM_REPO_ROOT): a failing command
+    writes the error log, and a test must never write into the real settings
+    folder -- not even a log (context_guide.md §1 P11).
+    """
     proc = subprocess.run(
         [sys.executable, "-m", "csdm.bridge"],
         input="".join(json.dumps(c) + "\n" for c in commands),
-        capture_output=True, text=True, timeout=timeout, encoding="utf-8")
+        capture_output=True, text=True, timeout=timeout, encoding="utf-8",
+        env={**os.environ, "CSDM_REPO_ROOT": _PROFILE})
     messages = []
     for line in proc.stdout.split("\n"):
         if line.strip():
             messages.append(json.loads(line))
     return proc, messages
+
+
+def _assert_clean_unexpected(case, error, raw_reason):
+    """A malformed command (a renderer bug) reaches the screen as one clean
+    sentence naming the error log; the raw reason and the traceback land in
+    that log, where a bug report can pick them up."""
+    case.assertTrue(error.startswith("Unexpected error while "), error)
+    case.assertNotIn("Traceback", error)
+    case.assertNotIn(raw_reason, error)
+    log = Path(_PROFILE) / "CSDM-batch-clip_config" / "csdm_errors.log"
+    case.assertIn(str(log), error)
+    text = log.read_text(encoding="utf-8")
+    case.assertIn("Traceback", text)
+    case.assertIn(raw_reason, text)
 
 
 class TestBridgeEndToEnd(unittest.TestCase):
@@ -43,8 +69,7 @@ class TestBridgeEndToEnd(unittest.TestCase):
         _, msgs = _run([{"type": "command", "id": "1", "name": "save_config"}])
         results = [m for m in msgs if m["type"] == "result"]
         self.assertFalse(results[0]["ok"])
-        self.assertIn("cfg", results[0]["error"])
-        self.assertNotIn("Traceback", results[0]["error"])
+        _assert_clean_unexpected(self, results[0]["error"], "needs a `cfg` object")
 
     def test_list_presets_answers_with_an_object(self):
         _, msgs = _run([{"type": "command", "id": "1", "name": "list_presets"}])
@@ -106,8 +131,7 @@ class TestBridgeEndToEnd(unittest.TestCase):
         _, msgs = _run([{"type": "command", "id": "1", "name": "start_run"}])
         results = [m for m in msgs if m["type"] == "result"]
         self.assertFalse(results[0]["ok"])
-        self.assertIn("cfg", results[0]["error"])
-        self.assertNotIn("Traceback", results[0]["error"])
+        _assert_clean_unexpected(self, results[0]["error"], "needs a `cfg` object")
 
     def test_every_command_the_renderer_needs_is_registered(self):
         """The shopping list for chantier 4a, checked in one place."""
