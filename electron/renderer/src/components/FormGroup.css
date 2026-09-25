@@ -1,0 +1,77 @@
+/*
+ * A titled block of setting rows (FormGroup.tsx). Colours and type come from
+ * theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.fgroup {
+  /* The label column every row of the group shares. Wide enough for the
+     longest label these groups carry ("Wait between") at the label's own
+     size and weight, and no wider: every pixel here is taken from the chip
+     row beside it, which must hold three chips in a half-width card. */
+  --fgroup-lab-w: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+/* A group after another one is set apart by a hairline, not by empty space:
+   the card must stay as tall as its content and no taller. */
+.fgroup + .fgroup {
+  padding-top: var(--sp-4);
+  border-top: var(--bw) solid var(--line);
+}
+
+/* The mock's stat key (`.st .k`): small, uppercase, tracked -- the voice this
+   window already uses to name a region, one step quieter than a card title. */
+.fgroup-t {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-micro);
+  font-weight: var(--fw-heavy);
+  letter-spacing: var(--tr-snug);
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* One label column for the whole group. Beats mock-bridge.css's
+   `.row .lab { min-width: 0 }`, which exists for rows holding SEVERAL
+   label+control pairs -- a group row holds exactly one. */
+.fgroup .row .lab {
+  flex: 0 0 var(--fgroup-lab-w);
+  width: var(--fgroup-lab-w);
+  min-width: 0;
+}
+
+/* A chip group takes the rest of its row and wraps UNDER itself, never back
+   under the label. */
+.fgroup .row .chips {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* When a narrow card does wrap a chip group, its label stays level with the
+   FIRST line of chips instead of floating between the two. */
+.fgroup .row:has(> .chips) {
+  align-items: baseline;
+}
+
+/* A segmented choice shows the engine's own values ("killer", "chrono");
+   capitalised on screen so they read like the chips beside them and like the
+   mock's `.seg` ("Killer / Victim / Both"). Display only: the stored value
+   and the radio's accessible name stay the engine's word. */
+.fgroup .seg span {
+  text-transform: capitalize;
+}
+
+/* A number box holds two or three digits: capped as narrow as the slider's
+   typed box, so a lone field does not read as a banner across the card. */
+.fgroup .fld.fld-num {
+  flex: 0 0 auto;
+  width: 6ch;
+  min-width: 0;
+  padding: 4px 6px;
+  text-align: right;
+}

@@ -103,8 +103,12 @@ DEFAULT_CONFIG = {
             "cards": {
                 "player": {"x": 0, "y": 0, "w": 15, "h": 9},
                 "demo-selection": {"x": 0, "y": 9, "w": 5, "h": 19},
-                "capture-timing": {"x": 5, "y": 9, "w": 5, "h": 14},
-                "timing-retries": {"x": 10, "y": 9, "w": 5, "h": 9},
+                # The two timing cards were re-measured after their regrouping
+                # (2026-09-25, e2e/capture-timing-proof.mjs prints the rows):
+                # capture-timing is sized for the `both` camera, its tallest
+                # state, and lines up with demo-selection beside it.
+                "capture-timing": {"x": 5, "y": 9, "w": 5, "h": 19},
+                "timing-retries": {"x": 10, "y": 9, "w": 5, "h": 11},
                 "weapon-filter": {"x": 0, "y": 28, "w": 15, "h": 17},
                 "kill-filters": {"x": 0, "y": 45, "w": 10, "h": 39},
                 "match-types": {"x": 10, "y": 45, "w": 5, "h": 13},

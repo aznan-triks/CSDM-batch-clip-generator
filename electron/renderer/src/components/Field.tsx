@@ -12,6 +12,8 @@ interface FieldProps {
   type?: "text" | "password";
   /** Hover explanation for what this setting does. */
   tip?: string;
+  /** Numeric box: capped narrow and right-aligned where a FormGroup styles it. */
+  numeric?: boolean;
 }
 
 /**
@@ -25,7 +27,7 @@ interface FieldProps {
  * -- which is what made this tab read as a stack of banners instead of a dense
  * panel.
  */
-export default function Field({ value, onChange, mono, placeholder, id, label, type, tip }: FieldProps) {
+export default function Field({ value, onChange, mono, placeholder, id, label, type, tip, numeric }: FieldProps) {
   const alwaysShow = useAlwaysTooltips();
   return (
     <>
@@ -37,7 +39,8 @@ export default function Field({ value, onChange, mono, placeholder, id, label, t
       <input
         id={id}
         type={type ?? "text"}
-        className={mono ? "fld fld-mono" : "fld"}
+        inputMode={numeric ? "numeric" : undefined}
+        className={["fld", mono ? "fld-mono" : null, numeric ? "fld-num" : null].filter(Boolean).join(" ")}
         value={value}
         placeholder={placeholder}
         title={tip}
