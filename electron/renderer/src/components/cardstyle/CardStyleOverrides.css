@@ -1,0 +1,51 @@
+/*
+ * Settings > UI Theme > Per-card style. Colours come from theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.cso {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cso > .lab {
+  margin-bottom: 2px;
+}
+
+.cso-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.cso-row label {
+  flex: 1;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--txt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A compact `.fld`: the list is ten rows high, a full field each would not fit. */
+.cso-sel {
+  flex: 0 0 auto;
+  width: 132px;
+  padding: 3px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* A card pinned to its own style reads in the accent, a default one stays quiet. */
+.cso-sel.on {
+  color: var(--accent);
+  font-weight: 600;
+}

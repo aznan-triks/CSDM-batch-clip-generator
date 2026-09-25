@@ -1,13 +1,14 @@
 /**
  * The Capture & Timing card: one model, drawn in the user's card style.
  *
- * `ui_card_style` is read live, so switching it in Settings redraws this card
+ * Its style (`useCardStyle`) is read live, so switching it in Settings redraws this card
  * at once; the model -- and so every key written -- is the same in all three.
  */
 import type { ComponentType } from "react";
 
 import Card from "../../components/Card";
-import { useCardStyle, type CardStyle } from "../../components/cardstyle/cardStyle";
+import type { CardStyle } from "../../components/cardstyle/cardStyle";
+import { useCardStyle } from "../../components/cardstyle/useCardStyle";
 import { ICONS } from "../../icons";
 import SentenceView from "./SentenceView";
 import TilesView from "./TilesView";
@@ -23,7 +24,7 @@ const VIEWS: Record<CardStyle, ComponentType<{ m: CaptureTimingModel }>> = {
 
 export default function CaptureTimingCard() {
   const m = useCaptureTiming();
-  const style = useCardStyle();
+  const style = useCardStyle("capture-timing");
   const View = VIEWS[style];
   return (
     <Card

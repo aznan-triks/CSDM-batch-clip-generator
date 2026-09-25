@@ -169,6 +169,18 @@ describe("the card style switch", () => {
     }
     expect(JSON.stringify(CARD_KEYS.map((k) => store[k]))).toBe(keysBefore);
   });
+
+  it("follows its own per-card override over the global style", async () => {
+    const { container } = await renderCard({
+      ...BOTH_DEFAULTS,
+      ui_card_style: "timeline",
+      ui_card_style_overrides: { "capture-timing": "tiles", "map-filter": "sentence" },
+    });
+    expect(container.querySelector(".ct-tiles")).not.toBeNull();
+    // The global switch no longer reaches it while the override stands.
+    act(() => screen.getByTestId("style-sentence").click());
+    expect(container.querySelector(".ct-tiles")).not.toBeNull();
+  });
 });
 
 describe("the timeline's handles", () => {

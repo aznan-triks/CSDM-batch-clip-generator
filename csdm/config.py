@@ -81,6 +81,9 @@ DEFAULT_CONFIG = {
     # you drag), "sentence" (a sentence with fill-in words) or "tiles" (big
     # picture tiles). One global choice; every variant writes the same keys.
     "ui_card_style": "timeline",
+    # Per-card exceptions to `ui_card_style`: {card id: style}. A card with no
+    # entry follows the global style (Settings > UI Theme > Per-card style).
+    "ui_card_style_overrides": {},
     # Reference card layout (LAYOUT_VERSION 4, sectionLayout.ts), redesigned
     # 2026-09-17 for the real column count a 1600x900 window measures today
     # (15 columns of `ui_card_block_size`, content pane ~902px), and again
@@ -149,10 +152,10 @@ DEFAULT_CONFIG = {
                 "paths": {"x": 0, "y": 6, "w": 15, "h": 14},
                 "config-folder": {"x": 0, "y": 20, "w": 15, "h": 7},
                 "presets": {"x": 0, "y": 27, "w": 5, "h": 12},
-                "ui-theme": {"x": 5, "y": 27, "w": 5, "h": 13},  # +2 rows: Card style
+                "ui-theme": {"x": 5, "y": 27, "w": 5, "h": 25},  # +2 rows: Card style, +12: Per-card style
                 "ui-layout": {"x": 10, "y": 27, "w": 5, "h": 11},
-                "performance": {"x": 0, "y": 40, "w": 7, "h": 6},
-                "injection-preview": {"x": 7, "y": 40, "w": 8, "h": 7},
+                "performance": {"x": 0, "y": 52, "w": 7, "h": 6},
+                "injection-preview": {"x": 7, "y": 52, "w": 8, "h": 7},
             },
             "collapsed": [],
         },
