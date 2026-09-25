@@ -13,6 +13,7 @@ const {
   engineIsBusy,
   noteEngineState,
   resetEngineState,
+  settleWithin,
 } = require("./lifecycle");
 
 /**
@@ -68,10 +69,19 @@ const WINDOW_MIN_H = 640;
 // tags this batch applied -- all of it lost if we terminate Python first.
 const ENGINE_SHUTDOWN_GRACE_MS = 4000;
 
+// How long closing waits for the renderer to write the settings its save
+// debounce is still holding (settings/store.tsx). A ceiling, not a wait: the
+// renderer's acknowledgement ends it as soon as the engine has answered the
+// save. It only runs out when the renderer hung or the engine is gone.
+const SETTINGS_FLUSH_TIMEOUT_MS = 2000;
+
 let mainWindow = null;
 let child = null;
 let stdoutBuffer = ""; // holds a line fragment carried over between two stdout chunks
 let quitting = false; // true once before-quit has taken over the shutdown
+let windowMayClose = false; // true once the renderer's pending settings are written
+let flushingBeforeClose = false; // a held close is waiting on that write
+let flushRequestCounter = 0;
 
 /**
  * Find a Python interpreter able to run this repo.
@@ -241,6 +251,58 @@ function shutdownEngine() {
   });
 }
 
+/**
+ * Ask the renderer to write the settings its debounce is still holding, and
+ * wait for its answer -- never longer than SETTINGS_FLUSH_TIMEOUT_MS.
+ *
+ * Main owns this because only main knows the window is going: a renderer-side
+ * `beforeunload` cannot wait for the engine's answer, and on the app-quit path
+ * (`before-quit` then `app.exit`) the page never unloads at all.
+ */
+/**
+ * Closing mid-run throws away work: the batch stops, the assembly never
+ * happens, and the tags applied so far are reverted. Ask first. Native
+ * dialog rather than a React one, because the renderer may be the thing
+ * that died. Returns true when the user chose to quit anyway.
+ */
+function confirmQuitDuringRun() {
+  const choice = dialog.showMessageBoxSync(mainWindow, {
+    type: "warning",
+    buttons: ["Keep running", "Stop the run and quit"],
+    defaultId: 0, // Enter keeps the run: the safe answer is the default one
+    cancelId: 0, // Escape and the title-bar cross do too
+    noLink: true,
+    title: "A run is in progress",
+    message: "A run is still going.",
+    detail:
+      "Quitting stops it now: the remaining demos are skipped, no video is assembled, " +
+      "and the tags applied during this batch are reverted.",
+  });
+  return choice !== 0;
+}
+
+function flushRendererSettings() {
+  // No window: nothing is pending. No engine: nobody could write it, and
+  // waiting would only add the full timeout to every close. A hung or crashed
+  // renderer is covered by the timeout itself.
+  if (!mainWindow || mainWindow.isDestroyed() || !child) {
+    return Promise.resolve();
+  }
+  flushRequestCounter += 1;
+  const requestId = flushRequestCounter;
+  let listener;
+  const acknowledged = new Promise((resolve) => {
+    listener = (_event, answeredId) => {
+      if (answeredId === requestId) resolve();
+    };
+    ipcMain.on("settings:flushed", listener);
+  });
+  mainWindow.webContents.send("settings:flush-request", requestId);
+  return settleWithin(acknowledged, SETTINGS_FLUSH_TIMEOUT_MS).then(() => {
+    ipcMain.removeListener("settings:flushed", listener);
+  });
+}
+
 function sendCommandToEngine(command) {
   if (child && child.stdin.writable) {
     child.stdin.write(JSON.stringify(command) + "\n");
@@ -283,25 +345,20 @@ function createWindow() {
   // whatever it would do with an unregistered URL.
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
 
-  // Closing mid-run throws away work: the batch stops, the assembly never
-  // happens, and the tags applied so far are reverted. Ask first. Native
-  // dialog rather than a React one, because the renderer may be the thing
-  // that died.
+  // Closing is held until the renderer has written the settings its save
+  // debounce is still holding -- otherwise an edit made in the last
+  // SAVE_DEBOUNCE_MS before closing is lost. Mid-run, the user confirms first.
   mainWindow.on("close", (event) => {
-    if (quitting || !engineIsBusy()) return;
-    const choice = dialog.showMessageBoxSync(mainWindow, {
-      type: "warning",
-      buttons: ["Keep running", "Stop the run and quit"],
-      defaultId: 0, // Enter keeps the run: the safe answer is the default one
-      cancelId: 0, // Escape and the title-bar cross do too
-      noLink: true,
-      title: "A run is in progress",
-      message: "A run is still going.",
-      detail:
-        "Quitting stops it now: the remaining demos are skipped, no video is assembled, " +
-        "and the tags applied during this batch are reverted.",
+    if (windowMayClose) return;
+    // Every close is held until the settings are written, then replayed.
+    event.preventDefault();
+    if (flushingBeforeClose) return; // a second click while the first is saving
+    if (!quitting && engineIsBusy() && !confirmQuitDuringRun()) return;
+    flushingBeforeClose = true;
+    flushRendererSettings().then(() => {
+      windowMayClose = true;
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.close();
     });
-    if (choice === 0) event.preventDefault();
   });
 
   // In development `scripts/dev.mjs` sets VITE_DEV_SERVER_URL so the window
@@ -373,7 +430,13 @@ app.on("before-quit", (event) => {
   if (quitting || !child) return;
   // Stopping the engine is asynchronous (it may have a cs2.exe to kill first)
   // and `before-quit` is not. Hold the quit, do the work, then exit for real.
+  // The settings flush comes first, while the engine can still answer it: a
+  // quit that does not start from the window's cross (app.quit elsewhere)
+  // reaches `app.exit` without the window ever getting its `close` event.
+  // On the usual path the window is already gone and this resolves at once.
   event.preventDefault();
   quitting = true;
-  shutdownEngine().then(() => app.exit(0));
+  flushRendererSettings()
+    .then(shutdownEngine)
+    .then(() => app.exit(0));
 });

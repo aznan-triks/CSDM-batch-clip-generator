@@ -24,6 +24,7 @@ function installPipe() {
   subscribers = new Set();
   window.bridge = {
     send() {},
+    onFlushRequest: () => () => {},
     onMessage(cb: (message: unknown) => void) {
       subscribers.add(cb);
       return () => subscribers.delete(cb);

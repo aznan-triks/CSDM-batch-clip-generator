@@ -71,6 +71,7 @@ describe("AppShell", () => {
     const subscribers = new Set<(message: unknown) => void>();
     window.bridge = {
       send() {},
+      onFlushRequest: () => () => {},
       onMessage(cb: (message: unknown) => void) {
         subscribers.add(cb);
         return () => subscribers.delete(cb);
@@ -116,6 +117,7 @@ describe("AppShell", () => {
       restartEngine() {
         return Promise.resolve();
       },
+      onFlushRequest: () => () => {},
       setWindowBounds() {
         return Promise.resolve();
       },

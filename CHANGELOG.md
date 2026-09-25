@@ -42,6 +42,11 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   The primary button's spinning ring is still animated at rest and remains the main idle cost;
   how to calm it is a visual choice left open.
 - A progress update during a run no longer re-renders all five tabs, only the parts that show it.
+- A setting changed right before closing the app is no longer lost: closing now waits for the
+  pending save to be written (a fraction of a second at most) before the window goes.
+- Previews and runs over more than 150 demos no longer re-parse demos they had just parsed (about
+  20 seconds wasted on 169 demos): the demos of the current selection now all stay in the parser
+  cache for the whole preview or run.
 
 ### Changed
 

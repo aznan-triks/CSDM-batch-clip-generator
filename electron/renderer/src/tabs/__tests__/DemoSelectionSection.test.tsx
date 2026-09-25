@@ -43,6 +43,7 @@ vi.mock("../../bridge", () => ({
     return Promise.reject(new Error(`unexpected command: ${name}`));
   },
   onMessage: () => () => {},
+  onFlushRequest: () => () => {},
   send: () => {},
   sendCommand: () => "1",
 }));

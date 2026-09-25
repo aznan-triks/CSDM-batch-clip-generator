@@ -80,6 +80,7 @@ vi.mock("../../bridge", () => ({
     return Promise.resolve({ type: "result", id: "1", ok: true, data: {} });
   },
   onMessage: () => () => {},
+  onFlushRequest: () => () => {},
   send: () => {},
   sendCommand: () => "1",
   pickPath: () => Promise.resolve(null),

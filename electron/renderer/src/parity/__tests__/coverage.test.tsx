@@ -51,6 +51,7 @@ vi.mock("../../bridge", () => {
         ? Promise.resolve({ type: "result", id: "1", ok: true, data: tables })
         : Promise.resolve({ type: "result", id: "1", ok: true, data: {} }),
     onMessage: () => () => {},
+    onFlushRequest: () => () => {},
     send: () => {},
     sendCommand: () => "1",
   };

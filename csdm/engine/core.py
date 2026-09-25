@@ -3227,6 +3227,7 @@ class EngineMixin:
 
         Thread-safe via _dp2_cache_lock (inside _dp2_parse_demo).
         """
+        self._dp2_cache_pin(demo_paths)
         required_sections = self._dp2_required_sections(cfg)
         if not required_sections:
             return
@@ -4666,17 +4667,36 @@ class EngineMixin:
             self.__filter_badge_defs_cache = self._get_filter_badge_defs()
             return self.__filter_badge_defs_cache
 
+    def _dp2_cache_pin(self, demo_paths):
+        """Mark the demos of the current query as never evictable by each other.
+
+        Called by `_preparse_dp2` with the whole query (preview and run alike):
+        every one of those demos is read again by the filters right after the
+        pre-parse, so evicting any of them only buys a re-parse. A fixed cap
+        below the query size did exactly that -- 169 demos against 150 turned
+        into ~20 s of re-parsing per preview, each re-parse evicting the next
+        demo to be read. The next query replaces the pin, which makes the
+        previous query's demos evictable again.
+        """
+        with self._dp2_cache_lock:
+            self._dp2_cache_pinned = frozenset(demo_paths)
+
     def _dp2_cache_put_locked(self, demo_path: str, data: dict):
         """Store one demo's demoparser2 data and evict the oldest demos beyond the cap.
 
         MUST be called with `_dp2_cache_lock` held. Lives on the engine, not
         on a host: the bridge host had no copy, so every dp2 parse raised
         AttributeError in the Electron app. Eviction follows insertion order;
-        rewriting a demo keeps its slot. The cap is `dp2_cache_max_demos`
-        (each demo holds 0.5-2 MB of parsed data). Player positions are kept
-        separately and are NOT evicted here: `_apply_shared_modifiers` reads
-        them with no re-parse fallback, so dropping them on eviction silently
-        loses positions on long (150+ demo) runs. `max(1, ...)` guards the
+        rewriting a demo keeps its slot. Demos of the current query
+        (`_dp2_cache_pin`) are skipped by eviction, so the cache holds
+        max(`dp2_cache_max_demos`, demos in the current query): the cap now
+        only bounds what earlier queries leave behind. Measured on real CS2
+        demos (64-226 MB files), an entry retains 0.3-0.8 MB, so even a
+        several-hundred-demo query stays in the low hundreds of MB -- and
+        that working set is re-parsed anyway if evicted. Player positions are
+        kept separately and are NOT evicted here: `_apply_shared_modifiers`
+        reads them with no re-parse fallback, so dropping them on eviction
+        silently loses positions on long runs. `max(1, ...)` guards the
         cap: a value of 0 or less would empty the cache on every write.
         """
         is_new = demo_path not in self._dp2_cache
@@ -4684,9 +4704,18 @@ class EngineMixin:
         if is_new:
             self._dp2_cache_order.append(demo_path)
         cap = max(1, int(self._host_cfg("dp2_cache_max_demos")))
-        while len(self._dp2_cache) > cap and self._dp2_cache_order:
-            oldest = self._dp2_cache_order.pop(0)
-            self._dp2_cache.pop(oldest, None)
+        excess = len(self._dp2_cache) - cap
+        if excess <= 0:
+            return
+        pinned = self._dp2_cache_pinned
+        survivors = []
+        for path in self._dp2_cache_order:
+            if excess > 0 and path not in pinned:
+                self._dp2_cache.pop(path, None)
+                excess -= 1
+            else:
+                survivors.append(path)
+        self._dp2_cache_order[:] = survivors
 
     def _dp2_parse_demo(self, demo_path, required_sections=None):
         if required_sections is None:

@@ -54,6 +54,50 @@ class Dp2CacheTests(unittest.TestCase):
         self.assertNotIn("a", host._dp2_cache)
         self.assertIs(host._player_positions_cache.get("a"), marker)
 
+    def test_the_current_query_demos_are_never_evicted_by_each_other(self):
+        # 169 demos against a cap of 150 used to evict the first 19 parsed
+        # before the filters read them: each read re-parsed one and evicted
+        # the next, ~20 s of re-parsing on every preview.
+        host = _Host({"dp2_cache_max_demos": 2})
+        working_set = ["a", "b", "c", "d"]
+        host._dp2_cache_pin(working_set)
+        with host._dp2_cache_lock:
+            for path in working_set:
+                host._dp2_cache_put_locked(path, {})
+        self.assertEqual(list(host._dp2_cache), working_set)
+
+    def test_demos_outside_the_current_query_are_evicted_first(self):
+        host = _Host({"dp2_cache_max_demos": 2})
+        with host._dp2_cache_lock:
+            host._dp2_cache_put_locked("old1", {})
+            host._dp2_cache_put_locked("old2", {})
+        host._dp2_cache_pin(["a", "b", "c"])
+        with host._dp2_cache_lock:
+            for path in ("a", "b", "c"):
+                host._dp2_cache_put_locked(path, {})
+        self.assertEqual(list(host._dp2_cache), ["a", "b", "c"])
+
+    def test_the_cap_still_bounds_what_a_new_query_leaves_behind(self):
+        host = _Host({"dp2_cache_max_demos": 3})
+        host._dp2_cache_pin(["a", "b", "c", "d"])
+        with host._dp2_cache_lock:
+            for path in ("a", "b", "c", "d"):
+                host._dp2_cache_put_locked(path, {})
+        host._dp2_cache_pin(["e"])
+        with host._dp2_cache_lock:
+            host._dp2_cache_put_locked("e", {})
+        self.assertEqual(list(host._dp2_cache), ["c", "d", "e"])
+
+    def test_preparse_pins_the_demos_of_the_query(self):
+        host = _Host({"dp2_cache_max_demos": 1})
+        pinned = []
+        host._dp2_cache_pin = lambda paths: pinned.append(list(paths))
+        host._dp2_required_sections = lambda cfg: {"fire"}
+        host._dp2_parse_demo = lambda path, sections=None: True
+        host.state = lambda name, payload: None
+        host._preparse_dp2({}, [__file__])
+        self.assertEqual(pinned, [[__file__]])
+
 
 if __name__ == "__main__":
     unittest.main()

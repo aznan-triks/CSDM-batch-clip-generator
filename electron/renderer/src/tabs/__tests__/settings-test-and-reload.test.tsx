@@ -61,6 +61,7 @@ function installPipe() {
     pickPath: () => Promise.resolve(null),
     pickSavePath: () => Promise.resolve(null),
     restartEngine: () => Promise.resolve(),
+    onFlushRequest: () => () => {},
     setWindowBounds: () => Promise.resolve(),
   } as unknown as typeof window.bridge;
 }

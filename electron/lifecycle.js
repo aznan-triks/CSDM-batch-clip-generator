@@ -36,4 +36,24 @@ function buildTreeKillArgs(pid) {
   return ["/PID", String(pid), "/T", "/F"];
 }
 
-module.exports = { noteEngineState, engineIsBusy, resetEngineState, buildTreeKillArgs };
+/**
+ * Wait for `work` to settle, but never longer than `timeoutMs`.
+ *
+ * Closing the window waits for the renderer to write its pending settings. A
+ * renderer that hung or crashed will never answer, and the window must still
+ * close; a flush that failed must not keep it open either. So this resolves --
+ * never rejects -- on whichever comes first.
+ */
+function settleWithin(work, timeoutMs) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, timeoutMs);
+    Promise.resolve(work)
+      .catch(() => {})
+      .then(() => {
+        clearTimeout(timer);
+        resolve();
+      });
+  });
+}
+
+module.exports = { noteEngineState, engineIsBusy, resetEngineState, buildTreeKillArgs, settleWithin };
