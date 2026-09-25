@@ -129,19 +129,32 @@ interface PendingCommand {
 }
 
 const pending = new Map<string, PendingCommand>();
-let routerInstalled = false;
+/** The pipe the router listens on, and how to stop listening to it. */
+let routedPipe: BridgeApi | null = null;
+let stopRouting: (() => void) | null = null;
 
 /**
- * Route `result` lines back to whoever is waiting for them.
+ * Route `result` lines back to whoever is waiting for them, on `pipe`.
  *
  * Installed on the first `runCommand` rather than at module load: importing
  * this file must stay free of side effects, or a test that only wants
  * `sendCommand` would silently subscribe to the pipe.
+ *
+ * Bound to ONE pipe, and re-bound when `window.bridge` is replaced. It used to
+ * subscribe once for the life of the module: a page (or test) that installed a
+ * new bridge sent its commands down the new pipe while the router still
+ * listened to the old one, so every answer was dropped and every caller waited
+ * forever. A replaced pipe answers nothing any more, so whatever was still
+ * waiting on it is failed at once rather than left pending.
  */
-function installResultRouter(): void {
-  if (routerInstalled) return;
-  routerInstalled = true;
-  onMessage((message) => {
+function installResultRouter(pipe: BridgeApi): void {
+  if (routedPipe === pipe) return;
+  if (stopRouting) {
+    stopRouting();
+    failAllPending("engine bridge replaced: the command was sent down a pipe nobody reads any more");
+  }
+  routedPipe = pipe;
+  stopRouting = pipe.onMessage((message) => {
     if (message.type === "result") {
       if (message.id === null) return;
       const waiting = pending.get(message.id);
@@ -196,7 +209,7 @@ export function runCommand(
   if (!pipe) {
     return Promise.reject(new Error(`no engine bridge on this page: ${name} cannot run`));
   }
-  installResultRouter();
+  installResultRouter(pipe);
   const key = SHARED_WHILE_IN_FLIGHT.has(name) ? `${name} ${JSON.stringify(payload)}` : null;
   let reads = inFlightReads.get(pipe);
   if (!reads) inFlightReads.set(pipe, (reads = new Map()));
