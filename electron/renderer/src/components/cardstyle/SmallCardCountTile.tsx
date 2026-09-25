@@ -8,6 +8,7 @@
  */
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react";
 
+import { formatStep, snapToStep } from "./numberStep";
 import "./SmallCard.css";
 
 interface CountTileProps {
@@ -23,6 +24,8 @@ interface CountTileProps {
   caption?: ReactNode;
   tip?: string;
   onChange: (value: number) => void;
+  /** One minus / plus / arrow step (default 1); decimals allowed, e.g. 0.1. */
+  step?: number;
 }
 
 export default function SmallCardCountTile({
@@ -36,10 +39,11 @@ export default function SmallCardCountTile({
   caption,
   tip,
   onChange,
+  step: stepSize = 1,
 }: CountTileProps) {
-  const clamp = (v: number) => Math.max(min, Math.min(max, Math.round(v)));
+  const clamp = (v: number) => Math.max(min, Math.min(max, snapToStep(v, stepSize)));
   const step = (by: number) => {
-    const next = clamp(value + by);
+    const next = clamp(value + by * stepSize);
     if (next !== value) onChange(next);
   };
   const valueRef = useRef<HTMLSpanElement>(null);
@@ -84,14 +88,14 @@ export default function SmallCardCountTile({
           aria-valuenow={value}
           aria-valuemin={min}
           aria-valuemax={max}
-          aria-valuetext={isSpecial ? special.word : `${value}${unit}`}
+          aria-valuetext={isSpecial ? special.word : `${formatStep(value, stepSize)}${unit}`}
           onKeyDown={onKeyDown}
         >
           {isSpecial ? (
             special.word
           ) : (
             <>
-              {value}
+              {formatStep(value, stepSize)}
               <small>{unit}</small>
             </>
           )}

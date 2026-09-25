@@ -96,7 +96,7 @@ await page.waitForTimeout(400);
 await settle();
 
 const videoChips = await page.evaluate(() => {
-  const chips = [...document.querySelectorAll(".cs2-effects .chip, .hlae-options .chip")];
+  const chips = [...document.querySelectorAll(".fx-card .chip, .fx-card [role=switch], .hl-card .chip, .hl-card [role=switch]")];
   return chips.map((c) => ({
     text: c.textContent.trim(),
     on: c.classList.contains("on"),

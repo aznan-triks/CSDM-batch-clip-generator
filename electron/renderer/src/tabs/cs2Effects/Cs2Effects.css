@@ -1,0 +1,112 @@
+/*
+ * CS2 Effects: the gravity lanes and their rulers. `fx-` prefixed.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+.fx-lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fx-lane {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--hair);
+  background: var(--surface-2);
+  transition: opacity var(--dur-base) var(--ease);
+}
+
+.fx-lane.dim {
+  opacity: 0.55;
+}
+
+.fx-lane-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.fx-name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.fx-name b {
+  font-size: 12.5px;
+  color: var(--txt);
+}
+
+.fx-name code {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--faint);
+}
+
+.fx-pull {
+  flex: none;
+  width: 18px;
+  height: 36px;
+}
+
+.fx-pull-body {
+  fill: var(--cam-k);
+}
+
+.fx-pull-arrow {
+  fill: none;
+  stroke: var(--cam-v);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* The shortcut values on a rail, evenly spaced from lowest to highest. */
+.fx-ruler {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 2px;
+}
+
+.fx-ruler::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  border-top: 2px solid color-mix(in srgb, var(--cam-k) 25%, transparent);
+}
+
+.fx-tick {
+  appearance: none;
+  position: relative;
+  padding: 1px 6px;
+  border-radius: 7px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.fx-tick:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.fx-tick.on {
+  border-color: var(--cam-k);
+  background: var(--cam-k);
+  color: #fff;
+}

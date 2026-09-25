@@ -1,0 +1,154 @@
+/*
+ * In-Game Options: the filmed screen. `ig-` prefixed. The HUD pieces and the
+ * X-ray outline appear or fade with their switches.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+.ig-screen {
+  position: relative;
+  height: 128px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid var(--hair);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cam-k) 16%, var(--solid)), color-mix(in srgb, var(--amber) 14%, var(--solid)) 78%);
+}
+
+.ig-radar,
+.ig-hp,
+.ig-ammo {
+  position: absolute;
+  opacity: 0.12;
+  transition: opacity var(--dur-base) var(--ease);
+}
+
+.ig-screen.hud .ig-radar,
+.ig-screen.hud .ig-hp,
+.ig-screen.hud .ig-ammo {
+  opacity: 1;
+}
+
+.ig-radar {
+  top: 8px;
+  left: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--txt) 45%, transparent);
+  background: color-mix(in srgb, var(--txt) 12%, transparent);
+}
+
+.ig-hp,
+.ig-ammo {
+  bottom: 7px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--txt) 55%, transparent);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ig-hp {
+  left: 8px;
+}
+
+.ig-ammo {
+  right: 8px;
+}
+
+.ig-wall {
+  position: absolute;
+  left: 44%;
+  bottom: 0;
+  width: 16%;
+  height: 62%;
+  border-radius: 4px 4px 0 0;
+  background: color-mix(in srgb, var(--txt) 30%, var(--solid));
+}
+
+/* A player behind the wall: hidden by it, outlined through it with X-ray. */
+.ig-man {
+  position: absolute;
+  left: 47%;
+  bottom: 12px;
+  z-index: 0;
+  width: 30px;
+  height: 30px;
+  color: transparent;
+  transition: color var(--dur-base) var(--ease), filter var(--dur-base) var(--ease);
+}
+
+.ig-man svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ig-screen.xray .ig-man {
+  z-index: 1;
+  color: var(--amber);
+  filter: drop-shadow(0 0 3px var(--amber));
+}
+
+.ig-feed {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.ig-feed > i {
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--red, var(--amber)) 60%, transparent);
+  background: color-mix(in srgb, var(--txt) 55%, transparent);
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 700;
+  color: #fff;
+}
+
+.ig-feed > i + i {
+  opacity: 0.6;
+}
+
+.ig-stay {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.ig-stay .w {
+  font-size: 10.5px;
+  color: var(--muted);
+}
+
+.ig-stay .cs-tok.num {
+  height: 22px;
+  line-height: 22px;
+  font-size: 11.5px;
+}
+
+.ig-badge {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  transform: translateX(-50%);
+  padding: 1px 8px;
+  border-radius: 9px;
+  background: var(--cam-k);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+
+.ig-after {
+  justify-content: flex-start;
+}

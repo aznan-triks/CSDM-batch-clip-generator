@@ -15,4 +15,11 @@ export const STYLED_CARDS: ReadonlyArray<{ id: string; title: string }> = [
   { id: "shot-filters", title: "Shot Filters" },
   { id: "match-types", title: "Match Types" },
   { id: "map-filter", title: "Map Filter" },
+  { id: "final-assembly", title: "Final Assembly" },
+  { id: "resolution", title: "Resolution, Framerate & Window" },
+  { id: "recording-system", title: "Recording System" },
+  { id: "hlae-options", title: "HLAE Options" },
+  { id: "in-game-options", title: "In-Game Options" },
+  { id: "cs2-effects", title: "CS2 Effects" },
+  { id: "encoding", title: "Encoding" },
 ];

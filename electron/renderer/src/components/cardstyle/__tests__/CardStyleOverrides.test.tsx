@@ -44,7 +44,7 @@ async function renderList(config: Record<string, unknown>) {
 }
 
 describe("Per-card style", () => {
-  it("lists every styled card, including the ten CAPTURE cards", async () => {
+  it("lists every styled card: the ten CAPTURE cards, then the seven VIDEO cards", async () => {
     await renderList({ ui_card_style: "timeline", ui_card_style_overrides: {} });
     for (const card of STYLED_CARDS) expect(screen.getByLabelText(card.title)).toBeTruthy();
     expect(STYLED_CARDS.map((c) => c.id)).toEqual([
@@ -58,6 +58,13 @@ describe("Per-card style", () => {
       "shot-filters",
       "match-types",
       "map-filter",
+      "final-assembly",
+      "resolution",
+      "recording-system",
+      "hlae-options",
+      "in-game-options",
+      "cs2-effects",
+      "encoding",
     ]);
   });
 

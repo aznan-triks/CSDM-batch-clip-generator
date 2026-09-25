@@ -1,0 +1,203 @@
+/*
+ * Encoding: the encode lanes, the CRF and bitrate rails, the command line.
+ * `en-` prefixed.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+.en-lane {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--hair);
+  background: var(--surface-2);
+}
+
+.en-ic {
+  flex: none;
+  align-self: center;
+  width: 22px;
+  height: 22px;
+  color: var(--cam-k);
+}
+
+.en-ic svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.en-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.en-codec {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.en-grow {
+  flex: 1;
+  min-width: 220px;
+}
+
+.en-select {
+  min-width: 130px;
+}
+
+.en-a .seg span {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+/* CRF: quality to the left, small files to the right; the pin is the value. */
+.en-rail {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.en-rail.crf {
+  background: linear-gradient(90deg, var(--cam-v), var(--cam-k) 45%, var(--amber));
+}
+
+.en-rail.crf i {
+  position: absolute;
+  top: -4px;
+  width: 4px;
+  height: 16px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--txt);
+  box-shadow: 0 0 0 2px var(--solid);
+}
+
+.en-rail.audio {
+  background: color-mix(in srgb, var(--cam-v) 16%, var(--solid));
+}
+
+.en-rail.audio b {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--cam-v);
+}
+
+.en-rail-caps {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--faint);
+}
+
+.en-rail-caps small:nth-child(2) {
+  font-weight: 700;
+  color: var(--cam-k);
+}
+
+/* The command line: code words with the two raw-flag boxes in place. */
+.en-cmd {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--txt) 88%, var(--solid));
+}
+
+.en-cmd code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: color-mix(in srgb, var(--solid) 80%, transparent);
+}
+
+.en-flags {
+  display: inline-flex;
+  flex: 1;
+  min-width: 150px;
+}
+
+.en-flags .fld {
+  width: 100%;
+  min-width: 0;
+  font-size: 11.5px;
+}
+
+/* ---------- tiles ---------- */
+.en-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+}
+
+.en-tile-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cam-k);
+}
+
+.en-tile-h svg {
+  width: 18px;
+  height: 18px;
+}
+
+.en-tile-h b {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.en-tile-h small {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.en-tile .lab {
+  display: none;
+}
+
+.en-tile .fld {
+  width: 100%;
+}
+
+.en-tile.wide .seg {
+  flex-wrap: wrap;
+}
+
+.en-pics .cs-pics {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.en-pics .cs-pic-th {
+  aspect-ratio: 100 / 60;
+}
+
+.en-art-file {
+  fill: var(--solid);
+  stroke: var(--c);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.en-art-ext {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--c);
+}

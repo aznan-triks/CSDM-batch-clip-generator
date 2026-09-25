@@ -119,9 +119,9 @@ export const PORTED_BEHIND_STATE: Record<string, string> = {
   I3: "TagsTab.tsx — puce de tag ; aucune puce sans tags chargés",
 
   /* ── L. Options HLAE ── */
-  L3: "VideoTab.tsx — Segmented des résolutions ; masqué tant que useTables() n'a pas répondu (contrairement au Segmented FPS voisin, qui reste monté avec des options vides)",
-  L6: "HlaeOptionsSection.tsx — boutons de vitesse rapide ; la section n'est montée qu'en mode HLAE (recsys)",
-  L8: "HlaeOptionsSection.tsx — champ Game Speed (%) ; même garde recsys que L6",
+  L3: "resolution/ResolutionCard.tsx — Segmented des résolutions ; masqué tant que useTables() n'a pas répondu (contrairement au Segmented FPS voisin, qui reste monté avec des options vides)",
+  L6: "hlaeOptions/HlaeOptionsCard.tsx — boutons de vitesse rapide (3 styles) ; la carte n'est montée qu'en mode HLAE (recsys)",
+  L8: "hlaeOptions/HlaeOptionsCard.tsx — réglage Game Speed (%), 3 styles ; même garde recsys que L6",
 
   /* ── N. Joueurs ── */
   N3: "player/parts.tsx — Segmented de tri par nom ; dans le bloc `{database && (...)}`, monté seulement une fois la base connectée",

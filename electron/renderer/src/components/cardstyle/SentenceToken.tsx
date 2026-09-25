@@ -18,6 +18,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { formatStep, snapToStep } from "./numberStep";
 import "./cardstyle.css";
 
 /** Pixels of sideways drag per step of a number token. */
@@ -134,15 +135,17 @@ interface NumberTokenProps {
   onChange: (value: number) => void;
   /** The popover's content, opened by a click that did not drag. */
   popover: ReactNode;
+  /** One drag / wheel / arrow step (default 1); decimals allowed, e.g. 0.1. */
+  step?: number;
 }
 
-export function NumberToken({ value, min, max, unit, label, tone = "primary", tip, onChange, popover }: NumberTokenProps) {
+export function NumberToken({ value, min, max, unit, label, tone = "primary", tip, onChange, popover, step = 1 }: NumberTokenProps) {
   const pop = usePopover();
   const tokenRef = useRef<HTMLButtonElement>(null);
   const scrub = useRef<{ x: number; from: number; moved: boolean } | null>(null);
-  const clamp = (v: number) => Math.max(min, Math.min(max, Math.round(v)));
-  const latest = useRef({ value, onChange, clamp });
-  latest.current = { value, onChange, clamp };
+  const clamp = (v: number) => Math.max(min, Math.min(max, snapToStep(v, step)));
+  const latest = useRef({ value, onChange, clamp, step });
+  latest.current = { value, onChange, clamp, step };
 
   // A wheel listener that may cancel the scroll: React's own is passive.
   useEffect(() => {
@@ -150,8 +153,8 @@ export function NumberToken({ value, min, max, unit, label, tone = "primary", ti
     if (!node) return;
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-      const { value: v, onChange: change, clamp: c } = latest.current;
-      const next = c(v + (event.deltaY < 0 ? 1 : -1));
+      const { value: v, onChange: change, clamp: c, step: by } = latest.current;
+      const next = c(v + (event.deltaY < 0 ? by : -by));
       if (next !== v) change(next);
     };
     node.addEventListener("wheel", onWheel, { passive: false });
@@ -168,15 +171,15 @@ export function NumberToken({ value, min, max, unit, label, tone = "primary", ti
     if (!s) return;
     const steps = Math.round((event.clientX - s.x) / DRAG_PX_PER_STEP);
     if (steps) s.moved = true;
-    const next = clamp(s.from + steps);
+    const next = clamp(s.from + steps * step);
     if (next !== value) onChange(next);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
-    const step = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[event.key];
-    if (step === undefined) return;
+    const dir = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[event.key];
+    if (dir === undefined) return;
     event.preventDefault();
-    const next = clamp(value + step);
+    const next = clamp(value + dir * step);
     if (next !== value) onChange(next);
   }
 
@@ -191,7 +194,7 @@ export function NumberToken({ value, min, max, unit, label, tone = "primary", ti
         aria-valuenow={value}
         aria-valuemin={min}
         aria-valuemax={max}
-        aria-valuetext={`${value}${unit}`}
+        aria-valuetext={`${formatStep(value, step)}${unit}`}
         aria-haspopup="dialog"
         aria-expanded={pop.open}
         title={tip ? `${tip}. Drag sideways or scroll to change` : "Drag sideways or scroll to change"}
@@ -208,7 +211,7 @@ export function NumberToken({ value, min, max, unit, label, tone = "primary", ti
         }}
         onKeyDown={onKeyDown}
       >
-        {value}
+        {formatStep(value, step)}
         {unit}
       </button>
       <Popover pop={pop} label={label}>

@@ -1,0 +1,104 @@
+/*
+ * Recording System: the two recording chains. `rsys-` prefixed.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+.rsys-lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rsys-lane {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--hair);
+  background: var(--surface-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+}
+
+.rsys-lane:hover {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.rsys-lane > b {
+  flex: none;
+  width: 68px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.rsys-lane.on {
+  border-color: var(--cam-k);
+  background: color-mix(in srgb, var(--cam-k) 7%, var(--solid));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cam-k) 14%, transparent);
+}
+
+.rsys-lane.on > b {
+  color: var(--cam-k);
+}
+
+.rsys-lane:not(.on) .rsys-chain {
+  opacity: 0.5;
+}
+
+.rsys-chain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 0;
+  min-width: 0;
+}
+
+.rsys-step-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.rsys-step {
+  padding: 2px 7px;
+  border-radius: 7px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  white-space: nowrap;
+  color: var(--txt);
+}
+
+.rsys-step.hlae {
+  border-color: var(--cam-k);
+  background: var(--cam-k);
+  color: #fff;
+}
+
+.rsys-link {
+  width: 12px;
+  border-top: 2px solid color-mix(in srgb, var(--cam-k) 45%, transparent);
+}
+
+.rsys-pics .cs-pics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rsys-pics .cs-pic-th {
+  aspect-ratio: 100 / 50;
+}
+
+.rsys-art-step {
+  fill: var(--solid);
+  stroke: var(--hair);
+  stroke-width: 1.4;
+}
+
+.rsys-art-hlae {
+  fill: var(--c);
+}

@@ -1,0 +1,158 @@
+/*
+ * Shared pieces of the remade VIDEO cards: the style bodies, the kicker, the
+ * hint line, shortcut chips, tile grids. `vk-` prefixed: the V12 mock owns
+ * the plain names, `cs-` / `sc-` belong to components/cardstyle.
+ * Colours come from theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.vk-card .sb {
+  container-type: inline-size;
+}
+
+.vk-a,
+.vk-b,
+.vk-c {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.vk-b .sc-prose {
+  font-size: 14.5px;
+}
+
+.vk-kick {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--cam-k);
+}
+
+.vk-hint {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.vk-warn {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--amber);
+}
+
+.vk-textrow .fld {
+  flex: 1;
+  min-width: 0;
+}
+
+.vk-exact {
+  display: contents;
+}
+
+/* Shortcut values under a number. */
+.vk-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.vk-quick .chip {
+  padding: 2px 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.cs-pop .vk-quick {
+  margin-top: 8px;
+}
+
+/* A text value inside a sentence word. */
+.vk-tokval {
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.vk-tokval.empty {
+  font-style: italic;
+  opacity: 0.6;
+}
+
+/* Tiles: two, three or four to a row, fewer when the card is narrow. */
+.vk-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.vk-tiles.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.vk-tiles.four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@container (max-width: 420px) {
+  .vk-tiles.three,
+  .vk-tiles.four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.vk-tiles .cs-tile {
+  width: 100%;
+  min-height: 96px;
+}
+
+.vk-numtile {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+/* A lane of the timeline style: a kicker, then its drawing. */
+.vk-lane {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.vk-lane-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  min-height: 26px;
+}
+
+.vk-track {
+  position: relative;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--hair);
+  background:
+    repeating-linear-gradient(90deg, transparent 0 11px, color-mix(in srgb, var(--hair) 60%, transparent) 11px 12px),
+    var(--surface-2);
+}
+
+.vk-switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.vk-pics .cs-pic-th {
+  background: var(--surface-2);
+}
