@@ -115,4 +115,18 @@ describe("FilterRow", () => {
     ).not.toBeNull();
     expect(screen.getByRole("button", { name: /Exclude/ })).toBeTruthy();
   });
+
+  it("flags a rule not yet checked in game, and only that one", async () => {
+    const note = "The 200 u/s default has not been checked in game yet.";
+    render(
+      <SettingsProvider>
+        <FilterRow def={{ ...DEF, key: "shot_mod_run_gun", untested: note }} />
+        <FilterRow def={DEF} />
+      </SettingsProvider>,
+    );
+    await act(async () => {});
+    const markers = screen.getAllByText(/UNTESTED/);
+    expect(markers).toHaveLength(1);
+    expect(markers[0].getAttribute("title")).toBe(note);
+  });
 });

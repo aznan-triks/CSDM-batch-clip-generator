@@ -152,6 +152,9 @@ describe("ActionBar", () => {
       // No preview yet: both GENERATE (nothing selected) and SAVE (no data) disabled.
       expect(screen.getByRole("button", { name: /GENERATE/ })).toHaveProperty("disabled", true);
       expect(screen.getByRole("button", { name: /SAVE/ })).toHaveProperty("disabled", true);
+      // ...and both say why, pointing at the step that is missing.
+      expect(screen.getByRole("button", { name: /GENERATE/ }).getAttribute("title")).toMatch(/PREVIEW/);
+      expect(screen.getByRole("button", { name: /SAVE/ }).getAttribute("title")).toMatch(/PREVIEW/);
 
       // A preview arrives with two clips, one unselected.
       act(() =>
@@ -180,6 +183,7 @@ describe("ActionBar", () => {
       // Unselect the last clip too: GENERATE disables, SAVE keeps working.
       act(() => emit({ type: "state", name: "editing_toggle", payload: { index: 0 } }));
       expect(screen.getByRole("button", { name: /GENERATE/ })).toHaveProperty("disabled", true);
+      expect(screen.getByRole("button", { name: /GENERATE/ }).getAttribute("title")).toMatch(/Check at least one clip/);
       expect(screen.getByRole("button", { name: /SAVE/ })).toHaveProperty("disabled", false);
     });
 

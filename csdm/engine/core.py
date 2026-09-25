@@ -45,7 +45,7 @@ from csdm.static_data import (
     CSDM_TO_DP2_WEAPON, TROIS_SHOT_THRESHOLDS, DP2_TICK_WINDOW,
     SPRAY_TRANSFER_WEAPONS_LOWER, SPRAY_MAX_GAP_TICKS,
 )
-from csdm.config import DEFAULT_CONFIG
+from csdm.config import DEFAULT_CONFIG, clips_root, detect_csdm_cli
 from csdm.core_utils import (
     build_camera_ticks, safe_folder_name, _count_kills, fmt_duration, progress_bar,
     process_is_running, ensure_csdm_dirs, _generate_id_for_type, display_to_iso,
@@ -556,7 +556,8 @@ class EngineMixin:
 
     def _resolve_cli(self, p):
         if not p:
-            return "csdm"
+            # Nothing set: the installer's standard location, then PATH.
+            return detect_csdm_cli() or "csdm"
         p = os.path.abspath(p)
         b = os.path.basename(p).lower()
         d = os.path.dirname(p)
@@ -2655,7 +2656,7 @@ class EngineMixin:
         cfg_dir = self._resolve_cs2_cfg_dir(cfg)
         if not cfg_dir:
             self.log("  ⚠ CS injection: CS2 cfg folder not found. "
-                       "Set cs2_cfg_dir in csdm_config.json.", "warn")
+                       "Set it in SETTINGS › Paths › CS2 cfg folder.", "warn")
             return False
 
         runtime_cmds = list(shared.get("console_cmds", []))
@@ -2933,9 +2934,8 @@ class EngineMixin:
     @staticmethod
     def _bj_output_dir(demo_path, cfg):
         """Resolve (and create) the clip output folder for this demo."""
-        _clips_dir = (cfg.get("output_dir_clips") or cfg.get("output_dir") or "").strip()
-        od = os.path.abspath(_clips_dir) if _clips_dir else ""
-        if cfg.get("subfolder_per_demo", True) and od:
+        od = clips_root(cfg)
+        if cfg.get("subfolder_per_demo", True):
             od = os.path.join(od, safe_folder_name(Path(demo_path).name))
             os.makedirs(od, exist_ok=True)
         return od
@@ -3367,14 +3367,13 @@ class EngineMixin:
             p = Path.home() / ".csdm" / "ffmpeg" / "ffmpeg.exe"
             ffmpeg = str(p) if p.exists() else None
         if not ffmpeg:
-            self.log("  Assembly: FFmpeg not found.", "err")
+            self.log("  Assembly skipped: FFmpeg not found (searched PATH and "
+                     f"{Path.home() / '.csdm' / 'ffmpeg'}). The clips themselves are recorded.", "err")
             return
 
         # Collect all video files from produced directories
-        _asm_base = (cfg.get("output_dir_assembled") or
-                    cfg.get("output_dir_clips") or
-                    cfg.get("output_dir") or "").strip()
-        out_root = os.path.abspath(_asm_base) if _asm_base else ""
+        _asm_base = (cfg.get("output_dir_assembled") or "").strip()
+        out_root = os.path.abspath(_asm_base) if _asm_base else clips_root(cfg)
         clips = []
         search_dirs = [d for d in produced_dirs if d] or ([out_root] if out_root else [])
         for d in search_dirs:
@@ -3470,8 +3469,7 @@ class EngineMixin:
                 # Determine the true root output folder — never delete at or above it.
                 # output_dir_clips is the authoritative raw-clips root; fall back to
                 # output_dir for backward compat with older configs.
-                _clips_root_raw = (cfg.get("output_dir_clips") or cfg.get("output_dir") or "")
-                out_root = Path(os.path.abspath(_clips_root_raw)).resolve() if _clips_root_raw else None
+                out_root = Path(clips_root(cfg)).resolve()
 
                 # Walk upward from each affected dir, removing empty dirs until we
                 # hit the root or a non-empty dir. This handles nested subfolder layouts
@@ -3990,7 +3988,9 @@ class EngineMixin:
     def run_inputs_problem(cfg):
         """Why `cfg` cannot run, preview or search, in the user's words; None when it can."""
         if not cfg.get("steam_ids"):
-            return "Check at least one registered account."
+            # Registering (★) is optional; what a run needs is an ACTIVE player.
+            return ("Pick at least one player: CAPTURE › Player, search your "
+                    "name or Steam ID, then click the row.")
         if not (cfg.get("event_actor") or cfg.get("event_target") or (cfg.get("events") or [])):
             # Rounds is independent of the perspective axis.
             return "Select at least one perspective (Actor / Target) or enable Rounds."
@@ -4129,9 +4129,19 @@ class EngineMixin:
             if w:
                 cli = w
             else:
-                self.log(f"CLI not found: {cli}", "err")
+                self.log(f"CS Demo Manager not found ({cli}). Install CS Demo Manager, "
+                         "or set SETTINGS › Paths › CSDM Executable to its csdm.CMD.", "err")
                 self.state("buttons_idle")
                 return
+        clips_dir = clips_root(cfg)
+        try:
+            os.makedirs(clips_dir, exist_ok=True)
+        except OSError as exc:
+            self.log(f"Raw clips folder unusable: {clips_dir} ({exc.strerror or exc}). "
+                     "Choose another one in SETTINGS › Paths › Raw clips folder.", "err")
+            self.state("buttons_idle")
+            return
+        self.log(f"Clips folder: {clips_dir}", "dim")
         player_str = self._player_str(cfg)
         tv = cfg.get("true_view", True)
         tag_name = cfg.get("tag_on_export", "")

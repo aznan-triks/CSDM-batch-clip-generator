@@ -92,6 +92,23 @@ export default function ActionBar({
   const hasPreview = previewClips.length > 0;
   const hasSelected = previewClips.some((clip) => clip.selected);
 
+  // A greyed-out button says why (first-run audit): a new user landing on
+  // EDITING sees an empty list and two dead buttons otherwise.
+  const noPreviewTip = "Run PREVIEW on the CAPTURE tab first: this tab lists the clips it finds";
+  const busyTip = "Wait for the current run or preview to finish";
+  const generateTip = busy
+    ? busyTip
+    : !hasPreview
+      ? noPreviewTip
+      : !hasSelected
+        ? "Check at least one clip below"
+        : "Run only the clips checked below, not a full batch";
+  const saveTip = busy
+    ? busyTip
+    : !hasPreview
+      ? noPreviewTip
+      : "Save the current settings and selection as a reusable preset";
+
   // GENERATE is the editing tab's primary: like RUN it starts a real run,
   // but restricted to the clips the user checked on the editing checklist.
   const onGenerate = useCallback(() => {
@@ -123,7 +140,7 @@ export default function ActionBar({
             icon={<ICONS.run />}
             variant="run"
             disabled={!hasSelected || busy}
-            title="Run only the clips checked below, not a full batch"
+            title={generateTip}
             data-action="Q1"
             onClick={onGenerate}
           />
@@ -134,7 +151,7 @@ export default function ActionBar({
             icon={<ICONS.presets />}
             variant="preview"
             disabled={!hasPreview || busy}
-            title="Save the current settings and selection as a reusable preset"
+            title={saveTip}
             data-action="Q2"
             onClick={onSave}
           />

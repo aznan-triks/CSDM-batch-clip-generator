@@ -55,7 +55,14 @@ export default function FilterRow({
 
   return (
     <div className="filter-row" title={def.tip}>
-      <span className="filter-row-label">{def.label}</span>
+      <span className="filter-row-label">
+        {def.label}
+        {def.untested && (
+          <span className="filter-row-untested" title={def.untested}>
+            {" "}UNTESTED
+          </span>
+        )}
+      </span>
       <SettingControl settingKey={def.key}>
         {/* Marker only, same "display: contents" rule SettingControl itself
             uses: Chip does not forward a data-action, and every filter row's
@@ -91,7 +98,9 @@ export default function FilterRow({
       )}
       {children}
       {alwaysShow && def.tip && (
-        <div className="persistent-tip filter-row-tip">{def.tip}</div>
+        <div className="persistent-tip filter-row-tip">
+          {def.untested ? `${def.tip}\nUNTESTED: ${def.untested}` : def.tip}
+        </div>
       )}
     </div>
   );

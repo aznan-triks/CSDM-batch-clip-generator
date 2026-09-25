@@ -57,9 +57,12 @@ ASM_NAMES_FILE = str(_ROOT / CONFIG_SUBDIR / "csdm_asm_names.json")
 DEFAULT_CONFIG = {
     "pg_host": "127.0.0.1", "pg_port": "5432",
     "pg_user": "postgres", "pg_pass": "", "pg_db": "csdm",
-    "csdm_exe": r"C:\Users\Trois\AppData\Local\Programs\cs-demo-manager\csdm.CMD",
-    "output_dir": r"H:\CS\CSVideos\Raws",
-    "output_dir_clips":    r"H:\CS\CSVideos\Raws",   # raw clips per demo
+    # Empty = auto-detect (csdm_cli_candidates) / default folder
+    # (default_clips_dir). A path of one machine here is a path nobody else
+    # has: a new install used to start pointed at the author's own disks.
+    "csdm_exe": "",
+    "output_dir": "",
+    "output_dir_clips":    "",   # raw clips per demo (empty = default_clips_dir)
     "output_dir_concat":   "",   # concatenated clips (empty = same as raw)
     "output_dir_assembled": "",  # final assembled file (empty = same as raw)
     "cs2_cfg_dir": "",
@@ -347,6 +350,46 @@ def _app_data_dir():
     if local:
         return Path(local)
     return Path.home() / "AppData" / "Local"
+
+
+# Where the CS Demo Manager installer puts its command-line entry point,
+# relative to %LOCALAPPDATA% (per-user install).
+CSDM_CLI_INSTALL_PATHS = (
+    ("Programs", "cs-demo-manager", "csdm.CMD"),
+    ("Programs", "cs-demo-manager", "csdm.exe"),
+)
+# Folder created under the user's Videos folder when no raw clips folder is set.
+DEFAULT_CLIPS_SUBDIR = "CSDM Batch Clips"
+
+
+def csdm_cli_candidates():
+    """Standard CS Demo Manager install locations, most likely first."""
+    base = _app_data_dir()
+    return [base.joinpath(*parts) for parts in CSDM_CLI_INSTALL_PATHS]
+
+
+def detect_csdm_cli():
+    """The CS Demo Manager CLI found without any setting, or "" when none is."""
+    for c in csdm_cli_candidates():
+        if c.is_file():
+            return str(c)
+    return shutil.which("csdm") or ""
+
+
+def default_clips_dir():
+    """The raw clips folder used when `output_dir_clips` is empty."""
+    return Path.home() / "Videos" / DEFAULT_CLIPS_SUBDIR
+
+
+def clips_root(cfg):
+    """The raw clips root a run writes to: the setting, else the default.
+
+    The one resolver for every reader (clip output, assembly, cleanup), so an
+    empty setting cannot mean "CS Demo Manager's own folder" to one of them
+    and "nowhere" to another (assembly then found no clip at all).
+    """
+    raw = (cfg.get("output_dir_clips") or cfg.get("output_dir") or "").strip()
+    return os.path.abspath(raw) if raw else str(default_clips_dir())
 
 
 def resolve_config_dir(value):

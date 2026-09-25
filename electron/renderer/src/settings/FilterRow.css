@@ -19,3 +19,9 @@
   color: var(--txt-lo);
   min-width: 190px;
 }
+
+/* A rule not yet checked in game (FilterDef.untested): named on the row,
+   the detail in its tooltip. */
+.filter-row-untested {
+  color: var(--fire-t);
+}

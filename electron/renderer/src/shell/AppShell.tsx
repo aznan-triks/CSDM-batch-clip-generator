@@ -8,7 +8,7 @@ import { markEditingViewed, useEngineSelector } from "../motion/useEngineState";
 import { useWindowActivity } from "../motion/useWindowActivity";
 import { useSetting } from "../settings/store";
 import { AlwaysTooltipsProvider } from "../settings/useAlwaysTooltips";
-import { DatabaseProvider } from "../settings/useDatabase";
+import { DatabaseProvider, useDatabase } from "../settings/useDatabase";
 import CaptureTab from "../tabs/CaptureTab";
 import { EditingTab } from "../tabs/EditingTab";
 import SettingsTab from "../tabs/SettingsTab";
@@ -20,7 +20,7 @@ import ActionBar from "./ActionBar";
 import Backdrop from "./Backdrop";
 import EngineWeaponBand from "./EngineWeaponBand";
 import { EngineLostBanner } from "./EngineLostBanner";
-import HudNav from "./HudNav";
+import HudNav, { type HudNavProps } from "./HudNav";
 import LogConsole from "./LogConsole";
 import { clampSplitPct, SPLIT_PCT_DEFAULT } from "./splitPane";
 import { TABS } from "./tabs";
@@ -265,8 +265,13 @@ export default function AppShell() {
       <ClickSpark />
       <Reticle />
       <AlwaysTooltipsProvider value={!!alwaysShowTooltips}>
+        {/* One connect_db for the whole window: keep-alive mounts every tab,
+            so the provider sits above the panels (CaptureTab's own provider
+            would leave TagsTab fetching a second time) and above the nav,
+            whose DB pill reports whether that one connection worked. */}
+        <DatabaseProvider>
         <div className="app">
-          <HudNav
+          <HudNavWithDb
             tabs={hudTabs}
             active={active}
             onSelect={setActive}
@@ -292,10 +297,6 @@ export default function AppShell() {
                 `tabpanel` role sits on the visible panel only. The `data-tab`
                 backdrop attribute is driven by `active` above, unchanged. */}
             <div className="scrollwrap">
-              {/* One connect_db for every tab: keep-alive mounts all of them, so
-                  the provider must sit above the panels (CaptureTab's own
-                  provider would leave TagsTab fetching a second time). */}
-              <DatabaseProvider>
               {TABS.map((tab) => (
                 <div
                   key={tab.id}
@@ -311,7 +312,6 @@ export default function AppShell() {
                   {tab.id === "settings" && <MemoSettingsTab />}
                 </div>
               ))}
-              </DatabaseProvider>
             </div>
             <div
               className="split-handle"
@@ -332,7 +332,19 @@ export default function AppShell() {
             weapon={<EngineWeaponBand buttonRef={buttonRef} />}
           />
         </div>
+        </DatabaseProvider>
       </AlwaysTooltipsProvider>
     </>
   );
+}
+
+
+/**
+ * The nav with its DB pill fed by the shared connection: HudNav stays
+ * presentational (its tests render it bare), this reads the provider.
+ */
+function HudNavWithDb(props: Omit<HudNavProps<TabSpec["id"]>, "dbState">) {
+  const { database, error } = useDatabase();
+  const dbState = error ? "error" : database ? "ok" : "pending";
+  return <HudNav {...props} dbState={dbState} />;
 }

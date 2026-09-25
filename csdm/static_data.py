@@ -52,6 +52,9 @@ class FilterDef(NamedTuple):
     # A row built from the registry (Damage / Shot Filters cards) renders one
     # numeric field per entry; kill filters keep their own hand-tuned extras.
     extra_ui: Optional[dict] = None
+    # Non-empty when the filter's rule has not been checked against real
+    # games yet: the text says what is unverified, the UI flags the row.
+    untested: str = ""
 
 
 KILL_FILTER_REGISTRY: _List[FilterDef] = [
@@ -87,7 +90,9 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
          "Uses player_death.attackerinair — demoparser2 required, not stored in CSDM DB."),
         dp2_filter="_airborne_dp2_filter",      dp2_apply="_apply_airborne_dp2_to_events",
         dp2_log="🪂 AIRBORNE",  dp2_result="airborne",    dp2_skip="0 AIRBORNE",
-        applies_to=("kill", "shot")),   # shot: shots.player_velocity_z
+        applies_to=("kill", "shot"),    # shot: shots.player_velocity_z
+        untested=("On shots, 'in the air' means a vertical speed above 1 u/s: "
+                  "that threshold has not been checked in game yet.")),
     FilterDef("kill_mod_collateral",     "🎯 COLLATERAL:",    "🎯 COLLAT.",    "dp2",
         ("Single bullet penetrated and killed multiple players in the same shot chain.\n"
          "Uses player_death.penetrated + shot grouping via demoparser2."),
@@ -212,7 +217,8 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
          "(sqrt(player_velocity_x² + player_velocity_y²)). Run speeds: knife 250 · AK 215 · AWP 200."),
         applies_to=("shot",),
         extra_config={"shot_mod_run_gun_speed": 200},
-        extra_ui={"shot_mod_run_gun_speed": ("Min speed", "u/s")}),
+        extra_ui={"shot_mod_run_gun_speed": ("Min speed", "u/s")},
+        untested="The 200 u/s default has not been checked in game yet."),
 ]
 
 # ── Derived structures (auto-generated — DO NOT EDIT, edit KILL_FILTER_REGISTRY) ──

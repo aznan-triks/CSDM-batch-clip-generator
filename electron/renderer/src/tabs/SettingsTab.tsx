@@ -23,6 +23,7 @@ import { pickPath, runCommand, setWindowBounds } from "../bridge";
 import SectionList, { type SectionSpec } from "../shell/SectionList";
 import SettingControl from "../settings/SettingControl";
 import { useDatabase } from "../settings/useDatabase";
+import { useTables } from "../settings/useTables";
 import { useSetting, useSettingsBatch } from "../settings/store";
 import { ACCENT_PRESETS, applyAccent, resolveAccent } from "../theme/accent";
 import { applyMode, DEFAULT_GROUND, GROUND_MODES } from "../theme/mode";
@@ -98,6 +99,9 @@ export default function SettingsTab() {
   // Named at the call site: `reload` alone reads as "reload this tab" three
   // hundred lines further down, where it is used.
   const { reload: reloadDatabase } = useDatabase();
+  // What an empty path resolves to on this machine (engine knowledge), shown
+  // as the placeholder so a blank box never reads as "not set up".
+  const defaultPaths = useTables().tables?.defaultPaths;
 
   const [csdmExe, setCsdmExe] = useSetting<string>("csdm_exe");
   const [cs2CfgDir, setCs2CfgDir] = useSetting<string>("cs2_cfg_dir");
@@ -327,6 +331,10 @@ export default function SettingsTab() {
             </button>
             {dbStatus && <span className="settings-db-status">{dbStatus}</span>}
           </div>
+          <p className="capture-hint">
+            Use the values shown in CS Demo Manager › Settings › Database. CS Demo Manager must be
+            installed and its database running.
+          </p>
         </Card>
       ),
     },
@@ -338,7 +346,13 @@ export default function SettingsTab() {
             <PathField
               id="csdm-exe"
               label="CSDM Executable"
-              placeholder="csdm.CMD or csdm.exe"
+              placeholder={
+                !defaultPaths
+                  ? "csdm.CMD or csdm.exe"
+                  : defaultPaths.csdmExe
+                    ? `Empty = auto-detected: ${defaultPaths.csdmExe}`
+                    : "Not found automatically: Browse to CS Demo Manager's csdm.CMD"
+              }
               value={csdmExe ?? ""}
               onChange={setCsdmExe}
               mode="file"
@@ -359,7 +373,11 @@ export default function SettingsTab() {
             <PathField
               id="output-dir-clips"
               label="Raw clips folder"
-              placeholder="A subfolder per demo is created here"
+              placeholder={
+                defaultPaths?.clipsDir
+                  ? `Empty = ${defaultPaths.clipsDir} (a subfolder per demo is created inside)`
+                  : "A subfolder per demo is created here"
+              }
               value={outputClips ?? ""}
               onChange={setOutputClips}
               mode="dir"

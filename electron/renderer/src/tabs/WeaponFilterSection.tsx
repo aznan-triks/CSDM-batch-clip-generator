@@ -22,6 +22,7 @@ import { useState } from "react";
 import Chip from "../components/Chip";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
+import DatabasePending from "../settings/DatabasePending";
 import { useDatabase } from "../settings/useDatabase";
 import { useTables } from "../settings/useTables";
 import { silhouetteFor, silhouetteRatio } from "../weapon/silhouettes";
@@ -66,7 +67,7 @@ export default function WeaponFilterSection() {
     return <p className="capture-hint">Loading weapons…</p>;
   }
   if (!database) {
-    return <p className="capture-hint">Waiting for DB…</p>;
+    return <DatabasePending />;
   }
 
   const selected = Array.isArray(weapons) ? weapons : [];

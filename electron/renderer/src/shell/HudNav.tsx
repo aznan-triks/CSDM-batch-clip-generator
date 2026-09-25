@@ -12,13 +12,17 @@ interface HudNavTab<T extends string> {
   tip?: string;
 }
 
-interface HudNavProps<T extends string> {
+export interface HudNavProps<T extends string> {
   tabs: HudNavTab<T>[];
   active: T;
   onSelect: (id: T) => void;
   /** The mock's `.navtools` pills. Values come from the caller, which is the
    *  one already inside the settings provider -- this stays presentational. */
   database?: string;
+  /** Whether the shared connection worked. The pill used to show the saved
+   *  database name even when nothing was connected (first-run audit). Absent
+   *  = unknown, the name is shown as before. */
+  dbState?: "pending" | "ok" | "error";
   preset?: string;
   /** The running build, from the engine's `hello` reply (`data.app_version`).
    *  Rendered beside the brand so the version in use is always on screen. */
@@ -38,9 +42,17 @@ export default function HudNav<T extends string>({
   active,
   onSelect,
   database,
+  dbState,
   preset,
   version,
 }: HudNavProps<T>) {
+  const dbLabel = dbState === "error" ? "offline" : database || "--";
+  const dbTip =
+    dbState === "error"
+      ? "Not connected to the database: see SETTINGS › PostgreSQL Connection"
+      : dbState === "pending"
+        ? "Connecting to the PostgreSQL database…"
+        : "PostgreSQL database currently connected for this session";
   return (
     <div className="hud-nav">
       <div className="hud-inner">
@@ -73,8 +85,8 @@ export default function HudNav<T extends string>({
           ))}
         </TabBar>
         <div className="navtools">
-          <div className="p" title="PostgreSQL database currently connected for this session">
-            DB <b>{database || "--"}</b>
+          <div className="p" title={dbTip} data-db-state={dbState}>
+            DB <b>{dbLabel}</b>
           </div>
           <div className="p" title="Active video encoding preset used when recording clips">
             Preset <b>{preset || "--"}</b>
