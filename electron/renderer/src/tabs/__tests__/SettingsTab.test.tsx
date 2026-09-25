@@ -283,12 +283,16 @@ describe("SettingsTab", () => {
           fireEvent.change(field, { target: { value: "JetBrains Mono" } });
         });
         await act(async () => {
-          vi.advanceTimersByTime(SAVE_DEBOUNCE_MS);
+          await vi.advanceTimersByTimeAsync(SAVE_DEBOUNCE_MS);
         });
 
-        const saves = saveCalls.filter((c) => c.cfg !== undefined);
-        const last = saves.at(-1)?.cfg as Record<string, unknown> | undefined;
-        expect(last?.ui_font_family).toBe("JetBrains Mono");
+        // The save reaches the bridge asynchronously; under a loaded full run
+        // it can land a tick after the debounce fires (was flaky).
+        await vi.waitFor(() => {
+          const saves = saveCalls.filter((c) => c.cfg !== undefined);
+          const last = saves.at(-1)?.cfg as Record<string, unknown> | undefined;
+          expect(last?.ui_font_family).toBe("JetBrains Mono");
+        });
       } finally {
         vi.useRealTimers();
       }
