@@ -112,3 +112,11 @@
   -webkit-box-shadow: 0 0 0 1000px var(--solid) inset;
   caret-color: var(--gold);
 }
+
+/* The unit after a number box ("s", "min"), shared by Field rows and
+   Slider rows so the two read alike side by side. */
+.unit {
+  flex: none;
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}

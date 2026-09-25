@@ -6,6 +6,10 @@
  * the coverage guard can see it; a control rendered without one counts as
  * missing, which is the point.
  *
+ * Capture & Timing is split into three titled groups (What to capture /
+ * Camera / Clip length) and Timing & Retries into two (If a recording fails /
+ * Between demos), each ending in plain words drawn from the values.
+ *
  * The three conditional rows are the window's own rules, not new behaviour:
  *   - the switch delay exists only in `both` perspective;
  *   - Mate POV exists in `victim` and `both`;
@@ -14,6 +18,7 @@
 import Card from "../components/Card";
 import Chip from "../components/Chip";
 import Field from "../components/Field";
+import FormGroup from "../components/FormGroup";
 import { ICONS } from "../icons";
 import Segmented from "../components/Segmented";
 import Slider from "../components/Slider";
@@ -30,7 +35,8 @@ import MapFilterSection from "./MapFilterSection";
 import MatchTypesSection from "./MatchTypesSection";
 import PlayerSection from "./PlayerSection";
 import WeaponFilterSection from "./WeaponFilterSection";
-import { clipWindowSummary, pacingSummary } from "./clipWindow";
+import ClipTimeline from "./ClipTimeline";
+import { clipWindow, clipWindowSummary, pacingSummary } from "./clipWindow";
 import "./CaptureTab.css";
 
 /**
@@ -90,6 +96,20 @@ export default function CaptureTab() {
   const retrySeconds = asCount(retryDelay, 0);
   const demoPauseSeconds = asCount(demoPause, 0);
   const timeoutMinutes = asCount(recordingTimeout, 0);
+  const clipInput = {
+    before: beforeSeconds,
+    after: afterSeconds,
+    perspective: perspective ?? PERSPECTIVES[0],
+    switchDelay,
+  };
+  const clip = clipWindow(clipInput);
+  const pacing = {
+    retries,
+    retryDelay: retrySeconds,
+    demoPause: demoPauseSeconds,
+    timeoutMin: timeoutMinutes,
+    order: clipOrder ?? CLIP_ORDERS[0],
+  };
 
   function toggleEvent(kind: string) {
     setEvents(
@@ -148,128 +168,139 @@ export default function CaptureTab() {
       id: "capture-timing",
       element: (
         <Card title="Capture &amp; Timing" icon={<ICONS.captureTiming />} count={perspective ?? PERSPECTIVES[0]}>
-          <EventTypeSection />
+          {/* Three groups in reading order: WHAT ends up in a clip, whose
+              eyes film it, how long it lasts. They used to be one flat list
+              of eleven rows mixing the three. */}
+          <FormGroup title="What to capture">
+            <EventTypeSection />
 
-          {/* Rounds is independent of the perspective/action-type axes; the
-              engine still reads it from the legacy `events` list. */}
-          <SettingControl settingKey="events">
+            {/* Rounds is independent of the perspective/action-type axes; the
+                engine still reads it from the legacy `events` list. */}
+            <SettingControl settingKey="events">
+              <div className="row">
+                <span className="lab">Also</span>
+                <div className="chips">
+                  <Chip
+                    label="Full rounds"
+                    tip="Also capture full-round clips, separate from the kill/death event filters above"
+                    selected={selectedEvents.includes("Rounds")}
+                    onToggle={() => toggleEvent("Rounds")}
+                  />
+                </div>
+              </div>
+            </SettingControl>
+          </FormGroup>
+
+          <FormGroup title="Camera">
+            {/* "Film from", under "Camera": the setting picks whose eyes the
+                clip is filmed through, and Event role above already answers
+                "who acts". */}
+            <SettingControl settingKey="perspective">
+              <div className="row">
+                <span className="lab">Film from</span>
+                <Segmented
+                  options={PERSPECTIVES}
+                  value={perspective ?? PERSPECTIVES[0]}
+                  onChange={setPerspective}
+                  label="Camera"
+                  tip="Whose eyes the clip is filmed through: the killer, the victim, or the killer then the victim (both)"
+                  optionActions={Object.fromEntries(PERSPECTIVES.map((p) => [p, "L5"]))}
+                />
+              </div>
+            </SettingControl>
+
+            {/* Mate POV replaces the victim camera, so it is meaningless on the killer. */}
+            {(perspective === "victim" || perspective === "both") && (
+              <div className="row">
+                <span className="lab">Mate POV</span>
+                <div className="chips">
+                  <SettingControl settingKey="kill_mod_mate_pov">
+                    <Chip
+                      label="Enable"
+                      tip="Film the victim's side from the teammate with the best view of the kill, instead of the victim"
+                      selected={!!matePov}
+                      onToggle={toggleMatePov}
+                    />
+                  </SettingControl>
+                  <SettingControl settingKey="kill_mod_mate_pov_req">
+                    <Chip
+                      label="★ Must"
+                      tip="Skip the clip when no teammate has a clear view of the kill"
+                      selected={!!matePovReq}
+                      onToggle={toggleMatePovReq}
+                    />
+                  </SettingControl>
+                </div>
+              </div>
+            )}
+
             <div className="row">
-              <span className="lab">Rounds</span>
-              <Chip
-                label="ROUNDS"
-                tip="Also capture full-round clips, separate from the kill/death event filters above"
-                selected={selectedEvents.includes("Rounds")}
-                onToggle={() => toggleEvent("Rounds")}
-              />
+              <SettingControl settingKey="player_name_override">
+                <Field
+                  id="player-name-override"
+                  label="Feed name"
+                  value={nameOverride ?? ""}
+                  onChange={setNameOverride}
+                  placeholder="name from the demo"
+                  tip="Name shown for your player in the clips' kill feed. Empty = the name stored in the demo"
+                />
+              </SettingControl>
             </div>
-          </SettingControl>
 
-          {/* "Camera", not "Perspective": the setting picks whose eyes the
-              clip is filmed through, and Event role above already answers
-              "who acts". */}
-          <SettingControl settingKey="perspective">
-            <div className="row">
-              <span className="lab">Camera</span>
-              <Segmented
-                options={PERSPECTIVES}
-                value={perspective ?? PERSPECTIVES[0]}
-                onChange={setPerspective}
-                label="Camera"
-                tip="Whose eyes the clip is filmed through: the killer, the victim, or the killer then the victim (both)"
-                optionActions={Object.fromEntries(PERSPECTIVES.map((p) => [p, "L5"]))}
-              />
-            </div>
-          </SettingControl>
+            {/* Only `both` switches camera, so only `both` has a delay to set.
+                Last in its group on purpose: it sits right above "Before",
+                the seconds it is added to (the bar below shows the sum). */}
+            {perspective === "both" && (
+              <SettingControl settingKey="victim_pre_s">
+                <Slider
+                  id="victim-pre-s"
+                  label="Victim view"
+                  unit="s"
+                  min={SWITCH_DELAY_RANGE.min}
+                  max={SWITCH_DELAY_RANGE.max}
+                  value={switchDelay}
+                  onChange={setVictimPre}
+                  tip="Both: the camera follows the killer, then switches to the victim this many seconds before the kill. These seconds are added to the seconds before"
+                />
+              </SettingControl>
+            )}
+          </FormGroup>
 
-          {/* Only `both` switches camera, so only `both` has a delay to set. */}
-          {perspective === "both" && (
-            <SettingControl settingKey="victim_pre_s">
+          <FormGroup title="Clip length">
+            {/* Each slider is a row of its own (mock `.row`: label, rail,
+                box). They are not columns in a grid: in a half-width card
+                that left each rail 92px long against the mock's 202px, and a
+                rail that short cannot be aimed. */}
+            <SettingControl settingKey="before">
               <Slider
-                id="victim-pre-s"
-                label="Victim view (s)"
-                min={SWITCH_DELAY_RANGE.min}
-                max={SWITCH_DELAY_RANGE.max}
-                value={switchDelay}
-                onChange={setVictimPre}
-                readout={`${switchDelay}s · total before: ${beforeSeconds + switchDelay}s`}
-                tip="Both: the camera follows the killer, then switches to the victim this many seconds before the kill. These seconds are added to Seconds before"
+                id="seconds-before"
+                label="Before"
+                unit="s"
+                min={BEFORE_RANGE.min}
+                max={BEFORE_RANGE.max}
+                value={beforeSeconds}
+                onChange={setBefore}
+                tip="Seconds of footage recorded before each event. Also sets how close two events must be to share one clip"
               />
             </SettingControl>
-          )}
-
-          {/* Mate POV replaces the victim camera, so it is meaningless on the killer. */}
-          {(perspective === "victim" || perspective === "both") && (
-            <div className="row">
-              <span className="lab">Mate POV</span>
-              <SettingControl settingKey="kill_mod_mate_pov">
-                <Chip
-                  label="Enable"
-                  tip="Film the victim's side from the teammate with the best view of the kill, instead of the victim"
-                  selected={!!matePov}
-                  onToggle={toggleMatePov}
-                />
-              </SettingControl>
-              <SettingControl settingKey="kill_mod_mate_pov_req">
-                <Chip
-                  label="★ Must"
-                  tip="Skip the clip when no teammate has a clear view of the kill"
-                  selected={!!matePovReq}
-                  onToggle={toggleMatePovReq}
-                />
-              </SettingControl>
-            </div>
-          )}
-
-          {/* Each slider is a row of its own (mock `.row`: label, rail,
-              readout). They are not columns in a grid: in a half-width card
-              that left each rail 92px long against the mock's 202px, and a
-              rail that short cannot be aimed. */}
-          <SettingControl settingKey="before">
-            <Slider
-              id="seconds-before"
-              label="Seconds before"
-              min={BEFORE_RANGE.min}
-              max={BEFORE_RANGE.max}
-              value={beforeSeconds}
-              onChange={setBefore}
-              readout={`${beforeSeconds}s`}
-              tip="Seconds of footage recorded before each event. Also sets how close two events must be to share one clip"
-            />
-          </SettingControl>
-          <SettingControl settingKey="after">
-            <Slider
-              id="seconds-after"
-              label="Seconds after"
-              min={AFTER_RANGE.min}
-              max={AFTER_RANGE.max}
-              value={afterSeconds}
-              onChange={setAfter}
-              readout={`${afterSeconds}s`}
-              tip="Seconds of footage recorded after each event"
-            />
-          </SettingControl>
-          {/* What one clip will hold, in words, from the values above. */}
-          <p className="capture-hint" data-testid="clip-window-summary">
-            {clipWindowSummary({
-              before: beforeSeconds,
-              after: afterSeconds,
-              perspective: perspective ?? PERSPECTIVES[0],
-              switchDelay,
-            })}
-          </p>
-
-          <div className="row">
-            <SettingControl settingKey="player_name_override">
-              <Field
-                id="player-name-override"
-                label="Kill-feed name"
-                value={nameOverride ?? ""}
-                onChange={setNameOverride}
-                placeholder="name from the demo"
-                tip="Name shown for your player in the clips' kill feed. Empty = the name stored in the demo"
+            <SettingControl settingKey="after">
+              <Slider
+                id="seconds-after"
+                label="After"
+                unit="s"
+                min={AFTER_RANGE.min}
+                max={AFTER_RANGE.max}
+                value={afterSeconds}
+                onChange={setAfter}
+                tip="Seconds of footage recorded after each event"
               />
             </SettingControl>
-          </div>
+            {/* What one clip will hold, drawn then said, from the values above. */}
+            <ClipTimeline window={clip} />
+            <p className="capture-hint" data-testid="clip-window-summary">
+              {clipWindowSummary(clipInput)}
+            </p>
+          </FormGroup>
         </Card>
       ),
     },
@@ -277,80 +308,82 @@ export default function CaptureTab() {
       id: "timing-retries",
       element: (
         <Card title="Timing &amp; Retries" icon={<ICONS.captureTiming />}>
-          {/* One field per row: two label + box pairs do not fit a
-              half-width card, and the wrap left "Timeout (min)" on one line
-              and its box alone on the next. Every setter stores a whole
-              number -- the batch loop counts and sleeps with these. */}
-          <div className="row">
-            <SettingControl settingKey="retry_count">
-              <Field
-                id="retry-count"
-                label="Retries"
-                mono
-                value={String(retries)}
-                onChange={(v) => setRetryCount(asCount(v, retries))}
-                tip="Extra attempts for a recording that fails, before the demo is marked failed. 0 = no retry"
-              />
-            </SettingControl>
-          </div>
-          <div className="row">
-            <SettingControl settingKey="retry_delay">
-              <Field
-                id="retry-delay"
-                label="Retry delay (s)"
-                mono
-                value={String(retrySeconds)}
-                onChange={(v) => setRetryDelay(asCount(v, retrySeconds))}
-                tip="Seconds to wait before each retry of a failed recording"
-              />
-            </SettingControl>
-          </div>
-          <div className="row">
-            <SettingControl settingKey="delay_between_demos">
-              <Field
-                id="demo-pause"
-                label="Demo pause (s)"
-                mono
-                value={String(demoPauseSeconds)}
-                onChange={(v) => setDemoPause(asCount(v, demoPauseSeconds))}
-                tip="Seconds to pause between two demos, giving CS2 and the recorder time to reset"
-              />
-            </SettingControl>
-          </div>
-          <div className="row">
-            <SettingControl settingKey="recording_timeout">
-              <Field
-                id="recording-timeout"
-                label="Timeout (min)"
-                mono
-                value={String(timeoutMinutes)}
-                onChange={(v) => setRecordingTimeout(asCount(v, timeoutMinutes))}
-                tip="A recording that runs longer than this is stopped and retried. 0 = automatic, from the length of the clips; a value here can only make the wait longer"
-              />
-            </SettingControl>
-          </div>
-
-          <SettingControl settingKey="clip_order">
+          {/* Every setter stores a whole number -- the batch loop counts and
+              sleeps with these. One field per row, each a narrow number box
+              with its unit, under one label column. */}
+          <FormGroup title="If a recording fails">
             <div className="row">
-              <span className="lab">Demo order</span>
-              <Segmented
-                options={CLIP_ORDERS}
-                value={clipOrder ?? CLIP_ORDERS[0]}
-                onChange={setClipOrder}
-                label="Demo order"
-                tip="Order in which demos are recorded: chronological by match date, or shuffled"
-              />
+              <SettingControl settingKey="retry_count">
+                <Field
+                  id="retry-count"
+                  label="Retries"
+                  numeric
+                  value={String(retries)}
+                  onChange={(v) => setRetryCount(asCount(v, retries))}
+                  tip="Extra attempts for a recording that fails, before the demo is marked failed. 0 = no retry"
+                />
+              </SettingControl>
+              <span className="unit">{retries === 1 ? "time" : "times"}</span>
             </div>
-          </SettingControl>
-          {/* What happens on a failure, in words, from the values above. */}
-          <p className="capture-hint" data-testid="pacing-summary">
-            {pacingSummary({
-              retries,
-              retryDelay: retrySeconds,
-              demoPause: demoPauseSeconds,
-              timeoutMin: timeoutMinutes,
-            })}
-          </p>
+            <div className="row">
+              <SettingControl settingKey="retry_delay">
+                <Field
+                  id="retry-delay"
+                  label="Wait between"
+                  numeric
+                  value={String(retrySeconds)}
+                  onChange={(v) => setRetryDelay(asCount(v, retrySeconds))}
+                  tip="Seconds to wait before each retry of a failed recording"
+                />
+              </SettingControl>
+              <span className="unit">s</span>
+            </div>
+            <div className="row">
+              <SettingControl settingKey="recording_timeout">
+                <Field
+                  id="recording-timeout"
+                  label="Stop if stuck"
+                  numeric
+                  value={String(timeoutMinutes)}
+                  onChange={(v) => setRecordingTimeout(asCount(v, timeoutMinutes))}
+                  tip="A recording that runs longer than this is stopped and retried. 0 = automatic, from the length of the clips; a value here can only make the wait longer"
+                />
+              </SettingControl>
+              <span className="unit">min{timeoutMinutes === 0 ? " (0 = automatic)" : ""}</span>
+            </div>
+          </FormGroup>
+
+          <FormGroup title="Between demos">
+            <div className="row">
+              <SettingControl settingKey="delay_between_demos">
+                <Field
+                  id="demo-pause"
+                  label="Pause"
+                  numeric
+                  value={String(demoPauseSeconds)}
+                  onChange={(v) => setDemoPause(asCount(v, demoPauseSeconds))}
+                  tip="Seconds to pause between two demos, giving CS2 and the recorder time to reset"
+                />
+              </SettingControl>
+              <span className="unit">s</span>
+            </div>
+            <SettingControl settingKey="clip_order">
+              <div className="row">
+                <span className="lab">Order</span>
+                <Segmented
+                  options={CLIP_ORDERS}
+                  value={clipOrder ?? CLIP_ORDERS[0]}
+                  onChange={setClipOrder}
+                  label="Demo order"
+                  tip="Order in which demos are recorded: chronological by match date, or shuffled"
+                />
+              </div>
+            </SettingControl>
+            {/* What a batch does on a failure and between demos, in words. */}
+            <p className="capture-hint" data-testid="pacing-summary">
+              {pacingSummary(pacing)}
+            </p>
+          </FormGroup>
         </Card>
       ),
     },

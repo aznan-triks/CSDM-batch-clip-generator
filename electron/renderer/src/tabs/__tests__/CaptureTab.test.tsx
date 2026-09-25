@@ -192,7 +192,7 @@ describe("CaptureTab conditional rows", () => {
     // Rounds is independent of the perspective/action-type axes: toggling an
     // action-type chip must not touch the Rounds flag and vice versa.
     await renderTab();
-    const rounds = screen.getByRole("button", { name: /^ROUNDS$/ });
+    const rounds = screen.getByRole("button", { name: /^Full rounds$/ });
     const nonLethal = screen.getByRole("button", { name: /^Non-lethal$/ });
 
     act(() => rounds.click());
@@ -200,12 +200,38 @@ describe("CaptureTab conditional rows", () => {
     expect(nonLethal.getAttribute("aria-pressed")).toBe("false");
   });
 
-  it("adds the switch delay to the before seconds in its readout", async () => {
-    // The window shows "total before: BEFORE + switch delay"; the two are
-    // added, never the larger of the two.
+  it("draws the victim view inside the seconds before, added, not maxed", async () => {
+    // before 3 + victim view 2: the bar shows both parts of the lead-in, and
+    // only `both` has a victim part at all.
     await renderTab();
+    const segments = () =>
+      [...screen.getByTestId("clip-timeline").children].map((seg) => seg.textContent);
+    expect(segments()).toEqual(["3s before", "5s after"]);
+
     choosePerspective("both");
-    expect(screen.getByText(/total before: 5s/)).toBeTruthy();
+    expect(segments()).toEqual(["3s killer", "2s victim", "5s after"]);
+  });
+
+  it("groups the card's rows under What to capture / Camera / Clip length", async () => {
+    // One flat list of eleven unrelated rows was the complaint; each group's
+    // settings must sit under its own caption.
+    const { container } = await renderTab();
+    choosePerspective("both");
+    const groupOf = (key: string) =>
+      container.querySelector(`[data-config-key="${key}"]`)?.closest(".fgroup")?.getAttribute("aria-label");
+    expect(groupOf("event_actor")).toBe("What to capture");
+    expect(groupOf("events")).toBe("What to capture");
+    expect(groupOf("perspective")).toBe("Camera");
+    expect(groupOf("victim_pre_s")).toBe("Camera");
+    expect(groupOf("kill_mod_mate_pov")).toBe("Camera");
+    expect(groupOf("player_name_override")).toBe("Camera");
+    expect(groupOf("before")).toBe("Clip length");
+    expect(groupOf("after")).toBe("Clip length");
+    expect(groupOf("retry_count")).toBe("If a recording fails");
+    expect(groupOf("retry_delay")).toBe("If a recording fails");
+    expect(groupOf("recording_timeout")).toBe("If a recording fails");
+    expect(groupOf("delay_between_demos")).toBe("Between demos");
+    expect(groupOf("clip_order")).toBe("Between demos");
   });
 
   it("keeps every field inside a row, never as a full-width block", async () => {
@@ -237,13 +263,14 @@ describe("CaptureTab timing, in words and in numbers", () => {
     await renderTab();
     const summary = () => screen.getByTestId("clip-window-summary").textContent;
     expect(summary()).toBe(
-      "Each clip: 3s before → event → 5s after. Events up to 11s apart share one clip.",
+      "Each moment becomes a clip of 8s (3s before, 5s after), and moments up to 11s apart are joined into one clip.",
     );
 
     // `both` adds the victim view to the seconds before (`_effective_before`).
     choosePerspective("both");
     expect(summary()).toBe(
-      "Each clip: 5s before → event → 5s after. Events up to 15s apart share one clip.",
+      "Each moment becomes a clip of 10s (3s on the killer, 2s on the victim, 5s after), " +
+        "and moments up to 15s apart are joined into one clip.",
     );
   });
 
@@ -265,12 +292,12 @@ describe("CaptureTab timing, in words and in numbers", () => {
     fireEvent.change(box, { target: { value: "4" } });
     expect(screen.getByTestId("retry-probe").textContent).toBe("number:4");
     expect(screen.getByTestId("pacing-summary").textContent).toContain(
-      "retried up to 4× (15s apart)",
+      "tried again up to 4 times, 15s apart",
     );
 
     // A negative never reaches the engine.
     fireEvent.change(box, { target: { value: "-2" } });
     expect(screen.getByTestId("retry-probe").textContent).toBe("number:0");
-    expect(screen.getByTestId("pacing-summary").textContent).toContain("is not retried");
+    expect(screen.getByTestId("pacing-summary").textContent).toContain("is not tried again");
   });
 });

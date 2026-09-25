@@ -1,5 +1,6 @@
 import { useAlwaysTooltips } from "../settings/useAlwaysTooltips";
 import NumberField from "./NumberField";
+import "./Field.css";
 import "./Slider.css";
 
 interface SliderProps {
@@ -11,6 +12,8 @@ interface SliderProps {
   label: string;
   /** Text shown at the right of the label row, e.g. "3s" or "total before: 5s". */
   readout?: string;
+  /** Unit written after the typed box ("s"), in the quiet ink of a unit. */
+  unit?: string;
   id?: string;
   /** Hover explanation for the whole slider row (label + rail + typed box). */
   tip?: string;
@@ -35,6 +38,7 @@ export default function Slider({
   step = 1,
   label,
   readout,
+  unit,
   id,
   tip,
 }: SliderProps) {
@@ -79,6 +83,7 @@ export default function Slider({
         max={max}
         step={step}
       />
+      {unit && <span className="unit">{unit}</span>}
       {readout && <span className="slider-readout">{readout}</span>}
       {alwaysShow && tip && <span className="persistent-tip">{tip}</span>}
     </div>
