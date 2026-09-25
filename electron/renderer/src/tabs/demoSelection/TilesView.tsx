@@ -24,7 +24,7 @@ export default function TilesView({ m }: { m: DemoSelectionModel }) {
         <span className="ds-kick">Quick ranges</span>
         <ClearAll m={m} />
       </div>
-      <div className="ds-tiles">
+      <div className="ds-tilegrid">
         <Shortcuts m={m} look="tile" />
       </div>
       <div className="row ds-dates">

@@ -150,12 +150,28 @@
   min-height: 0;
 }
 
+.pc-a {
+  display: grid;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 16px;
+}
+
+.pc-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 14px;
+  border-right: 1px solid var(--hair);
+}
+
 .pc-lineup {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 10px 12px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 9px 10px;
   border-radius: 14px;
   border: 1px solid var(--hair);
   background: linear-gradient(
@@ -165,30 +181,10 @@
   );
 }
 
-.pc-lineup .ps-active {
-  flex: 1;
-}
-
-.pc-board {
-  display: grid;
-  grid-template-columns: minmax(170px, 1fr) minmax(0, 2fr);
-  gap: 14px;
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
 .pc-a .ps-registered {
   margin: 0;
-  padding: 0 14px 0 0;
+  padding: 0;
   border-bottom: none;
-  border-right: 1px solid var(--hair);
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.pc-a .ps-registered-chips {
-  flex-direction: column;
-  align-items: flex-start;
 }
 
 .pc-a .ps-registered-chips.dragging .chip {
@@ -201,6 +197,18 @@
   gap: 8px;
   min-height: 0;
   min-width: 0;
+}
+
+/* Search, sort, count and pager on one line. */
+.pc-findbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.pc-findbar > .row {
+  display: contents;
 }
 
 .pc-find .ps-list {
@@ -269,6 +277,11 @@
   flex: none;
 }
 
+.pc-findline > .ps-controls {
+  flex: 1;
+  justify-content: flex-end;
+}
+
 .pc-b .ps-list {
   line-height: 1.4;
 }
@@ -280,8 +293,9 @@
 
 .pc-reg-tile .ps-registered-chips {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  padding: 7px 7px 0 0;
 }
 
 .pc-reg-tile .chip-pair {
@@ -292,11 +306,9 @@
 .player-section .chip-pair > .chip.pc-tile {
   flex: 1;
   position: relative;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  min-height: 92px;
-  padding: 12px;
+  gap: 10px;
+  min-height: 58px;
+  padding: 9px 36px 9px 10px;
   border: 1px solid var(--hair);
   border-radius: 14px;
   background: var(--solid);
@@ -306,20 +318,13 @@
 }
 
 .chip.pc-tile .pc-av {
-  width: 36px;
-  height: 36px;
-  font-size: 15px;
+  width: 34px;
+  height: 34px;
+  font-size: 14px;
 }
 
 .chip.pc-tile .pc-who {
   max-width: 100%;
-}
-
-.chip.pc-tile .pc-grip {
-  position: absolute;
-  left: 50%;
-  top: 4px;
-  transform: rotate(90deg);
 }
 
 /* The tile's check box, bottom right (the × owns the top corner). */
@@ -327,7 +332,7 @@
   content: "✓";
   position: absolute;
   right: 10px;
-  bottom: 10px;
+  top: calc(50% - 9px);
   width: 18px;
   height: 18px;
   display: grid;
@@ -356,10 +361,11 @@
 
 .player-section .pc-reg-tile .chip-pair > .close-btn {
   position: absolute;
-  top: 7px;
-  right: 7px;
-  width: 22px;
-  height: 22px;
+  top: -7px;
+  right: -7px;
+  z-index: 1;
+  width: 20px;
+  height: 20px;
   padding: 0;
   justify-content: center;
   border: 1px solid var(--hair);

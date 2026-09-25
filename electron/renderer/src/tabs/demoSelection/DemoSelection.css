@@ -6,6 +6,10 @@
  * NO :hover rule in this file may translate or scale anything (D13/D16).
  */
 
+.demo-selection {
+  min-width: 0;
+}
+
 .ds-a,
 .ds-b,
 .ds-c {
@@ -16,6 +20,7 @@
 
 .ds-head {
   display: flex;
+  white-space: nowrap;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -164,12 +169,13 @@
   pointer-events: none;
 }
 
+/* Today closes the strip on the right. */
 .ds-today {
   position: absolute;
-  top: 20px;
-  height: 56px;
-  border-left: 2px solid var(--txt);
-  opacity: 0.25;
+  right: -2px;
+  top: 22px;
+  height: 52px;
+  border-left: 2px solid color-mix(in srgb, var(--txt) 30%, transparent);
 }
 
 /* ---------- B: sentence ---------- */
@@ -206,18 +212,20 @@
 }
 
 /* ---------- C: calendar tiles ---------- */
-.ds-tiles {
+.ds-tilegrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
   gap: 8px;
 }
 
 .ds-tile {
   appearance: none;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 10px 10px 9px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 9px;
+  align-items: center;
+  padding: 9px 10px;
   border-radius: 14px;
   border: 1px solid var(--hair);
   background: var(--solid);
@@ -239,8 +247,8 @@
 
 .ds-tile-ic {
   display: block;
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   color: var(--accent);
 }
 
@@ -251,13 +259,14 @@
 }
 
 .ds-tile b {
-  margin-top: 6px;
+  line-height: 1.15;
   font-size: 13px;
   color: var(--txt);
 }
 
 .ds-tile small {
-  margin-top: 1px;
+  grid-column: 1 / -1;
+  margin-top: 5px;
   font-family: var(--mono);
   font-size: 9.5px;
   color: var(--faint);

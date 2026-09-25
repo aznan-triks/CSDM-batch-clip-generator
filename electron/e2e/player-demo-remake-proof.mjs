@@ -142,6 +142,16 @@ try {
         const body = node.querySelector(".sb");
         return { slot: Math.round(node.getBoundingClientRect().height), content: body ? body.scrollHeight : null, visible: body ? body.clientHeight : null };
       });
+      if (process.env.DIAG) {
+        console.log(await item.evaluate((node) => {
+          const chain = [];
+          for (let el = node.querySelector(".ds-tiles, .ds-head, .pc-find"); el && el !== node; el = el.parentElement) {
+            const cs = getComputedStyle(el);
+            chain.push(`${el.className}|w=${Math.round(el.getBoundingClientRect().width)}|${cs.display}|gtc=${cs.gridTemplateColumns}|minw=${cs.minWidth}`);
+          }
+          return chain.join(" <- ");
+        }));
+      }
       const file = path.join(outDir, `${card.id}-${style}.png`);
       await item.screenshot({ path: file });
       console.log(file, JSON.stringify(fit));

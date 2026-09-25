@@ -1,7 +1,7 @@
 /**
  * Player, style A: the roster board. The players are the control -- your
- * lineup on top, your ★ roster (drag to reorder) beside the searchable list,
- * everyone drawn as a V12 avatar pill.
+ * lineup and your ★ roster (drag to reorder) on the left, the searchable
+ * database on the right, everyone drawn as a V12 avatar pill.
  */
 import { ActivePlayers, ListControls, PlayerList, RegisteredAccounts, SearchBox } from "./parts";
 import type { PlayerCardModel } from "./usePlayerCard";
@@ -9,11 +9,11 @@ import type { PlayerCardModel } from "./usePlayerCard";
 export default function TimelineView({ m }: { m: PlayerCardModel }) {
   return (
     <div className="pc-a">
-      <div className="pc-lineup">
-        <span className="pc-kick">In the clips · {m.active.length}</span>
-        <ActivePlayers m={m} look="pill" label={null} />
-      </div>
-      <div className="pc-board">
+      <div className="pc-side">
+        <div className="pc-lineup">
+          <span className="pc-kick">In the clips · {m.active.length}</span>
+          <ActivePlayers m={m} look="pill" label={null} />
+        </div>
         <RegisteredAccounts
           m={m}
           look="pill"
@@ -24,12 +24,13 @@ export default function TimelineView({ m }: { m: PlayerCardModel }) {
             </div>
           }
         />
-        <div className="pc-find">
-          <span className="pc-kick">Find a player</span>
+      </div>
+      <div className="pc-find">
+        <div className="pc-findbar">
           <SearchBox m={m} />
           <ListControls m={m} />
-          <PlayerList m={m} look="pill" />
         </div>
+        <PlayerList m={m} look="pill" />
       </div>
     </div>
   );

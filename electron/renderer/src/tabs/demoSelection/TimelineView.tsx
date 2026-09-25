@@ -10,7 +10,7 @@ export default function TimelineView({ m }: { m: DemoSelectionModel }) {
   return (
     <div className="ds-a">
       <div className="ds-head">
-        <span className="ds-kick">Played between · drag the ends</span>
+        <span className="ds-kick">Played between</span>
         <ClearAll m={m} />
       </div>
       <RangeStrip from={m.from} to={m.to} demos={m.demos} onChange={m.setRange} tips={DEMO_TIPS} />

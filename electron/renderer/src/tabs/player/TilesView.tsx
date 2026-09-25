@@ -21,9 +21,11 @@ export default function TilesView({ m }: { m: PlayerCardModel }) {
       />
       <ActivePlayers m={m} look="pill" label="In the clips" />
       <div className="pc-find">
-        <span className="pc-kick">Add a player</span>
-        <SearchBox m={m} />
-        <ListControls m={m} />
+        <div className="pc-findbar">
+          <span className="pc-kick">Add a player</span>
+          <SearchBox m={m} />
+          <ListControls m={m} />
+        </div>
         <PlayerList m={m} look="tile" />
       </div>
     </div>

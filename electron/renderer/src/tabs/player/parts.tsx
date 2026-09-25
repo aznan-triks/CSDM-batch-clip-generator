@@ -210,7 +210,7 @@ export function RegisteredAccounts({
                   ) : (
                     p.name
                   )}
-                  {look !== "chip" && (
+                  {look === "pill" && (
                     <span className="pc-grip" aria-hidden="true">
                       ⋮⋮
                     </span>

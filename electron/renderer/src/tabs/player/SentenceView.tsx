@@ -41,8 +41,8 @@ export default function SentenceView({ m }: { m: PlayerCardModel }) {
             </ChoiceToken>
           </>
         )}
+        <ListControls m={m} sort={false} />
       </div>
-      <ListControls m={m} sort={false} />
       <PlayerList m={m} look="chip" />
     </div>
   );

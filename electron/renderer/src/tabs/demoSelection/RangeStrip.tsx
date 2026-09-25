@@ -1,19 +1,25 @@
 /**
- * The date range drawn on a calendar strip: months along the bottom, the
+ * The date range drawn on a calendar strip: dates along the bottom, the
  * chosen range as a band, a handle at each end to drag (or arrow) a bound by
  * whole days. Loaded demos show as ticks, so the range can be set around them.
  *
- * The strip covers the last year up to today, or further back when the From
- * date is older. An empty bound sits at the strip's edge and reads "any".
+ * The strip ends on today and zooms to the range: it starts a little before
+ * the From date (never less than LEAST_SPAN_DAYS back), or a year back when
+ * there is no From date. The scale holds still during a drag and re-fits when
+ * the handle is let go. An empty bound sits at the strip's edge.
  */
-import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 import type { DemoRow } from "../../components/DemoPicker";
 import { fmt, parseDay } from "./useDemoSelection";
 
 const DAY_MS = 86_400_000;
-/** The strip shows at least this many days back from today. */
-const MIN_SPAN_DAYS = 365;
+/** Shortest stretch the strip shows, so a one-day range still has room to drag. */
+const LEAST_SPAN_DAYS = 60;
+/** How far back the strip reaches when no From date is set. */
+const OPEN_SPAN_DAYS = 365;
+/** Minimum room between two date labels on the axis, in pixels. */
+const LABEL_GAP_PX = 42;
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 type Bound = "from" | "to";
@@ -36,27 +42,62 @@ function daysBetween(a: Date, b: Date): number {
   return Math.round((b.getTime() - a.getTime()) / DAY_MS);
 }
 
+/** The strip's first day, fitted to the range. */
+function fitStart(fromDay: Date | null, toDay: Date | null, today: Date): Date {
+  if (!fromDay) return addDays(today, -OPEN_SPAN_DAYS);
+  const length = daysBetween(fromDay, toDay ?? today);
+  const start = addDays(fromDay, -Math.max(7, Math.round(length / 2)));
+  const least = addDays(today, -LEAST_SPAN_DAYS);
+  return start < least ? start : least;
+}
+
+/** Tick candidates: first of each month on a long strip, Mondays on a short one. */
+function ticks(start: Date, today: Date): { day: Date; label: string; strong: boolean }[] {
+  const out: { day: Date; label: string; strong: boolean }[] = [];
+  if (daysBetween(start, today) > 100) {
+    for (let d = new Date(start.getFullYear(), start.getMonth() + 1, 1); d <= today; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
+      const jan = d.getMonth() === 0;
+      out.push({ day: d, label: jan ? String(d.getFullYear()) : MONTHS[d.getMonth()], strong: jan });
+    }
+    return out;
+  }
+  const first = addDays(start, (8 - start.getDay()) % 7);
+  for (let d = first; d <= today; d = addDays(d, 7)) {
+    out.push({ day: d, label: `${d.getDate()} ${MONTHS[d.getMonth()]}`, strong: d.getDate() <= 7 });
+  }
+  return out;
+}
+
 export default function RangeStrip({ from, to, demos, onChange, tips }: RangeStripProps) {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const fromDay = parseDay(from);
   const toDay = parseDay(to);
 
-  // Start on the first of a month, a year back or before the From date.
-  const earliest = addDays(today, -MIN_SPAN_DAYS);
-  const reach = fromDay && fromDay < earliest ? fromDay : earliest;
-  const start = new Date(reach.getFullYear(), reach.getMonth(), 1);
+  const axisRef = useRef<HTMLDivElement>(null);
+  const frozen = useRef<Date | null>(null);
+  const [dragging, setDragging] = useState<Bound | null>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const node = axisRef.current;
+    if (!node) return;
+    setWidth(node.clientWidth);
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => setWidth(node.clientWidth));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  const start = (dragging && frozen.current) || fitStart(fromDay, toDay, today);
   const span = Math.max(1, daysBetween(start, today));
   const at = (d: Date) => Math.min(100, Math.max(0, (daysBetween(start, d) / span) * 100));
 
-  const lo = fromDay ?? start;
+  const lo = fromDay && fromDay > start ? fromDay : start;
   const hi = toDay ?? today;
 
-  const axisRef = useRef<HTMLDivElement>(null);
-  const [dragging, setDragging] = useState<Bound | null>(null);
-
   function set(bound: Bound, day: Date) {
-    const clamped = day < start ? start : day > today ? today : day;
+    const clamped = day > today ? today : day;
     if (bound === "from") onChange(fmt(clamped > hi ? hi : clamped), to);
     else onChange(from, fmt(clamped < lo ? lo : clamped));
   }
@@ -70,6 +111,7 @@ export default function RangeStrip({ from, to, demos, onChange, tips }: RangeStr
 
   function onPointerDown(bound: Bound, event: PointerEvent<HTMLElement>) {
     event.currentTarget.setPointerCapture?.(event.pointerId);
+    frozen.current = start;
     setDragging(bound);
   }
 
@@ -80,6 +122,11 @@ export default function RangeStrip({ from, to, demos, onChange, tips }: RangeStr
     if (day.getTime() !== current.getTime()) set(bound, day);
   }
 
+  function release() {
+    frozen.current = null;
+    setDragging(null);
+  }
+
   function onKeyDown(bound: Bound, event: KeyboardEvent<HTMLElement>) {
     const step = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1, PageDown: -30, PageUp: 30 }[event.key];
     if (step === undefined) return;
@@ -87,11 +134,15 @@ export default function RangeStrip({ from, to, demos, onChange, tips }: RangeStr
     set(bound, addDays(bound === "from" ? lo : hi, step));
   }
 
-  // Month ticks: the first of every month inside the strip.
-  const months: { left: number; label: string; year: boolean }[] = [];
-  for (let d = new Date(start); d <= today; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) {
-    months.push({ left: at(d), label: d.getMonth() === 0 ? String(d.getFullYear()) : MONTHS[d.getMonth()], year: d.getMonth() === 0 });
-  }
+  // Every tick keeps its line; a label only shows where it has room.
+  let lastLabelPx = Number.NEGATIVE_INFINITY;
+  const axisTicks = ticks(start, today).map((t) => {
+    const left = at(t.day);
+    const px = (left / 100) * width;
+    const labelled = width > 0 && px - lastLabelPx >= LABEL_GAP_PX && px <= width - LABEL_GAP_PX / 2;
+    if (labelled) lastLabelPx = px;
+    return { ...t, left, labelled };
+  });
 
   // One tick per day that holds at least one loaded demo.
   const demoDays = new Map<number, number>();
@@ -102,50 +153,52 @@ export default function RangeStrip({ from, to, demos, onChange, tips }: RangeStr
 
   const noBounds = !fromDay && !toDay;
   const days = daysBetween(lo, hi) + 1;
+  const caption = noBounds
+    ? "any date"
+    : `${fromDay ? fmt(lo).slice(0, 5) : "any"} → ${toDay ? fmt(hi).slice(0, 5) : "today"}`;
+  // The caption rides above the band's middle, kept inside the strip.
+  const captionAt = Math.min(84, Math.max(16, (at(lo) + at(hi)) / 2));
 
   const handle = (bound: Bound) => {
     const day = bound === "from" ? lo : hi;
-    const set_ = bound === "from" ? fromDay : toDay;
-    const word = set_ ? fmt(day).slice(0, 5) : bound === "from" ? "any" : "today";
+    const isSet = bound === "from" ? !!fromDay : !!toDay;
     return (
-      <>
-        <button
-          type="button"
-          role="slider"
-          className={["ds-handle", bound, dragging === bound ? "drag" : null].filter(Boolean).join(" ")}
-          style={{ left: `${at(day)}%` }}
-          aria-label={bound === "from" ? "From date" : "To date"}
-          aria-valuemin={0}
-          aria-valuemax={span}
-          aria-valuenow={daysBetween(start, day)}
-          aria-valuetext={set_ ? fmt(day) : "no limit"}
-          title={`${bound === "from" ? tips.from : tips.to}. Drag, or use the arrow keys (Page Up/Down: 30 days)`}
-          onPointerDown={(e) => onPointerDown(bound, e)}
-          onPointerMove={(e) => onPointerMove(bound, e)}
-          onPointerUp={() => setDragging(null)}
-          onKeyDown={(e) => onKeyDown(bound, e)}
-        />
-        <span className={`ds-readout ${bound}`} style={{ left: `${at(day)}%` }}>
-          {word}
-        </span>
-      </>
+      <button
+        type="button"
+        role="slider"
+        className={["ds-handle", bound, dragging === bound ? "drag" : null].filter(Boolean).join(" ")}
+        style={{ left: `${at(day)}%` }}
+        aria-label={bound === "from" ? "From date" : "To date"}
+        aria-valuemin={0}
+        aria-valuemax={span}
+        aria-valuenow={daysBetween(start, day)}
+        aria-valuetext={isSet ? fmt(day) : "no limit"}
+        title={`${bound === "from" ? tips.from : tips.to}. Drag, or use the arrow keys (Page Up/Down: 30 days)`}
+        onPointerDown={(e) => onPointerDown(bound, e)}
+        onPointerMove={(e) => onPointerMove(bound, e)}
+        onPointerUp={release}
+        onKeyDown={(e) => onKeyDown(bound, e)}
+      />
     );
   };
 
   return (
     <div className="ds-strip">
       <div className="ds-axis" ref={axisRef}>
-        {months.map((mo) => (
-          <span key={mo.left} className={mo.year ? "ds-month year" : "ds-month"} style={{ left: `${mo.left}%` }}>
+        {axisTicks.map((t) => (
+          <span key={t.day.getTime()} className={t.strong ? "ds-month year" : "ds-month"} style={{ left: `${t.left}%` }}>
             <i aria-hidden="true" />
-            {mo.label}
+            {t.labelled ? t.label : null}
           </span>
         ))}
+        <span className="ds-readout" style={{ left: `${captionAt}%` }}>
+          {caption}
+        </span>
         <div
           className={noBounds ? "ds-band open" : "ds-band"}
           style={{ left: `${at(lo)}%`, width: `${Math.max(0.6, at(hi) - at(lo))}%` }}
         >
-          <span>{noBounds ? "every demo, any date" : `${days} day${days === 1 ? "" : "s"}`}</span>
+          <span>{noBounds ? "every demo" : `${days} day${days === 1 ? "" : "s"}`}</span>
         </div>
         {[...demoDays].map(([time, count]) => (
           <i
@@ -157,7 +210,7 @@ export default function RangeStrip({ from, to, demos, onChange, tips }: RangeStr
         ))}
         {handle("from")}
         {handle("to")}
-        <span className="ds-today" style={{ left: "100%" }} aria-hidden="true" />
+        <span className="ds-today" aria-hidden="true" title="Today" />
       </div>
     </div>
   );
