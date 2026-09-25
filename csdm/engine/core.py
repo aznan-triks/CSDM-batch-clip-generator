@@ -4193,8 +4193,28 @@ class EngineMixin:
                     f"To {cfg.get('date_to')}. Fix the dates in Demo Selection.")
         return None
 
+    @staticmethod
+    def _problem_empty_match_types(cfg):
+        # An enabled filter with nothing ticked used to filter nothing while
+        # looking active; the user meant "only these", so ask which ones.
+        if cfg.get("match_type_filter_enabled") and not any(
+                cfg.get(k) for k in _MATCH_TYPE_CFG_KEYS):
+            return ("The Match Types filter is on but no match type is ticked "
+                    "(CAPTURE › Match Types): tick at least one type, or switch "
+                    "the filter off to keep every match.")
+        return None
+
+    @staticmethod
+    def _problem_empty_map_filter(cfg):
+        if cfg.get("map_filter_enabled") and not cfg.get("map_filter"):
+            return ("The Map Filter is on but no map is selected "
+                    "(CAPTURE › Map Filter): select at least one map, or switch "
+                    "the filter off to keep every map.")
+        return None
+
     _RUN_INPUT_CHECKS = ("_problem_no_account", "_problem_no_live_source",
-                         "_problem_empty_date_range")
+                         "_problem_empty_date_range", "_problem_empty_match_types",
+                         "_problem_empty_map_filter")
 
     @staticmethod
     def run_inputs_problem(cfg):
