@@ -98,6 +98,20 @@ def test_unusable_clips_folder_stops_before_any_work(monkeypatch, tmp_path):
     assert engine.states[-1] == "buttons_idle"
 
 
+def test_unvalidated_rules_are_flagged_to_the_ui():
+    from csdm.bridge.tables import describe_filters
+    flagged = {f["key"] for f in describe_filters()["filters"] if f["untested"]}
+    assert {"kill_mod_airborne", "shot_mod_run_gun"} <= flagged
+
+
+def test_tables_tell_the_ui_what_empty_paths_resolve_to(monkeypatch, tmp_path):
+    from csdm.bridge.tables import describe_filters
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    monkeypatch.setattr("shutil.which", lambda name: None)
+    paths = describe_filters()["default_paths"]
+    assert paths == {"csdm_exe": "", "clips_dir": str(default_clips_dir())}
+
+
 def test_no_player_message_points_to_the_player_card():
     problem = EngineMixin.run_inputs_problem({"steam_ids": []})
     assert "CAPTURE" in problem and "Player" in problem

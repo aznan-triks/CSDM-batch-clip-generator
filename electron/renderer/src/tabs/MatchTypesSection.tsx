@@ -15,6 +15,7 @@
 import Chip from "../components/Chip";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
+import DatabasePending from "../settings/DatabasePending";
 import { useDatabase } from "../settings/useDatabase";
 import { useTables } from "../settings/useTables";
 import "./MatchTypesSection.css";
@@ -83,6 +84,8 @@ export default function MatchTypesSection() {
           />
         ))}
       </div>
+      {/* The boxes are disabled without a database: say why. */}
+      {!database && <DatabasePending />}
     </div>
   );
 }

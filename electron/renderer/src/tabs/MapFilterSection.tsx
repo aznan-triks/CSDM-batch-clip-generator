@@ -17,6 +17,7 @@
 import Chip from "../components/Chip";
 import SettingControl from "../settings/SettingControl";
 import { useSetting } from "../settings/store";
+import DatabasePending from "../settings/DatabasePending";
 import { useDatabase } from "../settings/useDatabase";
 import "./MapFilterSection.css";
 
@@ -47,7 +48,7 @@ export default function MapFilterSection() {
         </SettingControl>
       </div>
       {!database ? (
-        <p className="capture-hint">Waiting for DB…</p>
+        <DatabasePending />
       ) : (
         <SettingControl settingKey="map_filter">
           <div className="chips" data-action="H2">

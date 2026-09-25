@@ -27,6 +27,7 @@ import Segmented from "../components/Segmented";
 import SettingControl from "../settings/SettingControl";
 import { useSetting, useSettingsBatch } from "../settings/store";
 import CloseButton, { ChipPair } from "../components/CloseButton";
+import DatabasePending from "../settings/DatabasePending";
 import { useDatabase } from "../settings/useDatabase";
 import type { PlayerRow } from "../settings/useDatabase";
 import "./PlayerSection.css";
@@ -326,13 +327,19 @@ export default function PlayerSection() {
       )}
 
       {!database ? (
-        <p className="capture-hint">Waiting for DB…</p>
+        <DatabasePending />
       ) : (
         <SettingControl settingKey="steam_id">
           {/* One list, two keys: a row click writes steam_ids (every active player) and steam_id (the first). Both markers let the coverage guard see them reach the screen. */}
           <SettingControl settingKey="steam_ids">
             <div className="ps-list">
-              {visible.length === 0 && <p className="capture-hint">No player matches.</p>}
+              {visible.length === 0 && (
+                <p className="capture-hint">
+                  {rows.length === 0
+                    ? "No player in this database yet: analyze your demos in CS Demo Manager first, then press Test & Reload in SETTINGS."
+                    : "No player matches."}
+                </p>
+              )}
               {visible.map((row) => {
                 const [label, steamId] = row;
                 const name = row[2];

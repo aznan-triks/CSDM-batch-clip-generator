@@ -6,7 +6,7 @@ build its rows from the same source the engine filters on. A table copied into
 TypeScript would drift the day someone adds a filter, and the window would then
 silently stop showing it.
 """
-from csdm.config import _PRESET_ALL_CATS
+from csdm.config import _PRESET_ALL_CATS, default_clips_dir, detect_csdm_cli
 from csdm.static_data import (AUDIO_CODECS, FRAMERATES, KILL_FILTER_REGISTRY,
                               MATCH_TYPE_DEFS, RESOLUTIONS, VIDEO_CODECS,
                               WEAPON_CATEGORIES, WEAPON_CATEGORY_TIPS)
@@ -19,6 +19,7 @@ def describe_filters():
             {"key": f.key, "label": f.label, "tip": f.tip,
              "category": f.category, "hidden": bool(f.hide_ui),
              "applies_to": list(f.applies_to),
+             "untested": f.untested,
              "extras": [{"key": k, "label": label, "unit": unit,
                          "default": (f.extra_config or {}).get(k)}
                         for k, (label, unit) in (f.extra_ui or {}).items()]}
@@ -44,5 +45,9 @@ def describe_filters():
         # also carries "player"/"video", two backward-compat aliases for
         # reading old preset files that were never shown as checkboxes.
         "preset_categories": ["full"] + list(_PRESET_ALL_CATS),
+        # What an EMPTY path setting resolves to on this machine, so the
+        # Paths card can show it instead of a blank box (first-run audit).
+        "default_paths": {"csdm_exe": detect_csdm_cli(),
+                          "clips_dir": str(default_clips_dir())},
     }
 

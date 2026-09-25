@@ -95,9 +95,9 @@ function useDatabaseFetch(skip: boolean): DatabaseValue {
         });
       })
       .catch((cause: Error) => {
-        // Say it once and keep the window usable: the sections that need this
-        // stay in their "waiting for DB" state, which is already the correct
-        // display for "no answer yet" and for "answer will never come".
+        // Keep the window usable: the sections that need this render
+        // `DatabasePending`, which tells "no answer yet" from "failed, fix it
+        // in SETTINGS" by reading this error.
         if (!cancelled) setError(cause.message);
       });
     return () => {

@@ -45,7 +45,7 @@ from csdm.static_data import (
     CSDM_TO_DP2_WEAPON, TROIS_SHOT_THRESHOLDS, DP2_TICK_WINDOW,
     SPRAY_TRANSFER_WEAPONS_LOWER, SPRAY_MAX_GAP_TICKS,
 )
-from csdm.config import DEFAULT_CONFIG, clips_root, csdm_cli_candidates
+from csdm.config import DEFAULT_CONFIG, clips_root, detect_csdm_cli
 from csdm.core_utils import (
     build_camera_ticks, safe_folder_name, _count_kills, fmt_duration, progress_bar,
     process_is_running, ensure_csdm_dirs, _generate_id_for_type, display_to_iso,
@@ -557,10 +557,7 @@ class EngineMixin:
     def _resolve_cli(self, p):
         if not p:
             # Nothing set: the installer's standard location, then PATH.
-            for c in csdm_cli_candidates():
-                if c.is_file():
-                    return str(c)
-            return shutil.which("csdm") or "csdm"
+            return detect_csdm_cli() or "csdm"
         p = os.path.abspath(p)
         b = os.path.basename(p).lower()
         d = os.path.dirname(p)

@@ -368,6 +368,14 @@ def csdm_cli_candidates():
     return [base.joinpath(*parts) for parts in CSDM_CLI_INSTALL_PATHS]
 
 
+def detect_csdm_cli():
+    """The CS Demo Manager CLI found without any setting, or "" when none is."""
+    for c in csdm_cli_candidates():
+        if c.is_file():
+            return str(c)
+    return shutil.which("csdm") or ""
+
+
 def default_clips_dir():
     """The raw clips folder used when `output_dir_clips` is empty."""
     return Path.home() / "Videos" / DEFAULT_CLIPS_SUBDIR

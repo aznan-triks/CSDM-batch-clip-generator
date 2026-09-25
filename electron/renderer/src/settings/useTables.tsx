@@ -43,6 +43,8 @@ export interface FilterDef {
   applies_to?: EventCategory[];
   /** Labelled numeric settings for a registry-built row (damage / shot filters). */
   extras?: FilterExtra[];
+  /** What is not yet checked in game (Python `FilterDef.untested`); empty = validated. */
+  untested?: string;
 }
 
 
@@ -57,6 +59,8 @@ export interface Tables {
   audioCodecs: string[];
   /** `PresetSection`'s checkbox keys -- straight from Python's `PRESET_KEYS`, never retyped here. */
   presetCategories: string[];
+  /** What an empty path setting resolves to on this machine ("" = nothing found). */
+  defaultPaths: { csdmExe: string; clipsDir: string };
 }
 
 /** Shape of the JSON `describe_filters` returns, before renaming to camelCase. */
@@ -70,6 +74,7 @@ interface RawTables {
   video_codecs: string[];
   audio_codecs: string[];
   preset_categories: string[];
+  default_paths?: { csdm_exe: string; clips_dir: string };
 }
 
 interface TablesValue {
@@ -109,6 +114,10 @@ function useTablesFetch(skip: boolean): TablesValue {
           videoCodecs: raw.video_codecs,
           audioCodecs: raw.audio_codecs,
           presetCategories: raw.preset_categories ?? [],
+          defaultPaths: {
+            csdmExe: raw.default_paths?.csdm_exe ?? "",
+            clipsDir: raw.default_paths?.clips_dir ?? "",
+          },
         });
       })
       .catch((cause: Error) => {
