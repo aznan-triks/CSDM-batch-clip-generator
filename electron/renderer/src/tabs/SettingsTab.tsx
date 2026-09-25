@@ -22,6 +22,7 @@ import Slider from "../components/Slider";
 import { pickPath, runCommand, setWindowBounds } from "../bridge";
 import SectionList, { type SectionSpec } from "../shell/SectionList";
 import SettingControl from "../settings/SettingControl";
+import { asNumber } from "../settings/asNumber";
 import { useDatabase } from "../settings/useDatabase";
 import { useTables } from "../settings/useTables";
 import { useSetting, useSettingsBatch } from "../settings/store";
@@ -37,11 +38,6 @@ function clampLayout(w: number, h: number, split: number): [number, number, numb
   const width = Math.max(1000, Math.min(3840, Math.round(w) || WINDOW_DEFAULTS.w));
   const height = Math.max(600, Math.min(2160, Math.round(h) || 900));
   return [width, height, clampSplitPct(split)];
-}
-
-function asNumber(value: unknown, fallback: number): number {
-  const parsed = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 /**
