@@ -73,6 +73,34 @@
   background: var(--surface);
 }
 
+/* Why an empty preview is empty: the headline reads as text, not a hint. */
+.editing-empty-reason {
+  font-style: normal;
+  max-width: 60ch;
+}
+
+.editing-empty-headline {
+  margin: 0 0 var(--sp-2);
+  color: var(--txt);
+}
+
+.editing-empty-stages {
+  margin: 0 0 var(--sp-2);
+  padding-left: var(--sp-4);
+  font-size: var(--fs-sm);
+}
+
+.editing-empty-count {
+  display: inline-block;
+  min-width: 7ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.editing-empty-hint {
+  margin: 0;
+}
+
 .editing-list {
   display: flex;
   flex-direction: column;

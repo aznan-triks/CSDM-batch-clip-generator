@@ -177,17 +177,25 @@ export default function DemoSelectionSection() {
 
       <div className="row">
         <span className="lab">Shortcuts:</span>
-        {DATE_SHORTCUTS.map((shortcut) => (
-          <button
-            key={shortcut.label}
-            type="button"
-            className="chip"
-            title={shortcut.title}
-            data-action="F3" onClick={() => applyShortcut(shortcut)}
-          >
-            {shortcut.label}
-          </button>
-        ))}
+        {DATE_SHORTCUTS.map((shortcut) => {
+          // Lit when the dates on screen ARE this shortcut's range today, so
+          // "which range is active" reads at a glance (audit 2026-09-25, A:
+          // a 6-month range was taken for the last 30 days).
+          const range = rangeForShortcut(shortcut);
+          const active = range.from === (dateFrom ?? "") && range.to === (dateTo ?? "");
+          return (
+            <button
+              key={shortcut.label}
+              type="button"
+              className={active ? "chip on" : "chip"}
+              aria-pressed={active}
+              title={shortcut.title}
+              data-action="F3" onClick={() => applyShortcut(shortcut)}
+            >
+              {shortcut.label}
+            </button>
+          );
+        })}
         <button type="button" className="chip" data-action="F4" title="Clear date range and reset demo selection" onClick={clearAll}>
           Clear all
         </button>
