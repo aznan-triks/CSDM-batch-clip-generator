@@ -46,7 +46,8 @@ from csdm.static_data import (
     SPRAY_TRANSFER_WEAPONS_LOWER, SPRAY_MAX_GAP_TICKS,
 )
 from csdm.config import DEFAULT_CONFIG, clips_root, detect_csdm_cli
-from csdm.errors import WHERE as ERROR_WHERE, UserError, db_connect_message, report
+from csdm.errors import (WHERE as ERROR_WHERE, UserError, csdm_cli_message,
+                         db_connect_message, report)
 from csdm.core_utils import (
     build_camera_ticks, safe_folder_name, _count_kills, fmt_duration, progress_bar,
     process_is_running, ensure_csdm_dirs, _generate_id_for_type, display_to_iso,
@@ -3217,7 +3218,17 @@ class EngineMixin:
                 if "raw files not found" in ll:
                     is_e = True
                     self._last_raw_not_found = True
-                if is_e:
+                # A failure the user can fix reads as the fix, not as the
+                # CLI's wording; the raw line stays in the log for reference.
+                known = csdm_cli_message(line)
+                if known:
+                    has_err = True
+                    errs.append(known)
+                    if any(k in ll for k in self.RETRYABLE):
+                        retryable = True
+                    self.log(f"  > {line}", "dim")
+                    self.log(f"  ✗ {known}", "err")
+                elif is_e:
                     has_err = True
                     errs.append(line)
                     if any(k in ll for k in self.RETRYABLE):
