@@ -15,7 +15,7 @@ from csdm.bridge.protocol import LineWriter, MSG_FATAL, MSG_LOG, MSG_RESULT, MSG
 from csdm.bridge.tables import describe_filters
 from csdm.config import (apply_config_dir, build_preset, load_config, load_presets,
                          normalize_presets, preset_payload, probe_config_dir,
-                         save_config, save_presets)
+                         save_config, save_presets, take_config_notices)
 from csdm.engine.core import EngineMixin
 from csdm.errors import UserError, report
 from csdm.engine.state import EngineStateMixin
@@ -151,6 +151,8 @@ def _cmd_hello(host, command):
     settings = load_config()
     host.log(f"CSDM Batch Clips Generator {APP_VERSION} -- engine ready", "ok")
     host.log(f"python {platform.python_version()} | {len(settings)} settings loaded", "dim")
+    for notice in take_config_notices():
+        host.log(notice, "warn")
     return {"data": {"app_version": APP_VERSION,
                      "python_version": platform.python_version(),
                      "settings_count": len(settings)}}

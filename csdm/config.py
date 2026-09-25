@@ -829,13 +829,62 @@ def load_config():
     active = _bootstrap_dir()
     global _ACTIVE_DIR
     _ACTIVE_DIR = active
-    saved = _load_json(str(active / "csdm_config.json"))
+    saved = _read_saved_config(active / "csdm_config.json")
     if not saved:
         return DEFAULT_CONFIG.copy()
     cfg = DEFAULT_CONFIG.copy()
     cfg.update(saved)
     _migrate_config(saved, cfg)
     return cfg
+
+
+# Messages about the settings file that no command asked for (a damaged file
+# was set aside). The bridge's greeting writes them to the log at startup.
+_CONFIG_NOTICES = []
+
+
+def take_config_notices():
+    """Return and forget the pending settings-file notices."""
+    notices = list(_CONFIG_NOTICES)
+    _CONFIG_NOTICES.clear()
+    return notices
+
+
+def _read_saved_config(path):
+    """The saved settings as a dict; {} when there are none or they are unreadable.
+
+    A damaged file (invalid JSON, or JSON that is not an object) must not
+    stop the app, and must not vanish either: the next save would overwrite
+    the only copy of the user's settings. It is renamed aside with a
+    timestamp -- once, so later loads do not stack copies -- and a notice
+    says where it went.
+    """
+    if not path.exists():
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            saved = json.load(f)
+    except OSError:
+        return {}
+    except ValueError:
+        saved = None
+    if isinstance(saved, dict):
+        return saved
+    backup = path.with_name(f"{path.stem}.broken-{time.strftime('%Y%m%d-%H%M%S')}{path.suffix}")
+    try:
+        path.replace(backup)
+    except OSError as exc:
+        notice = (f"Your settings file {path} is damaged and could not be read, so the default "
+                  f"settings were loaded. It could not be set aside ({exc.strerror or exc}): "
+                  f"copy it somewhere safe now if you want to recover it, the next change "
+                  f"overwrites it.")
+        if notice not in _CONFIG_NOTICES:  # every load retries; say it once
+            _CONFIG_NOTICES.append(notice)
+        return {}
+    _CONFIG_NOTICES.append(
+        f"Your settings file was damaged and could not be read, so the default settings "
+        f"were loaded. The damaged file was kept as {backup}.")
+    return {}
 
 
 def save_config(cfg):
