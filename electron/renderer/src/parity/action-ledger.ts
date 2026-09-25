@@ -112,8 +112,8 @@ export const PORTED_BEHIND_STATE: Record<string, string> = {
   G3: "KillFiltersSection.tsx — bouton Clear ; même garde tables que G1/G2",
 
   /* ── H. Filtres de match ── */
-  H1: "MatchTypesSection.tsx — puce d'un type de match ; le composant retourne tôt tant que useTables() n'a pas répondu",
-  H2: "MapFilterSection.tsx — puce d'une carte ; affiche « Waiting for DB… » tant que useDatabase() n'a pas répondu",
+  H1: "matchTypes/useMatchTypes.tsx — case d'un type de match (3 styles) ; aucune case tant que useTables() n'a pas répondu",
+  H2: "mapFilter/useMapFilter.tsx — choix d'une carte (3 styles) ; aucune carte tant que useDatabase() n'a pas répondu",
 
   /* ── I. Tags ── */
   I3: "TagsTab.tsx — puce de tag ; aucune puce sans tags chargés",

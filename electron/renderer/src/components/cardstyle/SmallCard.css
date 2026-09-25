@@ -1,0 +1,151 @@
+/*
+ * Primitives of the small CAPTURE cards (Timing & Retries, Match Types, Map
+ * Filter): the sentence body and the big number tile. `sc-` prefixed: the
+ * V12 mock owns the plain names and `cs-` belongs to cardstyle.css.
+ * Colours come from theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+/* ---------- sentence body (style B) ---------- */
+.sc-prose {
+  padding: 2px 2px 4px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 2.1;
+  letter-spacing: -0.005em;
+  color: var(--txt);
+}
+
+.sc-line {
+  margin: 0 0 4px;
+}
+
+.sc-prose .w {
+  color: var(--muted);
+}
+
+.sc-prose .nw {
+  white-space: nowrap;
+}
+
+/* The small cards are narrow: a popover never runs past the card. */
+.sc-narrow .cs-pop {
+  width: min(262px, calc(100% + 20px));
+  min-width: 200px;
+}
+
+/* ---------- SmallCardCountTile (style C) ---------- */
+.sc-count {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 9px 9px 8px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+}
+
+.sc-count-h {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sc-count-ic {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--cam-k);
+}
+
+.sc-count-ic svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sc-count-t {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 11.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+
+.sc-count-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.sc-count-v {
+  font-family: var(--mono);
+  font-size: 23px;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+  color: var(--txt);
+  cursor: ns-resize;
+  border-radius: 6px;
+}
+
+.sc-count-v small {
+  margin-left: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--faint);
+}
+
+.sc-count-v:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.sc-count.special .sc-count-v {
+  color: var(--cam-v);
+}
+
+.sc-count-cap {
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--faint);
+}
+
+.sc-count-btns {
+  display: flex;
+  flex: none;
+  gap: 3px;
+}
+
+.sc-count-btns button {
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 7px;
+  border: 1px solid var(--hair);
+  background: var(--surface-2);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--cam-k);
+  cursor: pointer;
+}
+
+.sc-count-btns button:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.sc-count-btns button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}

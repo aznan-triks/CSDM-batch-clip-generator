@@ -81,6 +81,9 @@ DEFAULT_CONFIG = {
     # you drag), "sentence" (a sentence with fill-in words) or "tiles" (big
     # picture tiles). One global choice; every variant writes the same keys.
     "ui_card_style": "timeline",
+    # Per-card exceptions to `ui_card_style`: {card id: style}. A card with no
+    # entry follows the global style (Settings > UI Theme > Per-card style).
+    "ui_card_style_overrides": {},
     # Reference card layout (LAYOUT_VERSION 4, sectionLayout.ts), redesigned
     # 2026-09-17 for the real column count a 1600x900 window measures today
     # (15 columns of `ui_card_block_size`, content pane ~902px), and again
@@ -118,12 +121,16 @@ DEFAULT_CONFIG = {
                 # timeline needs 15, sentence 14, tiles more -- it scrolls). Timing &
                 # Retries moved under Map Filter, where the right column had
                 # room to spare next to Kill Filters.
+                # Card remake 2a (2026-09-25): match-types, map-filter and
+                # timing-retries grow 1-2 rows each so their tiles style fits
+                # (e2e/card-remake-2a-settings-proof.mjs prints the overflow);
+                # the right column still ends above damage-filters' row.
                 "capture-timing": {"x": 5, "y": 9, "w": 10, "h": 19},
-                "timing-retries": {"x": 10, "y": 68, "w": 5, "h": 11},
+                "timing-retries": {"x": 10, "y": 71, "w": 5, "h": 12},
                 "weapon-filter": {"x": 0, "y": 28, "w": 15, "h": 17},
                 "kill-filters": {"x": 0, "y": 45, "w": 10, "h": 39},
-                "match-types": {"x": 10, "y": 45, "w": 5, "h": 13},
-                "map-filter": {"x": 10, "y": 58, "w": 5, "h": 10},
+                "match-types": {"x": 10, "y": 45, "w": 5, "h": 14},
+                "map-filter": {"x": 10, "y": 59, "w": 5, "h": 12},
                 "damage-filters": {"x": 0, "y": 84, "w": 10, "h": 14},
                 "shot-filters": {"x": 0, "y": 98, "w": 10, "h": 11},
             },
@@ -149,10 +156,10 @@ DEFAULT_CONFIG = {
                 "paths": {"x": 0, "y": 6, "w": 15, "h": 14},
                 "config-folder": {"x": 0, "y": 20, "w": 15, "h": 7},
                 "presets": {"x": 0, "y": 27, "w": 5, "h": 12},
-                "ui-theme": {"x": 5, "y": 27, "w": 5, "h": 13},  # +2 rows: Card style
+                "ui-theme": {"x": 5, "y": 27, "w": 5, "h": 22},  # +2 rows: Card style, +9: Per-card style
                 "ui-layout": {"x": 10, "y": 27, "w": 5, "h": 11},
-                "performance": {"x": 0, "y": 40, "w": 7, "h": 6},
-                "injection-preview": {"x": 7, "y": 40, "w": 8, "h": 7},
+                "performance": {"x": 0, "y": 49, "w": 7, "h": 6},
+                "injection-preview": {"x": 7, "y": 49, "w": 8, "h": 7},
             },
             "collapsed": [],
         },

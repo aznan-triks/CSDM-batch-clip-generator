@@ -18,7 +18,8 @@ import Chip from "../components/Chip";
 import Field from "../components/Field";
 import PathField from "../components/PathField";
 import Segmented from "../components/Segmented";
-import { CARD_STYLES, useCardStyle } from "../components/cardstyle/cardStyle";
+import { CARD_STYLES, isCardStyle } from "../components/cardstyle/cardStyle";
+import CardStyleOverrides from "../components/cardstyle/CardStyleOverrides";
 import Slider from "../components/Slider";
 import { pickPath, runCommand, setWindowBounds } from "../bridge";
 import SectionList, { type SectionSpec } from "../shell/SectionList";
@@ -133,8 +134,8 @@ export default function SettingsTab() {
 
   const [cardBlockSize, setCardBlockSize] = useSetting<number>("ui_card_block_size");
   const [fontFamily, setFontFamily] = useSetting<string>("ui_font_family");
-  const [, setCardStyle] = useSetting<string>("ui_card_style");
-  const cardStyle = useCardStyle();
+  const [cardStyleRaw, setCardStyle] = useSetting<string>("ui_card_style");
+  const cardStyle = isCardStyle(cardStyleRaw) ? cardStyleRaw : CARD_STYLES[0];
   const [alwaysShowTooltips, setAlwaysShowTooltips] = useSetting<boolean>("ui_always_show_tooltips");
 
   // Configuration folder (v3.0.1): the active location plus a pending switch.
@@ -583,6 +584,7 @@ export default function SettingsTab() {
               />
             </div>
           </SettingControl>
+          <CardStyleOverrides globalStyle={cardStyle} />
           <SettingControl settingKey="ui_font_family">
             <Field
               id="ui-font-family"
