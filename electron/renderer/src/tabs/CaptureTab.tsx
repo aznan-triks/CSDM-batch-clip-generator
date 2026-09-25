@@ -29,6 +29,7 @@ import MapFilterSection from "./MapFilterSection";
 import MatchTypesSection from "./MatchTypesSection";
 import PlayerSection from "./PlayerSection";
 import WeaponFilterSection from "./WeaponFilterSection";
+import { clipWindowSummary, pacingSummary } from "./clipWindow";
 import "./CaptureTab.css";
 
 /**
@@ -55,6 +56,15 @@ function asNumber(value: unknown, fallback: number): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+/**
+ * A whole, non-negative number: a count of retries, seconds or minutes.
+ * An empty box keeps `fallback` (the current value) rather than jumping to 0.
+ */
+function asCount(value: unknown, fallback: number): number {
+  if (typeof value === "string" && value.trim() === "") return fallback;
+  return Math.max(0, Math.round(asNumber(value, fallback)));
+}
+
 export default function CaptureTab() {
   const [events, setEvents] = useSetting<string[]>("events");
   const [perspective, setPerspective] = useSetting<string>("perspective");
@@ -64,10 +74,11 @@ export default function CaptureTab() {
   const [nameOverride, setNameOverride] = useSetting<string>("player_name_override");
   const [before, setBefore] = useSetting<number>("before");
   const [after, setAfter] = useSetting<number>("after");
-  const [retryCount, setRetryCount] = useSetting<string>("retry_count");
-  const [retryDelay, setRetryDelay] = useSetting<string>("retry_delay");
-  const [demoPause, setDemoPause] = useSetting<string>("delay_between_demos");
-  const [timeout, setTimeout] = useSetting<string>("recording_timeout");
+  // Numbers, not the typed text: the batch loop counts and sleeps with them.
+  const [retryCount, setRetryCount] = useSetting<number>("retry_count");
+  const [retryDelay, setRetryDelay] = useSetting<number>("retry_delay");
+  const [demoPause, setDemoPause] = useSetting<number>("delay_between_demos");
+  const [recordingTimeout, setRecordingTimeout] = useSetting<number>("recording_timeout");
   const [clipOrder, setClipOrder] = useSetting<string>("clip_order");
   // Header counters (the mock's `.sh .cnt`). Read-only: they summarise what
   // the section already holds, they never become a second source of truth.
@@ -78,7 +89,12 @@ export default function CaptureTab() {
 
   const selectedEvents = Array.isArray(events) ? events : [];
   const beforeSeconds = asNumber(before, BEFORE_RANGE.min);
+  const afterSeconds = asNumber(after, AFTER_RANGE.min);
   const switchDelay = asNumber(victimPre, SWITCH_DELAY_RANGE.min);
+  const retries = asCount(retryCount, 0);
+  const retrySeconds = asCount(retryDelay, 0);
+  const demoPauseSeconds = asCount(demoPause, 0);
+  const timeoutMinutes = asCount(recordingTimeout, 0);
 
   function toggleEvent(kind: string) {
     setEvents(
@@ -153,15 +169,18 @@ export default function CaptureTab() {
             </div>
           </SettingControl>
 
+          {/* "Camera", not "Perspective": the setting picks whose eyes the
+              clip is filmed through, and Event role above already answers
+              "who acts". */}
           <SettingControl settingKey="perspective">
             <div className="row">
-              <span className="lab">Perspective</span>
+              <span className="lab">Camera</span>
               <Segmented
                 options={PERSPECTIVES}
                 value={perspective ?? PERSPECTIVES[0]}
                 onChange={setPerspective}
-                label="Perspective"
-                tip="Whose camera to record: the killer, the victim, or both with a camera switch"
+                label="Camera"
+                tip="Whose eyes the clip is filmed through: the killer, the victim, or the killer then the victim (both)"
                 optionActions={Object.fromEntries(PERSPECTIVES.map((p) => [p, "L5"]))}
               />
             </div>
@@ -172,13 +191,13 @@ export default function CaptureTab() {
             <SettingControl settingKey="victim_pre_s">
               <Slider
                 id="victim-pre-s"
-                label="Switch delay (s)"
+                label="Victim view (s)"
                 min={SWITCH_DELAY_RANGE.min}
                 max={SWITCH_DELAY_RANGE.max}
                 value={switchDelay}
                 onChange={setVictimPre}
                 readout={`${switchDelay}s · total before: ${beforeSeconds + switchDelay}s`}
-                tip="Delay before switching from killer POV to victim POV, in Both perspective"
+                tip="Both: the camera follows the killer, then switches to the victim this many seconds before the kill. These seconds are added to Seconds before"
               />
             </SettingControl>
           )}
@@ -190,7 +209,7 @@ export default function CaptureTab() {
               <SettingControl settingKey="kill_mod_mate_pov">
                 <Chip
                   label="Enable"
-                  tip="Also record a nearby teammate's point of view when available for this event"
+                  tip="Film the victim's side from the teammate with the best view of the kill, instead of the victim"
                   selected={!!matePov}
                   onToggle={toggleMatePov}
                 />
@@ -198,26 +217,13 @@ export default function CaptureTab() {
               <SettingControl settingKey="kill_mod_mate_pov_req">
                 <Chip
                   label="★ Must"
-                  tip="Require Mate POV footage to exist; skip the clip if none is available"
+                  tip="Skip the clip when no teammate has a clear view of the kill"
                   selected={!!matePovReq}
                   onToggle={toggleMatePovReq}
                 />
               </SettingControl>
             </div>
           )}
-
-          <div className="row">
-            <SettingControl settingKey="player_name_override">
-              <Field
-                id="player-name-override"
-                label="Name override"
-                value={nameOverride ?? ""}
-                onChange={setNameOverride}
-                placeholder="name stored in the demo"
-                tip="Match this player by an alternate in-game name instead of the DB name"
-              />
-            </SettingControl>
-          </div>
 
           {/* Each slider is a row of its own (mock `.row`: label, rail,
               readout). They are not columns in a grid: in a half-width card
@@ -232,7 +238,7 @@ export default function CaptureTab() {
               value={beforeSeconds}
               onChange={setBefore}
               readout={`${beforeSeconds}s`}
-              tip="How many seconds of footage to capture before the detected event"
+              tip="Seconds of footage recorded before each event. Also sets how close two events must be to share one clip"
             />
           </SettingControl>
           <SettingControl settingKey="after">
@@ -241,12 +247,34 @@ export default function CaptureTab() {
               label="Seconds after"
               min={AFTER_RANGE.min}
               max={AFTER_RANGE.max}
-              value={asNumber(after, AFTER_RANGE.min)}
+              value={afterSeconds}
               onChange={setAfter}
-              readout={`${asNumber(after, AFTER_RANGE.min)}s`}
-              tip="How many seconds of footage to capture after the detected event"
+              readout={`${afterSeconds}s`}
+              tip="Seconds of footage recorded after each event"
             />
           </SettingControl>
+          {/* What one clip will hold, in words, from the values above. */}
+          <p className="capture-hint" data-testid="clip-window-summary">
+            {clipWindowSummary({
+              before: beforeSeconds,
+              after: afterSeconds,
+              perspective: perspective ?? PERSPECTIVES[0],
+              switchDelay,
+            })}
+          </p>
+
+          <div className="row">
+            <SettingControl settingKey="player_name_override">
+              <Field
+                id="player-name-override"
+                label="Kill-feed name"
+                value={nameOverride ?? ""}
+                onChange={setNameOverride}
+                placeholder="name from the demo"
+                tip="Name shown for your player in the clips' kill feed. Empty = the name stored in the demo"
+              />
+            </SettingControl>
+          </div>
         </Card>
       ),
     },
@@ -254,61 +282,80 @@ export default function CaptureTab() {
       id: "timing-retries",
       element: (
         <Card title="Timing &amp; Retries" icon={<ICONS.captureTiming />}>
+          {/* One field per row: two label + box pairs do not fit a
+              half-width card, and the wrap left "Timeout (min)" on one line
+              and its box alone on the next. Every setter stores a whole
+              number -- the batch loop counts and sleeps with these. */}
           <div className="row">
             <SettingControl settingKey="retry_count">
               <Field
                 id="retry-count"
                 label="Retries"
                 mono
-                value={String(retryCount ?? "")}
-                onChange={setRetryCount}
-                tip="Number of times to retry a recording that fails before giving up"
+                value={String(retries)}
+                onChange={(v) => setRetryCount(asCount(v, retries))}
+                tip="Extra attempts for a recording that fails, before the demo is marked failed. 0 = no retry"
               />
             </SettingControl>
+          </div>
+          <div className="row">
             <SettingControl settingKey="retry_delay">
               <Field
                 id="retry-delay"
-                label="Delay (s)"
+                label="Retry delay (s)"
                 mono
-                value={String(retryDelay ?? "")}
-                onChange={setRetryDelay}
-                tip="Seconds to wait between retry attempts after a failed recording"
+                value={String(retrySeconds)}
+                onChange={(v) => setRetryDelay(asCount(v, retrySeconds))}
+                tip="Seconds to wait before each retry of a failed recording"
               />
             </SettingControl>
+          </div>
+          <div className="row">
             <SettingControl settingKey="delay_between_demos">
               <Field
                 id="demo-pause"
                 label="Demo pause (s)"
                 mono
-                value={String(demoPause ?? "")}
-                onChange={setDemoPause}
-                tip="Seconds to pause between demos, giving the recorder time to reset"
+                value={String(demoPauseSeconds)}
+                onChange={(v) => setDemoPause(asCount(v, demoPauseSeconds))}
+                tip="Seconds to pause between two demos, giving CS2 and the recorder time to reset"
               />
             </SettingControl>
+          </div>
+          <div className="row">
             <SettingControl settingKey="recording_timeout">
               <Field
                 id="recording-timeout"
                 label="Timeout (min)"
                 mono
-                value={String(timeout ?? "")}
-                onChange={setTimeout}
-                tip="Maximum minutes to wait for a single recording before aborting it"
+                value={String(timeoutMinutes)}
+                onChange={(v) => setRecordingTimeout(asCount(v, timeoutMinutes))}
+                tip="A recording that runs longer than this is stopped and retried. 0 = automatic, from the length of the clips; a value here can only make the wait longer"
               />
             </SettingControl>
           </div>
 
           <SettingControl settingKey="clip_order">
             <div className="row">
-              <span className="lab">Order</span>
+              <span className="lab">Demo order</span>
               <Segmented
                 options={CLIP_ORDERS}
                 value={clipOrder ?? CLIP_ORDERS[0]}
                 onChange={setClipOrder}
-                label="Order"
-                tip="Order in which demos are processed: chronological by date, or shuffled"
+                label="Demo order"
+                tip="Order in which demos are recorded: chronological by match date, or shuffled"
               />
             </div>
           </SettingControl>
+          {/* What happens on a failure, in words, from the values above. */}
+          <p className="capture-hint" data-testid="pacing-summary">
+            {pacingSummary({
+              retries,
+              retryDelay: retrySeconds,
+              demoPause: demoPauseSeconds,
+              timeoutMin: timeoutMinutes,
+            })}
+          </p>
         </Card>
       ),
     },
