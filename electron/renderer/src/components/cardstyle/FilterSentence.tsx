@@ -10,7 +10,7 @@ import { Fragment } from "react";
 import Chip from "../Chip";
 import SettingControl from "../../settings/SettingControl";
 import { FilterExtras, UntestedMark, filterTip } from "./FilterExtra";
-import type { FilterRowModel, FilterToggle } from "./filterRows";
+import { FILTER_ACTION, type FilterRowModel, type FilterToggle } from "./filterRows";
 import { ChoiceToken } from "./SentenceToken";
 import "./filterstyle.css";
 
@@ -27,7 +27,7 @@ export function FilterToggles({ row }: { row: FilterRowModel }) {
   return (
     <div className="chips">
       <SettingControl settingKey={row.enable.key}>
-        <span data-action="G1" style={{ display: "contents" }}>
+        <span data-action={FILTER_ACTION.enable} style={{ display: "contents" }}>
           <Chip label="Enable" tip={row.enable.tip} selected={row.enable.on} onToggle={row.enable.toggle} />
         </span>
       </SettingControl>
@@ -36,7 +36,7 @@ export function FilterToggles({ row }: { row: FilterRowModel }) {
       </SettingControl>
       {row.exclude && (
         <SettingControl settingKey={row.exclude.key}>
-          <span data-action="G2" style={{ display: "contents" }}>
+          <span data-action={FILTER_ACTION.exclude} style={{ display: "contents" }}>
             <Chip label="Exclude" tip={row.exclude.tip} selected={row.exclude.on} onToggle={row.exclude.toggle} />
           </span>
         </SettingControl>
@@ -132,7 +132,7 @@ export function FilterClause({ rows, mode, lead, empty, addLabel }: ClauseProps)
                 return (
                   <SettingControl key={row.key} settingKey={t.key}>
                     <span
-                      data-action={mode === "enable" ? "G1" : mode === "exclude" ? "G2" : undefined}
+                      data-action={mode === "must" ? undefined : FILTER_ACTION[mode]}
                       style={{ display: "contents" }}
                     >
                       <Chip

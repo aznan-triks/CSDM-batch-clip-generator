@@ -5,7 +5,7 @@
  */
 import SettingControl from "../../settings/SettingControl";
 import { FilterExtras, UntestedMark, filterTip } from "./FilterExtra";
-import type { FilterRowModel, FilterToggle } from "./filterRows";
+import { FILTER_ACTION, type FilterRowModel, type FilterToggle } from "./filterRows";
 import "./filterstyle.css";
 
 function FootToggle({ toggle, label, kind, action }: { toggle: FilterToggle; label: string; kind: string; action?: string }) {
@@ -37,7 +37,7 @@ export function FilterTile({ row }: { row: FilterRowModel }) {
           aria-pressed={row.enable.on}
           aria-label="Enable"
           title={filterTip(row.enable.tip, row.untested)}
-          data-action="G1"
+          data-action={FILTER_ACTION.enable}
           onClick={row.enable.toggle}
         >
           <span className="cf-tile-ck" aria-hidden="true">
@@ -55,7 +55,7 @@ export function FilterTile({ row }: { row: FilterRowModel }) {
       </SettingControl>
       <div className="cf-tile-feet">
         <FootToggle toggle={row.must} label="★ Must" kind="must" />
-        {row.exclude && <FootToggle toggle={row.exclude} label="Exclude" kind="exclude" action="G2" />}
+        {row.exclude && <FootToggle toggle={row.exclude} label="Exclude" kind="exclude" action={FILTER_ACTION.exclude} />}
       </div>
       <FilterExtras extras={row.extras} />
     </div>

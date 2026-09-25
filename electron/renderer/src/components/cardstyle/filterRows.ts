@@ -142,3 +142,10 @@ export function filterCount(rows: readonly FilterRowModel[]): string {
   const on = rows.filter((r) => r.enable.on || r.exclude?.on).length;
   return on ? `${on} active` : "none";
 }
+
+/**
+ * The parity markers (`data-action`) of a row's Enable and Exclude: one home
+ * for the three styles that draw them, as the parity guard requires.
+ */
+const dataAction = { enable: "G1", exclude: "G2" } as const;
+export const FILTER_ACTION = dataAction;

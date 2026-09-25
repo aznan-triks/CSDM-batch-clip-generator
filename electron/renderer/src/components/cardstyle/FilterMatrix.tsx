@@ -9,15 +9,15 @@ import type { ReactNode } from "react";
 import SettingControl from "../../settings/SettingControl";
 import { useAlwaysTooltips } from "../../settings/useAlwaysTooltips";
 import { FilterExtras, UntestedMark, filterTip } from "./FilterExtra";
-import type { FilterRowModel, FilterToggle } from "./filterRows";
+import { FILTER_ACTION, type FilterRowModel, type FilterToggle } from "./filterRows";
 import "./filterstyle.css";
 
 type CellKind = "keep" | "must" | "exclude";
 
 const CELL: Record<CellKind, { label: string; mark: string; action?: string }> = {
-  keep: { label: "Enable", mark: "✓", action: "G1" },
+  keep: { label: "Enable", mark: "✓", action: FILTER_ACTION.enable },
   must: { label: "★ Must", mark: "★" },
-  exclude: { label: "Exclude", mark: "✕", action: "G2" },
+  exclude: { label: "Exclude", mark: "✕", action: FILTER_ACTION.exclude },
 };
 
 function Cell({ kind, toggle }: { kind: CellKind; toggle: FilterToggle | null }) {
