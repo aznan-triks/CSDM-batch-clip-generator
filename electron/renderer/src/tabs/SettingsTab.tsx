@@ -315,7 +315,7 @@ export default function SettingsTab() {
               />
             </SettingControl>
           </div>
-          <div className="row">
+          <div className="row settings-db-row">
             <button
               type="button"
               className="chip"
@@ -325,12 +325,20 @@ export default function SettingsTab() {
             >
               Test & Reload
             </button>
-            {dbStatus && <span className="settings-db-status">{dbStatus}</span>}
+            {/* One message slot beside the button, not a line of its own: the
+                card's reference height (DEFAULT_CONFIG ui_sections) has no
+                row to spare, and a help line under it made the card scroll.
+                The guidance shows until a test answers; the answer replaces
+                it (a failure already names what to check). */}
+            {dbStatus ? (
+              <span className="settings-db-status">{dbStatus}</span>
+            ) : (
+              <span className="capture-hint">
+                Use the values shown in CS Demo Manager › Settings › Database. CS Demo Manager must be
+                installed and its database running.
+              </span>
+            )}
           </div>
-          <p className="capture-hint">
-            Use the values shown in CS Demo Manager › Settings › Database. CS Demo Manager must be
-            installed and its database running.
-          </p>
         </Card>
       ),
     },
