@@ -241,7 +241,7 @@ const CURSOR_DRIVEN_ALLOWLIST: readonly string[] = [
   // reorder by a pointer drag -- `mousedown` then per-chip `mousemove`/`mouseup`
   // swapping array indices. It only calls state setters (`setDragOver`/
   // `setSavedPlayers`), never `.style.*` or a tween.
-  "tabs/PlayerSection.tsx",
+  "tabs/player/parts.tsx",
 ];
 
 describe("pointer handlers in the source paint, they never move anything", () => {

@@ -1,0 +1,283 @@
+/*
+ * Demo Selection's three styles. DemoSelectionSection.css keeps the card
+ * root; this file draws the range strip (A), the sentence (B) and the
+ * calendar tiles (C). `ds-` prefixed like the section's own rules.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.ds-a,
+.ds-b,
+.ds-c {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ds-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ds-kick {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 70%, var(--muted));
+}
+
+.ds-dates {
+  align-items: flex-end;
+  gap: 12px;
+}
+
+/* ---------- A: the calendar strip ---------- */
+.ds-strip {
+  padding: 0 18px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--solid) 62%, transparent),
+    color-mix(in srgb, var(--solid) 40%, var(--hair-2))
+  );
+}
+
+.ds-axis {
+  position: relative;
+  height: 104px;
+  touch-action: none;
+}
+
+/* Month ticks and labels along the bottom. */
+.ds-month {
+  position: absolute;
+  bottom: 8px;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.ds-month i {
+  position: absolute;
+  left: 50%;
+  bottom: 15px;
+  height: 64px;
+  border-left: 1px dashed color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.ds-month.year {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.ds-band {
+  position: absolute;
+  top: 34px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cam-k) 80%, #fff), var(--cam-k));
+  box-shadow: 0 6px 14px -8px var(--shadow-tint, rgba(30, 50, 90, 0.35));
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #fff;
+}
+
+/* No bound at all: every date, drawn as the concepts' hatched "rest" part. */
+.ds-band.open {
+  border: 1px dashed color-mix(in srgb, var(--accent) 50%, transparent);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 12%, var(--solid)) 0 6px,
+    color-mix(in srgb, var(--accent) 5%, var(--solid)) 6px 12px
+  );
+  color: var(--accent);
+}
+
+.ds-demo {
+  position: absolute;
+  top: 66px;
+  width: 2px;
+  height: 8px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--emerald);
+}
+
+.ds-handle {
+  position: absolute;
+  top: 28px;
+  z-index: 3;
+  width: 14px;
+  height: 40px;
+  margin-left: -7px;
+  padding: 0;
+  border-radius: 7px;
+  border: 2px solid var(--cam-k);
+  background: var(--solid);
+  box-shadow: 0 4px 10px -4px rgba(30, 50, 90, 0.45);
+  cursor: ew-resize;
+  outline: none;
+  transition: box-shadow var(--dur-fast) var(--ease);
+}
+
+.ds-handle::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  border-left: 1.5px solid color-mix(in srgb, var(--cam-k) 60%, transparent);
+  border-right: 1.5px solid color-mix(in srgb, var(--cam-k) 60%, transparent);
+}
+
+.ds-handle:hover,
+.ds-handle:focus-visible,
+.ds-handle.drag {
+  box-shadow: 0 0 0 4px var(--accent-soft), 0 4px 10px -4px rgba(30, 50, 90, 0.45);
+}
+
+.ds-readout {
+  position: absolute;
+  top: 6px;
+  transform: translateX(-50%);
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--cam-k);
+  pointer-events: none;
+}
+
+.ds-today {
+  position: absolute;
+  top: 20px;
+  height: 56px;
+  border-left: 2px solid var(--txt);
+  opacity: 0.25;
+}
+
+/* ---------- B: sentence ---------- */
+.ds-b {
+  font-size: 14.5px;
+  line-height: 1.9;
+  color: var(--txt);
+}
+
+.ds-line {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+
+.ds-b .ds-dates span {
+  color: var(--muted);
+}
+
+.ds-b .ds-dates {
+  line-height: 1.4;
+}
+
+.ds-b .cs-pop small {
+  display: block;
+  margin-top: 8px;
+  color: var(--faint);
+}
+
+.ds-b .cs-pop > .chip {
+  margin-top: 4px;
+}
+
+/* ---------- C: calendar tiles ---------- */
+.ds-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.ds-tile {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 10px 10px 9px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+}
+
+.ds-tile:hover {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.ds-tile:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.ds-tile-ic {
+  display: block;
+  width: 30px;
+  height: 30px;
+  color: var(--accent);
+}
+
+.ds-tile-ic svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ds-tile b {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--txt);
+}
+
+.ds-tile small {
+  margin-top: 1px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.ds-tile.on {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--lime) 30%, var(--solid)), var(--lime) 140%);
+  border-color: var(--lime-glow);
+}
+
+.ds-tile.on .ds-tile-ic,
+.ds-tile.on small {
+  color: var(--lime-ink);
+}
+
+.ds-manual {
+  display: grid;
+}
+
+.ds-manual .cs-tile {
+  min-height: 0;
+}

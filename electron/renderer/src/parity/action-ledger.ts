@@ -124,13 +124,13 @@ export const PORTED_BEHIND_STATE: Record<string, string> = {
   L8: "HlaeOptionsSection.tsx — champ Game Speed (%) ; même garde recsys que L6",
 
   /* ── N. Joueurs ── */
-  N3: "PlayerSection.tsx — Segmented de tri par nom ; dans le bloc `{database && (...)}`, monté seulement une fois la base connectée",
-  N4: "PlayerSection.tsx — Segmented de tri par date ; même garde que N3",
-  N6: "PlayerSection.tsx — page précédente ; même garde database que N3/N4",
-  N7: "PlayerSection.tsx — page suivante ; même garde database que N3/N4",
-  N10: "PlayerSection.tsx — ★ sur une ligne de résultat ; la liste de résultats n'est montée qu'une fois la base connectée",
-  N12: "PlayerSection.tsx — × (CloseButton) sur une puce de compte enregistré ; ne s'affiche que si saved_players contient au moins une entrée",
-  N13: "PlayerSection.tsx — ligne de résultat (role=checkbox) ; même garde database que N10",
+  N3: "player/parts.tsx — Segmented de tri par nom ; dans le bloc `{database && (...)}`, monté seulement une fois la base connectée",
+  N4: "player/parts.tsx — Segmented de tri par date ; même garde que N3",
+  N6: "player/parts.tsx — page précédente ; même garde database que N3/N4",
+  N7: "player/parts.tsx — page suivante ; même garde database que N3/N4",
+  N10: "player/parts.tsx — ★ sur une ligne de résultat ; la liste de résultats n'est montée qu'une fois la base connectée",
+  N12: "player/parts.tsx — × (CloseButton) sur une puce de compte enregistré ; ne s'affiche que si saved_players contient au moins une entrée",
+  N13: "player/parts.tsx — ligne de résultat (role=checkbox) ; même garde database que N10",
 
   /* ── P. États & dialogues ── */
   P6: "LogConsole.tsx — bouton de choix du panneau #ask-panel ; affiché seulement pendant une question du moteur en cours",
