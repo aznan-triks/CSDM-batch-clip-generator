@@ -58,7 +58,7 @@ export type BridgeMessage =
    * spread extra keys into the payload, hence the index signature.
    */
   | { type: "result"; id: string | null; ok: boolean; error?: string; [key: string]: unknown }
-  | { type: "fatal"; error: string; traceback: string }
+  | { type: "fatal"; error: string }
   /**
    * One diagnostic line from the engine's own recorder, emitted only while
    * `set_debug` is on (`csdm/bridge/host.py`). It is protocol -- both ends

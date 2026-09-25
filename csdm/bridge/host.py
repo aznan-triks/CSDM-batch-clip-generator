@@ -9,7 +9,6 @@ import platform
 import sys
 import threading
 import time
-import traceback
 
 from csdm.bridge.ports import PipePorts
 from csdm.bridge.protocol import LineWriter, MSG_FATAL, MSG_LOG, MSG_RESULT, MSG_TRACE, decode
@@ -18,6 +17,7 @@ from csdm.config import (apply_config_dir, build_preset, load_config, load_prese
                          normalize_presets, preset_payload, probe_config_dir,
                          save_config, save_presets)
 from csdm.engine.core import EngineMixin
+from csdm.errors import UserError, report
 from csdm.engine.state import EngineStateMixin
 from csdm.version import APP_VERSION
 
@@ -28,7 +28,30 @@ class BridgeHost(EngineStateMixin, EngineMixin):
     def __init__(self, ports):
         self.init_engine_state()
         self.log, self.log_parts = ports.log, ports.log_parts
-        self.state, self.ask = ports.state, ports.ask
+        self.ask = ports.ask
+        self.state = lambda name, payload=None: ports.state(name, for_pipe(name, payload))
+
+
+# What the renderer reads from `preview_ready`'s `cfg` (motion/engineStore.ts):
+# the tick rate for clip durations, the player name for clip labels. The run
+# cfg the engine holds carries every setting, the Postgres password included;
+# echoing all of it back put that password into every preview message, and
+# from there into anything that records the stream. The pipe gets only these.
+PREVIEW_CFG_KEYS = ("tickrate", "player_name")
+
+
+def for_pipe(name, payload):
+    """The part of a state payload the renderer needs, never the full run cfg.
+
+    Applied at the pipe, not in the engine: the Tkinter host shares the same
+    event in-process and still needs the whole cfg to draw its own preview.
+    """
+    # Any state, not just `preview_ready`: `demo_entry` echoed the run cfg too
+    # (found by the axis-D probe), and the next event that does must not leak.
+    if isinstance(payload, dict) and isinstance(payload.get("cfg"), dict):
+        cfg = payload["cfg"]
+        return {**payload, "cfg": {k: cfg[k] for k in PREVIEW_CFG_KEYS if k in cfg}}
+    return payload
 
 
 # --- diagnostic recorder ------------------------------------------------------
@@ -337,10 +360,10 @@ def _cmd_save_preset(host, command):
     `name` already carries the command's name on every message."""
     preset_name = (command.get("preset") or "").strip()
     if not preset_name:
-        raise ValueError("a preset needs a name")
+        raise UserError("Type a name for the preset first.")
     cats = command.get("cats") or []
     if not cats:
-        raise ValueError("select at least one category to include")
+        raise UserError("Tick at least one category to include in the preset.")
     cfg = command.get("cfg")
     if not isinstance(cfg, dict):
         raise ValueError("save_preset needs a `cfg` object")
@@ -356,7 +379,7 @@ def _cmd_load_preset(host, command):
     preset_name = command.get("preset")
     presets = load_presets()
     if preset_name not in presets:
-        raise ValueError(f"no preset named {preset_name}")
+        raise UserError(f"There is no preset named '{preset_name}' any more. Reload the preset list.")
     data, keys, selected_clips = preset_payload(presets[preset_name])
     result = {"data": data, "keys": keys}
     if selected_clips is not None:
@@ -370,7 +393,7 @@ def _cmd_delete_preset(host, command):
     preset_name = command.get("preset")
     presets = load_presets()
     if preset_name not in presets:
-        raise ValueError(f"no preset named {preset_name}")
+        raise UserError(f"There is no preset named '{preset_name}' any more. Reload the preset list.")
     presets.pop(preset_name, None)
     save_presets(presets)
     return {"data": normalize_presets(presets)}
@@ -432,6 +455,39 @@ COMMANDS = {
 }
 
 
+# What each command is doing, in the words the unexpected-error sentence uses
+# ("Unexpected error while <action>."). A command missing here still reports
+# cleanly, with the fallback phrase.
+COMMAND_ACTIONS = {
+    "connect_db": "connecting to the database",
+    "list_demos": "loading the demo list",
+    "start_run": "starting the run",
+    "start_preview": "starting the preview",
+    "load_config": "loading your settings",
+    "save_config": "saving your settings",
+    "probe_config_dir": "checking the configuration folder",
+    "apply_config_dir": "moving the configuration folder",
+    "list_presets": "loading the presets",
+    "save_preset": "saving the preset",
+    "load_preset": "loading the preset",
+    "delete_preset": "deleting the preset",
+    "tags_search": "searching demos by tag",
+    "tags_calc_range": "computing the tag date range",
+    "tags_apply": "tagging demos",
+    "tags_remove": "removing tags",
+    "tag_create": "creating the tag",
+    "tag_delete": "deleting the tag",
+    "tags_export": "exporting tags",
+    "tags_import_scan": "reading the tags file",
+    "tags_import_apply": "importing tags",
+}
+
+
+def command_action(name):
+    """The phrase naming what command `name` was doing, for an error sentence."""
+    return COMMAND_ACTIONS.get(name, "handling that request")
+
+
 def _run_command(host, writer, command):
     """Execute one command in its own thread and send its `result` line.
 
@@ -462,8 +518,10 @@ def _run_command(host, writer, command):
         writer.send({"type": MSG_RESULT, "id": command_id, "ok": True, **payload})
     except Exception as exc:  # noqa: BLE001 -- fail fast inside, report clean outside
         elapsed = (time.perf_counter() - started) * 1000.0
-        _trace(writer, "done", command_id, name, elapsed, f"FAILED: {exc}")
-        writer.send({"type": MSG_RESULT, "id": command_id, "ok": False, "error": str(exc)})
+        message = report(exc, command_action(name))
+        # The recorder is a developer instrument: it keeps the raw reason.
+        _trace(writer, "done", command_id, name, elapsed, f"FAILED: {type(exc).__name__}: {exc}")
+        writer.send({"type": MSG_RESULT, "id": command_id, "ok": False, "error": message})
 
 
 def serve(stdin, stdout):
@@ -504,7 +562,8 @@ def serve(stdin, stdout):
                              "message": f"unknown message type ignored: {msg_type}",
                              "level": "err"})
     except Exception as exc:  # noqa: BLE001 -- report the fatal cause before exiting
-        writer.send({"type": MSG_FATAL, "error": str(exc), "traceback": traceback.format_exc()})
+        # The traceback goes to the error log (report); the window gets the sentence.
+        writer.send({"type": MSG_FATAL, "error": report(exc, "reading commands from the window")})
         for t in threads:
             t.join()
         return 1

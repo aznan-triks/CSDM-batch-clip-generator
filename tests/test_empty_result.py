@@ -211,6 +211,7 @@ class PreviewHost(FunnelHost):
         import threading
         self._preview_cancel = threading.Event()
         self._previewing = True
+        self._running = False  # the real hosts get it from EngineStateMixin
 
     def _preparse_dp2(self, cfg, paths):
         pass

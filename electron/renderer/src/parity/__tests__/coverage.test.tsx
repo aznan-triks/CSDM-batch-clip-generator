@@ -112,7 +112,7 @@ function mountedActions(): Set<string> {
 }
 
 const SRC = path.resolve(__dirname, "../..");
-const MARKER_LINE = /(data-action|dataAction|optionActions)\s*=/;
+const MARKER_LINE = /(data-action|dataAction|optionActions|prevAction|nextAction)\s*=/;
 
 /** id → the non-test source files that mark it. Reads the code, not the DOM. */
 function markerHomes(): Map<string, Set<string>> {

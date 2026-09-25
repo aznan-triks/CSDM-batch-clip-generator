@@ -12,6 +12,8 @@ import shutil
 import time
 from pathlib import Path
 
+from csdm.errors import UserError
+
 from csdm.static_data import (
     _FILTER_CONFIG_DEFAULTS, _FILTER_PRESET_PLAYER_KEYS, MATCH_TYPE_DEFS,
 )
@@ -45,6 +47,9 @@ CONFIG_SUBDIR = "CSDM-batch-clip_config"
 LEGACY_CONFIG_SUBDIR = "CSDM Batch Clip Generator"
 CONFIG_FILENAMES = ("csdm_config.json", "csdm_presets.json",
                     "csdm_players.json", "csdm_asm_names.json")
+# Full tracebacks of unexpected errors (csdm/errors.py), next to the settings
+# so a bug report can attach it. Not a settings file: it never moves with them.
+ERROR_LOG_FILENAME = "csdm_errors.log"
 
 # Default-location paths, kept for the legacy Tkinter host import
 # (`csdm_batch_clips_generator.py`). Active-location reads/writes go through
@@ -521,11 +526,24 @@ def _load_json(path, default_factory=dict):
     return default_factory()
 
 def _save_json(path, data):
+    """Write `data` as JSON, or raise a `UserError` saying why it was not saved.
+
+    It used to swallow the OSError: a settings folder on an unplugged drive
+    or a read-only file lost every change with nothing on screen.
+    """
     try:
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
-    except OSError:
-        pass
+    except OSError as exc:
+        raise UserError(
+            f"Could not save {path} ({exc.strerror or exc}). Your changes are not saved: "
+            "choose a configuration folder you can write to in SETTINGS › Configuration Folder."
+        ) from exc
+
+
+def error_log_path():
+    """Where unexpected errors are logged in full: the active config folder."""
+    return _file_dir() / ERROR_LOG_FILENAME
 
 def load_presets():
     return _load_json(str(_file_dir() / "csdm_presets.json"))
@@ -828,7 +846,7 @@ def save_config(cfg):
     try:
         target.mkdir(parents=True, exist_ok=True)
     except OSError:
-        pass  # _save_json reports the real failure if the dir stays unwritable
+        pass  # _save_json raises the readable failure if the dir stays unwritable
     _save_json(str(target / "csdm_config.json"), cfg)
 
 
@@ -886,7 +904,8 @@ def apply_config_dir(target):
     try:
         target_dir.mkdir(parents=True, exist_ok=True)
     except OSError as exc:
-        raise OSError(f"cannot create config folder {target_dir}: {exc}") from exc
+        raise UserError(f"Could not create the folder {target_dir} ({exc.strerror or exc}). "
+                        "Choose a folder on a drive that exists and that you can write to.") from exc
 
     stamp = time.strftime("%Y%m%d-%H%M%S")
     backup_dir = target_dir / f"backup-{stamp}"
@@ -897,14 +916,16 @@ def apply_config_dir(target):
                 backup_dir.mkdir(exist_ok=True)
                 shutil.copy2(dst, backup_dir / name)
             except OSError as exc:
-                raise OSError(f"cannot back up {dst}: {exc}") from exc
+                raise UserError(f"Could not back up {dst} ({exc.strerror or exc}). "
+                                "Nothing was moved; close any program using it and try again.") from exc
     for name in CONFIG_FILENAMES:
         src = current / name
         if src.exists():
             try:
                 shutil.copy2(src, target_dir / name)
             except OSError as exc:
-                raise OSError(f"cannot copy {name} to {target_dir}: {exc}") from exc
+                raise UserError(f"Could not copy {name} to {target_dir} ({exc.strerror or exc}). "
+                                "Choose a folder you can write to.") from exc
 
     cfg = _load_json(str(target_dir / "csdm_config.json"))
     if not isinstance(cfg, dict) or not cfg:

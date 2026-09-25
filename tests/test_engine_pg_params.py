@@ -80,7 +80,9 @@ class TestPgConnectFailures(unittest.TestCase):
         with self.assertRaises(ValueError) as ctx:
             host._pg_fresh()
         message = str(ctx.exception)
-        self.assertIn("pg_port", message)
+        # Names the field as the Settings card labels it ("Port"), not the
+        # config key: the sentence is for the user, who never sees `pg_port`.
+        self.assertIn("Port", message)
         self.assertIn("not-a-port", message)
 
 

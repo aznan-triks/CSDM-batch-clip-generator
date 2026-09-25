@@ -137,7 +137,18 @@ export function reduceEngineState(
 ): EngineState {
   switch (name) {
     case "buttons_idle":
-      return { ...state, busy: false };
+      // The engine's "back to rest": RUN usable again, nothing left to stop
+      // or kill -- what the Tk window's `_reset_btns` does for the same event.
+      // The engine never sends `run: true` itself, so clearing only `busy`
+      // left RUN greyed out after the first run or failed launch, for good.
+      return {
+        ...state,
+        busy: false,
+        runEnabled: true,
+        stopEnabled: false,
+        killEnabled: false,
+        stopLabel: INITIAL_ENGINE_STATE.stopLabel,
+      };
     case "buttons_busy":
       return { ...state, busy: true };
     case "buttons": {

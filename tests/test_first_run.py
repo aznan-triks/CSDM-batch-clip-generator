@@ -85,7 +85,7 @@ def test_missing_cli_says_where_to_fix_it(tmp_path, monkeypatch):
     engine = _Engine()
     engine._worker({"csdm_exe": str(tmp_path / "nowhere" / "csdm.CMD")})
     errors = [m for tag, m in engine.logs if tag == "err"]
-    assert errors and "SETTINGS" in errors[0] and "CSDM Executable" in errors[0]
+    assert errors and "SETTINGS › Paths" in errors[0] and "CSDM Executable" in errors[0]
     assert engine.states[-1] == "buttons_idle"
 
 
@@ -94,7 +94,7 @@ def test_unusable_clips_folder_stops_before_any_work(monkeypatch, tmp_path):
     blocker.write_text("x")  # a FILE where a folder must be created
     engine = _run_worker(monkeypatch, tmp_path, {"output_dir_clips": str(blocker / "sub")})
     errors = [m for tag, m in engine.logs if tag == "err"]
-    assert errors and "Raw clips folder" in errors[0] and "SETTINGS" in errors[0]
+    assert errors and "Raw clips folder" in errors[0] and "SETTINGS › Paths" in errors[0]
     assert engine.states[-1] == "buttons_idle"
 
 
