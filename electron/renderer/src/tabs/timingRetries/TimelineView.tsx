@@ -35,7 +35,7 @@ export default function TimelineView({ m }: { m: TimingRetriesModel }) {
       <div className="tr-lane" aria-label="If a recording fails">
         <div className="tr-lane-h">
           <span className="tr-kick">If a recording fails</span>
-          <CountWord n={m.retries} label="Retries" unit="×" />
+          <CountWord n={m.retries} label="Retries" unit={m.retries.value === 1 ? " retry" : " retries"} />
         </div>
         <div className="tr-track">
           <span className="tr-blk fail" title="A recording that failed">

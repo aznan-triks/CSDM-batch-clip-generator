@@ -6,7 +6,7 @@
  * the window would silently stop showing it (D20 / R1).
  *
  * Mounting the Capture tab used to fire one `describe_filters` per consuming
- * section (KillFiltersSection, MatchTypesSection, WeaponFilterSection all
+ * section (KillFiltersSection, useMatchTypes, WeaponFilterSection all
  * called this hook independently), each spawning its own Python thread doing
  * schema work. `TablesProvider` fetches once and every `useTables()` call
  * inside it reads the same value; a `useTables()` call with no `TablesProvider`

@@ -44,7 +44,7 @@ export default function CardStyleOverrides({ globalStyle }: { globalStyle: CardS
                 title={`How the ${card.title} card draws its settings. Default follows Card style above`}
                 onChange={(event) => choose(card.id, event.target.value)}
               >
-                <option value={DEFAULT}>Default ({WORDS[globalStyle]})</option>
+                <option value={DEFAULT}>Default: {globalStyle}</option>
                 {CARD_STYLES.map((s) => (
                   <option key={s} value={s}>
                     {WORDS[s]}

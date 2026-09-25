@@ -20,7 +20,7 @@
  * the place to widen that contract before something actually reads the rest.
  *
  * Mounting the Capture tab used to fire one `connect_db` per consuming
- * section (MatchTypesSection, WeaponFilterSection, MapFilterSection,
+ * section (useMatchTypes, WeaponFilterSection, useMapFilter,
  * PlayerSection all called this hook independently), each spawning its own
  * Python thread that reconnects and re-introspects the schema. `DatabaseProvider`
  * fetches once and every `useDatabase()` call inside it reads the same value; a

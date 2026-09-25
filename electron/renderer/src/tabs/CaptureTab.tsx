@@ -8,7 +8,8 @@
  *
  * Capture & Timing is its own component (captureTiming/CaptureTimingCard):
  * one data model drawn in three card styles; so is Timing & Retries
- * (timingRetries/TimingRetriesCard). Each reads its own style live.
+ * (timingRetries/TimingRetriesCard), Match Types and Map Filter
+ * (matchTypes/, mapFilter/). Each reads its own style live.
  */
 import Card from "../components/Card";
 import { ICONS } from "../icons";
@@ -18,12 +19,12 @@ import { TablesProvider } from "../settings/useTables";
 import DemoSelectionSection from "./DemoSelectionSection";
 import EventFiltersSection from "./EventFiltersSection";
 import KillFiltersSection from "./KillFiltersSection";
-import MapFilterSection from "./MapFilterSection";
-import MatchTypesSection from "./MatchTypesSection";
 import PlayerSection from "./PlayerSection";
 import WeaponFilterSection from "./WeaponFilterSection";
 import CaptureTimingCard from "./captureTiming/CaptureTimingCard";
 import TimingRetriesCard from "./timingRetries/TimingRetriesCard";
+import MapFilterCard from "./mapFilter/MapFilterCard";
+import MatchTypesCard from "./matchTypes/MatchTypesCard";
 import "./CaptureTab.css";
 
 export default function CaptureTab() {
@@ -92,22 +93,8 @@ export default function CaptureTab() {
         </Card>
       ),
     },
-    {
-      id: "match-types",
-      element: (
-        <Card title="Match Types" icon={<ICONS.matchTypes />}>
-          <MatchTypesSection />
-        </Card>
-      ),
-    },
-    {
-      id: "map-filter",
-      element: (
-        <Card title="Map Filter" icon={<ICONS.mapFilter />}>
-          <MapFilterSection />
-        </Card>
-      ),
-    },
+    { id: "match-types", element: <MatchTypesCard /> },
+    { id: "map-filter", element: <MapFilterCard /> },
   ];
 
   return (

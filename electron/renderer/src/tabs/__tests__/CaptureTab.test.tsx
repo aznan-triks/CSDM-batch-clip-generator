@@ -101,9 +101,9 @@ function keyOnScreen(container: HTMLElement, key: string): boolean {
 
 describe("CaptureTab bridge traffic", () => {
   it("fetches the static tables and the database exactly once for the whole tab", async () => {
-    // `KillFiltersSection`, `MatchTypesSection`, `WeaponFilterSection` all
-    // call `useTables()`, and `MatchTypesSection`, `WeaponFilterSection`,
-    // `MapFilterSection`, `PlayerSection` all call `useDatabase()`. Before
+    // `KillFiltersSection`, `useMatchTypes`, `WeaponFilterSection` all
+    // call `useTables()`, and `useMatchTypes`, `WeaponFilterSection`,
+    // `useMapFilter`, `PlayerSection` all call `useDatabase()`. Before
     // `TablesProvider`/`DatabaseProvider` existed, mounting the tab fired one
     // `describe_filters` and one `connect_db` PER consumer -- each spawning
     // its own Python thread against shared, unlocked host state. This is the

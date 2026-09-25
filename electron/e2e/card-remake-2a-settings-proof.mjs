@@ -69,7 +69,11 @@ const TITLES = { "timing-retries": "Timing & Retries", "match-types": "Match Typ
 const STYLES = ["timeline", "sentence", "tiles"];
 const CARD_ITEMS = '[role="tabpanel"]:not([hidden]) .react-grid-item';
 
-const server = await createServer({ configFile: path.join(ELECTRON_DIR, "vite.config.ts") });
+// Any free port: other proofs (and other worktrees) may hold the usual one.
+const server = await createServer({
+  configFile: path.join(ELECTRON_DIR, "vite.config.ts"),
+  server: { port: 0, strictPort: false },
+});
 await server.listen();
 const url = server.resolvedUrls?.local?.[0];
 const browser = await chromium.launch();

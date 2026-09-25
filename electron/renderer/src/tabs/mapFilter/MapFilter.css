@@ -1,0 +1,110 @@
+/*
+ * Map Filter: the veto board (timeline style) and the map monogram every
+ * style draws. `mf-` prefixed. Colours come from theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.mf-pool {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.mf-map {
+  appearance: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  padding: 7px 7px 6px;
+  border-radius: 11px;
+  border: 1px solid var(--hair);
+  background: var(--surface-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+}
+
+.mf-map .mf-mono {
+  width: 24px;
+  height: 24px;
+  font-size: 12px;
+}
+
+.mf-map-n {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+
+.mf-map-s {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.mf-map:hover:not([aria-disabled="true"]) {
+  border-color: color-mix(in srgb, var(--cam-k) 35%, transparent);
+}
+
+.mf-map.on {
+  border-color: var(--cam-k);
+  background: color-mix(in srgb, var(--cam-k) 9%, var(--solid));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cam-k) 14%, transparent);
+}
+
+.mf-map.on .mf-map-n,
+.mf-map.on .mf-map-s {
+  color: var(--cam-k);
+}
+
+.mf-map[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* The map monogram: a letter on a striped plate, one stripe angle per map. */
+.mf-mono {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 7px;
+  background:
+    repeating-linear-gradient(var(--a, 45deg), transparent 0 4px, color-mix(in srgb, var(--cam-k) 18%, transparent) 4px 6px),
+    color-mix(in srgb, var(--cam-k) 10%, var(--solid));
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--cam-k);
+}
+
+.mf-mono.s1 {
+  --a: 135deg;
+}
+
+.mf-mono.s2 {
+  --a: 0deg;
+}
+
+.mf-mono.s3 {
+  --a: 90deg;
+}
+
+.mf-map.on .mf-mono,
+.cs-tile.on .mf-mono {
+  background:
+    repeating-linear-gradient(var(--a, 45deg), transparent 0 4px, rgba(255, 255, 255, 0.22) 4px 6px),
+    var(--cam-k);
+  color: #fff;
+}

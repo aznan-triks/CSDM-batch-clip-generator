@@ -1,0 +1,65 @@
+/*
+ * Match Types, timeline style: the queue board. `mt-` prefixed.
+ * Colours come from theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+.mt-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+  gap: 6px;
+}
+
+.mt-ticket {
+  appearance: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px 4px 6px;
+  border-radius: 11px;
+  border: 1px solid var(--hair);
+  background: var(--surface-2);
+  font: inherit;
+  cursor: pointer;
+  filter: grayscale(0.85);
+  transition: border-color var(--dur-base) var(--ease), background var(--dur-base) var(--ease);
+}
+
+.mt-ticket .mt-emoji {
+  width: 26px;
+  height: 26px;
+  font-size: 19px;
+}
+
+.mt-ticket-n {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--faint);
+}
+
+.mt-ticket:hover:not([aria-disabled="true"]) {
+  border-color: color-mix(in srgb, var(--cam-k) 35%, transparent);
+}
+
+.mt-ticket.on {
+  filter: none;
+  border-color: var(--cam-k);
+  background: color-mix(in srgb, var(--cam-k) 9%, var(--solid));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--cam-k) 14%, transparent);
+}
+
+.mt-ticket.on .mt-ticket-n {
+  color: var(--cam-k);
+}
+
+.mt-ticket[aria-disabled="true"] {
+  cursor: not-allowed;
+}
