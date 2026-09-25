@@ -64,6 +64,7 @@ export function eventTypeMeta(eventType: string): { label: string; kind: string 
 export const EditingTab: React.FC = () => {
   const clips = useEngineSelector((s) => s.previewClips);
   const previewSerial = useEngineSelector((s) => s.previewSerial);
+  const emptyReason = useEngineSelector((s) => s.previewEmptyReason);
 
   const totalDurationS = clips.reduce((sum, c) => sum + c.durationS, 0);
   const selectedCount = clips.filter((c) => c.selected).length;
@@ -90,11 +91,29 @@ export const EditingTab: React.FC = () => {
   }
 
   if (clips.length === 0) {
+    // A preview that found nothing says why (engine `explain_empty_result`),
+    // never the "run a PREVIEW first" line meant for no preview at all.
     return (
       <div className="editing-tab">
         <div className="editing-empty">
           <div className="editing-empty-box">
-            No preview available. Run a PREVIEW first.
+            {emptyReason ? (
+              <div className="editing-empty-reason" role="status">
+                <p className="editing-empty-headline">{emptyReason.headline}</p>
+                <ol className="editing-empty-stages">
+                  {emptyReason.stages.map((stage, i) => (
+                    <li key={i}>
+                      <span className="editing-empty-count">{stage.count.toLocaleString("en-US")}</span>
+                      {" "}
+                      {stage.label}
+                    </li>
+                  ))}
+                </ol>
+                <p className="editing-empty-hint">{emptyReason.hint}</p>
+              </div>
+            ) : (
+              "No preview available. Run a PREVIEW first."
+            )}
           </div>
         </div>
       </div>

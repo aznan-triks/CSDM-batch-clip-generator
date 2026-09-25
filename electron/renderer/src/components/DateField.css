@@ -17,10 +17,15 @@
 }
 
 .date-field-text {
-  width: 11ch;
+  /* `dd-mm-yyyy` is 10 characters and never more. The width measures the TEXT
+     box: under the global border-box, `.fld`'s 12px paddings and border came
+     out of an 11ch width and the year was cut ("29-03-20"), which hid the
+     active range (audit 2026-09-25, A). Tabular digits keep 10ch exact. */
+  box-sizing: content-box;
+  width: 10ch;
+  font-variant-numeric: tabular-nums;
   /* The element wears `.fld` now, which declares `min-width: 90px` for fields
-     that share a row. `dd-mm-yyyy` is 11 characters and never more, so the
-     floor would only pad it. */
+     that share a row; the floor would only pad it. */
   min-width: 0;
   flex: 0 0 auto;
 }

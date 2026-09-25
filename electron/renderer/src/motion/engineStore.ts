@@ -49,6 +49,31 @@ export interface PreviewClip {
   selected: boolean;
 }
 
+/**
+ * Why the last preview found no clip, as the engine explained it
+ * (`explain_empty_result`, core.py): each step with the events it left, the
+ * step that removed the last one, and what to loosen.
+ */
+export interface EmptyReason {
+  headline: string;
+  hint: string;
+  stages: Array<{ label: string; count: number }>;
+}
+
+/** Read `empty_reason` off a `preview_ready` payload; null when absent or malformed. */
+function readEmptyReason(raw: unknown): EmptyReason | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.headline !== "string") return null;
+  const stages = Array.isArray(r.stages)
+    ? r.stages.map((s) => {
+        const st = (s ?? {}) as Record<string, unknown>;
+        return { label: String(st.label ?? ""), count: Number(st.count ?? 0) };
+      })
+    : [];
+  return { headline: r.headline, hint: String(r.hint ?? ""), stages };
+}
+
 export interface EngineState {
   /** False once the engine has reported it is idle again. */
   busy: boolean;
@@ -81,6 +106,8 @@ export interface EngineState {
   stopLabel: string;
   /** Clips from the most recent preview, or empty. */
   previewClips: PreviewClip[];
+  /** Why the most recent preview found no clip; null when it found some. */
+  previewEmptyReason: EmptyReason | null;
   /** True when a new preview has arrived and hasn't been viewed yet. */
   editingBadge: boolean;
 }
@@ -98,6 +125,7 @@ export const INITIAL_ENGINE_STATE: EngineState = {
   killEnabled: false,
   stopLabel: "⏸ Stop",
   previewClips: [],
+  previewEmptyReason: null,
   editingBadge: false,
 };
 
@@ -186,6 +214,7 @@ export function reduceEngineState(
         previewSerial: state.previewSerial + 1,
         busy: false,
         previewClips: clips,
+        previewEmptyReason: clips.length === 0 ? readEmptyReason(payload.empty_reason) : null,
         editingBadge: true,
       };
     }
