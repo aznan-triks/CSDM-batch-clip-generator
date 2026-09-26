@@ -12,6 +12,7 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { dispatchEngineMessage, editClip, getEngineState, resetEngineState } from "../../motion/engineStore";
 import PresetSection, { toggleCategory } from "../PresetSection";
 
 const TABLES_FIXTURE = {
@@ -49,7 +50,20 @@ vi.mock("../../bridge", () => ({
         data: {
           date: { cats: ["date"], data: { date_from: "", date_to: "" } },
           everything: { cats: ["full"], data: { date_from: "", date_to: "", steam_id: "" } },
+          reel: { cats: ["full"], data: {} },
         },
+      });
+    }
+    if (command === "load_preset" && payload.preset === "reel") {
+      // Saved from EDITING: the engine hands back the clips of its selection
+      // the current preview still lists, with their edits.
+      return Promise.resolve({
+        type: "result",
+        id: "1",
+        ok: true,
+        data: {},
+        keys: null,
+        selected_clips: [{ demo_path: "d1", start_tick: 3000, after_s: 4, excluded_events: ["3200:kill:a"] }],
       });
     }
     if (command === "load_preset" && payload.preset === "everything") {
@@ -126,6 +140,40 @@ describe("PresetSection", () => {
     const written = await loadPresetAndCaptureWrites("everything");
     expect(Object.keys(written).sort()).toEqual(["date_from", "date_to", "steam_id"]);
     expect(written).toEqual({ date_from: "01-01-2024", date_to: "02-02-2024", steam_id: "999" });
+  });
+
+  it("restores the EDITING selection and edits a preset holds", async () => {
+    resetEngineState();
+    dispatchEngineMessage("preview_ready", {
+      cfg: { tickrate: 64 },
+      sequences: {
+        d1: [
+          { start_tick: 1000, end_tick: 2000, events: [{ type: "kill", tick: 1200 }] },
+          { start_tick: 3000, end_tick: 4000, events: [{ type: "kill", tick: 3200 }], event_keys: ["3200:kill:a"] },
+        ],
+      },
+    });
+    editClip(0, { beforeS: 9 }); // an edit the preset does not hold: it goes
+    await loadPresetAndCaptureWrites("reel");
+    const [first, second] = getEngineState().previewClips;
+    expect(first.selected).toBe(false);
+    expect(first.edit).toBeUndefined();
+    expect(second.selected).toBe(true);
+    expect(second.edit).toEqual({ afterS: 4, excluded: ["3200:kill:a"] });
+    resetEngineState();
+  });
+
+  it("leaves the EDITING selection alone when the preset gives none back", async () => {
+    resetEngineState();
+    dispatchEngineMessage("preview_ready", {
+      cfg: { tickrate: 64 },
+      sequences: { d1: [{ start_tick: 1000, end_tick: 2000, events: [{ type: "kill", tick: 1200 }] }] },
+    });
+    editClip(0, { beforeS: 9 });
+    const before = getEngineState().previewClips;
+    await loadPresetAndCaptureWrites("date");
+    expect(getEngineState().previewClips).toBe(before);
+    resetEngineState();
   });
 
   it("keeps Full config and the partial categories mutually exclusive (M9 / M10)", async () => {

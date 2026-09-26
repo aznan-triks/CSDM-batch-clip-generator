@@ -12,7 +12,7 @@
  * The overlap join the engine does across clips is shown, not redrawn: the
  * inspector warns that two overlapping clips will be recorded as one.
  */
-import type { ClipEdit, PreviewClip, PreviewEvent } from "../../motion/useEngineState";
+import type { ClipEdit, PreviewClip, PreviewEvent, SavedClip } from "../../motion/useEngineState";
 
 /**
  * Range of a per-clip before / after handle, in whole seconds.
@@ -86,6 +86,19 @@ export function clipPayload(clip: PreviewClip): {
   if (edit.beforeS !== undefined) out.before_s = edit.beforeS;
   if (edit.afterS !== undefined) out.after_s = edit.afterS;
   if (edit.excluded?.length) out.excluded_events = [...edit.excluded];
+  return out;
+}
+
+export type ClipPayload = ReturnType<typeof clipPayload>;
+
+/** The inverse of `clipPayload`: a saved entry as the store keeps it (`restoreClipSelection`). */
+export function savedClip(entry: ClipPayload): SavedClip {
+  const edit: ClipEdit = {};
+  if (entry.before_s !== undefined) edit.beforeS = entry.before_s;
+  if (entry.after_s !== undefined) edit.afterS = entry.after_s;
+  if (entry.excluded_events?.length) edit.excluded = [...entry.excluded_events];
+  const out: SavedClip = { demoPath: entry.demo_path, startTick: entry.start_tick };
+  if (Object.keys(edit).length) out.edit = edit;
   return out;
 }
 

@@ -69,6 +69,16 @@ export interface CameraSegment {
   name: string;
 }
 
+/** One engine camera span (`_preview_camera_segments`, core.py), in the store's shape. */
+export function cameraSegment(raw: Record<string, unknown>): CameraSegment {
+  return {
+    fromTick: Number(raw.from_tick),
+    toTick: Number(raw.to_tick),
+    steamId: String(raw.steam_id ?? ""),
+    name: String(raw.name ?? ""),
+  };
+}
+
 /**
  * One clip's edits, as GENERATE and SAVE send them (clip_edits.py): whole
  * seconds before the first kept event / after the last one, and the events
@@ -256,12 +266,7 @@ export function reduceEngineState(
                 type: String(e.type ?? etype),
                 key: String(seq.event_keys?.[i] ?? i),
               })),
-              cameras: (seq.camera_segments ?? []).map((c) => ({
-                fromTick: Number(c.from_tick),
-                toTick: Number(c.to_tick),
-                steamId: String(c.steam_id ?? ""),
-                name: String(c.name ?? ""),
-              })),
+              cameras: (seq.camera_segments ?? []).map(cameraSegment),
             });
           }
         }
@@ -361,6 +366,30 @@ export function editClip(index: number, patch: ClipEdit | null): void {
     if (merged[key] === undefined || (key === "excluded" && merged.excluded?.length === 0)) delete merged[key];
   }
   next[index] = Object.keys(merged).length ? { ...clip, edit: merged } : clip;
+  publish({ ...current, previewClips: next });
+}
+
+/** One clip of a saved EDITING selection: its preview address and its edits. */
+export interface SavedClip {
+  demoPath: string;
+  startTick: number;
+  edit?: ClipEdit;
+}
+
+/**
+ * Put back a preset's EDITING selection (`load_preset`'s `selected_clips`,
+ * already matched to this preview by the engine): exactly the saved clips are
+ * checked, each with its saved edits; every other clip is unchecked, unedited.
+ */
+export function restoreClipSelection(saved: readonly SavedClip[]): void {
+  const address = (demoPath: string, startTick: number) => `${startTick}|${demoPath}`;
+  const byAddress = new Map(saved.map((c) => [address(c.demoPath, c.startTick), c]));
+  const next = current.previewClips.map((clip) => {
+    const entry = byAddress.get(address(clip.demoPath, clip.startTick));
+    const restored: PreviewClip = { ...clip, selected: entry !== undefined };
+    delete restored.edit;
+    return entry?.edit ? { ...restored, edit: entry.edit } : restored;
+  });
   publish({ ...current, previewClips: next });
 }
 
