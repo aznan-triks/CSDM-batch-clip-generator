@@ -59,7 +59,8 @@ function childBottom(child: HTMLElement, scroller: HTMLElement, style: CSSStyleD
  *   - the card is not laid out (its tab is hidden: `display: none`);
  *   - a body child grows to fill the card (PlayerSection: its list scrolls
  *     inside it by design) -- such a card has no natural height, its extent
- *     would just echo the card's own, so its stored height stands.
+ *     would just echo the card's own, so its height stands -- unless the
+ *     body overflows, in which case the card grows by the overflow.
  */
 export function naturalRows(node: HTMLElement, rowHeight: number, gap: number): number | null {
   const scroller = node.querySelector(".sb-scroll");
@@ -70,7 +71,12 @@ export function naturalRows(node: HTMLElement, rowHeight: number, gap: number): 
   for (const child of layoutChildren(scroller)) {
     const style = getComputedStyle(child);
     if (style.position === "absolute" || style.position === "fixed" || style.display === "none") continue;
-    if (parseFloat(style.flexGrow) > 0) return null;
+    if (parseFloat(style.flexGrow) > 0) {
+      // A filling body has no natural height, but one that still overflows
+      // (its fixed parts outgrew the card) says by how much: grow by that.
+      const overflow = scroller.scrollHeight - scroller.clientHeight;
+      return overflow > 0 ? rowsFor(node.offsetHeight + overflow, rowHeight, gap) : null;
+    }
     extent = Math.max(extent, childBottom(child, scroller, style));
   }
   extent += parseFloat(getComputedStyle(scroller).paddingBottom) || 0;
