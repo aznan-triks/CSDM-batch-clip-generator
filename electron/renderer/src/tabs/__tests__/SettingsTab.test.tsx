@@ -147,7 +147,8 @@ describe("SettingsTab", () => {
 
     await act(async () => (row?.querySelector('[data-action="B1"]') as HTMLButtonElement).click());
     expect(row?.querySelector(".settings-db-status")?.textContent).toBe("Connected");
-    expect(row?.querySelector(".capture-hint")).toBeNull();
+    // The answer joins the guidance, it does not replace it.
+    expect(row?.querySelector(".capture-hint")?.textContent).toMatch(/CS Demo Manager › Settings › Database/);
   });
 
   it("never shows the password in clear", async () => {

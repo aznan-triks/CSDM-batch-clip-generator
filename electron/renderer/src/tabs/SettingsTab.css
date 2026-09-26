@@ -48,14 +48,16 @@
   color: var(--fire-t);
 }
 
-/* The message beside Test & Reload takes the rest of the row and wraps
-   inside it. Without a zero basis, `.row`'s flex-wrap pushes the whole
-   sentence onto a line of its own -- the extra line that made the card
-   scroll. */
-.settings-db-row > .capture-hint,
-.settings-db-row > .settings-db-status {
+/* The answer and the guidance beside Test & Reload take the rest of the row,
+   stacked, and wrap inside it. Without a zero basis, `.row`'s flex-wrap
+   pushes the whole block onto a line of its own -- the extra line that made
+   the card scroll. */
+.settings-db-row > .settings-db-answer {
   flex: 1 1 0;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .settings-injection-preview {
