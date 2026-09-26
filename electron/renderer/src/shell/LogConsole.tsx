@@ -110,6 +110,41 @@ interface PendingAsk {
   choices: string[];
 }
 
+/**
+ * The answer field of a `text` question (the bridge's `save_preset` with
+ * `ask_name`): what was typed goes back as the answer, Enter or the confirm
+ * button sends it. Keyed by the question's id, so a new question starts empty.
+ */
+function AskTextAnswer({
+  label,
+  confirm,
+  onAnswer,
+}: {
+  label: string;
+  confirm: string;
+  onAnswer: (value: string) => void;
+}) {
+  const [text, setText] = useState("");
+  const blank = text.trim() === "";
+  return (
+    <>
+      <input
+        type="text"
+        aria-label={label}
+        value={text}
+        autoFocus
+        onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !blank) onAnswer(text);
+        }}
+      />{" "}
+      <button type="button" data-action="P6" disabled={blank} onClick={() => onAnswer(text)}>
+        {confirm}
+      </button>
+    </>
+  );
+}
+
 function levelClass(level: string | undefined): string {
   switch (level) {
     case "err":
@@ -659,7 +694,12 @@ export default function LogConsole() {
       {ask && (
         <div id="ask-panel" role="alertdialog" aria-label={ask.title}>
           <span>{ask.title} </span>
-          {ask.choices.map((choice) => (
+          {/* A `text` question (a preset's name) is answered with what was
+              typed, confirmed by its one choice; Cancel below answers null. */}
+          {ask.kind === "text" && (
+            <AskTextAnswer key={ask.id} label={ask.title} confirm={ask.choices[0] ?? "OK"} onAnswer={answer} />
+          )}
+          {ask.kind !== "text" && ask.choices.map((choice) => (
             <button type="button" key={choice} data-action="P6" onClick={() => answer(choice)}>
               {choice}
             </button>

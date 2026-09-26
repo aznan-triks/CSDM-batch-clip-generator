@@ -119,3 +119,41 @@ describe("a confirm ask keeps its choices and gains a cancel", () => {
     expect(sent).toContainEqual({ type: "answer", id: "9", value: null });
   });
 });
+
+describe("a text ask (EDITING SAVE's preset name) takes what is typed", () => {
+  const nameAsk: BridgeMessage = {
+    type: "ask",
+    id: "11",
+    kind: "text",
+    message: "Name for this preset",
+    options: ["Preset name:", "Save"],
+  };
+
+  it("sends the typed name as the answer", () => {
+    render(<LogConsole />);
+    act(() => emit(nameAsk));
+    fireEvent.change(screen.getByRole("textbox", { name: "Preset name:" }), { target: { value: "Clutch reel" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(sent).toContainEqual({ type: "answer", id: "11", value: "Clutch reel" });
+    expect(document.getElementById("ask-panel")).toBeNull();
+  });
+
+  it("sends it on Enter too, and cannot send a blank name", () => {
+    render(<LogConsole />);
+    act(() => emit(nameAsk));
+    const field = screen.getByRole("textbox", { name: "Preset name:" });
+    expect(screen.getByRole("button", { name: "Save" })).toHaveProperty("disabled", true);
+    fireEvent.keyDown(field, { key: "Enter" });
+    expect(sent).toHaveLength(0);
+    fireEvent.change(field, { target: { value: "p" } });
+    fireEvent.keyDown(field, { key: "Enter" });
+    expect(sent).toContainEqual({ type: "answer", id: "11", value: "p" });
+  });
+
+  it("Cancel answers null: the engine saves nothing", () => {
+    render(<LogConsole />);
+    act(() => emit(nameAsk));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(sent).toContainEqual({ type: "answer", id: "11", value: null });
+  });
+});

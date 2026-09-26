@@ -118,10 +118,18 @@ export default function ActionBar({
     void runCommand("start_run", { cfg: settings, selected_clips: selectedClips() });
   }, [settings, selectedClips]);
 
-  // SAVE opens the same preset-save path PresetSection uses (`save_preset`),
-  // carrying the current cfg and the selection that produced the preview.
+  // SAVE takes the same preset-save path PresetSection uses (`save_preset`),
+  // carrying the whole cfg ("full", as the Tkinter quick save stored it) and
+  // the checked clips with their edits. This bar has no name field: the
+  // engine asks the name on the console's question panel (`ask_name`), and
+  // the console narrates the outcome, a refusal included.
   const onSave = useCallback(() => {
-    void runCommand("save_preset", { cfg: settings, selected_clips: selectedClips() });
+    runCommand("save_preset", {
+      ask_name: true,
+      cats: ["full"],
+      cfg: settings,
+      selected_clips: selectedClips(),
+    }).catch(() => {});
   }, [settings, selectedClips]);
 
   const onCancel = useCallback(() => {
