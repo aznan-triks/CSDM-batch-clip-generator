@@ -63,10 +63,6 @@ export const NOT_YET_PORTED: Record<string, string> = {
   L4: "Basculer en résolution libre — mode libre non porté",
   L9: "Enregistrer le nom d'assemblage courant — sauvegarde nom assemblage non portée",
 
-  /* ── M. Réglages ── */
-  M9: "Bascule « partielle » — injection partielle non portée",
-  M10: "Bascule « complète » — injection complète absente ; le marqueur était posé par erreur sur Test & Reload",
-
   /* ── N. Joueurs ── */
   N5: "Première page — pagination joueurs partielle",
   N8: "Dernière page — pagination joueurs partielle",
@@ -122,6 +118,8 @@ export const PORTED_BEHIND_STATE: Record<string, string> = {
 
   /* ── M. Réglages ── */
   M8: "LogConsole.tsx — Export ▾ › Inspect › CS2 injection preview, écrit dans la console (commande injection_preview) ; même garde que J14",
+  M9: "PresetSection.tsx — puce de catégorie partielle (3 styles), décoche « Full config » ; aucune puce tant que useTables() n'a pas répondu",
+  M10: "PresetSection.tsx — puce « Full config » (3 styles), décoche les catégories partielles ; même garde que M9",
 
   /* ── N. Joueurs ── */
   N3: "player/parts.tsx — Segmented de tri par nom ; dans le bloc `{database && (...)}`, monté seulement une fois la base connectée",
