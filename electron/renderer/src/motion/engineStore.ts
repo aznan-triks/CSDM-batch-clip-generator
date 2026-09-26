@@ -47,6 +47,37 @@ export interface PreviewClip {
   playerName: string;
   /** Whether this clip is selected (default: true) */
   selected: boolean;
+  /** The clip's events in tick order, each named by the engine's `event_key`. */
+  events: PreviewEvent[];
+  /** Who the recording follows, and when (engine `_preview_camera_segments`). */
+  cameras: CameraSegment[];
+  /** The user's per-clip edits from the EDITING tab; absent = as previewed. */
+  edit?: ClipEdit;
+}
+
+export interface PreviewEvent {
+  tick: number;
+  type: string;
+  /** Opaque name the engine reads back in `excluded_events` (clip_edits.py). */
+  key: string;
+}
+
+export interface CameraSegment {
+  fromTick: number;
+  toTick: number;
+  steamId: string;
+  name: string;
+}
+
+/**
+ * One clip's edits, as GENERATE and SAVE send them (clip_edits.py): whole
+ * seconds before the first kept event / after the last one, and the events
+ * taken out. A missing field keeps what the preview computed.
+ */
+export interface ClipEdit {
+  beforeS?: number;
+  afterS?: number;
+  excluded?: string[];
 }
 
 /**
@@ -106,6 +137,8 @@ export interface EngineState {
   stopLabel: string;
   /** Clips from the most recent preview, or empty. */
   previewClips: PreviewClip[];
+  /** The tick rate the most recent preview measured its clips with. */
+  previewTickrate: number;
   /** Why the most recent preview found no clip; null when it found some. */
   previewEmptyReason: EmptyReason | null;
   /** True when a new preview has arrived and hasn't been viewed yet. */
@@ -125,6 +158,7 @@ export const INITIAL_ENGINE_STATE: EngineState = {
   killEnabled: false,
   stopLabel: "⏸ Stop",
   previewClips: [],
+  previewTickrate: 64,
   previewEmptyReason: null,
   editingBadge: false,
 };
@@ -188,6 +222,8 @@ export function reduceEngineState(
         start_tick: number; end_tick: number;
         event_type?: string;
         events: Array<Record<string, unknown>>;
+        event_keys?: string[];
+        camera_segments?: Array<Record<string, unknown>>;
       }>> | undefined;
       const clipCfg = payload.cfg as Record<string, unknown> | undefined;
       const tickrate = (clipCfg?.tickrate as number) ?? 64;
@@ -215,6 +251,17 @@ export function reduceEngineState(
               eventType: etype,
               playerName: pn,
               selected: true,
+              events: (seq.events ?? []).map((e, i) => ({
+                tick: Number(e.tick ?? seq.start_tick),
+                type: String(e.type ?? etype),
+                key: String(seq.event_keys?.[i] ?? i),
+              })),
+              cameras: (seq.camera_segments ?? []).map((c) => ({
+                fromTick: Number(c.from_tick),
+                toTick: Number(c.to_tick),
+                steamId: String(c.steam_id ?? ""),
+                name: String(c.name ?? ""),
+              })),
             });
           }
         }
@@ -225,6 +272,7 @@ export function reduceEngineState(
         previewSerial: state.previewSerial + 1,
         busy: false,
         previewClips: clips,
+        previewTickrate: tickrate,
         previewEmptyReason: clips.length === 0 ? readEmptyReason(payload.empty_reason) : null,
         editingBadge: true,
       };
@@ -295,6 +343,35 @@ export function toggleClipSelection(index: number): void {
   const next = [...clips];
   next[index] = { ...next[index], selected: !next[index].selected };
   publish({ ...current, previewClips: next });
+}
+
+/**
+ * Change one clip's edits (EDITING inspector). `null` puts the clip back as
+ * the preview drew it; a field set to `undefined` drops that one edit.
+ * Local, like the selection: the engine learns the edits on GENERATE.
+ */
+export function editClip(index: number, patch: ClipEdit | null): void {
+  const clips = current.previewClips;
+  if (index < 0 || index >= clips.length) return;
+  const next = [...clips];
+  const clip: PreviewClip = { ...clips[index] };
+  delete clip.edit;
+  const merged: ClipEdit = patch === null ? {} : { ...clips[index].edit, ...patch };
+  for (const key of Object.keys(merged) as Array<keyof ClipEdit>) {
+    if (merged[key] === undefined || (key === "excluded" && merged.excluded?.length === 0)) delete merged[key];
+  }
+  next[index] = Object.keys(merged).length ? { ...clip, edit: merged } : clip;
+  publish({ ...current, previewClips: next });
+}
+
+/** Take one event out of its clip, or put it back. */
+export function toggleClipEvent(index: number, key: string): void {
+  const clip = current.previewClips[index];
+  if (!clip) return;
+  const excluded = clip.edit?.excluded ?? [];
+  editClip(index, {
+    excluded: excluded.includes(key) ? excluded.filter((k) => k !== key) : [...excluded, key],
+  });
 }
 
 /** The editing tab has been looked at: put its badge out. */

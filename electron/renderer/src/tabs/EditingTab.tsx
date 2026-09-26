@@ -11,18 +11,28 @@
  *
  * The composite key is `demoPath:startTick`, the same pair the engine uses to
  * address a clip uniquely (two clips in one demo can never share a start tick).
+ *
+ * Two views of the same clips, switched in the header: the Timeline (default:
+ * one lane per demo, a clip opens in the inspector to be edited on its own --
+ * tabs/editing/) and the List (the checklist). The pager is shared: it pages
+ * clips in the list, demo lanes on the timeline.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import Pager from "../components/Pager";
+import Segmented from "../components/Segmented";
 import { toggleClipSelection, useEngineSelector } from "../motion/useEngineState";
+import ClipInspector from "./editing/ClipInspector";
+import { buildLanes, editedWindow } from "./editing/clipEdits";
+import EditingTimeline, { EDITING_TIMELINE } from "./editing/EditingTimeline";
 import "./EditingTab.css";
+import "./editing/EditingTimeline.css";
 
 /**
  * How many clips reach the DOM at once. Measured: a 8 465-clip preview put
  * 41 000 nodes in this always-mounted tab (+250 MB renderer) and froze the
  * next PREVIEW (AUDIT_perf_ressources.md). Same remedy and same HC.1 status
- * as PLAYER_LIST. A timeline redesign will replace this list later.
+ * as PLAYER_LIST. The timeline view bounds itself the same way (EDITING_TIMELINE).
  */
 export const EDITING_LIST = { pageSize: 100 } as const;
 
@@ -61,21 +71,37 @@ export function eventTypeMeta(eventType: string): { label: string; kind: string 
   return EVENT_TYPE_META[eventType] ?? { label: eventType, kind: "other" };
 }
 
+/** The header's view switch; the first one is where the tab opens. */
+export const EDITING_VIEWS = ["Timeline", "List"] as const;
+type EditingView = (typeof EDITING_VIEWS)[number];
+
 export const EditingTab: React.FC = () => {
   const clips = useEngineSelector((s) => s.previewClips);
   const previewSerial = useEngineSelector((s) => s.previewSerial);
   const emptyReason = useEngineSelector((s) => s.previewEmptyReason);
+  const tickrate = useEngineSelector((s) => s.previewTickrate);
 
-  const totalDurationS = clips.reduce((sum, c) => sum + c.durationS, 0);
+  // As the run will record them: edited windows, excluded-event clips at 0.
+  const durations = useMemo(() => clips.map((c) => editedWindow(c, tickrate)?.durationS ?? 0), [clips, tickrate]);
+  const totalDurationS = durations.reduce((sum, d) => sum + d, 0);
   const selectedCount = clips.filter((c) => c.selected).length;
+  const lanes = useMemo(() => buildLanes(clips), [clips]);
 
+  const [view, setView] = useState<EditingView>(EDITING_VIEWS[0]);
+  const [activeClip, setActiveClip] = useState<number | null>(null);
   const [page, setPage] = useState(0);
-  // A new PREVIEW starts on page 1; toggling a clip must not move the reader.
-  useEffect(() => setPage(0), [previewSerial]);
-  const pageCount = Math.max(1, Math.ceil(clips.length / EDITING_LIST.pageSize));
+  // A new PREVIEW starts on page 1 with nothing open; toggling a clip must not move the reader.
+  useEffect(() => {
+    setPage(0);
+    setActiveClip(null);
+  }, [previewSerial]);
+  const onList = view === "List";
+  const pageSize = onList ? EDITING_LIST.pageSize : EDITING_TIMELINE.lanesPerPage;
+  const pageCount = Math.max(1, Math.ceil((onList ? clips.length : lanes.length) / pageSize));
   const currentPage = Math.min(page, pageCount - 1);
-  const start = currentPage * EDITING_LIST.pageSize;
+  const start = currentPage * pageSize;
   const visible = clips.slice(start, start + EDITING_LIST.pageSize);
+  const activeLane = activeClip === null ? undefined : lanes.find((l) => l.indices.includes(activeClip));
 
   /**
    * Include or exclude this clip.
@@ -121,43 +147,79 @@ export const EditingTab: React.FC = () => {
   }
 
   return (
-    <div className="editing-tab">
+    <div className={onList ? "editing-tab" : "editing-tab editing-tab--timeline"}>
       <div className="editing-header">
         <span className="editing-summary">
           <strong>{selectedCount}</strong> of <strong>{clips.length}</strong> clips
           {" · "}
           <strong>{formatTotal(totalDurationS)}</strong>
         </span>
+        <Segmented
+          label="Editing view"
+          tip="Timeline: clips on each demo's time axis, editable one by one. List: the plain checklist."
+          options={EDITING_VIEWS}
+          value={view}
+          onChange={(v) => {
+            setView(v as EditingView);
+            setPage(0);
+          }}
+        />
         {pageCount > 1 && (
           <div className="row editing-pager">
             <Pager page={currentPage} pageCount={pageCount} onPage={setPage} />
           </div>
         )}
       </div>
-      <div className="editing-list">
-        {visible.map((clip, i) => {
-          const idx = start + i;
-          const meta = eventTypeMeta(clip.eventType);
-          return (
-            <div
-              key={`${clip.demoPath}:${clip.startTick}`}
-              className={`editing-clip${clip.selected ? " selected" : ""}`}
-              title="Click to include or exclude this clip from the recording run"
-              onClick={() => handleToggle(idx)}
-            >
-              <div className="clip-check" />
-              <span className="clip-duration">{formatDuration(clip.durationS)}</span>
-              <span
-                className={`clip-type clip-badge clip-badge--${meta.kind}`}
-                title="Type of in-game event that triggered this clip"
+      {!onList && (
+        <EditingTimeline
+          clips={clips}
+          lanes={lanes.slice(start, start + pageSize)}
+          tickrate={tickrate}
+          activeIndex={activeClip}
+          onSelect={setActiveClip}
+          previewSerial={previewSerial}
+        />
+      )}
+      {!onList && activeClip !== null && activeLane && (
+        <ClipInspector
+          clips={clips}
+          index={activeClip}
+          lane={activeLane}
+          tickrate={tickrate}
+          onClose={() => setActiveClip(null)}
+        />
+      )}
+      {onList && (
+        <div className="editing-list">
+          {visible.map((clip, i) => {
+            const idx = start + i;
+            const meta = eventTypeMeta(clip.eventType);
+            return (
+              <div
+                key={`${clip.demoPath}:${clip.startTick}`}
+                className={`editing-clip${clip.selected ? " selected" : ""}`}
+                title="Click to include or exclude this clip from the recording run"
+                onClick={() => handleToggle(idx)}
               >
-                {meta.label}
-              </span>
-              <span className="clip-player">{clip.playerName}</span>
-            </div>
-          );
-        })}
-      </div>
+                <div className="clip-check" />
+                <span className="clip-duration">{formatDuration(durations[idx])}</span>
+                <span
+                  className={`clip-type clip-badge clip-badge--${meta.kind}`}
+                  title="Type of in-game event that triggered this clip"
+                >
+                  {meta.label}
+                </span>
+                <span className="clip-player">{clip.playerName}</span>
+                {clip.edit && (
+                  <span className="clip-edited" title="Edited on the timeline">
+                    ✎ edited
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
