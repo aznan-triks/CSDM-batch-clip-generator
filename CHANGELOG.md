@@ -20,6 +20,27 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.5.0 — 2026-09-26
+
+### Added
+
+- EDITING is now a timeline, like a video editor: one lane per demo, each clip a block with its events. Click a clip to include or exclude it, drag its start and end, or take single events out; what you edit is exactly what gets recorded. The old list is one click away (Timeline / List).
+- Card styles (Timeline / Sentence / Tiles) now cover every tab: VIDEO, TAGS and SETTINGS too, globally or per card.
+- Console: search (Ctrl+F), save the log, export the clip list (HTML, TXT, JSON), and preview what a run injects into CS2.
+- New hit-zone filters next to HEADSHOT HIT: BODY, ARM, LEG.
+- Presets: "Full config" and the categories now exclude each other, like the old window.
+
+### Fixed
+
+- SAVE in EDITING never saved anything (no preset name was sent); it now asks for a name and saves the settings with your clip selection and edits. Loading that preset restores them on a matching preview.
+- Recent CS2 demos (after the May 2026 game update) are readable again: demoparser2 0.41.4 is now required (46 → 111 readable demos here, identical kills on the ones already readable).
+- Cards size themselves to their content in every style: no more cards scrolling or leaving large empty space (a card you resize yourself keeps your size).
+- Four remade cards could no longer be moved or collapsed; fixed.
+- Numbers typed in VIDEO settings (FOV, game speed, gravity, death-notice time) are saved as numbers, so a typed word can no longer break a run.
+- The PostgreSQL help line stays visible after Test & Reload.
+- Tooltips use one font everywhere.
+- The engine's player-positions cache is now bounded.
+
 ## 3.4.0 — 2026-09-25
 
 ### Added
