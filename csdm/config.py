@@ -173,14 +173,18 @@ DEFAULT_CONFIG = {
         "settings": {
             "v": 4,
             "cards": {
-                "postgresql": {"x": 0, "y": 0, "w": 15, "h": 9},
-                "paths": {"x": 0, "y": 9, "w": 15, "h": 14},
-                "config-folder": {"x": 0, "y": 23, "w": 15, "h": 9},
-                "presets": {"x": 0, "y": 51, "w": 7, "h": 15},
-                "ui-theme": {"x": 0, "y": 32, "w": 15, "h": 19},  # wide: Card style + Per-card style (every tab) on its face
-                "ui-layout": {"x": 7, "y": 51, "w": 8, "h": 15},
-                "performance": {"x": 0, "y": 66, "w": 7, "h": 7},
-                "injection-preview": {"x": 7, "y": 66, "w": 8, "h": 7},
+                # postgresql +1 (2026-09-26): Test & Reload's answer now joins the
+                # CS Demo Manager guidance instead of replacing it; tiles needed
+                # the row after a failed test (e2e/card-fit-proof.mjs). Every
+                # card below moves down 1.
+                "postgresql": {"x": 0, "y": 0, "w": 15, "h": 10},
+                "paths": {"x": 0, "y": 10, "w": 15, "h": 14},
+                "config-folder": {"x": 0, "y": 24, "w": 15, "h": 9},
+                "presets": {"x": 0, "y": 52, "w": 7, "h": 15},
+                "ui-theme": {"x": 0, "y": 33, "w": 15, "h": 19},  # wide: Card style + Per-card style (every tab) on its face
+                "ui-layout": {"x": 7, "y": 52, "w": 8, "h": 15},
+                "performance": {"x": 0, "y": 67, "w": 7, "h": 7},
+                "injection-preview": {"x": 7, "y": 67, "w": 8, "h": 7},
             },
             "collapsed": [],
         },

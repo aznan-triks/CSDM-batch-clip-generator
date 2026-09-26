@@ -69,7 +69,7 @@ const SPECS: Spec[] = [
     actions: [],
   },
   { id: "config-folder", prefix: "cf", card: <ConfigFolderCard />, keys: [], actions: ["M13", "M14", "M15"] },
-  { id: "presets", prefix: "ps", card: <PresetSection />, keys: [], actions: ["C3", "C4", "C5"] },
+  { id: "presets", prefix: "ps", card: <PresetSection />, keys: [], actions: ["C3", "C4", "C5", "M9", "M10"] },
   { id: "ui-theme", prefix: "ut", card: <UiThemeCard />, keys: ["theme_accent", "theme_bg", "ui_card_style", "ui_font_family"], actions: ["M2", "M3"] },
   {
     id: "ui-layout",

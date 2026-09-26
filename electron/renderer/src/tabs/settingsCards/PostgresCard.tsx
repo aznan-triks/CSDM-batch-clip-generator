@@ -81,12 +81,21 @@ function TestButton({ m, className, children }: { m: PostgresModel; className?: 
   );
 }
 
-/** One message slot: the guidance until a test answers, then the answer. */
+/**
+ * The test's answer over the guidance. The guidance stays once a test has
+ * answered: a failed test is exactly when the user needs to know where CS Demo
+ * Manager shows the right values.
+ */
 function Answer({ m }: { m: PostgresModel }) {
-  return m.status ? (
-    <span className={`settings-db-status st-${m.state}`}>{m.status}</span>
-  ) : (
-    <span className="capture-hint">{HINT}</span>
+  return (
+    <span className="settings-db-answer">
+      {m.status && (
+        <span className={`settings-db-status st-${m.state}`} role="status">
+          {m.status}
+        </span>
+      )}
+      <span className="capture-hint">{HINT}</span>
+    </span>
   );
 }
 

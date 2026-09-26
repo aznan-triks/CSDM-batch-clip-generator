@@ -12,7 +12,7 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import PresetSection from "../PresetSection";
+import PresetSection, { toggleCategory } from "../PresetSection";
 
 const TABLES_FIXTURE = {
   filters: [],
@@ -126,5 +126,27 @@ describe("PresetSection", () => {
     const written = await loadPresetAndCaptureWrites("everything");
     expect(Object.keys(written).sort()).toEqual(["date_from", "date_to", "steam_id"]);
     expect(written).toEqual({ date_from: "01-01-2024", date_to: "02-02-2024", steam_id: "999" });
+  });
+
+  it("keeps Full config and the partial categories mutually exclusive (M9 / M10)", async () => {
+    const { container } = await renderSection();
+    const chip = (action: string, label: string) =>
+      [...container.querySelectorAll<HTMLElement>(`[data-action="${action}"]`)].find((el) => el.textContent === label)!;
+    const pressed = (el: HTMLElement) => el.getAttribute("aria-pressed") === "true";
+    act(() => chip("M9", "Date").click());
+    act(() => chip("M9", "Players").click());
+    act(() => chip("M10", "Full config").click());
+    expect(pressed(chip("M10", "Full config"))).toBe(true);
+    expect(pressed(chip("M9", "Date")) || pressed(chip("M9", "Players"))).toBe(false);
+    act(() => chip("M9", "Date").click());
+    expect(pressed(chip("M9", "Date"))).toBe(true);
+    expect(pressed(chip("M10", "Full config"))).toBe(false);
+  });
+});
+
+describe("toggleCategory", () => {
+  it("unticks a ticked category without touching the others", () => {
+    expect([...toggleCategory(new Set(["date", "players"]), "date")]).toEqual(["players"]);
+    expect([...toggleCategory(new Set(["full"]), "full")]).toEqual([]);
   });
 });

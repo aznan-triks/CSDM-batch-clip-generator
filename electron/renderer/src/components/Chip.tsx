@@ -16,10 +16,12 @@ interface ChipProps {
   disabled?: boolean;
   /** Hover explanation for abbreviated or jargon-heavy chip labels. */
   tip?: string;
+  /** Parity marker (`data-action`) for a chip that answers a Tkinter action. */
+  dataAction?: string;
 }
 
 /** A toggle chip, extracted from the mock's `.chip` (ui-v5.html lines 86-92). */
-export default function Chip({ label, selected, onToggle, disabled, tip }: ChipProps) {
+export default function Chip({ label, selected, onToggle, disabled, tip, dataAction }: ChipProps) {
   // `on`, not `chip-selected`: the mock's stylesheet is the base sheet and it
   // styles `.chip.on`. `chip-selected` had no rule in any stylesheet, so the
   // selected face never reached the screen -- across all 27 call sites.
@@ -31,6 +33,7 @@ export default function Chip({ label, selected, onToggle, disabled, tip }: ChipP
       aria-pressed={!!selected}
       aria-disabled={!!disabled}
       title={tip}
+      data-action={dataAction}
       onClick={() => {
         if (!disabled) onToggle();
       }}

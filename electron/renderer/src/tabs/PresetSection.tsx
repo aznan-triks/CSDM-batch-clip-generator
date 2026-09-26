@@ -58,6 +58,27 @@ function categoryLabel(key: string): string {
     .join(" ");
 }
 
+const FULL = "full";
+
+/**
+ * The "partial" and "full" toggles of `_tab_outils` (M9 / M10): "full" saves
+ * everything, so ticking it clears every partial category (`_on_full_toggle`),
+ * and ticking any partial category clears "full" (`_on_partial_toggle`). The
+ * two can never be saved together, which would be a full preset in disguise.
+ */
+export function toggleCategory(previous: ReadonlySet<string>, cat: string): Set<string> {
+  if (previous.has(cat)) {
+    const next = new Set(previous);
+    next.delete(cat);
+    return next;
+  }
+  if (cat === FULL) return new Set([FULL]);
+  const next = new Set(previous);
+  next.delete(FULL);
+  next.add(cat);
+  return next;
+}
+
 interface PresetsModel {
   name: string;
   setName: (value: string) => void;
@@ -135,13 +156,7 @@ function usePresets(): PresetsModel {
     setName,
     categories: tables?.presetCategories ?? [],
     isIncluded: (cat) => selectedCats.has(cat),
-    toggleCat: (cat) =>
-      setSelectedCats((previous) => {
-        const next = new Set(previous);
-        if (next.has(cat)) next.delete(cat);
-        else next.add(cat);
-        return next;
-      }),
+    toggleCat: (cat) => setSelectedCats((previous) => toggleCategory(previous, cat)),
     save,
     presets,
     load: (presetName) =>
@@ -229,6 +244,7 @@ function Categories({ m }: { m: PresetsModel }) {
           tip={`Include ${categoryLabel(key)} settings in this preset`}
           selected={m.isIncluded(key)}
           onToggle={() => m.toggleCat(key)}
+          dataAction={key === FULL ? "M10" : "M9"}
         />
       ))}
     </div>

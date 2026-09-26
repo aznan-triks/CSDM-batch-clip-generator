@@ -118,17 +118,8 @@ describe("CaptureTab bridge traffic", () => {
 });
 
 describe("CaptureTab conditional rows", () => {
-  it("gives every card the grid's drag handle and collapse toggle", async () => {
-    // A remade card that swallows SectionList's props can no longer be moved
-    // or collapsed (regression caught 2026-09-25 on four remade cards).
-    const { container } = await renderTab();
-    const cards = [...container.querySelectorAll("[data-card-id]")];
-    expect(cards.length).toBeGreaterThan(0);
-    const missing = cards
-      .filter((card) => !card.querySelector(".drag-handle"))
-      .map((card) => card.getAttribute("data-card-id"));
-    expect(missing).toEqual([]);
-  });
+  // The drag-handle guard for every card lives in gridProps.allTabs.test.tsx,
+  // across all four tabs on the card grid.
 
   it("hides the switch delay outside `both` perspective", async () => {
     // Only `both` switches camera mid-clip, so only `both` has a delay to set.
