@@ -166,7 +166,8 @@ _HAND_WRITTEN: list = [
        ("assemble_after", "assemble_output", "delete_after_assemble"),
        level="advanced"),
     # ── I8 Check before running ────────────────────────────────────────────
-    _C("preview", "I8", "Preview", (), ("start_preview", "cancel_preview", "run_inputs_problem"),
+    _C("preview", "I8", "Preview", (), ("start_preview", "cancel_preview", "run_inputs_problem",
+                                           "clip_cameras"),
        level="essential"),
     _C("preview_export", "I8", "Export the preview clip list", (), ("export_preview",),
        level="advanced"),

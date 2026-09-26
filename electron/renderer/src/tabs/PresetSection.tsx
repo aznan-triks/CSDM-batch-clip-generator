@@ -35,6 +35,8 @@ import { ChoiceToken } from "../components/cardstyle/SentenceToken";
 import type { GridProps } from "../components/cardstyle/gridProps";
 import { runCommand } from "../bridge";
 import { ICONS } from "../icons";
+import { restoreClipSelection } from "../motion/useEngineState";
+import { type ClipPayload, savedClip } from "./editing/clipEdits";
 import { useAllSettings, useSettingsBatch } from "../settings/store";
 import { useTables } from "../settings/useTables";
 import { Glyph } from "./settingsCards/shared";
@@ -165,6 +167,12 @@ function usePresets(): PresetsModel {
         const data = (result.data ?? {}) as Record<string, unknown>;
         const keys = (result.keys as string[] | null | undefined) ?? null;
         setMany(keys === null ? data : Object.fromEntries(keys.map((k) => [k, data[k]])));
+        // The EDITING selection it holds, already matched to the current
+        // preview by the engine (`preset_clip_selection`), which says in the
+        // console what it restored or why it could not.
+        if (Array.isArray(result.selected_clips)) {
+          restoreClipSelection((result.selected_clips as ClipPayload[]).map(savedClip));
+        }
         setStatus(`Loaded "${presetName}".`);
       }),
     askDelete: setPendingDelete,

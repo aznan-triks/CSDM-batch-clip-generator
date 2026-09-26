@@ -3989,6 +3989,71 @@ class EngineMixin:
         return {"content": render_preview(fmt, self.preview_clip_rows(seqs, cfg), meta),
                 "filename": filename, "mime": mime, "clips": nb_clips}
 
+    def edited_clip_cameras(self, entry):
+        """Who the camera follows in one EDITING clip once its edits are applied.
+
+        `entry` is one `selected_clips` entry (clip_edits.py). The clip is
+        edited by `apply_clip_edits` and its cameras planned by
+        `_preview_camera_segments` -- the calls a run makes before
+        `_build_json` -- so the inspector shows what will be recorded.
+        Returns None when every event was taken out (nothing is recorded).
+        """
+        last = self._last_preview_result
+        if not last:
+            raise UserError("Run a PREVIEW first: there is no clip to edit yet.")
+        (clean,) = normalize_clip_selection([entry])
+        seqs, cfg = last["seqs"], last["cfg"]
+        dp = clean["demo_path"]
+        own = [s for s in seqs.get(dp, []) if s["start_tick"] == clean["start_tick"]]
+        if not own:
+            raise UserError("This clip is not in the last PREVIEW any more: run PREVIEW again.")
+        edited = apply_clip_edits(own, dp, [clean], cfg["tickrate"])
+        if not edited:
+            return None
+        _, sids_active, primary_sid = self._camera_players(cfg)
+        return self._preview_camera_segments(dp, edited[0], cfg, sids_active, primary_sid)
+
+    def preset_clip_selection(self, preset_name, selected_clips):
+        """The EDITING selection a loaded preset restores, matched to the last PREVIEW.
+
+        Returns the preset's entries whose clip the last preview listed (the
+        renderer checks exactly those, with their edits), or None when there
+        is nothing to restore. Says in the console what happened either way.
+        """
+        if not selected_clips:
+            self.log(f"Preset '{preset_name}' holds no EDITING clip selection: "
+                     "the EDITING tab keeps its own.", "dim")
+            return None
+        try:
+            wanted = normalize_clip_selection(selected_clips)
+        except ValueError:
+            # A hand-edited presets file must not stop its settings loading.
+            self.log(f"Preset '{preset_name}': its EDITING clip selection is unreadable and "
+                     "was ignored; its settings were loaded.", "warn")
+            return None
+        count = len(wanted)
+        last = self._last_preview_result
+        if not last:
+            self.log(f"Preset '{preset_name}' holds an EDITING selection of {count} clip(s): "
+                     "run PREVIEW with its settings, then load the preset again to restore it.",
+                     "warn")
+            return None
+        listed = {(dp, s["start_tick"]) for dp, demo_seqs in last["seqs"].items() for s in demo_seqs}
+        matched = [e for e in wanted if (e["demo_path"], e["start_tick"]) in listed]
+        if not matched:
+            self.log(f"None of the {count} clip(s) saved in preset '{preset_name}' is in the "
+                     "current PREVIEW (other settings or demos): the EDITING selection was left "
+                     "as it was. Run PREVIEW with the preset's settings, then load it again.",
+                     "warn")
+            return None
+        missing = count - len(matched)
+        message = (f"Preset '{preset_name}': EDITING selection restored "
+                   f"({len(matched)} clip(s) checked, with their edits).")
+        if missing:
+            message += f" {missing} saved clip(s) are not in this PREVIEW and were skipped."
+        self.log(message, "warn" if missing else "ok")
+        return matched
+
     def _preview_worker(self, cfg):
         """Compute a preview and hand the result over the state channel.
 

@@ -86,7 +86,8 @@
   border-bottom: var(--bw) solid var(--line);
 }
 
-#ask-panel button {
+#ask-panel button,
+#ask-panel input {
   margin-right: 8px;
 }
 

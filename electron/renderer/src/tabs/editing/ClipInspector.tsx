@@ -13,6 +13,7 @@ import {
   editClip,
   toggleClipEvent,
   toggleClipSelection,
+  type CameraSegment,
   type PreviewClip,
 } from "../../motion/useEngineState";
 import { clampTo } from "../clipWindow";
@@ -25,6 +26,7 @@ import {
   overlapsAnother,
   type Lane,
 } from "./clipEdits";
+import { useClipCameras } from "./useClipCameras";
 
 /** Seconds of axis drawn past each end of the clip, so both handles stay grabbable. */
 const AXIS_MARGIN_S = 2;
@@ -40,6 +42,7 @@ interface ClipInspectorProps {
 export default function ClipInspector({ clips, index, lane, tickrate, onClose }: ClipInspectorProps) {
   const clip = clips[index];
   const win = editedWindow(clip, tickrate);
+  const cameras = useClipCameras(clip);
   const position = lane.indices.indexOf(index) + 1;
   const sec = (tick: number) => tick / tickrate;
 
@@ -132,7 +135,7 @@ export default function ClipInspector({ clips, index, lane, tickrate, onClose }:
       {win && (
         <ClipTimeline
           label="This clip, around its events"
-          spans={cameraSpans(clip, win.startTick, win.endTick, rel)}
+          spans={cameraSpans(cameras, win.startTick, win.endTick, rel)}
           handles={handles}
           markers={markers}
           extent={extent}
@@ -170,17 +173,17 @@ export default function ClipInspector({ clips, index, lane, tickrate, onClose }:
 }
 
 /**
- * The camera spans the preview planned, cut to the edited clip: the first and
+ * The camera spans of the edited clip (`useClipCameras`), cut to its edges: the first and
  * last span stretch to the new edges (the recording holds its target), one
  * colour per change of player so a switch reads at a glance.
  */
 function cameraSpans(
-  clip: PreviewClip,
+  cameras: readonly CameraSegment[],
   startTick: number,
   endTick: number,
   rel: (tick: number) => number,
 ): TimelineSpan[] {
-  const inside = clip.cameras.filter((c) => c.toTick > startTick && c.fromTick < endTick);
+  const inside = cameras.filter((c) => c.toTick > startTick && c.fromTick < endTick);
   if (inside.length === 0) {
     return [{ key: "clip", from: rel(startTick), to: rel(endTick), tone: "primary", label: "" }];
   }

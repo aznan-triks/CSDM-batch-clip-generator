@@ -271,7 +271,7 @@ describe("ActionBar", () => {
       expect(sent[0].cfg).toEqual({ steam_ids: ["1"], events: ["Kills"] });
     });
 
-    it("SAVE sends save_preset with the cfg and selection, and nothing else", async () => {
+    it("SAVE asks the engine to name a full preset of the cfg and the selection", async () => {
       const { sent, emit } = await renderBar("editing");
       act(() =>
         emit({
@@ -289,6 +289,12 @@ describe("ActionBar", () => {
       act(() => screen.getByRole("button", { name: /SAVE/ }).click());
       expect(sent).toHaveLength(1);
       expect(sent[0].name).toBe("save_preset");
+      // The bug: no name and no category went, and the engine refused every
+      // save with "Type a name for the preset first". The name is asked on
+      // the console's question panel (`ask_name`); the preset keeps it all.
+      expect(sent[0].ask_name).toBe(true);
+      expect(sent[0].cats).toEqual(["full"]);
+      expect(sent[0].cfg).toEqual({ steam_ids: ["1"], events: ["Kills"] });
       expect(sent[0].selected_clips).toEqual([{ demo_path: "demo1", start_tick: 1000 }]);
     });
 
