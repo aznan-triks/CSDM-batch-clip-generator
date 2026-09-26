@@ -136,12 +136,19 @@ describe.each(CARD_STYLES)("Kill Filters, %s style", (style) => {
   });
 
   it("keeps the UNTESTED mark, ★ Must and Exclude on screen", async () => {
-    const { container } = await renderCard(<KillFiltersCard />, base);
-    const untested = killDefs().filter((d) => d.untested);
-    expect(untested.length).toBeGreaterThan(0);
-    expect(container.querySelectorAll(".cf-untested").length).toBeGreaterThan(0);
-    expect(container.textContent).toMatch(/must/i);
-    expect(container.textContent).toMatch(/Exclude|Drop/);
+    // No shipped filter is UNTESTED any more (AIRBORNE and RUN & GUN were
+    // validated, 2026-09-26): flag one here to keep the mark itself covered.
+    const flagged = killDefs()[0] as FilterDef & { untested?: string };
+    const before = flagged.untested;
+    flagged.untested = "Not checked in game yet.";
+    try {
+      const { container } = await renderCard(<KillFiltersCard />, base);
+      expect(container.querySelectorAll(".cf-untested").length).toBeGreaterThan(0);
+      expect(container.textContent).toMatch(/must/i);
+      expect(container.textContent).toMatch(/Exclude|Drop/);
+    } finally {
+      flagged.untested = before;
+    }
   });
 
   it("locks the headshot choice while ONE TAP is on", async () => {
