@@ -158,22 +158,22 @@ DEFAULT_CONFIG = {
             "v": 4,
             "cards": {
                 "tag-grid": {"x": 0, "y": 0, "w": 15, "h": 10},
-                "tag-range": {"x": 0, "y": 10, "w": 5, "h": 10},
-                "operations": {"x": 5, "y": 10, "w": 10, "h": 12},
+                "tag-range": {"x": 0, "y": 10, "w": 6, "h": 10},
+                "operations": {"x": 6, "y": 10, "w": 9, "h": 13},
             },
             "collapsed": [],
         },
         "settings": {
             "v": 4,
             "cards": {
-                "postgresql": {"x": 0, "y": 0, "w": 15, "h": 6},
-                "paths": {"x": 0, "y": 6, "w": 15, "h": 14},
-                "config-folder": {"x": 0, "y": 20, "w": 15, "h": 7},
-                "presets": {"x": 0, "y": 27, "w": 5, "h": 12},
-                "ui-theme": {"x": 5, "y": 27, "w": 5, "h": 22},  # +2 rows: Card style, +9: Per-card style
-                "ui-layout": {"x": 10, "y": 27, "w": 5, "h": 11},
-                "performance": {"x": 0, "y": 49, "w": 7, "h": 6},
-                "injection-preview": {"x": 7, "y": 49, "w": 8, "h": 7},
+                "postgresql": {"x": 0, "y": 0, "w": 15, "h": 9},
+                "paths": {"x": 0, "y": 9, "w": 15, "h": 14},
+                "config-folder": {"x": 0, "y": 23, "w": 15, "h": 9},
+                "presets": {"x": 0, "y": 51, "w": 7, "h": 15},
+                "ui-theme": {"x": 0, "y": 32, "w": 15, "h": 19},  # wide: Card style + Per-card style (every tab) on its face
+                "ui-layout": {"x": 7, "y": 51, "w": 8, "h": 15},
+                "performance": {"x": 0, "y": 66, "w": 7, "h": 7},
+                "injection-preview": {"x": 7, "y": 66, "w": 8, "h": 7},
             },
             "collapsed": [],
         },

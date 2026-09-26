@@ -102,16 +102,20 @@ function TimelineView({ m }: { m: PostgresModel }) {
           <span className="st-node-h">
             <span className="st-ic"><Glyph g="user" /></span>You
           </span>
-          <TextBox t={m.user} />
-          <TextBox t={m.pass} />
+          <div className="st-form">
+            <TextBox t={m.user} />
+            <TextBox t={m.pass} />
+          </div>
         </div>
         <span className="st-link" aria-hidden="true" />
         <div className="st-node">
           <span className="st-node-h">
             <span className="st-ic"><Glyph g="server" /></span>Server
           </span>
-          <TextBox t={m.host} />
-          <TextBox t={m.port} />
+          <div className="st-form">
+            <TextBox t={m.host} />
+            <TextBox t={m.port} />
+          </div>
         </div>
         <span className="st-link" aria-hidden="true" />
         <div className="st-node">
@@ -119,7 +123,9 @@ function TimelineView({ m }: { m: PostgresModel }) {
             <span className="st-ic"><Glyph g="db" /></span>Database
             <Light m={m} />
           </span>
-          <TextBox t={m.db} />
+          <div className="st-form">
+            <TextBox t={m.db} />
+          </div>
         </div>
       </div>
       <div className="row settings-db-row">

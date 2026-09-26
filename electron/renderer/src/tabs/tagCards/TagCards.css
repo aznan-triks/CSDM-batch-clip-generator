@@ -312,14 +312,21 @@
 
 .tgr-line b {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 10.5px;
   white-space: nowrap;
   color: var(--txt);
 }
 
 .tgr-line small {
   font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
   color: var(--faint);
+}
+
+.tgr-span b {
+  font-family: inherit;
+  font-weight: 700;
 }
 
 .tgr-end i {

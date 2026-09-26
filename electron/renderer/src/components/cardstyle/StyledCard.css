@@ -136,6 +136,7 @@
 }
 
 .sx-word.empty {
+  padding-right: 2px; /* the italic's last letter leans past the box */
   font-weight: 600;
   font-style: italic;
   opacity: 0.8;

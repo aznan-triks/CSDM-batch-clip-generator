@@ -88,6 +88,23 @@
   color: var(--txt);
 }
 
+/* Label and box on one line: "User [____]". */
+.st-form {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 5px 8px;
+}
+
+.st-form .lab {
+  margin: 0;
+}
+
+.st-form .fld {
+  flex: none;
+  min-width: 0;
+}
+
 .st-node-h .st-light {
   margin-left: auto;
 }

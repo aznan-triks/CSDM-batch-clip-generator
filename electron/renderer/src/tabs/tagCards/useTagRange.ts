@@ -67,11 +67,8 @@ export function useTagRange(): TagRangeModel {
       const result = await runCommand("tags_calc_range", { tag_ids: active });
       const data = result.data as RangeResult;
       setRange(data);
-      setStatus(
-        data.date_start && data.date_end
-          ? `${data.demo_count} demo(s) -- start: ${data.date_start}  end: ${data.date_end}`
-          : `${data.demo_count} demo(s) -- dates unavailable.`,
-      );
+      // The dates themselves are drawn by every style; only a gap is news.
+      setStatus(data.date_start && data.date_end ? "" : `${data.demo_count} demo(s) -- dates unavailable.`);
     } catch (cause) {
       setStatus((cause as Error).message);
     } finally {
