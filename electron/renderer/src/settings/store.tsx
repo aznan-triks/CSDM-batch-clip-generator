@@ -126,6 +126,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // for the answer (with a ceiling, main.js) before letting the window go.
   useEffect(() => onFlushRequest(writeNow), [writeNow]);
 
+  // Unmounting sends the held-back save now instead of leaving its timer
+  // running: an orphaned timer fired SAVE_DEBOUNCE_MS later on behalf of a
+  // provider that no longer existed, writing its stale settings over newer
+  // ones (seen as the flaky "grid-size slider" test: the previous test's
+  // provider saved `ui_card_block_size: 48` over this one's 64 under a
+  // loaded full run). `writeNow` is stable, so this runs on unmount only.
+  useEffect(() => () => void writeNow(), [writeNow]);
+
   return (
     <SettingsContext.Provider value={{ settings, setSetting, setMany, loading, error }}>
       {children}

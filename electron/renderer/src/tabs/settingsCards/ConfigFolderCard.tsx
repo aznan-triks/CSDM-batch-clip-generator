@@ -254,18 +254,18 @@ function Footer({ m }: { m: ConfigFolderModel }) {
 function TimelineView({ m }: { m: ConfigFolderModel }) {
   return (
     <SettingControl settingKey="config_dir">
-      <div className="cf-a settings-folder">
-        <div className="cf-move">
-          <div className="cf-from">
+      <div className="cfg-a settings-folder">
+        <div className="cfg-move">
+          <div className="cfg-from">
             <span className="sx-kick">Settings live in</span>
             <Current m={m} />
           </div>
-          <span className="cf-arrow" aria-hidden="true">
+          <span className="cfg-arrow" aria-hidden="true">
             copy to →
           </span>
-          <div className="cf-to">
+          <div className="cfg-to">
             {CHOICES.map((c) => (
-              <LocationButton key={c.kind} m={m} c={c} className="cf-dest">
+              <LocationButton key={c.kind} m={m} c={c} className="cfg-dest">
                 <span className="st-ic">
                   <Glyph g={c.glyph} />
                 </span>
@@ -284,7 +284,7 @@ function SentenceView({ m }: { m: ConfigFolderModel }) {
   const now = CHOICES.find((c) => c.kind === m.info?.kind);
   return (
     <SettingControl settingKey="config_dir">
-      <div className="cf-b settings-folder">
+      <div className="cfg-b settings-folder">
         <div className="sc-prose">
           <div className="sc-line">
             <span className="w">Keep my settings in</span>{" "}
@@ -322,11 +322,11 @@ function SentenceView({ m }: { m: ConfigFolderModel }) {
 function TilesView({ m }: { m: ConfigFolderModel }) {
   return (
     <SettingControl settingKey="config_dir">
-      <div className="cf-c settings-folder">
-        <div className="cf-tiles">
+      <div className="cfg-c settings-folder">
+        <div className="cfg-tiles">
           {CHOICES.map((c) => (
-            <LocationButton key={c.kind} m={m} c={c} className="cf-tile">
-              <span className="cf-tile-art">
+            <LocationButton key={c.kind} m={m} c={c} className="cfg-tile">
+              <span className="cfg-tile-art">
                 <Glyph g={c.glyph} />
               </span>
               <b>{c.label}</b>
@@ -334,7 +334,7 @@ function TilesView({ m }: { m: ConfigFolderModel }) {
             </LocationButton>
           ))}
         </div>
-        <div className="cf-from">
+        <div className="cfg-from">
           <span className="sx-kick">Now</span>
           <Current m={m} />
         </div>
@@ -348,5 +348,5 @@ const VIEWS: CardViews<ConfigFolderModel> = { timeline: TimelineView, sentence: 
 
 export default function ConfigFolderCard(grid: GridProps) {
   const m = useConfigFolder();
-  return <StyledCard cardId="config-folder" title="Configuration Folder" icon={<ICONS.paths />} prefix="cf" m={m} views={VIEWS} grid={grid} />;
+  return <StyledCard cardId="config-folder" title="Configuration Folder" icon={<ICONS.paths />} prefix="cfg" m={m} views={VIEWS} grid={grid} />;
 }

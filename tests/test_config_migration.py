@@ -294,3 +294,61 @@ def test_old_format_migration_is_idempotent():
 def test_old_format_migration_keeps_only_rounds_in_events():
     assert _migrated({"events": ["Kills", "Deaths"]})["events"] == []
     assert _migrated({"events": ["Kills", "Rounds"]})["events"] == ["Rounds"]
+
+
+# ---------------------------------------------------------------------------
+# Card heights fit their content unless the user set them (v4 -> v5)
+# ---------------------------------------------------------------------------
+
+
+def _default_h(tab, card):
+    return DEFAULT_CONFIG["ui_sections"][tab]["cards"][card]["h"]
+
+
+def test_manual_heights_flags_only_the_heights_that_are_not_the_default():
+    cfg = _migrated({
+        "ui_sections": {
+            "capture": {
+                "v": 4,
+                "cards": {
+                    "player": {"x": 0, "y": 0, "w": 15, "h": _default_h("capture", "player")},
+                    "kill-filters": {"x": 0, "y": 9, "w": 10, "h": _default_h("capture", "kill-filters") + 7},
+                    # Collapsed: its own height is hPrev, and that one is the default.
+                    "map-filter": {"x": 10, "y": 9, "w": 5, "h": 2, "hPrev": _default_h("capture", "map-filter")},
+                },
+                "collapsed": ["map-filter"],
+            }
+        },
+    })
+    layout = cfg["ui_sections"]["capture"]
+    assert layout["v"] == UI_SECTIONS_VERSION == 5
+    assert "manual" not in layout["cards"]["player"]
+    assert layout["cards"]["kill-filters"]["manual"] is True
+    assert "manual" not in layout["cards"]["map-filter"]
+    assert layout["collapsed"] == ["map-filter"]
+
+
+def test_manual_heights_is_idempotent_and_leaves_v5_alone():
+    # A v5 card that fits its content stores whatever height it last had --
+    # re-running the v4 rule on it would wrongly call that height manual.
+    v5 = {"capture": {"v": 5, "cards": {"player": {"x": 0, "y": 0, "w": 15, "h": 31}}, "collapsed": []}}
+    assert "manual" not in _migrated({"ui_sections": v5})["ui_sections"]["capture"]["cards"]["player"]
+    once = _migrated({"ui_sections": {"capture": {"v": 4, "cards": {"player": {"x": 0, "y": 0, "w": 15, "h": 31}}}}})
+    twice = _migrated({"ui_sections": once["ui_sections"]})
+    assert twice["ui_sections"] == once["ui_sections"]
+    assert once["ui_sections"]["capture"]["cards"]["player"]["manual"] is True
+
+
+def test_a_v3_layout_goes_through_both_steps():
+    cfg = _migrated({
+        "ui_card_block_size": 96,
+        "ui_sections": {"tags": {"v": 3, "cards": {"tag-grid": {"x": 0, "y": 0, "w": 3, "h": _default_h("tags", "tag-grid")}}}},
+    })
+    slot = cfg["ui_sections"]["tags"]["cards"]["tag-grid"]
+    assert slot["w"] == 6 and "manual" not in slot
+    assert cfg["ui_sections"]["tags"]["v"] == UI_SECTIONS_VERSION
+
+
+def test_default_layouts_are_stamped_with_the_current_schema():
+    for layout in DEFAULT_CONFIG["ui_sections"].values():
+        assert layout["v"] == UI_SECTIONS_VERSION
