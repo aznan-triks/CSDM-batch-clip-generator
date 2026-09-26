@@ -14,9 +14,10 @@ import path from "node:path";
 import { _electron as electron } from "@playwright/test";
 import { createServer } from "vite";
 
-import { CONFIG, ELECTRON_DIR } from "./config.mjs";
+import { CONFIG, ELECTRON_DIR, isolatedProfileEnv } from "./config.mjs";
 
-export async function launchWithEngine() {
+/** `profile`: pass the same `isolatedProfileEnv()` twice to prove a restart. */
+export async function launchWithEngine(profile = isolatedProfileEnv()) {
   const server = await createServer({ configFile: path.join(ELECTRON_DIR, "vite.config.ts") });
   await server.listen();
   const url = server.resolvedUrls?.local?.[0];
@@ -29,7 +30,7 @@ export async function launchWithEngine() {
   // PYTHONPATH or VIRTUAL_ENV from the launching shell makes the child import
   // a different tree than the one under test, and the resulting failure looks
   // exactly like a product bug.
-  const env = { ...process.env, VITE_DEV_SERVER_URL: url, CSDM_E2E_BACKGROUND: "1" };
+  const env = { ...process.env, VITE_DEV_SERVER_URL: url, CSDM_E2E_BACKGROUND: "1", ...profile };
   delete env.PYTHONPATH;
   delete env.VIRTUAL_ENV;
 

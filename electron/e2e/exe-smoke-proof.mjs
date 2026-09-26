@@ -22,7 +22,7 @@ import path from "node:path";
 
 import { chromium } from "@playwright/test";
 
-import { ELECTRON_DIR, SHOT_DIR } from "./config.mjs";
+import { ELECTRON_DIR, SHOT_DIR, isolatedProfileEnv } from "./config.mjs";
 
 const EXE = path.join(ELECTRON_DIR, "dist-app", "CSDM-Batch-Clips-Generator.exe");
 const PORT = 9223;
@@ -64,6 +64,8 @@ delete cleanEnv.VIRTUAL_ENV;
 // gets, which is the opposite of what this gate is for.
 delete cleanEnv.CSDM_PYTHON_PATH;
 cleanEnv.CSDM_E2E_BACKGROUND = "1"; // hidden window, no focus steal
+// The exe resolves the real checkout; its settings must not be the user's.
+Object.assign(cleanEnv, isolatedProfileEnv());
 const child = spawn(EXE, [`--remote-debugging-port=${PORT}`], {
   cwd: ELECTRON_DIR,
   detached: true,

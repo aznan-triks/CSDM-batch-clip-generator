@@ -31,6 +31,9 @@ export const NO_CONTROL_BY_DESIGN: Record<string, string> = {
   positions_cache_max_demos: "memory bound for the player-positions cache, a safety cap rather than a user choice",
   // Added in v213 with the confirmed process exit, after the inventory was
   // written. Read by the engine through _host_cfg; no widget was ever built.
+  // A marker, not a choice: set by load_config once csdm_players.json was
+  // imported into saved_players, so a list emptied on purpose stays empty.
+  saved_players_imported: "engine-only marker: the old window's players were imported once",
   process_exit_poll_interval: "engine-only: how often the task list is polled",
   process_exit_timeout: "engine-only: how long the engine waits for cs2.exe to go",
   cs2_process_name: "engine-only: the image name the exit watcher looks for",
