@@ -4905,6 +4905,37 @@ class EngineMixin:
                 survivors.append(path)
         self._dp2_cache_order[:] = survivors
 
+    def _positions_cache_put_locked(self, demo_path: str, pos_df):
+        """Store one demo's player_positions frame and evict the oldest beyond the cap.
+
+        MUST be called with `_dp2_cache_lock` held. Same policy as
+        `_dp2_cache_put_locked`, with its own cap (`positions_cache_max_demos`)
+        because a positions frame (every tick x every player) is far larger
+        than a dp2 entry: insertion order, a rewrite keeps its slot, and the
+        demos of the current query (`_dp2_cache_pin`) are never evicted --
+        `_apply_shared_modifiers` reads these frames with no re-parse
+        fallback. An evicted demo also loses the "positions" section of its
+        dp2 entry, so the next query that needs it parses it again instead of
+        trusting a section whose frame is gone.
+        """
+        self._player_positions_cache[demo_path] = pos_df
+        cap = max(1, int(self._host_cfg("positions_cache_max_demos")))
+        excess = len(self._player_positions_cache) - cap
+        if excess <= 0:
+            return
+        pinned = self._dp2_cache_pinned
+        for path in list(self._player_positions_cache):
+            if excess <= 0:
+                break
+            # The frame just written is about to be read: never its own victim.
+            if path in pinned or path == demo_path:
+                continue
+            del self._player_positions_cache[path]
+            excess -= 1
+            entry = self._dp2_cache.get(path)
+            if isinstance(entry, dict) and "_sections" in entry:
+                entry["_sections"] = set(entry["_sections"]) - {"positions"}
+
     @staticmethod
     def _is_source1_demo(demo_path) -> bool:
         """True for a CS:GO (Source 1) demo, which demoparser2 cannot read.
@@ -5171,8 +5202,8 @@ class EngineMixin:
             # Lazy player_positions for the shared modifier layer. Parsed once per
             # demo and cached so airborne / no-scope checks on non-kill events do
             # not re-parse on every event. Stored separately from _dp2_cache (the
-            # per-demo frame can be large and the LRU eviction is tuned for the
-            # fire/death structures).
+            # per-demo frame can be large), under its own cap: see
+            # _positions_cache_put_locked.
             try:
                 pos_df = parser.parse_event(
                     "player_positions",
@@ -5181,7 +5212,7 @@ class EngineMixin:
                 )
                 if pos_df is not None and len(pos_df) > 0:
                     with self._dp2_cache_lock:
-                        self._player_positions_cache[demo_path] = pos_df
+                        self._positions_cache_put_locked(demo_path, pos_df)
             except Exception as e:
                 section_errors["positions"] = e
 

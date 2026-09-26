@@ -236,7 +236,16 @@ html[data-motion="none"] .gun2.in {
    still clipped to the 2px ring; the square's side (300% of the button) is
    far larger than the button's diagonal at any realistic aspect ratio
    (buttons here are wider than tall), so it fully covers .sb at every
-   angle. */
+   angle.
+   What the ring still costs is NOT in the page: Chromium traces
+   (e2e/ring-cost-proof.mjs) show 0 paint, no extra style recalc and a
+   renderer damage rect of the button alone, yet every ring frame makes the
+   display compositor re-run the frosted-glass blurs (backdrop-filter) of the
+   band, the console, the cards and the top bar, because the button sits
+   inside the blurred band. Moving the band's blur onto a pane under the
+   button, dropping its shadow or shrinking its blur radius changes nothing
+   measurable; only removing blurs does. Layer hints on the ring are no help
+   either (docs/audits/AUDIT_finalisation_idle-ring-cost.md). */
 .btn.primary .sb {
   background: none;
   animation: none;
