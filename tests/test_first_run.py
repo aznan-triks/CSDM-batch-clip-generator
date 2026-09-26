@@ -100,8 +100,10 @@ def test_unusable_clips_folder_stops_before_any_work(monkeypatch, tmp_path):
 
 def test_unvalidated_rules_are_flagged_to_the_ui():
     from csdm.bridge.tables import describe_filters
+    # AIRBORNE and RUN & GUN are validated (user, 2026-09-26: both always
+    # worked in the Python app), so they carry no UNTESTED marker.
     flagged = {f["key"] for f in describe_filters()["filters"] if f["untested"]}
-    assert {"kill_mod_airborne", "shot_mod_run_gun"} <= flagged
+    assert not {"kill_mod_airborne", "shot_mod_run_gun"} & flagged
 
 
 def test_tables_tell_the_ui_what_empty_paths_resolve_to(monkeypatch, tmp_path):
