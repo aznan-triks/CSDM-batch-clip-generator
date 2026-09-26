@@ -22,6 +22,8 @@ const TABLES_FIXTURE = {
 vi.mock("../../settings/store", () => ({
   useAllSettings: () => ({ date_from: "", date_to: "", steam_id: "999" }),
   useSettingsBatch: () => () => {},
+  // The card reads its style (none stored: the default timeline).
+  useSetting: () => [undefined, () => {}],
 }));
 
 const calls: Array<{ command: string; payload: unknown }> = [];

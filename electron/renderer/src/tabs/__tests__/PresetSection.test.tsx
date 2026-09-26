@@ -32,6 +32,8 @@ vi.mock("../../settings/store", () => ({
   useSettingsBatch: () => (changes: Record<string, unknown>) => {
     writes.push(changes);
   },
+  // The card reads its style (none stored: the default timeline).
+  useSetting: () => [undefined, () => {}],
 }));
 
 vi.mock("../../bridge", () => ({

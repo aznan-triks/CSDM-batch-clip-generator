@@ -1,0 +1,617 @@
+/*
+ * The Tags-tab cards (Tags, Tag Range, Operations) in their three styles.
+ * Prefixes: tg- (Tags, and bits all three share), tgr- (Tag Range),
+ * tgo- (Operations). Colours from theme/tokens.css; a tag's own colour
+ * arrives as --tag. No :hover rule translates or scales anything (D13/D16).
+ */
+
+.tg-empty,
+.tg-status {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--faint);
+}
+
+.tg-status {
+  color: var(--muted);
+}
+
+.tg-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.tg-foot-sep {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: var(--hair);
+}
+
+/* ---------- Tags, timeline: the tray above the palette ---------- */
+.tg-tray {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-bottom: 10px;
+  padding: 7px 9px;
+  border-radius: 14px;
+  border: 1px dashed color-mix(in srgb, var(--cam-k) 35%, transparent);
+  background: color-mix(in srgb, var(--cam-k) 5%, var(--solid));
+}
+
+.tg-tray-empty {
+  font-size: 12px;
+  color: var(--faint);
+}
+
+.tg-tray-end {
+  margin-left: auto;
+}
+
+.tg-pill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px 0 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--tag) 55%, transparent);
+  background: color-mix(in srgb, var(--tag) 16%, var(--solid));
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--txt);
+  cursor: pointer;
+}
+
+.tg-pill i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--tag);
+}
+
+.tg-pill-ck {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--tag);
+}
+
+.tg-palette {
+  margin-top: 2px;
+}
+
+/* The tag's dot is its identity: full opacity (the mock dims its own). */
+.tg-card .chip .d {
+  opacity: 1;
+}
+
+/* ---------- the new-tag form ---------- */
+.tg-create {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 9px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: var(--surface-2);
+}
+
+.tg-create-name {
+  flex: 1 1 160px;
+  min-width: 120px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  font: inherit;
+  color: var(--txt);
+}
+
+.tg-create-name:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+}
+
+/* ---------- Tags, tiles ---------- */
+.tg-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 8px;
+}
+
+.tg-tile {
+  position: relative;
+  min-width: 0;
+}
+
+.tg-tile-main,
+.tg-tile-new {
+  appearance: none;
+  width: 100%;
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0 0 9px;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tg-tile-band {
+  align-self: stretch;
+  height: 34px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 7px 8px;
+  background: linear-gradient(135deg, var(--tag), color-mix(in srgb, var(--tag) 55%, var(--solid)));
+}
+
+.tg-tile-ck {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  border: 1.5px solid color-mix(in srgb, #fff 70%, transparent);
+  font-size: 11px;
+  font-weight: 900;
+  color: transparent;
+}
+
+.tg-tile b {
+  max-width: 100%;
+  margin: 8px 10px 0;
+  overflow: hidden;
+  font-size: 13.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--txt);
+}
+
+.tg-tile small {
+  margin: 1px 10px 0;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.tg-tile.on .tg-tile-main {
+  border-color: var(--tag);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--tag) 22%, transparent),
+    var(--shadow-sm);
+}
+
+.tg-tile.on .tg-tile-ck {
+  background: #fff;
+  border-color: #fff;
+  color: var(--tag);
+}
+
+.tg-tile.on small {
+  color: var(--txt);
+}
+
+.tg-tile-x {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+}
+
+.tg-tile-x .close-btn {
+  border-radius: 8px;
+}
+
+.tg-tile-new {
+  align-items: center;
+  justify-content: center;
+  padding: 9px;
+  border-style: dashed;
+  box-shadow: none;
+  color: var(--cam-k);
+}
+
+.tg-tile-new span {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.tg-tile-new b {
+  margin: 4px 0 0;
+  color: var(--cam-k);
+}
+
+.tg-tile-new.on {
+  background: color-mix(in srgb, var(--cam-k) 7%, var(--solid));
+}
+
+.tg-tile-main:focus-visible,
+.tg-tile-new:focus-visible,
+.tg-pill:focus-visible,
+.tgr-end:focus-visible,
+.tgr-span:focus-visible,
+.tgr-tail:focus-visible,
+.tgr-tile:focus-visible,
+.tgr-calc:focus-visible,
+.tgo-tile:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ---------- Tag Range ---------- */
+.tgr-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tgr-names {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--txt);
+}
+
+.tgr-now {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: var(--faint);
+}
+
+.tgr-now b {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* The date line: start ▮━━━━━▮ end ┈┈ after */
+.tgr-line {
+  display: grid;
+  grid-template-columns: auto 1fr auto 0.55fr;
+  align-items: stretch;
+}
+
+.tgr-line button {
+  appearance: none;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.tgr-line button:disabled {
+  cursor: not-allowed;
+}
+
+.tgr-line b {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  white-space: nowrap;
+  color: var(--txt);
+}
+
+.tgr-line small {
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+  color: var(--faint);
+}
+
+.tgr-span b {
+  font-family: inherit;
+  font-weight: 700;
+}
+
+.tgr-end i {
+  width: 14px;
+  height: 22px;
+  margin-bottom: 4px;
+  border-radius: 5px;
+  background: var(--cam-k);
+  box-shadow: 0 2px 6px -2px color-mix(in srgb, var(--cam-k) 60%, transparent);
+}
+
+.tgr-span::before,
+.tgr-tail::before {
+  content: "";
+  align-self: stretch;
+  height: 10px;
+  margin: 6px -4px 10px;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--cam-k), color-mix(in srgb, var(--cam-k) 70%, var(--solid)));
+}
+
+.tgr-tail::before {
+  background: repeating-linear-gradient(90deg, var(--cam-v) 0 6px, transparent 6px 11px);
+}
+
+.tgr-line button:hover:not(:disabled) small {
+  color: var(--cam-k);
+}
+
+.tgr-line.ghost .tgr-end i,
+.tgr-line.ghost .tgr-span::before {
+  background: var(--hair);
+  box-shadow: none;
+}
+
+.tgr-line.ghost .tgr-tail::before {
+  background: repeating-linear-gradient(90deg, var(--hair) 0 6px, transparent 6px 11px);
+}
+
+.tgr-line.ghost b {
+  color: var(--faint);
+}
+
+/* Tag Range, tiles */
+.tgr-calc {
+  appearance: none;
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--cam-k) 35%, transparent);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--cam-k) 9%, var(--solid)), var(--solid));
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tgr-calc-ic {
+  grid-row: 1 / 3;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--cam-k);
+  color: #fff;
+}
+
+.tgr-calc-ic svg {
+  width: 20px;
+  height: 20px;
+}
+
+.tgr-calc b {
+  font-size: 14px;
+  color: var(--txt);
+}
+
+.tgr-calc small {
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--muted);
+}
+
+.tgr-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tgr-tile {
+  appearance: none;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 9px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tgr-tile:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--cam-k) 40%, transparent);
+}
+
+.tgr-tile:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.tgr-tile b {
+  font-size: 13px;
+  color: var(--txt);
+}
+
+.tgr-tile small {
+  max-width: 100%;
+  overflow: hidden;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--faint);
+}
+
+.tgr-art {
+  width: 100%;
+  height: 22px;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.tgr-art .base {
+  stroke: var(--hair);
+  stroke-width: 4;
+}
+
+.tgr-art .ticks {
+  stroke: var(--faint);
+  stroke-width: 1.5;
+}
+
+.tgr-art .lit {
+  stroke: var(--cam-k);
+  stroke-width: 6;
+}
+
+.tgr-tile.alt .tgr-art .lit {
+  stroke: var(--cam-v);
+  stroke-dasharray: 5 4;
+}
+
+/* ---------- Operations ---------- */
+.tgo-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.5fr) minmax(0, 0.9fr);
+  gap: 8px;
+}
+
+.tgo-step {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 10px 10px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+}
+
+.tgo-step > b {
+  font-size: 12.5px;
+  color: var(--txt);
+}
+
+.tgo-n {
+  position: absolute;
+  top: 9px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--cam-k);
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.tgo-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tg-found-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 4px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.tgo-a .tags-found-list,
+.tgo-b .tags-found-list,
+.tgo-c .tags-found-list {
+  margin-top: 0;
+}
+
+.tgo-b .tg-found,
+.tgo-c .tg-found {
+  margin-top: 8px;
+}
+
+.tgo-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
+}
+
+.tgo-tile {
+  appearance: none;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tgo-tile:hover {
+  border-color: color-mix(in srgb, var(--cam-k) 40%, transparent);
+}
+
+.tgo-tile b {
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--txt);
+}
+
+.tgo-tile small {
+  font-size: 10.5px;
+  color: var(--faint);
+}
+
+.tgo-ic {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: var(--cam-k);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tgo-tile.alt .tgo-ic {
+  stroke: var(--cam-v);
+}
+
+.tgo-tile.danger .tgo-ic {
+  stroke: var(--blood-t);
+}

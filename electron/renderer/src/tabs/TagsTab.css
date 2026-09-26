@@ -9,19 +9,6 @@
   color: var(--blood-t);
 }
 
-.tags-selection {
-  font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  color: var(--dim);
-  margin-top: var(--sp-4);
-}
-
-.tags-hint {
-  font-family: var(--font-display);
-  font-size: var(--fs-sm);
-  color: var(--dim);
-}
-
 .tags-range-status {
   font-family: var(--font-display);
   font-size: var(--fs-sm);
@@ -90,14 +77,6 @@
   font-size: var(--fs-sm);
   color: var(--dim);
   margin-top: var(--sp-3);
-}
-
-/*
- * The tag dot is the tag's identity, so it keeps full opacity at rest -- the
- * mock dims its own dots to .5 because they only decorate a filter name.
- */
-.tags-tab .chip .d {
-  opacity: 1;
 }
 
 /* The tag grid above the search and sort controls. The Field the search uses

@@ -1,0 +1,246 @@
+/*
+ * Shared pieces of the TAGS and SETTINGS cards in their three styles
+ * (StyledParts.tsx). `sx-` prefixed: the V12 mock owns the plain names,
+ * `cs-` belongs to cardstyle.css and `sc-` to SmallCard.css.
+ * Colours come from theme/tokens.css only.
+ *
+ * NO :hover rule in this file may translate or scale anything (D13/D16).
+ */
+
+/* ---------- a lane: a titled strip of the timeline style ---------- */
+.sx-kick {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.sx-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 4px;
+}
+
+.sx-status {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.sx-status.bad {
+  color: var(--blood-t);
+}
+
+/* ---------- an action that reads as a word of the sentence ---------- */
+.sx-act {
+  appearance: none;
+  display: inline;
+  padding: 1px 6px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--cam-k) 22%, transparent);
+  background: var(--solid);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--cam-k) 18%, transparent);
+  font: inherit;
+  font-weight: 700;
+  color: var(--cam-k);
+  cursor: pointer;
+}
+
+.sx-act.alt {
+  color: var(--cam-v);
+  border-color: color-mix(in srgb, var(--cam-v) 28%, transparent);
+}
+
+.sx-act.danger {
+  color: var(--blood-t);
+  border-color: color-mix(in srgb, var(--blood-t) 30%, transparent);
+}
+
+/* A quieter one, under the sentence rather than in it. */
+.sx-act.link {
+  padding: 3px 9px;
+  font-size: 12px;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.sx-act:hover:not(:disabled) {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.sx-act:disabled {
+  color: var(--faint);
+  border-style: dashed;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.sx-act:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ---------- WordOptions: radio lines in a sentence popover ---------- */
+.sx-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sx-opt {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--txt);
+  cursor: pointer;
+}
+
+.sx-opt small {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--faint);
+}
+
+.sx-opt:hover,
+.sx-opt.on {
+  border-color: color-mix(in srgb, var(--cam-k) 45%, transparent);
+}
+
+.sx-opt.on {
+  background: color-mix(in srgb, var(--cam-k) 8%, var(--solid));
+  color: var(--cam-k);
+}
+
+.sx-opt:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* ---------- TextWord ---------- */
+.sx-word {
+  max-width: 22ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sx-word.empty {
+  padding-right: 2px; /* the italic's last letter leans past the box */
+  font-weight: 600;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* A text box inside a popover takes the popover's width. */
+.cs-pop .fld,
+.cs-pop .path-field {
+  width: 100%;
+}
+
+/* ---------- BigTile ---------- */
+.sx-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.sx-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 11px;
+  border-radius: 14px;
+  border: 1px solid var(--hair);
+  background: var(--solid);
+  box-shadow: var(--shadow-sm);
+}
+
+.sx-tile.wide {
+  grid-column: 1 / -1;
+}
+
+.sx-tile-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sx-tile-h b {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--txt);
+}
+
+.sx-tile-ic {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--cam-k) 10%, var(--solid));
+  color: var(--cam-k);
+}
+
+.sx-tile-ic svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sx-tile.alt .sx-tile-ic {
+  background: color-mix(in srgb, var(--cam-v) 12%, var(--solid));
+  color: var(--cam-v);
+}
+
+.sx-tile.warn .sx-tile-ic {
+  background: color-mix(in srgb, var(--amber) 14%, var(--solid));
+  color: var(--amber);
+}
+
+.sx-tile-cap {
+  font-size: 10.5px;
+  line-height: 1.35;
+  color: var(--faint);
+}
+
+.sx-tile-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.sx-tile-body > .setting,
+.sx-tile-body .fld {
+  min-width: 0;
+}
+
+.sx-tile.on {
+  border-color: color-mix(in srgb, var(--cam-k) 45%, transparent);
+  box-shadow:
+    0 0 0 3px var(--accent-soft),
+    var(--shadow-sm);
+}

@@ -116,7 +116,7 @@ export const PORTED_BEHIND_STATE: Record<string, string> = {
   H2: "mapFilter/useMapFilter.tsx — choix d'une carte (3 styles) ; aucune carte tant que useDatabase() n'a pas répondu",
 
   /* ── I. Tags ── */
-  I3: "TagsTab.tsx — puce de tag ; aucune puce sans tags chargés",
+  I3: "tagCards/actions.tsx — puce/tuile de tag ; aucune sans tags chargés",
 
   /* ── L. Options HLAE ── */
   L3: "resolution/ResolutionCard.tsx — Segmented des résolutions ; masqué tant que useTables() n'a pas répondu (contrairement au Segmented FPS voisin, qui reste monté avec des options vides)",

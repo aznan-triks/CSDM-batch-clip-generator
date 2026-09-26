@@ -15,6 +15,7 @@ export const STYLED_CARDS: ReadonlyArray<{ id: string; title: string }> = [
   { id: "shot-filters", title: "Shot Filters" },
   { id: "match-types", title: "Match Types" },
   { id: "map-filter", title: "Map Filter" },
+  // VIDEO
   { id: "final-assembly", title: "Final Assembly" },
   { id: "resolution", title: "Resolution, Framerate & Window" },
   { id: "recording-system", title: "Recording System" },
@@ -22,4 +23,17 @@ export const STYLED_CARDS: ReadonlyArray<{ id: string; title: string }> = [
   { id: "in-game-options", title: "In-Game Options" },
   { id: "cs2-effects", title: "CS2 Effects" },
   { id: "encoding", title: "Encoding" },
+  // TAGS
+  { id: "tag-grid", title: "Tags" },
+  { id: "tag-range", title: "Tag Range" },
+  { id: "operations", title: "Operations" },
+  // SETTINGS
+  { id: "postgresql", title: "PostgreSQL Connection" },
+  { id: "paths", title: "Paths" },
+  { id: "config-folder", title: "Configuration Folder" },
+  { id: "presets", title: "Presets" },
+  { id: "ui-theme", title: "UI Theme" },
+  { id: "ui-layout", title: "UI Layout" },
+  { id: "performance", title: "Performance" },
+  { id: "injection-preview", title: "Injection Preview" },
 ];

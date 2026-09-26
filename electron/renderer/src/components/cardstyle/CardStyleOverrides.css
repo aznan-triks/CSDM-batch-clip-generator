@@ -4,13 +4,15 @@
  * NO :hover rule in this file may translate or scale anything (D13/D16).
  */
 
+/* Two columns where the card is wide enough: the list covers every tab. */
 .cso {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 3px var(--sp-4);
 }
 
 .cso > .lab {
+  grid-column: 1 / -1;
   margin-bottom: 2px;
 }
 

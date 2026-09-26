@@ -1,5 +1,5 @@
 /**
- * TagsTab's "By config" search (`searchByConfig`, data-action "I6") must send
+ * The Operations card's "By config" search (data-action "I6") must send
  * the window's current settings as `cfg` -- the same run model PREVIEW uses --
  * not the empty object it used to hardcode (audit 2026-09-15, E17). A `cfg: {}`
  * fails `run_inputs_problem` on the engine side ("Check at least one
@@ -7,12 +7,12 @@
  *
  * Mocked the way `PresetSection.test.tsx` mocks the settings store and the
  * bridge: real components, faked collaborators, so this exercises TagsTab's
- * own wiring rather than the store or the bridge transport.
+ * own wiring (`tagCards/useTagOps.ts`) rather than the store or the bridge.
  */
 import { act, render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import TagsTab from "../TagsTab";
+import TagOpsCard from "../tagCards/TagOpsCard";
 
 /** Exactly the shape `useAllSettings` returns: the whole flat settings dict. */
 const SETTINGS = { steam_ids: ["1"], event_actor: true, events: [] };
@@ -44,11 +44,11 @@ vi.mock("../../bridge", () => ({
   pickSavePath: () => Promise.resolve(null),
 }));
 
-describe("TagsTab searchByConfig", () => {
+describe("Tags tab, Operations card: search by config", () => {
   it("sends the window's settings as cfg, not an empty object", async () => {
-    const { container } = render(<TagsTab />);
+    const { container } = render(<TagOpsCard />);
     await act(async () => {});
-    calls.length = 0; // drop the mount-time tags_set_active call
+    calls.length = 0;
 
     const button = container.querySelector('[data-action="I6"]') as HTMLButtonElement;
     expect(button).toBeTruthy();
