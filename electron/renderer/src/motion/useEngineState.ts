@@ -20,12 +20,14 @@ import { useSyncExternalStore } from "react";
 
 import { getEngineState, subscribeEngineState } from "./engineStore";
 
-export type { EngineState, PreviewClip, SummaryLine } from "./engineStore";
+export type { CameraSegment, ClipEdit, EngineState, PreviewClip, PreviewEvent, SummaryLine } from "./engineStore";
 export {
   INITIAL_ENGINE_STATE,
   dispatchEngineMessage,
+  editClip,
   markEditingViewed,
   reduceEngineState,
+  toggleClipEvent,
   toggleClipSelection,
 } from "./engineStore";
 import type { EngineState } from "./engineStore";

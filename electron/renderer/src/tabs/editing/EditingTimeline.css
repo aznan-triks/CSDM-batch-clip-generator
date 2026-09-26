@@ -1,0 +1,300 @@
+/*
+ * The EDITING timeline and its clip inspector (EditingTimeline.tsx,
+ * ClipInspector.tsx).
+ *
+ * In timeline view the tab does not scroll as a whole: the lanes scroll in
+ * their own box (both axes, demo names pinned left, ruler pinned top) and the
+ * inspector stays in view under them.
+ *
+ * NO :hover rule here may translate or scale anything (D13/D16).
+ */
+/* The panel AppShell wraps every tab in has no height of its own (the list
+   view grows and the shell's .scrollwrap scrolls it). The timeline instead
+   fills the scrollwrap, so its lanes scroll in their own box and the
+   inspector stays on screen under them. */
+.scrollwrap > div:has(> .editing-tab--timeline) {
+  height: 100%;
+}
+
+.editing-tab--timeline {
+  overflow: hidden;
+}
+
+.editing-header .seg {
+  margin-left: auto;
+  margin-right: var(--sp-2);
+}
+
+.edtl {
+  /* Same hues as the list's event badges (EditingTab.css). */
+  --edtl-kill: var(--accent);
+  --edtl-damage: #f97316;
+  --edtl-shot: #14b8a6;
+  --edtl-other: var(--dim);
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 120px;
+  margin-top: var(--sp-2);
+}
+
+.edtl-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-bottom: var(--sp-1);
+  padding: var(--sp-1);
+  border-radius: var(--r-mid);
+  background: var(--panel);
+}
+
+.edtl-zoom {
+  min-width: 9ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.edtl-hint {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  color: var(--faint);
+}
+
+.edtl-scroll {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--hair);
+  border-radius: var(--r-mid);
+  background: var(--solid);
+}
+
+.edtl-row {
+  display: flex;
+  min-width: 100%;
+}
+
+.edtl-label {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  flex: none;
+  width: var(--edtl-label-w);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  padding: 0 var(--sp-2);
+  border-right: 1px solid var(--hair);
+  background: var(--solid);
+  overflow: hidden;
+}
+
+.edtl-demo {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  color: var(--txt);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edtl-label small {
+  font-size: var(--fs-xs);
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.edtl-track {
+  position: relative;
+  flex: none;
+}
+
+.edtl-ruler {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  height: 24px;
+  border-bottom: 1px solid var(--hair);
+  background: var(--solid);
+}
+
+.edtl-ruler .edtl-label {
+  z-index: 4;
+}
+
+.edtl-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  padding-left: 4px;
+  border-left: 1px solid color-mix(in srgb, var(--txt) 22%, transparent);
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 24px;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.edtl-lane {
+  height: 44px;
+  border-bottom: 1px solid var(--hair-2);
+}
+
+.edtl-lane .edtl-track {
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0 21px,
+    color-mix(in srgb, var(--accent) 5%, transparent) 21px 22px
+  );
+}
+
+/* One clip. A button: focusable, clickable, no native chrome. */
+.edtl-clip {
+  --kind: var(--edtl-other);
+  position: absolute;
+  top: 9px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--kind) 70%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--kind) 30%, var(--solid));
+  cursor: pointer;
+  overflow: hidden;
+  transition: box-shadow var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+
+.edtl-clip.kind-kill { --kind: var(--edtl-kill); }
+.edtl-clip.kind-damage { --kind: var(--edtl-damage); }
+.edtl-clip.kind-shot { --kind: var(--edtl-shot); }
+
+.edtl-clip.in {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--kind) 75%, #fff), var(--kind));
+}
+
+.edtl-clip.out {
+  border-style: dashed;
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--kind) 10%, transparent) 0 4px,
+    color-mix(in srgb, var(--kind) 22%, transparent) 4px 8px
+  );
+}
+
+/* An edited clip wears a small corner dot. */
+.edtl-clip.edited::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--solid);
+  box-shadow: 0 0 0 1px var(--kind);
+}
+
+.edtl-clip:hover,
+.edtl-clip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.edtl-clip.active {
+  box-shadow: 0 0 0 2px var(--solid), 0 0 0 4px var(--accent);
+}
+
+.edtl-mark {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  width: 0;
+  margin-left: -1px;
+  border-left: 2px solid var(--solid);
+}
+
+.edtl-mark.ghost {
+  border-left-style: dotted;
+  opacity: 0.7;
+}
+
+/* ---------- inspector ---------- */
+.edtl-inspector {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+  padding: var(--sp-2);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-mid);
+  background: var(--solid);
+}
+
+.edtl-insp-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--fs-sm);
+  color: var(--dim);
+}
+
+.edtl-insp-include {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: var(--fw-bold);
+  color: var(--txt);
+  cursor: pointer;
+}
+
+.edtl-insp-title strong {
+  color: var(--txt);
+}
+
+.edtl-insp-when {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--txt);
+}
+
+.edtl-insp-note {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--accent);
+}
+
+.edtl-insp-events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.edtl-insp-event {
+  padding: 2px var(--sp-2);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-mid);
+  background: var(--solid);
+  color: var(--txt);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.edtl-insp-event small {
+  font-family: var(--mono);
+  color: var(--dim);
+}
+
+.edtl-insp-event.out {
+  text-decoration: line-through;
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.editing-clip .clip-edited {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  color: var(--accent);
+}

@@ -16,7 +16,7 @@ import { act, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { BridgeMessage } from "../../bridge";
-import { resetEngineState } from "../../motion/engineStore";
+import { editClip, resetEngineState, toggleClipEvent } from "../../motion/engineStore";
 import ActionBar from "../ActionBar";
 
 interface SentCommand {
@@ -290,6 +290,41 @@ describe("ActionBar", () => {
       expect(sent).toHaveLength(1);
       expect(sent[0].name).toBe("save_preset");
       expect(sent[0].selected_clips).toEqual([{ demo_path: "demo1", start_tick: 1000 }]);
+    });
+
+    it("GENERATE and SAVE carry each clip's timeline edits", async () => {
+      const { sent, emit } = await renderBar("editing");
+      act(() =>
+        emit({
+          type: "state",
+          name: "preview_ready",
+          payload: {
+            cfg: { tickrate: 64 },
+            sequences: {
+              demo1: [
+                {
+                  start_tick: 1000,
+                  end_tick: 2000,
+                  events: [{ type: "kill", tick: 1200 }, { type: "kill", tick: 1400 }],
+                  event_keys: ["1200:kill:a", "1400:kill:b"],
+                },
+              ],
+            },
+          },
+        }),
+      );
+      act(() => {
+        editClip(0, { beforeS: 5, afterS: 0 });
+        toggleClipEvent(0, "1400:kill:b");
+      });
+      const edited = { demo_path: "demo1", start_tick: 1000, before_s: 5, after_s: 0, excluded_events: ["1400:kill:b"] };
+
+      sent.length = 0;
+      act(() => screen.getByRole("button", { name: /GENERATE/ }).click());
+      act(() => screen.getByRole("button", { name: /SAVE/ }).click());
+      expect(sent.map((c) => c.name)).toEqual(["start_run", "save_preset"]);
+      expect(sent[0].selected_clips).toEqual([edited]);
+      expect(sent[1].selected_clips).toEqual([edited]);
     });
 
     it("CANCEL switches back to the capture tab and sends no command", async () => {

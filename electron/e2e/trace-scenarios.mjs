@@ -181,6 +181,9 @@ async function main() {
       .innerText()
       .catch(() => "?");
     await openTab(page, "EDITING");
+    // The tab opens on the timeline; the checklist this probe reads is the List
+    // view. No switch when the preview came back empty -- then 0 rows is the answer.
+    await page.getByRole("radio", { name: "List" }).click().catch(() => {});
     const editingRows = await page.locator(".editing-list > *").count();
     const editingText = await page
       .locator(".editing-tab")

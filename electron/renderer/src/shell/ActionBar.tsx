@@ -17,6 +17,7 @@ import ActionButton from "../components/ActionButton";
 import { ICONS } from "../icons";
 import { useEngineSelector } from "../motion/useEngineState";
 import { useAllSettings } from "../settings/store";
+import { clipPayload } from "../tabs/editing/clipEdits";
 import type { TabSpec } from "./tabs";
 import { useRunInputsProblem } from "./useRunInputsProblem";
 import "./ActionBar.css";
@@ -84,12 +85,10 @@ export default function ActionBar({
 
   // The preview selection, in the snake_case shape the Python `_worker`
   // expects (the composite key `(demo_path, start_tick)` that addresses a
-  // clip uniquely). Both GENERATE and SAVE send it; only GENERATE runs.
+  // clip uniquely), each with its EDITING edits (clip_edits.py). Both
+  // GENERATE and SAVE send it; only GENERATE runs.
   const selectedClips = useCallback(
-    () =>
-      previewClips
-        .filter((clip) => clip.selected)
-        .map((clip) => ({ demo_path: clip.demoPath, start_tick: clip.startTick })),
+    () => previewClips.filter((clip) => clip.selected).map(clipPayload),
     [previewClips],
   );
 

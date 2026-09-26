@@ -48,6 +48,7 @@ from csdm.static_data import (
 )
 from csdm.config import DEFAULT_CONFIG, clips_root, detect_csdm_cli
 from csdm.engine.preview_export import PREVIEW_EXPORT_FORMATS, clip_row, render_preview
+from csdm.engine.clip_edits import apply_clip_edits, event_key, normalize_clip_selection
 from csdm.errors import (WHERE as ERROR_WHERE, UserError, csdm_cli_message,
                          db_connect_message, report)
 from csdm.core_utils import (
@@ -126,7 +127,8 @@ class EngineMixin:
     #   join_sql — extra JOIN clause to append to FROM, or "" if the col is in matches
     _MAP_COL_CANDIDATES = ("map_name", "game_map", "map", "level_name", "server_map")
 
-    # Optional set of clips a batch run is restricted to, as {demo_path: [start_tick, ...]}.
+    # Optional selection a batch run is restricted to: the EDITING tab's
+    # normalized `selected_clips` (clip_edits.py), per-clip edits included.
     # None means "no restriction" (backward compatible). Set by start_run, read by _worker,
     # cleared when a run ends.
     _selected_clips = None
@@ -2977,6 +2979,51 @@ class EngineMixin:
             return (f"-preset {video_preset} " + user_out_params).strip()
         return user_out_params
 
+    def _camera_players(self, cfg):
+        """`(active SIDs in order, the same as a set, primary SID)` the cameras follow."""
+        sids_active_list = []
+        for _sid in self._get_sids(cfg):
+            _sid = str(_sid or "")
+            if _sid and _sid not in sids_active_list:
+                sids_active_list.append(_sid)
+        sids_active = set(sids_active_list)
+        primary_sid = str(cfg.get("steam_id") or "")
+        if primary_sid not in sids_active:
+            primary_sid = sids_active_list[0] if sids_active_list else primary_sid
+        return sids_active_list, sids_active, primary_sid
+
+    def _seq_cameras(self, seq, cfg, sids_active, primary_sid):
+        """The player cameras one sequence records, for the cfg's perspective."""
+        perspective = cfg.get("perspective", "killer")
+        if perspective == "both":
+            tickrate = cfg.get("tickrate", 64)
+            victim_pre_ticks = max(0, int(cfg.get("victim_pre_s", 2)) * tickrate)
+            return self._build_cams_both(seq, sids_active, primary_sid, cfg,
+                                         tickrate, victim_pre_ticks)
+        if perspective == "victim":
+            return self._build_cams_victim(seq, sids_active, primary_sid, cfg)
+        return self._build_cams_killer(seq, sids_active, primary_sid)
+
+    def _preview_camera_segments(self, demo_path, seq, cfg, sids_active, primary_sid):
+        """Who the camera follows during one previewed clip, as spans.
+
+        The same cameras `_build_json` would record, with consecutive
+        points on one player folded into one `{from_tick, to_tick, steam_id,
+        name}` span -- what the EDITING inspector draws.
+        """
+        with self._dp2_cache_lock:
+            names = self._dp2_cache.get(demo_path, {}).get("demo_names") or {}
+        segments = []
+        for cam in self._seq_cameras(seq, cfg, sids_active, primary_sid):
+            sid = str(cam.get("playerSteamId") or "")
+            if segments and segments[-1]["steam_id"] == sid:
+                continue
+            if segments:
+                segments[-1]["to_tick"] = cam["tick"]
+            segments.append({"from_tick": cam["tick"], "to_tick": seq["end_tick"], "steam_id": sid,
+                             "name": names.get(sid) or self._player_names.get(sid, "")})
+        return segments
+
     def _build_json(self, demo_path, sequences, cfg):
         # In multi-player, sid = first SID (JSON compat), but we determine
         # the "owner" of each event dynamically from killer_sid/victim_sid.
@@ -2992,31 +3039,13 @@ class EngineMixin:
             psid = str(psid or "")
             return _demo_names.get(psid) or self._player_names.get(psid, "")
 
-        sids_active_list = []
-        for _sid in self._get_sids(cfg):
-            _sid = str(_sid or "")
-            if _sid and _sid not in sids_active_list:
-                sids_active_list.append(_sid)
-        sids_active = set(sids_active_list)
-        primary_sid = str(cfg.get("steam_id") or "")
-        if primary_sid not in sids_active:
-            primary_sid = sids_active_list[0] if sids_active_list else primary_sid
-        tickrate = cfg.get("tickrate", 64)
+        sids_active_list, sids_active, primary_sid = self._camera_players(cfg)
         perspective = cfg.get("perspective", "killer")
         recsys = self._normalize_recsys(cfg.get("recsys", "HLAE"))
 
-        victim_pre_s = cfg.get("victim_pre_s", 2)
-        victim_pre_ticks = max(0, int(victim_pre_s) * tickrate)
-
         seqs = []
         for idx, seq in enumerate(sequences, 1):
-            if perspective == "both":
-                cams = self._build_cams_both(seq, sids_active, primary_sid, cfg,
-                                             tickrate, victim_pre_ticks)
-            elif perspective == "victim":
-                cams = self._build_cams_victim(seq, sids_active, primary_sid, cfg)
-            else:
-                cams = self._build_cams_killer(seq, sids_active, primary_sid)
+            cams = self._seq_cameras(seq, cfg, sids_active, primary_sid)
 
             players_opts = self._bj_players_options(
                 seq, cams, perspective, sids_active, sids_active_list,
@@ -3904,10 +3933,25 @@ class EngineMixin:
                 "stages": [{"label": s, "count": n} for s, n in stages]}
 
     def _preview_sequences(self, evts, cfg):
-        """The clip sequences a preview shows, per demo (demos with no event left out)."""
-        return {dp: self._build_sequences(events, cfg["tickrate"],
-                                          self._effective_before(cfg), cfg["after"])
-                for dp, events in evts.items() if events}
+        """The clip sequences a preview shows, per demo (demos with no event left out).
+
+        Each sequence also carries what the EDITING tab needs to edit it:
+        `event_keys` (one per event, the names `apply_clip_edits` reads back)
+        and `camera_segments` (who the recording will follow, and when).
+        """
+        _, sids_active, primary_sid = self._camera_players(cfg)
+        out = {}
+        for dp, events in evts.items():
+            if not events:
+                continue
+            seqs = self._build_sequences(events, cfg["tickrate"],
+                                         self._effective_before(cfg), cfg["after"])
+            for seq in seqs:
+                seq["event_keys"] = [event_key(e) for e in seq["events"]]
+                seq["camera_segments"] = self._preview_camera_segments(
+                    dp, seq, cfg, sids_active, primary_sid)
+            out[dp] = seqs
+        return out
 
     def _remember_preview(self, seqs_by_demo, cfg):
         """Keep the clip list a preview just showed, for `preview_export`."""
@@ -4232,8 +4276,10 @@ class EngineMixin:
         `buttons_busy` itself -- do not raise them twice.
 
         selected_clips: optional list of {demo_path, start_tick} dicts restricting
-        the run to those clips; None (default) runs every clip.
+        the run to those clips, each optionally carrying the EDITING tab's
+        per-clip edits (clip_edits.py); None (default) runs every clip.
         """
+        selected_clips = normalize_clip_selection(selected_clips)
         if not self.validate_run_inputs(cfg):
             return False
         ensure_csdm_dirs()
@@ -4625,13 +4671,8 @@ class EngineMixin:
                 events, cfg["tickrate"],
                 self._effective_before(cfg), cfg["after"])
             t_seq = time.time() - t0_seq
-            if self._selected_clips is not None:
-                selected = {(s["demo_path"], s["start_tick"])
-                            for s in self._selected_clips}
-                seqs = [s for s in seqs
-                        if (dp, s["start_tick"]) in selected]
-                if not seqs:
-                    continue
+            # The EDITING tab's selection and per-clip edits (clip_edits.py).
+            seqs = apply_clip_edits(seqs, dp, self._selected_clips, cfg["tickrate"])
             if not seqs:
                 continue
             dn = Path(dp).name

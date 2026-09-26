@@ -11,6 +11,7 @@
  * handle run away from it) and re-fits when the handle is let go.
  */
 import {
+  Fragment,
   useLayoutEffect,
   useRef,
   useState,
@@ -34,8 +35,11 @@ export interface TimelineSpan {
 
 export interface TimelineHandle {
   id: string;
-  /** Config key the handle writes, for the coverage guard. */
-  settingKey: string;
+  /**
+   * Config key the handle writes, for the coverage guard. Absent when the
+   * handle edits no setting (the EDITING inspector's per-clip handles).
+   */
+  settingKey?: string;
   /** The second the handle sits on. */
   at: number;
   tone?: "primary" | "alt";
@@ -199,33 +203,42 @@ export default function ClipTimeline({
             </span>
           </span>
         ))}
-        {handles.map((h) => (
-          <SettingControl key={h.id} settingKey={h.settingKey}>
-            <div
-              className={["cs-tl-handle", h.tone === "alt" ? "alt" : null, dragging === h.id ? "drag" : null]
-                .filter(Boolean)
-                .join(" ")}
-              role="slider"
-              tabIndex={0}
-              aria-label={h.label}
-              aria-valuenow={h.value}
-              aria-valuemin={h.min}
-              aria-valuemax={h.max}
-              aria-valuetext={h.readout}
-              title={h.tip}
-              data-handle={h.id}
-              style={{ left: x(h.at) }}
-              onPointerDown={(e) => onPointerDown(h, e)}
-              onPointerMove={(e) => onPointerMove(h, e)}
-              onPointerUp={onPointerUp}
-              onPointerCancel={onPointerUp}
-              onKeyDown={(e) => onKeyDown(h, e)}
-            />
-            <span className={h.tone === "alt" ? "cs-tl-readout alt" : "cs-tl-readout"} style={{ left: x(h.at) }}>
-              {h.readout}
-            </span>
-          </SettingControl>
-        ))}
+        {handles.map((h) => {
+          const control = (
+            <>
+              <div
+                className={["cs-tl-handle", h.tone === "alt" ? "alt" : null, dragging === h.id ? "drag" : null]
+                  .filter(Boolean)
+                  .join(" ")}
+                role="slider"
+                tabIndex={0}
+                aria-label={h.label}
+                aria-valuenow={h.value}
+                aria-valuemin={h.min}
+                aria-valuemax={h.max}
+                aria-valuetext={h.readout}
+                title={h.tip}
+                data-handle={h.id}
+                style={{ left: x(h.at) }}
+                onPointerDown={(e) => onPointerDown(h, e)}
+                onPointerMove={(e) => onPointerMove(h, e)}
+                onPointerUp={onPointerUp}
+                onPointerCancel={onPointerUp}
+                onKeyDown={(e) => onKeyDown(h, e)}
+              />
+              <span className={h.tone === "alt" ? "cs-tl-readout alt" : "cs-tl-readout"} style={{ left: x(h.at) }}>
+                {h.readout}
+              </span>
+            </>
+          );
+          return h.settingKey ? (
+            <SettingControl key={h.id} settingKey={h.settingKey}>
+              {control}
+            </SettingControl>
+          ) : (
+            <Fragment key={h.id}>{control}</Fragment>
+          );
+        })}
         {bracket && (
           <>
             <span className="cs-tl-bracket" style={{ left: x(bracket.from), width: w(bracket.from, bracket.to) }} />

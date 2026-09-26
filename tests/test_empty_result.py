@@ -7,6 +7,7 @@ nothing says which stage removed the last event (`explain_empty_result`).
 import pytest
 
 from csdm.engine.core import EngineMixin
+from csdm.engine.state import EngineStateMixin
 
 # A current (2-axis) config: one account, the Actor perspective.
 ACCOUNT = {"steam_ids": ["76561198000000000"], "event_actor": True}
@@ -226,15 +227,13 @@ def test_funnel_never_blames_nothing_when_every_stage_alone_keeps_events():
     assert reason["stages"][-1]["label"] == EngineMixin._EMPTY_RESULT_REST_LABEL
 
 
-class PreviewHost(FunnelHost):
+class PreviewHost(EngineStateMixin, FunnelHost):
     """Runs `_preview_worker` inline with the demo-analysis stages stubbed."""
 
     def __init__(self, rules):
         super().__init__(rules)
-        import threading
-        self._preview_cancel = threading.Event()
+        self.init_engine_state()  # what every real host starts from
         self._previewing = True
-        self._running = False  # the real hosts get it from EngineStateMixin
 
     def _preparse_dp2(self, cfg, paths):
         pass

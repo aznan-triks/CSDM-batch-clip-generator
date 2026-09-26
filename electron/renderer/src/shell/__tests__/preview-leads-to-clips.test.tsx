@@ -9,7 +9,7 @@
  * a command the engine never implemented
  * (AUDIT_retours_ui_8_points.md, ecarts E2 and E3).
  */
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -116,10 +116,17 @@ describe("after a preview", () => {
   });
 });
 
+/** The checklist is the EDITING tab's List view; the tab opens on the Timeline. */
+function showList() {
+  const header = document.querySelector(".editing-header") as HTMLElement;
+  fireEvent.click(within(header).getByRole("radio", { name: "List" }));
+}
+
 describe("the clip checklist", () => {
   it("includes every clip to begin with", () => {
     renderShell();
     deliver(previewReady(3));
+    showList();
     expect(document.querySelectorAll(".editing-clip.selected")).toHaveLength(3);
     expect(document.querySelector(".editing-header")?.textContent).toContain("3");
   });
@@ -127,6 +134,7 @@ describe("the clip checklist", () => {
   it("excludes the clip that was clicked, and only that one", () => {
     renderShell();
     deliver(previewReady(3));
+    showList();
     const rows = document.querySelectorAll(".editing-clip");
 
     fireEvent.click(rows[1]);
@@ -139,6 +147,7 @@ describe("the clip checklist", () => {
   it("puts the clip back on a second click", () => {
     renderShell();
     deliver(previewReady(2));
+    showList();
     const row = document.querySelectorAll(".editing-clip")[0];
     fireEvent.click(row);
     fireEvent.click(row);
@@ -148,6 +157,7 @@ describe("the clip checklist", () => {
   it("counts what is left included", () => {
     renderShell();
     deliver(previewReady(3));
+    showList();
     fireEvent.click(document.querySelectorAll(".editing-clip")[0]);
     expect(document.querySelector(".editing-header")?.textContent).toContain("2 of 3");
   });

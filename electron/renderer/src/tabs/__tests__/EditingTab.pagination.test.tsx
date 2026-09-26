@@ -11,12 +11,18 @@ function previewOf(count: number) {
   act(() => dispatchEngineMessage("preview_ready", { sequences: { "d.dem": seqs }, cfg: { tickrate: 64 } }));
 }
 
+/** The checklist is the List view; the tab opens on the Timeline. */
+function showList() {
+  fireEvent.click(screen.getByRole("radio", { name: "List" }));
+}
+
 describe("EditingTab pagination", () => {
   beforeEach(() => resetEngineState());
 
   it("renders one page of clips, not the whole preview", () => {
     render(<EditingTab />);
     previewOf(EDITING_LIST.pageSize * 2 + 5);
+    showList();
     expect(document.querySelectorAll(".editing-clip")).toHaveLength(EDITING_LIST.pageSize);
     expect(screen.getByText(`1 / 3`)).toBeTruthy();
   });
@@ -24,12 +30,14 @@ describe("EditingTab pagination", () => {
   it("counts the whole preview in the header", () => {
     render(<EditingTab />);
     previewOf(EDITING_LIST.pageSize + 1);
+    showList();
     expect(document.querySelector(".editing-summary")?.textContent).toContain(`of ${EDITING_LIST.pageSize + 1} clips`);
   });
 
   it("toggles the clip under the cursor on a later page", () => {
     render(<EditingTab />);
     previewOf(EDITING_LIST.pageSize + 3);
+    showList();
     fireEvent.click(screen.getByLabelText("Next page"));
     fireEvent.click(document.querySelectorAll(".editing-clip")[1]);
     expect(getEngineState().previewClips[EDITING_LIST.pageSize + 1].selected).toBe(false);
@@ -39,6 +47,7 @@ describe("EditingTab pagination", () => {
   it("goes back to the first page on a new preview, not on a toggle", () => {
     render(<EditingTab />);
     previewOf(EDITING_LIST.pageSize + 3);
+    showList();
     fireEvent.click(screen.getByLabelText("Next page"));
     fireEvent.click(document.querySelectorAll(".editing-clip")[0]);
     expect(screen.getByText("2 / 2")).toBeTruthy();
@@ -49,6 +58,7 @@ describe("EditingTab pagination", () => {
   it("shows no pager when everything fits on one page", () => {
     render(<EditingTab />);
     previewOf(3);
+    showList();
     expect(screen.queryByLabelText("Next page")).toBeNull();
   });
 });
