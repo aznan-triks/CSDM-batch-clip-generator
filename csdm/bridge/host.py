@@ -39,6 +39,10 @@ class BridgeHost(EngineStateMixin, EngineMixin):
 # from there into anything that records the stream. The pipe gets only these.
 PREVIEW_CFG_KEYS = ("tickrate", "player_name")
 
+# EDITING's SAVE asks the preset's name on the console's question panel: a
+# "text" question is titled by options[0] and confirmed by options[1].
+PRESET_NAME_QUESTION = ("Preset name:", "Save")
+
 
 def for_pipe(name, payload):
     """The part of a state payload the renderer needs, never the full run cfg.
@@ -359,8 +363,18 @@ def _cmd_list_presets(host, command):
 
 def _cmd_save_preset(host, command):
     """Store one preset. The preset's own name travels as `preset`, not `name`:
-    `name` already carries the command's name on every message."""
-    preset_name = (command.get("preset") or "").strip()
+    `name` already carries the command's name on every message.
+
+    With `ask_name` (EDITING's SAVE, which has no name field) the name is
+    asked through the console's question panel, as the Tkinter quick save
+    asked it with a dialog; a cancelled question saves nothing."""
+    preset_name = command.get("preset")
+    if command.get("ask_name"):
+        preset_name = host.ask("text", "Name for this preset", PRESET_NAME_QUESTION)
+        if preset_name is None:
+            host.log("Preset not saved: no name was given.", "dim")
+            return {"cancelled": True}
+    preset_name = (preset_name or "").strip()
     if not preset_name:
         raise UserError("Type a name for the preset first.")
     cats = command.get("cats") or []
@@ -373,7 +387,11 @@ def _cmd_save_preset(host, command):
     selected_clips = command.get("selected_clips")
     presets[preset_name] = build_preset(cfg, cats, selected_clips)
     save_presets(presets)
-    return {"data": normalize_presets(presets)}
+    stored = presets[preset_name]
+    clips = len(stored.get("selected_clips") or [])
+    host.log(f"Preset '{preset_name}' saved ({len(stored['data'])} settings"
+             + (f", {clips} EDITING clip(s) with their edits" if clips else "") + ").", "ok")
+    return {"data": normalize_presets(presets), "preset": preset_name}
 
 
 def _cmd_load_preset(host, command):
@@ -384,9 +402,18 @@ def _cmd_load_preset(host, command):
         raise UserError(f"There is no preset named '{preset_name}' any more. Reload the preset list.")
     data, keys, selected_clips = preset_payload(presets[preset_name])
     result = {"data": data, "keys": keys}
-    if selected_clips is not None:
-        result["selected_clips"] = selected_clips
+    restored = host.preset_clip_selection(preset_name, selected_clips)
+    if restored is not None:
+        result["selected_clips"] = restored
     return result
+
+
+def _cmd_clip_cameras(host, command):
+    """The cameras one EDITING clip records once edited (`edited_clip_cameras`)."""
+    clip = command.get("clip")
+    if not isinstance(clip, dict):
+        raise ValueError("clip_cameras needs a `clip` object")
+    return {"cameras": host.edited_clip_cameras(clip)}
 
 
 def _cmd_delete_preset(host, command):
@@ -475,6 +502,7 @@ COMMANDS = {
     "save_preset": _cmd_save_preset,
     "load_preset": _cmd_load_preset,
     "delete_preset": _cmd_delete_preset,
+    "clip_cameras": _cmd_clip_cameras,
     "request_stop": _cmd_request_stop,
     "request_kill": _cmd_request_kill,
     "cancel_preview": _cmd_cancel_preview,
@@ -515,6 +543,7 @@ COMMAND_ACTIONS = {
     "save_preset": "saving the preset",
     "load_preset": "loading the preset",
     "delete_preset": "deleting the preset",
+    "clip_cameras": "planning the clip's cameras",
     "tags_search": "searching demos by tag",
     "tags_calc_range": "computing the tag date range",
     "tags_apply": "tagging demos",
