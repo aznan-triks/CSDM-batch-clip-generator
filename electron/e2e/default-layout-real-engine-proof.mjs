@@ -21,7 +21,7 @@ import path from "node:path";
 import { _electron as electron } from "@playwright/test";
 import { createServer } from "vite";
 
-import { ELECTRON_DIR, SHOT_DIR } from "./config.mjs";
+import { ELECTRON_DIR, SHOT_DIR, isolatedProfileEnv } from "./config.mjs";
 
 mkdirSync(SHOT_DIR, { recursive: true });
 
@@ -33,7 +33,7 @@ const app = await electron.launch({
   args: [ELECTRON_DIR],
   cwd: ELECTRON_DIR,
   timeout: 60000,
-  env: { ...process.env, VITE_DEV_SERVER_URL: url },
+  env: { ...process.env, VITE_DEV_SERVER_URL: url, CSDM_E2E_BACKGROUND: "1", ...isolatedProfileEnv() },
 });
 
 const page = await app.firstWindow({ timeout: 60000 });

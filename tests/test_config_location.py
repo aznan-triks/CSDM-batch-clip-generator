@@ -142,11 +142,21 @@ def test_custom_legacy_subfolder_is_copied_into_renamed_folder(isolated):
 
 def test_repo_root_honours_csdm_repo_root_override(isolated, monkeypatch):
     override = isolated["project"] / "elsewhere"
+    monkeypatch.delenv("CSDM_PROFILE_ROOT", raising=False)
     monkeypatch.setenv("CSDM_REPO_ROOT", str(override))
     assert c._repo_root() == override
 
 
+def test_profile_root_wins_over_repo_root(isolated, monkeypatch):
+    """A proof keeps running the checkout's code (CSDM_REPO_ROOT) on a
+    throwaway profile: the settings must follow CSDM_PROFILE_ROOT."""
+    monkeypatch.setenv("CSDM_REPO_ROOT", str(isolated["project"] / "code"))
+    monkeypatch.setenv("CSDM_PROFILE_ROOT", str(isolated["project"] / "profile"))
+    assert c._repo_root() == isolated["project"] / "profile"
+
+
 def test_repo_root_falls_back_to_package_location(isolated, monkeypatch):
+    monkeypatch.delenv("CSDM_PROFILE_ROOT", raising=False)
     monkeypatch.delenv("CSDM_REPO_ROOT", raising=False)
     root = c._repo_root()
     assert (root / "csdm" / "config.py").exists()
@@ -336,7 +346,8 @@ def test_damaged_config_loads_defaults_and_is_set_aside_once(isolated, content):
     cfg_path.parent.mkdir(parents=True, exist_ok=True)
     cfg_path.write_text(content, encoding="utf-8")
 
-    assert c.load_config() == c.DEFAULT_CONFIG
+    # Defaults, with the one-time legacy-players import recorded as done.
+    assert c.load_config() == {**c.DEFAULT_CONFIG, "saved_players_imported": True}
     backups = list(cfg_path.parent.glob("csdm_config.broken-*.json"))
     assert len(backups) == 1 and backups[0].read_text(encoding="utf-8") == content
     assert not cfg_path.exists()

@@ -16,7 +16,7 @@ _PROFILE = tempfile.mkdtemp(prefix="csdm-bridge-e2e-")
 def _run(commands, timeout=30):
     """Feed JSON lines in, collect JSON messages out.
 
-    The bridge runs on a throwaway profile (CSDM_REPO_ROOT): a failing command
+    The bridge runs on a throwaway profile (CSDM_PROFILE_ROOT): a failing command
     writes the error log, and a test must never write into the real settings
     folder -- not even a log (context_guide.md §1 P11).
     """
@@ -24,7 +24,7 @@ def _run(commands, timeout=30):
         [sys.executable, "-m", "csdm.bridge"],
         input="".join(json.dumps(c) + "\n" for c in commands),
         capture_output=True, text=True, timeout=timeout, encoding="utf-8",
-        env={**os.environ, "CSDM_REPO_ROOT": _PROFILE})
+        env={**os.environ, "CSDM_PROFILE_ROOT": _PROFILE})
     messages = []
     for line in proc.stdout.split("\n"):
         if line.strip():

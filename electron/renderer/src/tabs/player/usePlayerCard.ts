@@ -4,8 +4,14 @@
  * Ported from `PlayerSearchWidget` (csdm/widgets.py): a search box over the
  * database's player list, multi-selection by click, active players tracked as
  * a set. The window's separate "registered accounts" file is persisted here
- * under the `saved_players` config key (one store, migrated by
- * `_migrate_config`), and each DB row carries its own ★ to register a player.
+ * under the `saved_players` config key (one store; the old window's
+ * csdm_players.json is imported once by `load_config`), and each DB row
+ * carries its own ★ to register a player.
+ *
+ * Every write of `saved_players` is an UPDATER over the store's latest list,
+ * never a list computed from this render: two ★ clicks (or a ★ and a drag)
+ * landing before a re-render each wrote their own stale copy, and the last
+ * one silently dropped the other's favourite.
  *
  * `steam_ids` is the real source of truth (core.py: `cfg.get("steam_ids") or
  * ([cfg["steam_id"]] if cfg.get("steam_id") else [])`); `steam_id` and
@@ -64,6 +70,10 @@ export interface ListedPlayer {
   label: string;
   active: boolean;
   registered: boolean;
+}
+
+function asList(raw: SavedPlayer[] | undefined): SavedPlayer[] {
+  return Array.isArray(raw) ? raw : [];
 }
 
 /** Move the element at `from` so it sits at `to` (drag reorder). */
@@ -141,7 +151,7 @@ export function usePlayerCard(): PlayerCardModel {
   const setMany = useSettingsBatch();
 
   // A config written by an older build has no `saved_players`: read as empty.
-  const savedPlayers = Array.isArray(savedRaw) ? savedRaw : [];
+  const savedPlayers = asList(savedRaw);
 
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
@@ -211,13 +221,14 @@ export function usePlayerCard(): PlayerCardModel {
     isActive: (steamId) => activeIds.includes(steamId),
     toggle,
     toggleRegister: (steamId, name) =>
-      setSavedPlayers(
-        isRegistered(steamId)
-          ? savedPlayers.filter((p) => p.steam_id !== steamId)
-          : [...savedPlayers, { steam_id: steamId, name }],
-      ),
+      setSavedPlayers((previous) => {
+        const list = asList(previous);
+        return list.some((p) => p.steam_id === steamId)
+          ? list.filter((p) => p.steam_id !== steamId)
+          : [...list, { steam_id: steamId, name }];
+      }),
     // Forget the account (reversible, no confirmation); it stays active.
-    removeSaved: (steamId) => setSavedPlayers(savedPlayers.filter((p) => p.steam_id !== steamId)),
+    removeSaved: (steamId) => setSavedPlayers((previous) => asList(previous).filter((p) => p.steam_id !== steamId)),
     drag: {
       shown:
         dragFrom !== null && dragOver !== null && dragFrom !== dragOver
@@ -235,7 +246,11 @@ export function usePlayerCard(): PlayerCardModel {
       },
       up: () => {
         if (dragFrom === null) return;
-        if (dragOver !== null && dragFrom !== dragOver) setSavedPlayers(reorder(savedPlayers, dragFrom, dragOver));
+        if (dragOver !== null && dragFrom !== dragOver) {
+          const from = dragFrom;
+          const to = dragOver;
+          setSavedPlayers((previous) => reorder(asList(previous), from, to));
+        }
         setDragFrom(null);
         setDragOver(null);
       },

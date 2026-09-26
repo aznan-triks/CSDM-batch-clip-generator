@@ -28,8 +28,13 @@ def _repo_root():
     location, which is the real project root in every supported launch mode
     (the engine is never packaged inside the exe, so ``__file__`` never points
     at a temp extraction).
+
+    CSDM_PROFILE_ROOT wins over both, for the settings ONLY: a test or an e2e
+    proof runs the real code of a checkout (so CSDM_REPO_ROOT must stay that
+    checkout) against a throwaway profile. Without it every proof launched
+    from the main checkout read and rewrote the user's real settings.
     """
-    override = os.environ.get("CSDM_REPO_ROOT")
+    override = os.environ.get("CSDM_PROFILE_ROOT") or os.environ.get("CSDM_REPO_ROOT")
     if override:
         return Path(override)
     return Path(__file__).resolve().parent.parent
@@ -194,6 +199,9 @@ DEFAULT_CONFIG = {
     "ui_font_family": "auto", # "auto" = first available of UI_FONT_STACK; or a forced name (e.g. "JetBrains Mono")
     "steam_id": "", "player_name": "", "player_name_override": "",
     "saved_players": [],
+    # True once the old window's csdm_players.json was imported into
+    # saved_players (load_config), so a list the user empties stays empty.
+    "saved_players_imported": False,
     "steam_ids": [],          # every active player; steam_id mirrors the first one
     # Event model (2-axis: Actor/Target × Lethal/Non-lethal/Other)
     "event_actor": True,      # Actor perspective — I am the one acting
@@ -629,6 +637,24 @@ def preset_keys_for(cats):
     return keys
 
 
+# Keys that are the user's or the machine's, never a capture recipe: who the
+# user is (saved_players), how to reach the database, where the app and its
+# settings live, and how the window looks. A full preset used to snapshot them
+# all, so loading it later silently put back an old favourites list, old
+# credentials or an old layout. Stripped on save AND on load (old presets).
+PRESET_EXCLUDED_KEYS = frozenset({
+    "saved_players", "saved_players_imported",
+    "pg_host", "pg_port", "pg_user", "pg_pass", "pg_db",
+    "csdm_exe", "config_dir",
+})
+PRESET_EXCLUDED_PREFIXES = ("ui_", "theme_")
+
+
+def preset_excludes(key):
+    """Whether `key` is personal/app state a preset must never carry."""
+    return key in PRESET_EXCLUDED_KEYS or key.startswith(PRESET_EXCLUDED_PREFIXES)
+
+
 def build_preset(cfg, cats, selected_clips=None):
     """Extract from `cfg` the preset the user asked to save.
 
@@ -636,8 +662,9 @@ def build_preset(cfg, cats, selected_clips=None):
     user's clip selection from the editing page, stored alongside the config.
     """
     keys = preset_keys_for(cats)
-    preset = {"cats": ["full"], "data": dict(cfg)} if keys is None \
-        else {"cats": list(cats), "data": {k: cfg[k] for k in keys if k in cfg}}
+    data = {k: cfg[k] for k in (cfg if keys is None else keys)
+            if k in cfg and not preset_excludes(k)}
+    preset = {"cats": ["full"] if keys is None else list(cats), "data": data}
     if selected_clips:
         preset["selected_clips"] = selected_clips
     return preset
@@ -663,7 +690,7 @@ def preset_payload(preset):
     `selected_clips` is None when the preset has no clip selection
     (saved before editing support, or intentionally omitted).
     """
-    data = dict(preset.get("data", {}))
+    data = {k: v for k, v in preset.get("data", {}).items() if not preset_excludes(k)}
     if "steam_id" in data and "steam_ids" not in data:
         data["steam_ids"] = [data["steam_id"]] if data["steam_id"] else []
     if ("event_ally" not in data and "event_enemy" not in data
@@ -687,7 +714,8 @@ def normalize_presets(presets):
     """
     result = {}
     for name, preset in presets.items():
-        entry = {"cats": preset_cats(preset), "data": preset.get("data", {})}
+        data = {k: v for k, v in preset.get("data", {}).items() if not preset_excludes(k)}
+        entry = {"cats": preset_cats(preset), "data": data}
         if "selected_clips" in preset:
             entry["selected_clips"] = preset["selected_clips"]
         result[name] = entry
@@ -942,12 +970,37 @@ def load_config():
     global _ACTIVE_DIR
     _ACTIVE_DIR = active
     saved = _read_saved_config(active / "csdm_config.json")
-    if not saved:
-        return DEFAULT_CONFIG.copy()
     cfg = DEFAULT_CONFIG.copy()
-    cfg.update(saved)
-    _migrate_config(saved, cfg)
+    if saved:
+        cfg.update(saved)
+        _migrate_config(saved, cfg)
+    _import_legacy_players(cfg, active)
     return cfg
+
+
+def _import_legacy_players(cfg, directory):
+    """Bring the old window's registered players (csdm_players.json) into
+    `saved_players`, once.
+
+    The Electron window reads `saved_players` only; the Tkinter window kept the
+    same list in its own file, and nothing ever copied it over, so every
+    favourite registered there was invisible. Imported only while the list is
+    still empty and the marker unset: a list the user emptied on purpose
+    carries the marker (the next save writes it) and is never refilled.
+    """
+    if cfg.get("saved_players_imported"):
+        return
+    cfg["saved_players_imported"] = True
+    if cfg.get("saved_players"):
+        return
+    legacy = _load_json(str(directory / "csdm_players.json"), list)
+    players, seen = [], set()
+    for entry in legacy if isinstance(legacy, list) else []:
+        steam_id = str(entry.get("steam_id") or "").strip() if isinstance(entry, dict) else ""
+        if steam_id and steam_id not in seen:
+            seen.add(steam_id)
+            players.append({"steam_id": steam_id, "name": str(entry.get("name") or steam_id)})
+    cfg["saved_players"] = players
 
 
 # Messages about the settings file that no command asked for (a damaged file

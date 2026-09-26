@@ -38,7 +38,9 @@ vi.mock("../../settings/store", () => {
         store.listeners.add(handler);
         return () => store.listeners.delete(handler);
       }, [key]);
-      const setter = (next: unknown) => {
+      const setter = (update: unknown) => {
+        // The hook writes updaters (`prev => next`), like the real store accepts.
+        const next = typeof update === "function" ? (update as (prev: unknown) => unknown)(read()) : update;
         if (key === "saved_players") store.state.saved = next as { steam_id: string; name: string }[];
         if (key === "steam_ids") store.state.active = next as string[];
         setValue(next);
