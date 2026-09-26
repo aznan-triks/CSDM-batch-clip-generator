@@ -1,6 +1,6 @@
 /*
  * The SETTINGS cards in their three styles. Prefixes: st- (pieces several
- * cards share), pg- PostgreSQL, pa- Paths, cf- Configuration Folder,
+ * cards share), pg- PostgreSQL, pa- Paths, cfg- Configuration Folder,
  * ps- Presets, ut- UI Theme, ul- UI Layout, pf- Performance, ip- Injection.
  * Colours from theme/tokens.css. No :hover rule translates or scales (D13/D16).
  */
@@ -201,35 +201,35 @@
 }
 
 /* ---------- Configuration Folder ---------- */
-.cf-move {
+.cfg-move {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.3fr);
   align-items: center;
   gap: 10px;
 }
 
-.cf-from {
+.cfg-from {
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.cf-arrow {
+.cfg-arrow {
   font-size: 11px;
   font-weight: 700;
   color: var(--cam-k);
   white-space: nowrap;
 }
 
-.cf-to {
+.cfg-to {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.cf-dest,
-.cf-tile {
+.cfg-dest,
+.cfg-tile {
   appearance: none;
   display: inline-flex;
   align-items: center;
@@ -246,8 +246,8 @@
   cursor: pointer;
 }
 
-.cf-dest.on,
-.cf-tile.on {
+.cfg-dest.on,
+.cfg-tile.on {
   border-color: color-mix(in srgb, var(--cam-k) 55%, transparent);
   box-shadow:
     0 0 0 3px var(--accent-soft),
@@ -255,27 +255,27 @@
   color: var(--cam-k);
 }
 
-.cf-dest:disabled,
-.cf-tile:disabled {
+.cfg-dest:disabled,
+.cfg-tile:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-.cf-tiles {
+.cfg-tiles {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 8px;
 }
 
-.cf-tile {
+.cfg-tile {
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
   padding: 10px;
 }
 
-.cf-tile-art {
+.cfg-tile-art {
   width: 40px;
   height: 40px;
   display: grid;
@@ -285,7 +285,7 @@
   color: var(--cam-k);
 }
 
-.cf-tile-art svg {
+.cfg-tile-art svg {
   width: 24px;
   height: 24px;
   fill: none;
@@ -295,18 +295,18 @@
   stroke-linejoin: round;
 }
 
-.cf-tile small {
+.cfg-tile small {
   font-size: 11px;
   font-weight: 500;
   color: var(--faint);
 }
 
-.cf-b .sx-opt:disabled {
+.cfg-b .sx-opt:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-.cf-b .settings-folder-path {
+.cfg-b .settings-folder-path {
   display: inline;
 }
 
@@ -597,8 +597,8 @@
   max-width: 220px;
 }
 
-.cf-dest:focus-visible,
-.cf-tile:focus-visible,
+.cfg-dest:focus-visible,
+.cfg-tile:focus-visible,
 .ut-ground:focus-visible,
 .ul-act:focus-visible,
 .pf-core:focus-visible {
