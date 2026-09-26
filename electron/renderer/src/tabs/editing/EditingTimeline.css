@@ -8,6 +8,14 @@
  *
  * NO :hover rule here may translate or scale anything (D13/D16).
  */
+/* The panel AppShell wraps every tab in has no height of its own (the list
+   view grows and the shell's .scrollwrap scrolls it). The timeline instead
+   fills the scrollwrap, so its lanes scroll in their own box and the
+   inspector stays on screen under them. */
+.scrollwrap > div:has(> .editing-tab--timeline) {
+  height: 100%;
+}
+
 .editing-tab--timeline {
   overflow: hidden;
 }
@@ -34,7 +42,10 @@
   display: flex;
   align-items: center;
   gap: var(--sp-1);
-  padding: 0 var(--sp-1) var(--sp-1);
+  margin-bottom: var(--sp-1);
+  padding: var(--sp-1);
+  border-radius: var(--r-mid);
+  background: var(--panel);
 }
 
 .edtl-zoom {
@@ -56,7 +67,7 @@
   overflow: auto;
   border: 1px solid var(--hair);
   border-radius: var(--r-mid);
-  background: var(--surface);
+  background: var(--solid);
 }
 
 .edtl-row {
@@ -218,7 +229,7 @@
   padding: var(--sp-2);
   border: 1px solid var(--hair);
   border-radius: var(--r-mid);
-  background: var(--surface);
+  background: var(--solid);
 }
 
 .edtl-insp-head {
