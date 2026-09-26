@@ -40,8 +40,10 @@
 }
 
 /* ---------- A: the calendar strip ---------- */
+/* 11px + the axis's own 7px inset (INSET_PX, RangeStrip.tsx) = the 18px the
+   dates always sat in from the strip's border. */
 .ds-strip {
-  padding: 0 18px;
+  padding: 0 11px;
   border-radius: 14px;
   border: 1px solid var(--hair);
   background: linear-gradient(
@@ -172,7 +174,7 @@
 /* Today closes the strip on the right. */
 .ds-today {
   position: absolute;
-  right: -2px;
+  right: 5px; /* just past the last day: the 7px inset less its 2px line */
   top: 22px;
   height: 52px;
   border-left: 2px solid color-mix(in srgb, var(--txt) 30%, transparent);

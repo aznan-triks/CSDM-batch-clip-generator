@@ -88,8 +88,10 @@ export default function TimelineView({ m }: { m: TimingRetriesModel }) {
                   {i === 1 ? <CountWord n={m.demoPause} label="Pause" tone="alt" /> : <i>{m.demoPause.value}s</i>}
                 </span>
               )}
-              <span className="tr-blk demo" title={`Demo recorded ${i + 1}${["st", "nd", "rd"][i]}`}>
-                {GLYPHS.demo}
+              {/* The order badge hangs off the block's corner: the pin holds both,
+                  so the badge sits inside a box instead of spilling out of one. */}
+              <span className="tr-pin" title={`Demo recorded ${i + 1}${["st", "nd", "rd"][i]}`}>
+                <span className="tr-blk demo">{GLYPHS.demo}</span>
                 <b>{n}</b>
               </span>
             </span>

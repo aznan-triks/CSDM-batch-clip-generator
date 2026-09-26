@@ -79,10 +79,21 @@
   color: var(--cam-v);
 }
 
-.tr-blk.demo b {
+/* A demo block and its order badge. The badge overhangs the block's corner by
+   3px; the pin's right padding is that overhang, so the badge stays inside a
+   box the row accounts for (it used to push every step 3-4px wider than its
+   own width). Its 4px drop below stays within the track's padding. */
+.tr-pin {
+  position: relative;
+  flex: none;
+  display: flex;
+  padding-right: 3px;
+}
+
+.tr-pin b {
   position: absolute;
-  right: -4px;
-  bottom: -5px;
+  right: 0;
+  bottom: -4px;
   min-width: 15px;
   height: 15px;
   display: grid;

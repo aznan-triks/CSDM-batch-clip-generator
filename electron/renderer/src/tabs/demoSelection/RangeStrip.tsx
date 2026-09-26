@@ -20,6 +20,16 @@ const LEAST_SPAN_DAYS = 60;
 const OPEN_SPAN_DAYS = 365;
 /** Minimum room between two date labels on the axis, in pixels. */
 const LABEL_GAP_PX = 42;
+/**
+ * Half a handle's width. The dates run from this far inside the axis's left
+ * edge to this far inside its right one, so a handle centred on the first or
+ * last day stays inside the axis instead of hanging 7px out of it.
+ */
+const INSET_PX = 7;
+/** Where a percentage of the date span sits on the axis (CSS `left`). */
+const place = (pct: number) => `calc(${INSET_PX}px + (100% - ${2 * INSET_PX}px) * ${pct / 100})`;
+/** How wide a percentage of the date span is on the axis (CSS `width`). */
+const stretch = (pct: number) => `calc((100% - ${2 * INSET_PX}px) * ${pct / 100})`;
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 type Bound = "from" | "to";
@@ -82,9 +92,9 @@ export default function RangeStrip({ from, to, demos, onChange, tips }: RangeStr
   useEffect(() => {
     const node = axisRef.current;
     if (!node) return;
-    setWidth(node.clientWidth);
+    setWidth(node.clientWidth - 2 * INSET_PX);
     if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => setWidth(node.clientWidth));
+    const observer = new ResizeObserver(() => setWidth(node.clientWidth - 2 * INSET_PX));
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
@@ -104,8 +114,9 @@ export default function RangeStrip({ from, to, demos, onChange, tips }: RangeStr
 
   function dayAt(clientX: number): Date {
     const rect = axisRef.current?.getBoundingClientRect();
-    if (!rect || rect.width === 0) return today;
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+    const railWidth = (rect?.width ?? 0) - 2 * INSET_PX;
+    if (!rect || railWidth <= 0) return today;
+    const ratio = Math.min(1, Math.max(0, (clientX - rect.left - INSET_PX) / railWidth));
     return addDays(start, Math.round(ratio * span));
   }
 
@@ -167,7 +178,7 @@ export default function RangeStrip({ from, to, demos, onChange, tips }: RangeStr
         type="button"
         role="slider"
         className={["ds-handle", bound, dragging === bound ? "drag" : null].filter(Boolean).join(" ")}
-        style={{ left: `${at(day)}%` }}
+        style={{ left: place(at(day)) }}
         aria-label={bound === "from" ? "From date" : "To date"}
         aria-valuemin={0}
         aria-valuemax={span}
@@ -186,17 +197,17 @@ export default function RangeStrip({ from, to, demos, onChange, tips }: RangeStr
     <div className="ds-strip">
       <div className="ds-axis" ref={axisRef}>
         {axisTicks.map((t) => (
-          <span key={t.day.getTime()} className={t.strong ? "ds-month year" : "ds-month"} style={{ left: `${t.left}%` }}>
+          <span key={t.day.getTime()} className={t.strong ? "ds-month year" : "ds-month"} style={{ left: place(t.left) }}>
             <i aria-hidden="true" />
             {t.labelled ? t.label : null}
           </span>
         ))}
-        <span className="ds-readout" style={{ left: `${captionAt}%` }}>
+        <span className="ds-readout" style={{ left: place(captionAt) }}>
           {caption}
         </span>
         <div
           className={noBounds ? "ds-band open" : "ds-band"}
-          style={{ left: `${at(lo)}%`, width: `${Math.max(0.6, at(hi) - at(lo))}%` }}
+          style={{ left: place(at(lo)), width: stretch(Math.max(0.6, at(hi) - at(lo))) }}
         >
           <span>{noBounds ? "every demo" : `${days} day${days === 1 ? "" : "s"}`}</span>
         </div>
@@ -204,7 +215,7 @@ export default function RangeStrip({ from, to, demos, onChange, tips }: RangeStr
           <i
             key={time}
             className="ds-demo"
-            style={{ left: `${at(new Date(time))}%` }}
+            style={{ left: place(at(new Date(time))) }}
             title={`${count} demo${count === 1 ? "" : "s"} on ${fmt(new Date(time))}`}
           />
         ))}
