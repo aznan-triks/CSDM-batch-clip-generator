@@ -20,6 +20,18 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.5.1 — 2026-09-26
+
+### Fixed
+
+- Favourite players (★) no longer disappear. Two causes: two quick edits of the list (★ twice, or ★ and a drag) could overwrite each other, and on the development machine the test suite rewrote the real settings file without the list. Both are fixed; tests and checks now always run on a throwaway copy of the settings.
+- Favourites from the old Python window (`csdm_players.json`) are imported once into the app; a list you empty on purpose stays empty.
+- Presets no longer carry personal settings (favourites, database login, CS Demo Manager path, configuration folder, display and theme settings): loading a preset can no longer overwrite them.
+
+### Changed
+
+- AIRBORNE and RUN & GUN are validated and no longer marked UNTESTED.
+
 ## 3.5.0 — 2026-09-26
 
 ### Added
