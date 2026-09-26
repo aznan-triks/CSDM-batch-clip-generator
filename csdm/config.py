@@ -106,7 +106,7 @@ DEFAULT_CONFIG = {
     # the reference layout actually fills 1600x900 both ways.
     "ui_sections": {
         "capture": {
-            "v": 4,
+            "v": 5,
             "cards": {
                 "player": {"x": 0, "y": 0, "w": 15, "h": 9},
                 "demo-selection": {"x": 0, "y": 9, "w": 5, "h": 22},
@@ -140,7 +140,7 @@ DEFAULT_CONFIG = {
             "collapsed": [],
         },
         "video": {
-            "v": 4,
+            "v": 5,
             "cards": {
                 # Card remake 2b (2026-09-26): every VIDEO card sized so its
                 # three styles fit with no scroll at 1600x900
@@ -162,7 +162,7 @@ DEFAULT_CONFIG = {
         # Card remake 2c (2026-09-25): the Tags tab moved onto the card grid;
         # sizes from e2e/card-remake-2c-proof.mjs (each style's rows printed).
         "tags": {
-            "v": 4,
+            "v": 5,
             "cards": {
                 "tag-grid": {"x": 0, "y": 0, "w": 15, "h": 10},
                 "tag-range": {"x": 0, "y": 10, "w": 6, "h": 10},
@@ -171,7 +171,7 @@ DEFAULT_CONFIG = {
             "collapsed": [],
         },
         "settings": {
-            "v": 4,
+            "v": 5,
             "cards": {
                 # postgresql +1 (2026-09-26): Test & Reload's answer now joins the
                 # CS Demo Manager guidance instead of replacing it; tiles needed
@@ -784,6 +784,9 @@ def _migrate_config(saved: dict, cfg: dict) -> None:
     # rename above: it reads `ui_sections` and `ui_card_block_size` as they
     # finally stand.
     _migrate_card_grid_half_step(saved, cfg)
+    # Card heights fit their content unless the user set them  (v4 -> v5).
+    # After the half-step, which stamps the v4 this one reads.
+    _migrate_card_grid_manual_heights(cfg)
 
 # Legacy filter keys dropped from KILL_FILTER_REGISTRY, mapped onto their
 # replacement. Applied to the main config AND to preset payloads, since both
@@ -802,9 +805,11 @@ _DEAD_FILTER_KEYS = ("kill_mod_no_trois_shot_req",)
 # `shell/__tests__/layout-version-parity.test.ts` reads this file to prove the
 # two agree -- the same discipline as the settings coverage guard, which reads
 # its key list from Python rather than keeping a TypeScript copy.
-UI_SECTIONS_VERSION = 4
+UI_SECTIONS_VERSION = 5
 
-# Columns per stored column when the grid halved (v3 -> v4).
+# The schema the half-step produces (v3 -> v4), and the columns per stored
+# column it scales by.
+_GRID_HALF_STEP_VERSION = 4
 _GRID_HALF_STEP_SCALE = 2
 
 
@@ -820,7 +825,7 @@ def _migrate_card_grid_half_step(saved: dict, cfg: dict) -> None:
     which this change does not touch.
 
     Idempotent: keyed on the stored version, and a tab already stamped `v: 4`
-    is left alone.
+    (or later) is left alone.
     """
     sections = saved.get("ui_sections")
     if not isinstance(sections, dict):
@@ -829,7 +834,8 @@ def _migrate_card_grid_half_step(saved: dict, cfg: dict) -> None:
     migrated = {}
     touched = False
     for tab_id, layout in sections.items():
-        if not isinstance(layout, dict) or layout.get("v") == UI_SECTIONS_VERSION:
+        version = layout.get("v") if isinstance(layout, dict) else None
+        if not isinstance(layout, dict) or (isinstance(version, (int, float)) and version >= _GRID_HALF_STEP_VERSION):
             migrated[tab_id] = layout
             continue
         cards = layout.get("cards")
@@ -847,7 +853,7 @@ def _migrate_card_grid_half_step(saved: dict, cfg: dict) -> None:
                 if isinstance(value, (int, float)):
                     widened[key] = int(value) * _GRID_HALF_STEP_SCALE
             scaled[card_id] = widened
-        migrated[tab_id] = {**layout, "v": UI_SECTIONS_VERSION, "cards": scaled}
+        migrated[tab_id] = {**layout, "v": _GRID_HALF_STEP_VERSION, "cards": scaled}
 
     if not touched:
         return
@@ -859,6 +865,52 @@ def _migrate_card_grid_half_step(saved: dict, cfg: dict) -> None:
     stored_block = saved.get("ui_card_block_size")
     if isinstance(stored_block, (int, float)) and stored_block > 0:
         cfg["ui_card_block_size"] = max(8, round(stored_block / _GRID_HALF_STEP_SCALE))
+
+
+def _migrate_card_grid_manual_heights(cfg: dict) -> None:
+    """Flag the card heights the user chose by hand (v4 -> v5).
+
+    From v5 a card's height follows its content -- which depends on the card
+    style and the pane's width -- unless the user resized it: that card carries
+    `manual: True` and keeps its rectangle (shell/SectionList.tsx). A v4 layout
+    never recorded who set a height, so the one sign left is used: a stored
+    height that differs from today's default was not the default. Such a card
+    keeps its height (conservative: nothing the user sees changes size); every
+    other card starts fitting its content.
+
+    A collapsed card's own height is in `hPrev` (`h` is the folded header).
+    Idempotent: only a tab stamped v4 is touched, and it leaves stamped v5.
+    """
+    sections = cfg.get("ui_sections")
+    if not isinstance(sections, dict):
+        return
+    defaults = DEFAULT_CONFIG["ui_sections"]
+
+    migrated = {}
+    touched = False
+    for tab_id, layout in sections.items():
+        if not isinstance(layout, dict) or layout.get("v") != _GRID_HALF_STEP_VERSION:
+            migrated[tab_id] = layout
+            continue
+        cards = layout.get("cards")
+        if not isinstance(cards, dict):
+            migrated[tab_id] = layout
+            continue
+        touched = True
+        default_cards = defaults.get(tab_id, {}).get("cards", {})
+        marked = {}
+        for card_id, slot in cards.items():
+            if not isinstance(slot, dict):
+                continue
+            slot = dict(slot)
+            height = slot.get("hPrev", slot.get("h"))
+            if height != default_cards.get(card_id, {}).get("h"):
+                slot["manual"] = True
+            marked[card_id] = slot
+        migrated[tab_id] = {**layout, "v": UI_SECTIONS_VERSION, "cards": marked}
+
+    if touched:
+        cfg["ui_sections"] = migrated
 
 
 def migrate_legacy_filter_keys(d: dict) -> None:

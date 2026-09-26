@@ -71,16 +71,21 @@ describe("migrateLayout", () => {
     expect(cards.player.x + cards.player.w).toBeLessThanOrEqual(10);
   });
 
-  it("reports which cards had no stored rectangle", () => {
-    const stored = { cards: { known: { x: 0, y: 0, w: 3, h: 9 } } };
-    const { fresh } = migrateLayout(stored, ["known", "brand-new"], 6);
-    expect(fresh).toEqual(["brand-new"]);
+  it("keeps a hand-set height's mark and nothing else", () => {
+    const stored = {
+      v: LAYOUT_VERSION,
+      cards: { player: { x: 0, y: 0, w: 6, h: 12, manual: true }, demo: { x: 6, y: 0, w: 4, h: 9, manual: "yes" } },
+    };
+    const { cards } = migrateLayout(stored, IDS, 10);
+    expect(cards.player.manual).toBe(true);
+    // Only a literal `true` is a hand-set height; the rest fits its content.
+    expect(cards.demo.manual).toBeUndefined();
+    expect(cards.timing.manual).toBeUndefined();
   });
 
-  it("reports nothing fresh once every card is stored", () => {
-    const stored = { cards: { a: { x: 0, y: 0, w: 3, h: 9 } } };
-    const { fresh } = migrateLayout(stored, ["a"], 6);
-    expect(fresh).toEqual([]);
+  it("does not rescale a v4 layout's columns (v4 -> v5 only added `manual`)", () => {
+    const v4 = { v: 4, cards: { player: { x: 2, y: 0, w: 6, h: 12 } } };
+    expect(migrateLayout(v4, IDS, 20).cards.player).toEqual({ x: 2, y: 0, w: 6, h: 12 });
   });
 });
 

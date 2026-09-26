@@ -17,7 +17,11 @@
  * Output: electron/e2e/output/fix-card-leftovers/fit.json + one shot per tab
  * at 1600x900 in the default style.
  *
- * Usage: node e2e/card-fit-proof.mjs [--quick]   (--quick: 1600x900 only)
+ *   - `emptyPx`: how much of its body sits empty below its content (the card
+ *     is too tall -- fix/cards-fit-style).
+ *
+ * Usage: node e2e/card-fit-proof.mjs [--quick] [--out=<dir>]
+ *   --quick: 1600x900 only; --out: folder under e2e/output (default fix-card-leftovers)
  */
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -28,13 +32,16 @@ import { createServer } from "vite";
 
 import { ELECTRON_DIR, SHOT_DIR } from "./config.mjs";
 
-const outDir = path.join(SHOT_DIR, "fix-card-leftovers");
+const OUT_ARG = process.argv.find((a) => a.startsWith("--out="));
+const outDir = path.join(SHOT_DIR, OUT_ARG ? OUT_ARG.slice("--out=".length) : "fix-card-leftovers");
 mkdirSync(outDir, { recursive: true });
 
 const QUICK = process.argv.includes("--quick");
 const WIDTHS = QUICK ? [1600] : [820, 980, 1180, 1440, 1600];
 const SPLITS = QUICK ? [60] : [38, 60, 80];
 const STYLES = ["timeline", "sentence", "tiles"];
+// Below one fine row plus its gap, empty space is just the row rounding.
+const EMPTY_TOLERANCE_PX = 34;
 const TABS = ["CAPTURE", "VIDEO", "TAGS", "SETTINGS"];
 const PG_ERROR =
   "PostgreSQL at localhost:5432 (database 'csdm') refused user 'postgres' with this password. Check User and Pass in SETTINGS › PostgreSQL Connection.";
@@ -107,6 +114,19 @@ function measureTab() {
     const title = node.querySelector(".sh .t")?.textContent ?? "?";
     const body = node.querySelector(".sb-scroll") ?? node.querySelector(".sb");
     const scrollPx = body ? body.scrollHeight - body.clientHeight : 0;
+    // Empty space: the body's height minus where its last child ends. A
+    // `display: contents` wrapper has no box: its children are measured.
+    const boxes = (parent) =>
+      [...parent.children].flatMap((c) => (getComputedStyle(c).display === "contents" ? boxes(c) : [c]));
+    let emptyPx = 0;
+    if (body && !node.querySelector(".sec.closed")) {
+      const top = body.getBoundingClientRect().top - body.scrollTop;
+      let bottom = 0;
+      for (const child of boxes(body)) {
+        bottom = Math.max(bottom, child.getBoundingClientRect().bottom - top + (parseFloat(getComputedStyle(child).marginBottom) || 0));
+      }
+      emptyPx = Math.max(0, Math.round(body.clientHeight - bottom - (parseFloat(getComputedStyle(body).paddingBottom) || 0)));
+    }
     const overlaps = [];
     rects.forEach((r, j) => {
       if (j === i) return;
@@ -135,7 +155,9 @@ function measureTab() {
       const name = (n) => (n ? `${n.tagName.toLowerCase()}.${[...n.classList].join(".")}` : "");
       wide.push({ el: name(el), overPx: over, culprit: name(culprit), text: (el.textContent ?? "").slice(0, 24) });
     }
-    return { card: title, scrollPx, overlaps, wide };
+    // A body child that grows to fill the card has no natural height of its own.
+    const fills = body ? [...body.children].filter((c) => parseFloat(getComputedStyle(c).flexGrow) > 0).map((c) => c.className) : [];
+    return { card: title, scrollPx, emptyPx, fills, overlaps, wide };
   });
 }
 
@@ -183,7 +205,23 @@ try {
         for (const tab of TABS) {
           await openTab(page, tab);
           record({ width, split, style, tab }, await page.evaluate(measureTab));
-          if (width === 1600 && split === 60 && style === "timeline") await page.screenshot({ path: path.join(outDir, `tab-${tab.toLowerCase()}.png`) });
+          if (width === 1600 && split === 60) {
+            await page.screenshot({ path: path.join(outDir, `tab-${tab.toLowerCase()}-${style}.png`) });
+            // Cards the tab shot cuts off, whole: Kill Filters (the tallest) and
+            // Configuration Folder (its `cf-` prefix used to collide with the
+            // filter cards'). A shot taller than the viewport comes back
+            // garbled, so the viewport grows to hold the card for this one shot.
+            const cardId = { CAPTURE: "kill-filters", SETTINGS: "config-folder" }[tab];
+            if (cardId) {
+              const card = page.locator(`[data-card-id="${cardId}"]`);
+              const box = await card.boundingBox();
+              await page.setViewportSize({ width, height: Math.max(900, Math.ceil(box.y + box.height + 400)) });
+              await settle(page);
+              await card.screenshot({ path: path.join(outDir, `${cardId}-${style}.png`) });
+              await page.setViewportSize({ width, height: 900 });
+              await settle(page);
+            }
+          }
         }
         // SETTINGS is open: fail a Test & Reload and measure PostgreSQL again.
         await page.evaluate(() => {
@@ -211,3 +249,15 @@ for (const p of problems) {
   console.log(`${p.width}/${p.split}/${p.style} ${p.tab} › ${p.card}: scroll ${p.scrollPx}${p.overlaps.length ? ` overlaps ${p.overlaps}` : ""}${wide ? ` wide ${wide}` : ""}`);
 }
 console.log(`${problems.length} problem rows out of ${results.length}`);
+// Per style: how much scrolls (too short) and how much sits empty (too tall).
+for (const style of STYLES) {
+  const rows = results.filter((r) => r.style === style && !r.tab.includes("pg failed"));
+  const scroll = rows.filter((r) => r.scrollPx > 1);
+  const empty = rows.filter((r) => r.emptyPx > EMPTY_TOLERANCE_PX);
+  const sum = (list, key) => list.reduce((n, r) => n + r[key], 0);
+  const max = (list, key) => Math.max(0, ...list.map((r) => r[key]));
+  console.log(
+    `${style}: ${scroll.length} scrolling (total ${sum(scroll, "scrollPx")} px, max ${max(scroll, "scrollPx")}); ` +
+      `${empty.length} with >${EMPTY_TOLERANCE_PX} px empty (total ${sum(empty, "emptyPx")} px, max ${max(empty, "emptyPx")})`,
+  );
+}

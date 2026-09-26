@@ -25,6 +25,12 @@ export interface GridSlot {
    * an expanded card.
    */
   hPrev?: number;
+  /**
+   * The user set this card's height by hand (a resize that changed `h`).
+   * Absent means the card fits its content: SectionList measures it and the
+   * stored `h` is only its first-paint height (fix/cards-fit-style).
+   */
+  manual?: boolean;
 }
 
 /** Rows a collapsed card occupies when the config key is unreadable. */
@@ -46,7 +52,15 @@ type UiSections = Record<string, TabLayout>;
  * on every `load_config`). `__tests__/layout-version-parity.test.ts` reads
  * config.py and fails if the two ever drift.
  */
-export const LAYOUT_VERSION = 4;
+export const LAYOUT_VERSION = 5;
+
+/**
+ * The schema the column half-step produced (v3 -> v4). v4 -> v5 only added
+ * `manual`, which Python derives (it knows the default heights), so the
+ * column scaling below applies to anything older than THIS, not than the
+ * current version.
+ */
+const HALF_STEP_VERSION = 4;
 
 /**
  * Columns per stored column when the grid halved (v3 -> v4).
@@ -56,7 +70,7 @@ export const LAYOUT_VERSION = 4;
  * now describes half the width -- every stored `x` and `w` doubles, and the
  * card reopens exactly where it was. `y`/`h` are fine rows and do not move.
  *
- * Python does this first and stamps `v: 4`, so this is normally a no-op. It
+ * Python does this first and stamps `v: 4` (then 5), so this is normally a no-op. It
  * stays because this module OWNS the stored shape: a layout that reaches the
  * renderer still carrying `v: 3` (a config restored by hand, a tab written by
  * an older build) must not be drawn at half width.
@@ -80,8 +94,6 @@ export interface SectionLayout {
   toggleCollapsed(id: string): void;
   /** Persist a full set of rectangles (what react-grid-layout just produced). */
   save(next: Record<string, GridSlot>): void;
-  /** Cards that had no stored rectangle -- the only ones a measurement may resize. */
-  freshIds(): string[];
 }
 
 function isSlot(value: unknown): value is GridSlot {
@@ -111,7 +123,7 @@ export function migrateLayout(
   declaredIds: readonly string[],
   cols: number,
   wideIds?: ReadonlySet<string>,
-): { cards: Record<string, GridSlot>; collapsed: string[]; fresh: string[] } {
+): { cards: Record<string, GridSlot>; collapsed: string[] } {
   const layout = (typeof raw === "object" && raw !== null ? raw : {}) as TabLayout;
   const storedCards = (typeof layout.cards === "object" && layout.cards !== null ? layout.cards : {}) as Record<
     string,
@@ -124,7 +136,6 @@ export function migrateLayout(
   const storedVersion = typeof layout.v === "number" && Number.isFinite(layout.v) ? layout.v : 2;
 
   const cards: Record<string, GridSlot> = {};
-  const fresh: string[] = [];
   for (const id of declaredIds) {
     const stored = storedCards[id];
     let slot: GridSlot | null = null;
@@ -141,7 +152,7 @@ export function migrateLayout(
     // A rectangle stored before v4 counts 96px columns; the grid counts 48px
     // ones now. Scale before the clamp below, which is expressed in current
     // columns.
-    if (slot && storedVersion < LAYOUT_VERSION) {
+    if (slot && storedVersion < HALF_STEP_VERSION) {
       slot.x *= COLS_SCALE_V3_TO_V4;
       slot.w *= COLS_SCALE_V3_TO_V4;
       if (typeof slot.hPrev === "number") {
@@ -152,10 +163,7 @@ export function migrateLayout(
     if (!slot) {
       // A newly declared card lands on its reference placement rather than
       // an anonymous bottom-of-the-pile stack, so a fresh install and a
-      // freshly reset tab look the same. It is also the ONLY moment its
-      // height may be re-measured: past this write, the rectangle is the
-      // user's (SectionList.tsx).
-      fresh.push(id);
+      // freshly reset tab look the same.
       const reference = defaultSlots(
         declaredIds.map((cardId) => ({ id: cardId, wide: Boolean(wideIds?.has(cardId)) })),
         cols,
@@ -175,9 +183,15 @@ export function migrateLayout(
     } else {
       delete slot.hPrev;
     }
+    // Only a literal `true` marks a hand-set height; anything else fits.
+    if ((stored as { manual?: unknown } | undefined)?.manual === true) {
+      slot.manual = true;
+    } else {
+      delete slot.manual;
+    }
     cards[id] = slot;
   }
-  return { cards, collapsed: collapsed.filter((id) => declaredIds.includes(id)), fresh };
+  return { cards, collapsed: collapsed.filter((id) => declaredIds.includes(id)) };
 }
 
 export function useSectionLayout(
@@ -188,7 +202,7 @@ export function useSectionLayout(
   collapsedRows: number = COLLAPSED_ROWS_FALLBACK,
 ): SectionLayout {
   const [stored, setStored] = useSetting<UiSections>("ui_sections");
-  const { cards, collapsed, fresh } = migrateLayout(stored?.[tabId], declaredIds, cols, wideIds);
+  const { cards, collapsed } = migrateLayout(stored?.[tabId], declaredIds, cols, wideIds);
 
   function persist(nextCards: Record<string, GridSlot>, nextCollapsed: string[]): void {
     // The functional form, not `{...(stored ?? {}), [tabId]: ...}`: every
@@ -206,7 +220,6 @@ export function useSectionLayout(
 
   return {
     slots: () => cards,
-    freshIds: () => fresh,
     isCollapsed: (id) => collapsed.includes(id),
     toggleCollapsed(id) {
       const set = new Set(collapsed);
@@ -227,12 +240,15 @@ export function useSectionLayout(
       persist(nextCards, [...set]);
     },
     save(next) {
-      // Never let a write-back erase the remembered height: react-grid-layout
-      // knows nothing about `hPrev` and hands back rectangles without it.
+      // Never let a write-back erase the remembered height or the hand-set
+      // mark: react-grid-layout knows nothing about `hPrev`/`manual` and hands
+      // back rectangles without them. A `manual` in `next` (the card the user
+      // just resized) is kept too.
       const merged: Record<string, GridSlot> = {};
       for (const [id, slot] of Object.entries(next)) {
         const prev = cards[id]?.hPrev;
-        merged[id] = prev === undefined ? slot : { ...slot, hPrev: prev };
+        const manual = slot.manual === true || cards[id]?.manual === true;
+        merged[id] = { ...slot, ...(prev === undefined ? {} : { hPrev: prev }), ...(manual ? { manual: true } : {}) };
       }
       persist(merged, collapsed);
     },

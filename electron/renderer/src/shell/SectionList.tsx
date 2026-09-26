@@ -19,8 +19,8 @@ import { cloneElement, useEffect, useRef, useState, type CSSProperties, type Mou
 // v1-shaped surface is what this adapter is written against.
 import GridLayout, { type Layout } from "react-grid-layout/legacy";
 
+import { layoutChildren, naturalRows } from "./cardFit";
 import { useSectionLayout, COLLAPSED_ROWS_FALLBACK, type GridSlot } from "./sectionLayout";
-import { useSettingsStatus } from "../settings/store";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./SectionList.css";
@@ -61,33 +61,15 @@ const FALLBACK_GAP = 10;
 const FALLBACK_ROW = 24;
 
 /**
- * How many fine rows a card needs to show all of its content.
- *
- * `.sb-scroll` is the card's scroller (components/Card.tsx): its
- * `scrollHeight` is the content's real height even while the grid clips it,
- * so the card's natural height is its current height plus whatever the
- * scroller is hiding. Rows are the grid's own unit -- one row plus one gap,
- * except the last row, which carries no gap.
+ * Oscillation guard: a card whose fitted height changes more often than this
+ * within FIT_BURST_WINDOW_MS stops being fitted for the rest of the session
+ * and keeps its last height. Content that sizes itself off the card's own
+ * height (a `height: 100%` body child, say) would otherwise feed the
+ * measurement back into itself forever. Not a config value -- no user tunes
+ * it; a real style switch or window resize settles in one or two changes.
  */
-function contentRows(node: Element, rowHeight: number, gap: number): number | null {
-  const scroller = node.querySelector(".sb-scroll");
-  if (!(scroller instanceof HTMLElement) || !(node instanceof HTMLElement)) return null;
-  const natural = node.offsetHeight + (scroller.scrollHeight - scroller.clientHeight);
-  if (!Number.isFinite(natural) || natural <= 0) return null;
-  return Math.max(1, Math.ceil((natural + gap) / (rowHeight + gap)));
-}
-
-/**
- * How long a fresh card's content must stop changing size before its
- * measurement is trusted. Some cards fetch their content over the bridge
- * (KillFiltersSection's `describe_filters`, live 2026-08-10): they mount
- * showing "Loading filters..." and balloon once the reply arrives, well
- * after a single point-in-time read would have already measured and locked
- * in the tiny placeholder's height. Not a config value -- nothing about it
- * is meant to be tuned per user, only long enough to outlast a bridge round
- * trip without feeling laggy.
- */
-const MEASURE_SETTLE_MS = 200;
+const FIT_BURST_LIMIT = 12;
+const FIT_BURST_WINDOW_MS = 1000;
 
 export default function SectionList({ tabId, sections }: SectionListProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -121,135 +103,106 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
   );
   const layout = useSectionLayout(tabId, declaredIds, cols, wideIds, collapsedRows);
   const slots = layout.slots();
-  const { loading: settingsLoading } = useSettingsStatus();
 
-  // A card is measured exactly once: on the render where it has no stored
-  // rectangle (fresh install, or the Settings "reset cards" button, which
-  // clears `ui_sections`). Past that one commit it is no longer fresh, so no
-  // height the user chose -- or the user's own manual resize, later -- is
-  // ever overwritten (his call, 2026-08-10). `slots`/`layout` are read
-  // through a ref inside the effect: the ResizeObserver callbacks below fire
-  // on their own schedule, long after the render that registered them, and
-  // closing over the render's own `slots`/`layout` would write back stale
-  // rectangles for cards other than the one that just changed.
-  const liveRef = useRef({ slots, layout });
-  liveRef.current = { slots, layout };
-
-  // The set of fresh cards is captured ONCE, the first render where the grid
-  // has actually mounted (`width > 0`) -- never read live off
-  // `layout.freshIds()` again. `freshIds()` SHRINKS as each card commits,
-  // and it fed the effect's own dependency array directly before this: the
-  // first (typically instant) commit changed that array, tearing down every
-  // OTHER card's still-pending observer along with it. KILL FILTERS (whose
-  // content arrives over the bridge, well after the others) was torn down,
-  // re-armed against its still-empty "Loading filters..." placeholder by a
-  // sibling's commit, and locked in there before its own content ever
-  // arrived -- measured live at the real 1100x900 default, unchanged across
-  // three different attempts at the timing before this snapshot was taken.
+  // Content-fitted heights (fix/cards-fit-style). A card the user never
+  // resized by hand (`manual` unset) is exactly as tall as its content, in
+  // whatever card style and at whatever pane width is current; the stored
+  // `h` is only its first-paint height. A hand-resized card keeps its size.
   //
-  // Also gated on `settingsLoading`: this component mounts and measures
-  // before `load_config` answers (`settings/store.tsx`'s `loading` flag used
-  // to go unread everywhere), so on a real launch every card could be seen
-  // as "never configured" here even though the loaded config's `ui_sections`
-  // covers every one of them a moment later -- the reference layout's own
-  // rectangles never showing up, replaced by the flat auto-stack, on
-  // whichever launches lost this race (found 2026-09-17, reproduced twice in
-  // a row against the real engine). `settingsLoading` still flips to `false`
-  // on a REJECTED `load_config` (store.tsx's `.finally`), so the no-engine
-  // e2e suite (CSDM_PYTHON_PATH="csdm-e2e-no-engine") sees no behaviour
-  // change beyond one microtask.
-  const [freshSnapshot, setFreshSnapshot] = useState<string[] | null>(null);
-  useEffect(() => {
-    if (freshSnapshot !== null || width <= 0 || settingsLoading) return;
-    const ids = layout.freshIds();
-    if (ids.length > 0) setFreshSnapshot(ids);
-    // Runs once per mount (tabId change remounts this component): checked by
-    // `freshSnapshot !== null` above, not by a dependency list that would
-    // have to include the ever-shrinking `layout.freshIds()` itself.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width, freshSnapshot, settingsLoading]);
+  // `fitted` is render state; `fitRef` is the latest measurement, which runs
+  // ahead of it while the user drags or resizes -- the grid must not move
+  // under the pointer, so nothing is applied until the gesture ends.
+  const [fitted, setFitted] = useState<Record<string, number>>({});
+  const fitRef = useRef<Record<string, number>>({});
+  const busyRef = useRef(false);
 
   useEffect(() => {
-    if (!freshSnapshot || !containerRef.current) return;
+    const pane = containerRef.current;
+    if (!pane || typeof ResizeObserver === "undefined" || typeof MutationObserver === "undefined") return;
 
-    // Commits within this one measurement pass must never lose each other.
-    // Seeding each write from `liveRef.current.slots` raced whenever two
-    // cards settled close together: React may not have re-rendered (and
-    // refreshed `liveRef`) between them, so the second commit's base
-    // excluded the first's just-saved height and silently reverted it
-    // (found live: PLAYER's measured 500 reverted to the 806 default the
-    // moment KILL FILTERS' later commit landed). `localCards` is one
-    // accumulator shared by every commit in THIS pass, mutated in place --
-    // JS has no threads, so even callbacks that fire a millisecond apart
-    // still touch it one at a time, in order.
-    const localCards = { ...slots };
-    const stops: Array<() => void> = [];
+    const frozen = new Set<string>();
+    const bursts = new Map<string, number[]>();
 
-    for (const id of freshSnapshot) {
-      if (liveRef.current.layout.isCollapsed(id)) continue;
-      const node = containerRef.current.querySelector(`[data-card-id="${id}"]`);
-      const scroller = node?.querySelector(".sb-scroll");
-      if (!node || !(scroller instanceof HTMLElement)) continue;
-
-      let settle: ReturnType<typeof setTimeout> | null = null;
-      let observer: MutationObserver | null = null;
-      let stopped = false;
-      const stop = () => {
-        stopped = true;
-        if (settle) clearTimeout(settle);
-        observer?.disconnect();
-      };
-      const schedule = () => {
-        if (stopped) return;
-        const rows = contentRows(node, rowHeight, gap);
-        if (rows === null) return;
-        // A card whose content is still arriving (KillFiltersSection's
-        // `describe_filters` reply, say) mutates more than once; each
-        // mutation restarts the wait so only the SETTLED height is ever
-        // committed.
-        if (settle) clearTimeout(settle);
-        settle = setTimeout(() => {
-          // One commit per card, ever, THEN the observer stops -- a later
-          // change to this same content (a filter's sub-panel opening, say)
-          // must never fight a height the user has since chosen by hand.
-          stop();
-          if (liveRef.current.layout.isCollapsed(id) || rows === localCards[id]?.h) return;
-          localCards[id] = { ...localCards[id], h: rows };
-          liveRef.current.layout.save({ ...localCards });
-        }, MEASURE_SETTLE_MS);
-      };
-
-      if (typeof MutationObserver !== "undefined") {
-        // A ResizeObserver on the scroller's content watches the WRONG
-        // event here: KillFiltersSection doesn't resize its placeholder, it
-        // REPLACES it -- `<p>Loading filters...</p>` unmounts and a whole
-        // new `<div class="kill-filters">` mounts in its place once
-        // `describe_filters` answers. A ResizeObserver bound to the old `<p>`
-        // node is watching an element that has already left the document;
-        // it never fires again (measured live: the scroller's box sat still
-        // at 728px while its content grew to 1954px, unnoticed). `.sb-scroll`
-        // itself never gets replaced, only its children do, so THAT is the
-        // stable node to watch -- for any mutation, not just a resize.
-        observer = new MutationObserver(schedule);
-        observer.observe(scroller, { childList: true, subtree: true, characterData: true });
+    // Measured in the ResizeObserver callback itself: layout is clean there,
+    // so the reads cost no extra layout pass. Re-measuring a card whose own
+    // height just changed yields the same rows (its content does not depend
+    // on its box), so the loop ends after one round -- the burst guard above
+    // is only for content that breaks that assumption.
+    const resizes = new ResizeObserver((entries) => {
+      const cards = new Map<string, HTMLElement>();
+      for (const entry of entries) {
+        const node = entry.target?.closest("[data-card-id]");
+        const id = node?.getAttribute("data-card-id");
+        if (id && node instanceof HTMLElement) cards.set(id, node);
       }
-      schedule();
-      stops.push(stop);
-    }
+      let next: Record<string, number> | null = null;
+      const now = performance.now();
+      for (const [id, node] of cards) {
+        if (frozen.has(id)) continue;
+        const rows = naturalRows(node, rowHeight, gap);
+        if (rows === null || rows === (next ?? fitRef.current)[id]) continue;
+        const recent = (bursts.get(id) ?? []).filter((t) => now - t < FIT_BURST_WINDOW_MS);
+        recent.push(now);
+        bursts.set(id, recent);
+        if (recent.length > FIT_BURST_LIMIT) {
+          frozen.add(id);
+          continue;
+        }
+        next = { ...(next ?? fitRef.current), [id]: rows };
+      }
+      if (!next) return;
+      fitRef.current = next;
+      if (!busyRef.current) setFitted(next);
+    });
 
-    return () => stops.forEach((stop) => stop());
-    // `layout`/`slots` are read live through `liveRef`; the effect itself
-    // only needs to (re)start when the frozen fresh-card list changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [freshSnapshot, rowHeight, gap]);
+    // What to watch: each card's body and its direct children. A card style
+    // switch or a bridge reply (KillFiltersSection's `describe_filters`)
+    // REPLACES those children, and the grid itself unmounts while its tab is
+    // hidden (width 0), so the set is re-read on every structural change.
+    // `observe` on an already watched element is a no-op; a newly watched one
+    // gets an initial callback, which is what measures a fresh card.
+    const watched = new Set<Element>();
+    const rewire = () => {
+      for (const element of watched) {
+        if (!element.isConnected) {
+          resizes.unobserve(element);
+          watched.delete(element);
+        }
+      }
+      for (const scroller of pane.querySelectorAll("[data-card-id] .sb-scroll")) {
+        for (const element of [scroller, ...layoutChildren(scroller)]) {
+          if (watched.has(element)) continue;
+          watched.add(element);
+          resizes.observe(element);
+        }
+      }
+    };
+    const mutations = new MutationObserver(rewire);
+    mutations.observe(pane, { childList: true, subtree: true });
+    rewire();
 
-  const rglLayout: Layout = declaredIds.map((id) => ({
-    i: id,
-    ...slots[id],
-    // A collapsed card has no height to give: leaving the corner live would
-    // let the user store a height that expanding immediately overwrites.
-    isResizable: !layout.isCollapsed(id),
-  }));
+    return () => {
+      mutations.disconnect();
+      resizes.disconnect();
+    };
+  }, [rowHeight, gap]);
+
+  const rglLayout: Layout = declaredIds.map((id) => {
+    // `slots()` covers every declared card; the fallback only guards a caller
+    // (a test stub) that declares more cards than it stores.
+    const { x, y, w, h, manual } = slots[id] ?? ({} as GridSlot);
+    const collapsed = layout.isCollapsed(id);
+    return {
+      i: id,
+      x,
+      y,
+      w,
+      h: collapsed || manual ? h : (fitted[id] ?? h),
+      // A collapsed card has no height to give: leaving the corner live would
+      // let the user store a height that expanding immediately overwrites.
+      isResizable: !collapsed,
+    };
+  });
 
   // Persisted only from `onDragStop`/`onResizeStop`, never from
   // `onLayoutChange`: the library also fires `onLayoutChange` whenever `cols`
@@ -260,12 +213,39 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
   // recover it -- nothing remembered the original (unlike height's `hPrev`).
   // Drag/resize stop only fire from an actual user gesture, so this is the
   // one place a rectangle change is truly the user's to keep.
-  function saveLayout(next: Layout): void {
+  function toSlots(next: Layout): Record<string, GridSlot> {
     const cards: Record<string, GridSlot> = {};
     for (const item of next) {
       cards[item.i] = { x: item.x, y: item.y, w: item.w, h: item.h };
     }
+    return cards;
+  }
+
+  function startGesture(): void {
+    busyRef.current = true;
+  }
+
+  // The gesture is over: apply whatever was measured meanwhile.
+  function endGesture(): void {
+    busyRef.current = false;
+    setFitted(fitRef.current);
+  }
+
+  function onDragStop(next: Layout): void {
+    layout.save(toSlots(next));
+    endGesture();
+  }
+
+  // A resize that changed the height makes that height the user's: the card
+  // stops fitting its content and keeps it. Widening alone does not -- the
+  // card still grows or shrinks to its content at the new width.
+  function onResizeStop(next: Layout, oldItem: Layout[number] | null, newItem: Layout[number] | null): void {
+    const cards = toSlots(next);
+    if (newItem && oldItem && newItem.h !== oldItem.h && cards[newItem.i]) {
+      cards[newItem.i].manual = true;
+    }
     layout.save(cards);
+    endGesture();
   }
 
   return (
@@ -283,8 +263,10 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
           compactType="vertical"
           preventCollision={false}
           isBounded
-          onDragStop={saveLayout}
-          onResizeStop={saveLayout}
+          onDragStart={startGesture}
+          onResizeStart={startGesture}
+          onDragStop={onDragStop}
+          onResizeStop={onResizeStop}
           resizeHandles={["se"]}
         >
           {sections.map((spec) => (
