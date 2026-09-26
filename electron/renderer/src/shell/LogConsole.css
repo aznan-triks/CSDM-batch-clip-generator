@@ -231,3 +231,59 @@
 .console .prompt-cmd {
   color: var(--dim);
 }
+
+/* ── Search walk (J4–J7) ──
+   Its own strip under the header, only while a search is open (the Tkinter
+   search bar row): the header keeps its measured width. */
+.log-search-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-4);
+  border-bottom: var(--bw) solid var(--line);
+}
+
+.log-search-bar .chip {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--tr-snug);
+  padding: var(--sp-1) var(--sp-3);
+}
+
+.log-search-count {
+  font-size: var(--fs-xs);
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+/* Every hit in the text, and the line the walk is on. Tinted from the accent
+   so the highlight follows the chosen theme in both grounds. */
+.console .body mark.log-hit {
+  background: color-mix(in srgb, var(--gold) 28%, transparent);
+  color: inherit;
+  border-radius: 2px;
+}
+
+.console .body .log-search-cur {
+  background: color-mix(in srgb, var(--gold) 10%, transparent);
+  box-shadow: inset 2px 0 0 var(--gold);
+}
+
+/* The heading lines of the CS2 injection preview (Tkinter tag "key"). */
+.line-key {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* Group titles inside the Export menu: labels, not items. */
+.log-export-group {
+  padding: var(--sp-2) var(--sp-4) var(--sp-1);
+  font-size: var(--fs-micro);
+  letter-spacing: var(--tr-wide);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.log-export-menu button {
+  white-space: nowrap;
+}

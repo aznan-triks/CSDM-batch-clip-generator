@@ -45,6 +45,8 @@ ENGINE_STATE_DEFAULTS = {
     "_pg_params": dict,
     "_previewing": lambda: False,
     "_preview_cancel": threading.Event,
+    # The clip list the last preview showed, for `preview_export` (None = none yet).
+    "_last_preview_result": lambda: None,
 }
 
 

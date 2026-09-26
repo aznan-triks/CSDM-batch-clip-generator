@@ -59,24 +59,11 @@ export const NOT_YET_PORTED: Record<string, string> = {
   /* ── E. Filtres d'armes ── */
   E3: "Cocher/décocher une catégorie entière — toggle de catégorie non porté",
 
-  /* ── J. Logs ── */
-  J4: "Ouvrir la recherche (Ctrl+F) — barre de recherche non portée dans la console HTML",
-  J5: "Occurrence suivante (Entrée) — dépend de J4",
-  J6: "Occurrence précédente — dépend de J4",
-  J7: "Fermer la recherche (Échap) — dépend de J4",
-
-  /* ── K. Export ── */
-  K1: "Ouvrir le menu d'export de la prévisualisation — absent ; le marqueur était posé par erreur sur l'export du journal (audit 2026-09-15)",
-  K2: "Exporter en HTML — l'export HTML existe mais le menu Export est partiel",
-  K3: "Exporter en texte — export TXT non porté",
-  K4: "Exporter en JSON — export JSON non porté",
-
   /* ── L. Options HLAE ── */
   L4: "Basculer en résolution libre — mode libre non porté",
   L9: "Enregistrer le nom d'assemblage courant — sauvegarde nom assemblage non portée",
 
   /* ── M. Réglages ── */
-  M8: "Rafraîchir l'aperçu d'injection — preview HLAE non porté",
   M9: "Bascule « partielle » — injection partielle non portée",
   M10: "Bascule « complète » — injection complète absente ; le marqueur était posé par erreur sur Test & Reload",
 
@@ -86,7 +73,6 @@ export const NOT_YET_PORTED: Record<string, string> = {
   N9: "Aller à une page (Entrée) — saut de page non porté",
 
   /* ── P. États & dialogues ── */
-  P4: "Message éclair dans les logs — rendu dans LogConsole, pas un data-action",
   P5: "Compteurs de logs par niveau — rendu dans LogConsole (badges), pas un data-action",
 };
 
@@ -118,10 +104,24 @@ export const PORTED_BEHIND_STATE: Record<string, string> = {
   /* ── I. Tags ── */
   I3: "tagCards/actions.tsx — puce/tuile de tag ; aucune sans tags chargés",
 
+  /* ── J. Logs ── */
+  J5: "LogConsole.tsx — ▼ occurrence suivante ; affiché seulement pendant une recherche (Entrée fait de même)",
+  J6: "LogConsole.tsx — ▲ occurrence précédente ; même garde que J5 (Maj+Entrée fait de même)",
+  J7: "LogConsole.tsx — bouton Esc (fermer la recherche) ; même garde que J5 (Échap fait de même)",
+  J14: "LogConsole.tsx — Export ▾ › Console log › Text (.txt) ; dans le menu, monté seulement une fois ouvert",
+
+  /* ── K. Export ── */
+  K2: "LogConsole.tsx — Export ▾ › Preview clip list › HTML ; même garde que J14 (commande export_preview)",
+  K3: "LogConsole.tsx — Export ▾ › Preview clip list › Text ; même garde que J14",
+  K4: "LogConsole.tsx — Export ▾ › Preview clip list › JSON ; même garde que J14",
+
   /* ── L. Options HLAE ── */
   L3: "resolution/ResolutionCard.tsx — Segmented des résolutions ; masqué tant que useTables() n'a pas répondu (contrairement au Segmented FPS voisin, qui reste monté avec des options vides)",
   L6: "hlaeOptions/HlaeOptionsCard.tsx — boutons de vitesse rapide (3 styles) ; la carte n'est montée qu'en mode HLAE (recsys)",
   L8: "hlaeOptions/HlaeOptionsCard.tsx — réglage Game Speed (%), 3 styles ; même garde recsys que L6",
+
+  /* ── M. Réglages ── */
+  M8: "LogConsole.tsx — Export ▾ › Inspect › CS2 injection preview, écrit dans la console (commande injection_preview) ; même garde que J14",
 
   /* ── N. Joueurs ── */
   N3: "player/parts.tsx — Segmented de tri par nom ; dans le bloc `{database && (...)}`, monté seulement une fois la base connectée",
@@ -133,6 +133,7 @@ export const PORTED_BEHIND_STATE: Record<string, string> = {
   N13: "player/parts.tsx — ligne de résultat (role=checkbox) ; même garde database que N10",
 
   /* ── P. États & dialogues ── */
+  P4: "LogConsole.tsx — ligne d'état éphémère (flash) ; n'existe que 3 s après un enregistrement, un export ou une erreur",
   P6: "LogConsole.tsx — bouton de choix du panneau #ask-panel ; affiché seulement pendant une question du moteur en cours",
   P7: "LogConsole.tsx — bouton OK d'erreur du panneau #ask-panel ; même garde que P6",
   P9: "ConfirmDialog.tsx — Cancel/Confirm ; rendu par portail seulement pendant une confirmation de suppression en cours",

@@ -39,6 +39,7 @@ except ImportError:
 
 from csdm.static_data import (
     SUICIDE_WEAPONS, DELAYED_EFFECT_WEAPONS, KILL_FILTER_REGISTRY, GUN_WEAPONS_LOWER,
+    DAMAGE_HITGROUPS,
     KILL_FILTER_SQL_COLS, CPU_VIDEO_CODECS,
     CSDM_RUNTIME_CFG_NAME, CSDM_RUNTIME_BLOCK_START, CSDM_RUNTIME_BLOCK_END,
     _NO_AUTO_EXCLUDE, PERSP_LABELS, _MATCH_TYPE_KEY_TO_DB, _MATCH_TYPE_CFG_KEYS,
@@ -46,6 +47,7 @@ from csdm.static_data import (
     SPRAY_TRANSFER_WEAPONS_LOWER, SPRAY_MAX_GAP_TICKS,
 )
 from csdm.config import DEFAULT_CONFIG, clips_root, detect_csdm_cli
+from csdm.engine.preview_export import PREVIEW_EXPORT_FORMATS, clip_row, render_preview
 from csdm.errors import (WHERE as ERROR_WHERE, UserError, csdm_cli_message,
                          db_connect_message, report)
 from csdm.core_utils import (
@@ -1379,8 +1381,20 @@ class EngineMixin:
         except (TypeError, ValueError):
             return None
 
+    def _hit_zone(self, e, zone):
+        return self._num(e.get("hitgroup")) in DAMAGE_HITGROUPS[zone]
+
     def _rule_headshot_hit(self, e, n):
-        return self._num(e.get("hitgroup")) == 1
+        return self._hit_zone(e, "head")
+
+    def _rule_body_hit(self, e, n):
+        return self._hit_zone(e, "body")
+
+    def _rule_arm_hit(self, e, n):
+        return self._hit_zone(e, "arm")
+
+    def _rule_leg_hit(self, e, n):
+        return self._hit_zone(e, "leg")
 
     def _rule_big_hit(self, e, n):
         hp = self._num(e.get("health_damage"))
@@ -1408,6 +1422,9 @@ class EngineMixin:
 
     _EVENT_RULES = {
         "dmg_mod_headshot_hit": _rule_headshot_hit,
+        "dmg_mod_body_hit":     _rule_body_hit,
+        "dmg_mod_arm_hit":      _rule_arm_hit,
+        "dmg_mod_leg_hit":      _rule_leg_hit,
         "dmg_mod_big_hit":      _rule_big_hit,
         "dmg_mod_low_hp":       _rule_low_hp,
         "dmg_mod_team_damage":  _rule_team_damage,
@@ -2711,6 +2728,38 @@ class EngineMixin:
             hlae_options["extraArgs"] = " ".join(tokens)
         return hlae_options
 
+    def injection_preview_lines(self, cfg):
+        """What the next run will inject into CS2 for `cfg`, as (text, kind) lines.
+
+        `kind` is "key" (a heading), "val" (an injected value) or "dim" (none).
+        Read-only: builds the same arguments a run builds, writes nothing.
+        Shared by the Tkinter INJECTION PREVIEW section and the bridge command.
+        """
+        shared = self._common_cs2_injection(cfg)
+        lines = []
+        if self._normalize_recsys(cfg.get("recsys", "HLAE")) == "HLAE":
+            extra = self._inject_hlae_extra_args(cfg, shared).get("extraArgs", "")
+            lines.append(("HLAE extraArgs:", "key"))
+            if extra:
+                # One line per switch or console command, with its arguments:
+                # "+sv_gravity 800", not "+sv_gravity" then "800".
+                groups = []
+                for tok in extra.split():
+                    if not groups or tok[:1] in "+-":
+                        groups.append(tok)
+                    else:
+                        groups[-1] += " " + tok
+                lines.extend(("  " + group, "val") for group in groups)
+            else:
+                lines.append(("  (none)", "dim"))
+        else:
+            launch = shared.get("launch_args", [])
+            lines.append(("Launch args:", "key"))
+            lines.append(("  " + (" ".join(launch) or "(none)"), "val" if launch else "dim"))
+            lines.append(("Console cmds:", "key"))
+            lines.extend(("  " + c, "val") for c in shared.get("console_cmds", []))
+        return lines
+
     @staticmethod
     def _seq_actor_sid(e):
         """Actor-role SID for an event: killer for kills/deaths, attacker for
@@ -3860,6 +3909,42 @@ class EngineMixin:
                                           self._effective_before(cfg), cfg["after"])
                 for dp, events in evts.items() if events}
 
+    def _remember_preview(self, seqs_by_demo, cfg):
+        """Keep the clip list a preview just showed, for `preview_export`."""
+        self._last_preview_result = {"seqs": seqs_by_demo, "cfg": cfg}
+
+    def preview_clip_rows(self, seqs_by_demo, cfg):
+        """Every clip of a preview as an export row, demos in picker order."""
+        rows = []
+        for dp in sorted(seqs_by_demo, key=self._demo_sort_key):
+            seqs = seqs_by_demo[dp]
+            date_str, name = self._format_demo_date(dp), Path(dp).name
+            rows.extend(clip_row(seq, i, len(seqs), dp, name, date_str, cfg)
+                        for i, seq in enumerate(seqs, 1))
+        return rows
+
+    def preview_export(self, fmt):
+        """The last preview's clip list rendered as `fmt` (html / txt / json).
+
+        Returns the file content and its default name; the window writes it.
+        Refuses in plain words when there is nothing to export yet.
+        """
+        if fmt not in PREVIEW_EXPORT_FORMATS:
+            raise ValueError(f"unknown preview export format: {fmt!r}")
+        last = self._last_preview_result
+        if not last:
+            raise UserError("Run a PREVIEW first: there is no clip list to export yet.")
+        seqs, cfg = last["seqs"], last["cfg"]
+        nb_clips, total_sec, _avg = self._sequence_totals(seqs, cfg["tickrate"])
+        if not nb_clips:
+            raise UserError("The last PREVIEW found no clip: there is nothing to export.")
+        meta = {"generated": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "player": self._player_str(cfg), "nb_clips": nb_clips,
+                "total": self._hms(total_sec)}
+        filename, mime = PREVIEW_EXPORT_FORMATS[fmt]
+        return {"content": render_preview(fmt, self.preview_clip_rows(seqs, cfg), meta),
+                "filename": filename, "mime": mime, "clips": nb_clips}
+
     def _preview_worker(self, cfg):
         """Compute a preview and hand the result over the state channel.
 
@@ -3917,6 +4002,7 @@ class EngineMixin:
                 empty_reason = self.explain_empty_result(cfg, funnel)
             if self._preview_cancel.is_set():
                 return
+            self._remember_preview(seqs, cfg)
             self.state("preview_ready", {
                 "events": evts,
                 "sequences": seqs,
@@ -4485,9 +4571,11 @@ class EngineMixin:
                             # `sequences` too: the Electron checklist is built
                             # from them, and without them this preview showed
                             # no clip at all.
+                            _seqs = self._preview_sequences(_fe, cfg)
+                            self._remember_preview(_seqs, cfg)
                             self.state("preview_ready", {
                                 "events": _fe, "cfg": cfg, "timings": None,
-                                "sequences": self._preview_sequences(_fe, cfg)})
+                                "sequences": _seqs})
                         except Exception as e:  # noqa: BLE001 -- clean message outside
                             self.log(f"✗ Preview failed: {report(e, 'computing the preview')}",
                                      "err")

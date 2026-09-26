@@ -23,6 +23,19 @@ from typing import NamedTuple, Optional, List as _List
 # To REMOVE one:   delete its entry.
 # To CHANGE it:    edit its entry — nothing else needs updating.
 
+# CS2 hit zones, as `damages.hitgroup` stores them (engine enum HITGROUP_*;
+# checked against a real CS Demo Manager database on 2026-09-25: 0 generic --
+# grenades, fire --, 1 head, 2 chest, 3 stomach, 4/5 left/right arm, 6/7
+# left/right leg, 8 neck). Neck is left out of every zone: it is neither the
+# head nor the body, and a filter that guessed would lie about one of them.
+DAMAGE_HITGROUPS = {
+    "head": (1,),
+    "body": (2, 3),
+    "arm": (4, 5),
+    "leg": (6, 7),
+}
+
+
 class FilterDef(NamedTuple):
     key:          str
     label:        str            # UI label (flabel), e.g. "💨 SMOKE:"
@@ -180,6 +193,17 @@ KILL_FILTER_REGISTRY: _List[FilterDef] = [
     # the damages / shots queries carry, never by SQL on kills or by dp2.
     FilterDef("dmg_mod_headshot_hit",    "🎯 HEADSHOT HIT:",  "🎯 HS HIT",     "event",
         "Damage that landed on the head (damages.hitgroup = 1).",
+        applies_to=("damage",)),
+    # Hit zone (E1): the rest of the body, one filter per zone, same shape as
+    # HEADSHOT HIT. Tick several to keep any of them.
+    FilterDef("dmg_mod_body_hit",        "🦺 BODY HIT:",      "🦺 BODY HIT",   "event",
+        "Damage that landed on the chest or the stomach (damages.hitgroup = 2 or 3).",
+        applies_to=("damage",)),
+    FilterDef("dmg_mod_arm_hit",         "💪 ARM HIT:",       "💪 ARM HIT",    "event",
+        "Damage that landed on an arm (damages.hitgroup = 4 or 5).",
+        applies_to=("damage",)),
+    FilterDef("dmg_mod_leg_hit",         "🦵 LEG HIT:",       "🦵 LEG HIT",    "event",
+        "Damage that landed on a leg (damages.hitgroup = 6 or 7).",
         applies_to=("damage",)),
     FilterDef("dmg_mod_big_hit",         "💥 BIG HIT:",       "💥 BIG HIT",    "event",
         "One hit dealing at least N health damage (damages.health_damage).",

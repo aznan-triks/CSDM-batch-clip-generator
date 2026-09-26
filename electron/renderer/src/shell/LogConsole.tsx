@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 
-import { onMessage, send } from "../bridge";
+import { onMessage, runCommand, send } from "../bridge";
+import { downloadFile } from "../download";
 import { useTracing } from "../debug/useTracing";
 import { useAllSettings } from "../settings/store";
 import { PROMPT_COMMANDS, narrate, promptFor, reciteSelection } from "./consoleNarrative";
@@ -16,7 +18,14 @@ import "./LogConsole.css";
  * worth and a real batch's log is the only record of what happened. What it
  * does NOT do is grow forever, which is what it did before.
  */
-export const LOG_CONSOLE = { maxRendered: 1500 } as const;
+export const LOG_CONSOLE = {
+  maxRendered: 1500,
+  /** How long a status line (P4, the Tkinter `_log_flash`) stays in the log. */
+  flashMs: 3000,
+  logFileName: "csdm-console-log.txt",
+  htmlFileName: "csdm-console-export.html",
+} as const;
+
 
 /**
  * One rendered console line.
@@ -35,6 +44,55 @@ interface Line {
   level: string;
   /** When the line arrived, for the timestamp toggle. */
   ts: number;
+  /** A status line the console wrote itself; it leaves after `flashMs`. */
+  flash?: boolean;
+}
+
+const PREVIEW_EXPORT_TIP =
+  "Every clip the last PREVIEW found: date, demo, weapon, filters, tick and its playdemo command";
+
+/** What `export_preview` answers with: the file, ready to save. */
+interface PreviewExport {
+  content: string;
+  filename: string;
+  mime: string;
+  clips: number;
+}
+
+/** Every [start, end) of `needle` in `haystack`, case-insensitive. */
+function matchRanges(haystack: string, needle: string): [number, number][] {
+  if (!needle) return [];
+  const ranges: [number, number][] = [];
+  const lower = haystack.toLowerCase();
+  for (let at = lower.indexOf(needle); at !== -1; at = lower.indexOf(needle, at + needle.length)) {
+    ranges.push([at, at + needle.length]);
+  }
+  return ranges;
+}
+
+/**
+ * `text`, which starts at `offset` in its line, with the parts inside `ranges`
+ * wrapped in <mark>. The search highlight of the Tkinter console
+ * (`search_hi`), cut at run boundaries so each piece keeps its level colour.
+ */
+function withMarks(text: string, offset: number, ranges: [number, number][]): ReactNode {
+  if (!ranges.length) return text;
+  const pieces: ReactNode[] = [];
+  let cursor = 0;
+  for (const [start, end] of ranges) {
+    const from = Math.max(start - offset, cursor);
+    const to = Math.min(end - offset, text.length);
+    if (to <= from) continue;
+    if (from > cursor) pieces.push(text.slice(cursor, from));
+    pieces.push(
+      <mark key={from} className="log-hit">
+        {text.slice(from, to)}
+      </mark>,
+    );
+    cursor = to;
+  }
+  if (cursor < text.length) pieces.push(text.slice(cursor));
+  return pieces;
 }
 
 /**
@@ -82,23 +140,6 @@ function escapeHtml(text: string): string {
 }
 
 /**
- * Build a standalone HTML file from the lines on screen and trigger a
- * download.
- *
- * The old Tkinter window's "Export ▾" menu (HTML / TXT / JSON) exported the
- * last PREVIEW RESULT -- a different table entirely, built from data the
- * engine attaches to `preview_ready`. Reproducing that here would need the
- * preview result plumbed into this component and a JSON/table renderer that
- * does not exist yet, well past this task's scope. What this menu exports
- * instead is the console's own lines, which the renderer already holds --
- * the one export the existing data supports honestly.
- *
- * There is also no `pickSavePath`-driven save dialog: writing the chosen path
- * would need a new IPC method in `main.js`/`preload.js`, which is likewise
- * out of scope here. The browser download the `<a download>` triggers is the
- * simplest thing that actually ships a file without adding that surface.
- */
-/**
  * Copy plain text to the clipboard, tolerating the environments that don't
  * have one (jsdom under test, a browser tab with no secure context).
  *
@@ -116,26 +157,22 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-function exportLinesAsHtml(lines: Line[]): void {
-  if (typeof URL === "undefined" || typeof URL.createObjectURL !== "function") {
-    console.warn("log export unavailable: no Blob/URL support in this environment");
-    return;
-  }
+/** The console's own lines as a standalone HTML page. */
+function linesAsHtml(lines: Line[]): string {
   const body = lines
     .map((line) => `<div class="${line.cssClass}">${escapeHtml(line.text)}</div>`)
     .join("\n");
-  const html =
+  return (
     "<!doctype html><html><head><meta charset=\"utf-8\">" +
     "<title>CSDM console export</title></head><body><pre>" +
     body +
-    "</pre></body></html>";
-  const blob = new Blob([html], { type: "text/html" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = "csdm-console-export.html";
-  anchor.click();
-  URL.revokeObjectURL(url);
+    "</pre></body></html>"
+  );
+}
+
+/** The console's own lines as plain text, one per line (Tkinter `_log_save`). */
+function linesAsText(lines: Line[]): string {
+  return lines.map((line) => `${formatTimestamp(line.ts)} ${line.text}`).join("\n");
 }
 
 /**
@@ -157,6 +194,9 @@ export default function LogConsole() {
   // thread waiting on an answer that can no longer be sent.
   const [asks, setAsks] = useState<PendingAsk[]>([]);
   const [search, setSearch] = useState("");
+  // Which match the search is on (J5/J6), as an index into the matching lines.
+  const [searchIndex, setSearchIndex] = useState(0);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   // ON by default: the approved mock timestamps every line, and a run's log is
   // read afterwards to find out WHEN something happened.
@@ -229,11 +269,98 @@ export default function LogConsole() {
   // unless the auto-scroll toggle is off, in which case the reader has
   // deliberately scrolled up to read something and a jump would throw them
   // back to the bottom mid-read.
+  // While a search is open the reader is walking its matches: a new line must
+  // not throw them back to the bottom (the Tkinter console `see()`s the match).
+  const searching = search.trim() !== "";
   useEffect(() => {
-    if (!autoScroll) return;
+    if (!autoScroll || searching) return;
     const element = logRef.current;
     if (element) element.scrollTop = element.scrollHeight;
-  }, [lines, autoScroll]);
+  }, [lines, autoScroll, searching]);
+
+  // Ctrl+F opens the search (J4), from anywhere in the window, as it did in
+  // the Tkinter console. The console is never unmounted, so this is too.
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  /** Add lines the console writes itself (status, injection preview). */
+  function append(entries: Omit<Line, "key" | "ts">[]) {
+    const stamped = entries.map((entry) => {
+      nextKey.current += 1;
+      return { ...entry, key: nextKey.current, ts: Date.now() };
+    });
+    setLines((previous) => [...previous, ...stamped]);
+    return stamped.map((line) => line.key);
+  }
+
+  /**
+   * A status line that leaves by itself after `flashMs` (P4): the Tkinter
+   * console's `_log_flash`. Saving, exporting and copying report here, where
+   * the user is already looking, and do not clutter the record of the run.
+   */
+  function flash(text: string, level: "ok" | "warn" | "err") {
+    const [key] = append([{ runs: [[text, level]], text, cssClass: levelClass(level), level, flash: true }]);
+    window.setTimeout(() => {
+      setLines((previous) => previous.filter((line) => line.key !== key));
+    }, LOG_CONSOLE.flashMs);
+  }
+
+  /** The reason a command failed, in the engine's own words. */
+  function reason(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+  }
+
+  function saveLog() {
+    const saved = downloadFile(LOG_CONSOLE.logFileName, linesAsText(recorded()), "text/plain");
+    if (saved) flash("✓ Log saved", "ok");
+    else flash("✗ The log could not be saved here", "err");
+  }
+
+  async function exportPreview(format: string) {
+    try {
+      const result = await runCommand("export_preview", { format });
+      const file = result.data as PreviewExport;
+      if (downloadFile(file.filename, file.content, file.mime)) {
+        flash(`✓ Preview exported (${file.clips} clips)`, "ok");
+      } else {
+        flash("✗ The preview could not be saved here", "err");
+      }
+    } catch (error) {
+      flash(`⚠ ${reason(error)}`, "warn");
+    }
+  }
+
+  /**
+   * What the next run would inject into CS2 (M8), written into the console:
+   * the Tkinter INJECTION PREVIEW section, read from the engine with the
+   * settings as they stand now. Asking again refreshes it.
+   */
+  async function showInjection() {
+    try {
+      const result = await runCommand("injection_preview", { cfg: settingsRef.current });
+      const rows = (result.lines as [string, string][]) ?? [];
+      append([
+        { runs: [["── CS2 injection preview ──", "dim"]], text: "── CS2 injection preview ──", cssClass: "line-dim", level: "" },
+        ...rows.map(([text, kind]) => ({
+          runs: [[text, kind === "dim" ? "dim" : ""]] as Run[],
+          text,
+          cssClass: kind === "key" ? "line-key" : kind === "dim" ? "line-dim" : "",
+          level: "",
+        })),
+      ]);
+    } catch (error) {
+      flash(`⚠ ${reason(error)}`, "warn");
+    }
+  }
 
   function answer(value: string | null) {
     if (!ask) return;
@@ -252,17 +379,43 @@ export default function LogConsole() {
     setCopyStatus(ok ? "✓ Selection copied" : selected ? "" : "Nothing selected");
   }
 
+  /** The record of the run: what the exports write, status lines left out. */
+  const recorded = () => lines.filter((line) => !line.flash);
+
   const trimmedSearch = search.trim().toLowerCase();
   const matching = trimmedSearch
     ? lines.filter((line) => line.text.toLowerCase().includes(trimmedSearch))
     : lines;
+  // The search keeps filtering (the lines shown are the lines that match) and
+  // also walks them, one at a time, the way the Tkinter search bar did:
+  // Enter / ▼ next, Shift+Enter / ▲ previous, Esc closes.
+  const matchCount = trimmedSearch ? matching.length : 0;
+  const current = matchCount ? ((searchIndex % matchCount) + matchCount) % matchCount : -1;
+  const currentKey = current >= 0 ? matching[current].key : null;
+
+  useEffect(() => {
+    if (currentKey === null) return;
+    const element = logRef.current?.querySelector(`[data-line="${currentKey}"]`);
+    // jsdom has no scrollIntoView; the real window does.
+    element?.scrollIntoView?.({ block: "nearest" });
+  }, [currentKey]);
+
+  function stepSearch(delta: number) {
+    setSearchIndex((previous) => previous + delta);
+  }
+
+  function closeSearch() {
+    setSearch("");
+    setSearchIndex(0);
+    searchRef.current?.blur();
+  }
   // The TAIL, bounded. A batch of several hundred clips writes thousands of
   // lines into a scrolling area that sits inside a `backdrop-filter` surface,
   // so every one of them costs a re-blur on every repaint -- the player list's
   // problem, except it grows while the user watches.
   //
   // The lines themselves are KEPT: a work tool's log is the record of a run,
-  // and `exportLinesAsHtml` still writes every one. Only the rendering is cut,
+  // and the log exports still write every one. Only the rendering is cut,
   // which is strictly more than the mock does (it drops its own past 40).
   const visibleLines =
     matching.length > LOG_CONSOLE.maxRendered
@@ -284,13 +437,28 @@ export default function LogConsole() {
           <label className="log-search">
             Search
             <input
+              ref={searchRef}
               type="text"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setSearchIndex(0);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  stepSearch(event.shiftKey ? -1 : 1);
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  closeSearch();
+                }
+              }}
               placeholder="filter…"
-              title="Filter console output by text"
+              title="Search the console (Ctrl+F). Enter: next match, Shift+Enter: previous, Esc: close"
+              data-action="J4"
             />
           </label>
+
 
           <button
             type="button"
@@ -360,23 +528,69 @@ export default function LogConsole() {
               className="chip"
               aria-haspopup="menu"
               aria-expanded={exportMenuOpen}
-              title="Download the full console log as an HTML file"
-              data-action="J14"
+              title="Save the log, export preview clips, inspect"
+              data-action="K1"
               onClick={() => setExportMenuOpen((previous) => !previous)}
             >
               Export ▾
             </button>
             {exportMenuOpen && (
               <div className="log-export-menu" role="menu">
+                <span className="log-export-group" role="presentation">Console log</span>
                 <button
                   type="button"
                   role="menuitem"
+                  aria-label="Console log, Text (.txt)"
+                  title="Save every console line, with its time, to a text file"
+                  data-action="J14"
                   onClick={() => {
-                    exportLinesAsHtml(lines);
+                    saveLog();
+                    setExportMenuOpen(false);
+                  }}
+                >
+                  Text (.txt)
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  aria-label="Console log, HTML (.html)"
+                  title="Save every console line, with its colour, to an HTML page"
+                  onClick={() => {
+                    const saved = downloadFile(LOG_CONSOLE.htmlFileName, linesAsHtml(recorded()), "text/html");
+                    if (!saved) flash("✗ The log could not be saved here", "err");
                     setExportMenuOpen(false);
                   }}
                 >
                   HTML (.html)
+                </button>
+                <span className="log-export-group" role="presentation">Preview clip list</span>
+                {/* One literal marker per format: the parity ledger reads them
+                    out of the source. The formats are the engine's
+                    (`csdm/engine/preview_export.py::PREVIEW_EXPORT_FORMATS`). */}
+                <button type="button" role="menuitem" aria-label="Preview clips, HTML (.html)" title={PREVIEW_EXPORT_TIP} data-action="K2"
+                  onClick={() => { void exportPreview("html"); setExportMenuOpen(false); }}>
+                  HTML (.html)
+                </button>
+                <button type="button" role="menuitem" aria-label="Preview clips, Text (.txt)" title={PREVIEW_EXPORT_TIP} data-action="K3"
+                  onClick={() => { void exportPreview("txt"); setExportMenuOpen(false); }}>
+                  Text (.txt)
+                </button>
+                <button type="button" role="menuitem" aria-label="Preview clips, JSON (.json)" title={PREVIEW_EXPORT_TIP} data-action="K4"
+                  onClick={() => { void exportPreview("json"); setExportMenuOpen(false); }}>
+                  JSON (.json)
+                </button>
+                <span className="log-export-group" role="presentation">Inspect</span>
+                <button
+                  type="button"
+                  role="menuitem"
+                  title="Write into the console the arguments and commands a run with the current settings injects into CS2"
+                  data-action="M8"
+                  onClick={() => {
+                    void showInjection();
+                    setExportMenuOpen(false);
+                  }}
+                >
+                  CS2 injection preview
                 </button>
                 <button
                   type="button"
@@ -397,6 +611,50 @@ export default function LogConsole() {
           </div>
         </div>
       </div>
+
+      {/* The Tkinter search bar was its own row under the toolbar, and so is
+          this: the walk's count and arrows do not fit beside six chips in
+          the console header, where they squeezed the search box to nothing
+          and pushed Export off the column (hidden-window proof). */}
+      {searching && (
+        <div className="log-search-bar" role="search" aria-label="Search results">
+          <span className="log-search-count" aria-live="polite">
+            {matchCount ? `${current + 1}/${matchCount}` : "0 results"}
+          </span>
+          <button
+            type="button"
+            className="chip"
+            aria-label="Previous match"
+            title="Previous match (Shift+Enter)"
+            data-action="J6"
+            disabled={!matchCount}
+            onClick={() => stepSearch(-1)}
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            className="chip"
+            aria-label="Next match"
+            title="Next match (Enter)"
+            data-action="J5"
+            disabled={!matchCount}
+            onClick={() => stepSearch(1)}
+          >
+            ▼
+          </button>
+          <button
+            type="button"
+            className="chip"
+            aria-label="Close search"
+            title="Close the search (Esc)"
+            data-action="J7"
+            onClick={closeSearch}
+          >
+            Esc
+          </button>
+        </div>
+      )}
 
       {ask && (
         <div id="ask-panel" role="alertdialog" aria-label={ask.title}>
@@ -426,7 +684,12 @@ export default function LogConsole() {
           and so does every test that counts lines. */}
       <div className="body" id="log" ref={logRef}>
         {visibleLines.map((line, lineIndex) => (
-          <div key={line.key} className={line.cssClass}>
+          <div
+            key={line.key}
+            data-line={line.key}
+            data-action={line.flash ? "P4" : undefined}
+            className={[line.cssClass, line.key === currentKey ? "log-search-cur" : ""].filter(Boolean).join(" ")}
+          >
             {showTimestamps && <span className="log-ts">{formatTimestamp(line.ts)} </span>}
             {showBadges && line.level && (
               <span className={`log-badge ${line.cssClass}`}>{line.level.toUpperCase()}</span>
@@ -440,6 +703,7 @@ export default function LogConsole() {
                 written through its colour change rather than per piece. */}
             {(() => {
               const budget = revealed(lineIndex);
+              const hits = matchRanges(line.text, trimmedSearch);
               let used = 0;
               return line.runs.map(([piece, level], index) => {
                 const from = used;
@@ -447,7 +711,7 @@ export default function LogConsole() {
                 if (budget === Infinity) {
                   return (
                     <span key={index} className={levelClass(level)}>
-                      {piece}
+                      {withMarks(piece, from, hits)}
                     </span>
                   );
                 }
@@ -455,7 +719,7 @@ export default function LogConsole() {
                 if (take === 0) return null;
                 return (
                   <span key={index} className={levelClass(level)}>
-                    {piece.slice(0, take)}
+                    {withMarks(piece.slice(0, take), from, hits)}
                   </span>
                 );
               });

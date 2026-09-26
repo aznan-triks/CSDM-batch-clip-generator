@@ -47,9 +47,14 @@
   overflow: hidden;
 }
 
+/* Date and Map give ground before Demo does. With fixed 118px/80px tracks the
+   narrowest card (233px inside) left the 1fr Demo column at 0px -- its header
+   gone, the table 10px wider than its box (hidden-window sweep, 2026-09-26).
+   Every column now has a floor, and the free space fills Date/Map to their
+   old widths first, so a wide card looks exactly as before. */
 .dp-row {
   display: grid;
-  grid-template-columns: 24px 118px 80px 1fr;
+  grid-template-columns: 24px minmax(64px, 118px) minmax(40px, 80px) minmax(40px, 1fr);
   align-items: center;
   gap: var(--sp-3);
   padding: var(--sp-2) var(--sp-3);

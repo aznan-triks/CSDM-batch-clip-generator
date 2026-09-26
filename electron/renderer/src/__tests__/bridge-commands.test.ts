@@ -147,4 +147,20 @@ describe("runCommand", () => {
     await expect(first).rejects.toThrow(/engine exited/);
     await expect(second).rejects.toThrow(/engine exited/);
   });
+  it("follows a replaced bridge: the new pipe's answers reach the caller", async () => {
+    const first = installFakeBridge();
+    const { runCommand } = await freshBridge();
+
+    const stranded = runCommand("start_run");
+    const second = installFakeBridge();
+    const answered = runCommand("load_config");
+
+    // The command in flight on the old pipe can no longer be answered.
+    await expect(stranded).rejects.toThrow(/bridge replaced/);
+    // The old pipe is no longer listened to...
+    first.emit({ type: "result", id: "2", ok: false, error: "stale pipe" });
+    // ...and the new one is.
+    second.emit({ type: "result", id: "2", ok: true, data: { crf: 18 } });
+    await expect(answered).resolves.toMatchObject({ id: "2", data: { crf: 18 } });
+  });
 });

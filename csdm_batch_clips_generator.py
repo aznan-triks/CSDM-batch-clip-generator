@@ -130,6 +130,7 @@ from csdm.static_data import (
 )
 from csdm.engine.core import EngineMixin, PG_PARAM_KEYS
 from csdm.engine.state import EngineStateMixin
+from csdm.engine.preview_export import PREVIEW_EXPORT_FORMATS, clip_row, render_preview
 
 # ── Configuration : defauts, presets, persistance (Phase 1.1) ──────────────
 #  Extracted into csdm/config.py, imported here to keep the same names.
@@ -5025,28 +5026,7 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         except Exception:
             return
         try:
-            shared = self._common_cs2_injection(cfg)
-            hlae_opts = self._inject_hlae_extra_args(cfg, shared)
-            recsys = self._normalize_recsys(cfg.get("recsys", "HLAE"))
-
-            lines = []
-            if recsys == "HLAE":
-                extra = hlae_opts.get("extraArgs", "")
-                lines.append(("HLAE extraArgs:", "key"))
-                if extra:
-                    for tok in extra.split():
-                        lines.append(("  " + tok, "val"))
-                else:
-                    lines.append(("  (none)", "dim"))
-            else:
-                la = shared.get("launch_args", [])
-                lines.append(("Launch args:", "key"))
-                lines.append(("  " + (" ".join(la) or "(none)"), "val" if la else "dim"))
-                cmds = shared.get("console_cmds", [])
-                lines.append(("Console cmds:", "key"))
-                for c in cmds:
-                    lines.append(("  " + c, "val"))
-
+            lines = self.injection_preview_lines(cfg)
             txt = "\n".join(t for t, _ in lines)
             tags = []
             pos = 0
@@ -5247,200 +5227,51 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
             "nb_clips": nb_clips, "total_sec": total_sec,
         }
 
-    def _export_preview_html(self):
-        """Export the last preview result as a standalone HTML file."""
+    def _export_preview(self, fmt):
+        """Export the last preview result (shared renderer: csdm/engine/preview_export.py)."""
         if not self._last_preview_data:
             self._log_flash("  ⚠ Run a preview first (F6).", "warn")
             return
-        import html as _html
-
-        d        = self._last_preview_data
-        nb_clips = d["nb_clips"]
-        total_sec= d["total_sec"]
-
+        default_name, _mime = PREVIEW_EXPORT_FORMATS[fmt]
+        label = {"html": "HTML", "txt": "Text", "json": "JSON"}[fmt]
         path = filedialog.asksaveasfilename(
-            parent=self,
-            defaultextension=".html",
-            filetypes=[("HTML", "*.html"), ("All files", "*.*")],
-            title="Export preview as HTML",
-            initialfile="csdm_preview.html",
+            parent=self, defaultextension=f".{fmt}",
+            filetypes=[(label, f"*.{fmt}"), ("All files", "*.*")],
+            title=f"Export preview as {fmt.upper()}", initialfile=default_name,
         )
         if not path:
             return
-
-        rows_html = []
-        for row in self._preview_clip_rows():
-            filters_str = ", ".join(row["filters"]) or "—"
-            rows_html.append(
-                f"<tr>"
-                f"<td>{_html.escape(row['date'])}</td>"
-                f"<td class='mono'>{_html.escape(row['demo'])}</td>"
-                f"<td>{row['clip_index']}/{row['clip_count']}</td>"
-                f"<td>{_html.escape(row['weapon'])}</td>"
-                f"<td>{_html.escape(filters_str)}</td>"
-                f"<td>{row['tick']}</td>"
-                f"<td class='mono cmd'>{_html.escape(row['command'])}</td>"
-                f"</tr>"
-            )
-
-        h_total = self._hms(total_sec)
-        generated = time.strftime("%Y-%m-%d %H:%M:%S")
-        player_str = _html.escape(self._player_str(d["cfg"]))
-        html_out = f"""<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8">
-<title>CSDM Preview Export — {generated}</title>
-<style>
-  body{{font-family:Consolas,monospace;background:#0e0e0e;color:#e0e0e0;margin:2rem}}
-  h1{{color:#22c55e;font-size:1.1rem;margin-bottom:.4rem}}
-  .meta{{color:#888;font-size:.85rem;margin-bottom:1.2rem}}
-  table{{border-collapse:collapse;width:100%;font-size:.85rem}}
-  th{{background:#1a1a1a;color:#f97316;text-align:left;padding:6px 10px;border-bottom:1px solid #252525}}
-  td{{padding:5px 10px;border-bottom:1px solid #181818;vertical-align:top}}
-  tr:hover td{{background:#141414}}
-  .mono{{font-family:Consolas,monospace}}
-  .cmd{{color:#93c5fd;cursor:pointer;user-select:all}}
-  .summary{{margin-top:1rem;color:#86efac;font-size:.9rem}}
-</style>
-</head>
-<body>
-<h1>CSDM Preview Export</h1>
-<div class="meta">Generated: {generated} · Player: {player_str} · {nb_clips} clips · {h_total}</div>
-<table>
-<thead><tr>
-  <th>Date</th><th>Demo</th><th>Clip</th><th>Weapon</th><th>Filters</th><th>Tick</th><th>Command</th>
-</tr></thead>
-<tbody>
-{"".join(rows_html)}
-</tbody>
-</table>
-<div class="summary">▶ {nb_clips} clips &nbsp;|&nbsp; total {h_total}</div>
-</body></html>"""
-
+        d = self._last_preview_data
+        meta = {"generated": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "player": self._player_str(d["cfg"]), "nb_clips": d["nb_clips"],
+                "total": self._hms(d["total_sec"])}
         try:
-            Path(path).write_text(html_out, encoding="utf-8")
-            self._log_flash(f"  ✓ HTML exported → {path}", "ok")
+            Path(path).write_text(render_preview(fmt, list(self._preview_clip_rows()), meta),
+                                  encoding="utf-8")
+            self._log_flash(f"  ✓ {fmt.upper()} exported → {path}", "ok")
         except Exception as e:
             self._log_flash(f"  ✗ Export failed: {e}", "err")
+
+    def _export_preview_html(self):
+        self._export_preview("html")
+
+    def _export_preview_txt(self):
+        self._export_preview("txt")
+
+    def _export_preview_json(self):
+        self._export_preview("json")
 
     def _preview_clip_rows(self):
         """Shared helper — yield dicts for every clip in the last preview result."""
         d = self._last_preview_data
         evts, cfg = d["evts"], d["cfg"]
         for dp in d["sorted_demos"]:
-            date_str  = d["demo_dates"].get(dp, "??")
-            demo_name = Path(dp).name
             seqs = self._build_sequences(
                 evts.get(dp, []), cfg["tickrate"],
                 self._effective_before(cfg), cfg["after"])
             for i, seq in enumerate(seqs, 1):
-                kill_parts = [e for e in seq.get("events", []) if e.get("type") == "kill"]
-                matched_keys: set = set()
-                for e in kill_parts:
-                    matched_keys |= (e.get("_mf") or set())
-                if matched_keys:
-                    filters = [f.badge for f in KILL_FILTER_REGISTRY if f.key in matched_keys]
-                else:
-                    filters = [f.badge for f in KILL_FILTER_REGISTRY
-                               if cfg.get(f.key) and not f.hide_ui]
-                weapon = kill_parts[0].get("weapon", "—") if kill_parts else "—"
-                tick   = seq.get("start_tick", 0)
-                yield {
-                    "date":        date_str,
-                    "demo":        demo_name,
-                    "demo_path":   dp,
-                    "clip_index":  i,
-                    "clip_count":  len(seqs),
-                    "weapon":      weapon,
-                    "filters":     filters,
-                    "tick":        tick,
-                    "command":     f"playdemo {demo_name} {tick}",
-                }
-
-    def _export_preview_txt(self):
-        """Export the last preview result as a plain-text file."""
-        if not self._last_preview_data:
-            self._log_flash("  ⚠ Run a preview first (F6).", "warn")
-            return
-
-        path = filedialog.asksaveasfilename(
-            parent=self, defaultextension=".txt",
-            filetypes=[("Text", "*.txt"), ("All files", "*.*")],
-            title="Export preview as TXT", initialfile="csdm_preview.txt",
-        )
-        if not path:
-            return
-
-        d = self._last_preview_data
-        generated  = time.strftime("%Y-%m-%d %H:%M:%S")
-        player_str = self._player_str(d["cfg"])
-        h_total    = self._hms(d["total_sec"])
-        nb_clips   = d["nb_clips"]
-
-        COL = (12, 36, 6, 18, 30, 8)  # Date, Demo, Clip, Weapon, Filters, Tick
-        HDR = ("Date", "Demo", "Clip", "Weapon", "Filters found", "Tick")
-        sep = "─" * (sum(COL) + len(COL) * 2)
-
-        lines = [
-            f"CSDM Preview Export — {generated}",
-            f"Player: {player_str}   |   {nb_clips} clips   |   {h_total}",
-            sep,
-            "  ".join(h.ljust(w) for h, w in zip(HDR, COL)),
-            sep,
-        ]
-        for row in self._preview_clip_rows():
-            clip_lbl   = f"{row['clip_index']}/{row['clip_count']}"
-            filter_lbl = ", ".join(row["filters"]) or "—"
-            cells = (
-                row["date"][:COL[0]].ljust(COL[0]),
-                row["demo"][:COL[1]].ljust(COL[1]),
-                clip_lbl[:COL[2]].ljust(COL[2]),
-                row["weapon"][:COL[3]].ljust(COL[3]),
-                filter_lbl[:COL[4]].ljust(COL[4]),
-                str(row["tick"])[:COL[5]].ljust(COL[5]),
-            )
-            lines.append("  ".join(cells))
-            lines.append(f"  {'':>{COL[0]+2}}cmd: {row['command']}")
-        lines += [sep, f"▶ {nb_clips} clips  |  total {h_total}"]
-
-        try:
-            Path(path).write_text("\n".join(lines), encoding="utf-8")
-            self._log_flash(f"  ✓ TXT exported → {path}", "ok")
-        except Exception as e:
-            self._log_flash(f"  ✗ Export failed: {e}", "err")
-
-    def _export_preview_json(self):
-        """Export the last preview result as JSON."""
-        if not self._last_preview_data:
-            self._log_flash("  ⚠ Run a preview first (F6).", "warn")
-            return
-
-        import json as _json
-        path = filedialog.asksaveasfilename(
-            parent=self, defaultextension=".json",
-            filetypes=[("JSON", "*.json"), ("All files", "*.*")],
-            title="Export preview as JSON", initialfile="csdm_preview.json",
-        )
-        if not path:
-            return
-
-        d = self._last_preview_data
-        generated  = time.strftime("%Y-%m-%d %H:%M:%S")
-        player_str = self._player_str(d["cfg"])
-        clips      = list(self._preview_clip_rows())
-        out = {
-            "generated":      generated,
-            "player":         player_str,
-            "nb_clips":       d["nb_clips"],
-            "total_duration": self._hms(d["total_sec"]),
-            "clips": clips,
-        }
-        try:
-            Path(path).write_text(_json.dumps(out, ensure_ascii=False, indent=2),
-                                  encoding="utf-8")
-            self._log_flash(f"  ✓ JSON exported → {path}", "ok")
-        except Exception as e:
-            self._log_flash(f"  ✗ Export failed: {e}", "err")
+                yield clip_row(seq, i, len(seqs), dp, Path(dp).name,
+                               d["demo_dates"].get(dp, "??"), cfg)
 
 if __name__ == "__main__":
     App().mainloop()
