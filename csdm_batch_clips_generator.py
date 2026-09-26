@@ -434,7 +434,11 @@ class App(EngineStateMixin, EngineMixin, tk.Tk):
         return cfg
 
     def _auto_save(self):
-        save_config(self._collect_config())
+        # Over the saved file, never instead of it: this window knows only its
+        # own keys, and writing them alone erased every key it does not show
+        # (the Electron window's favourites `saved_players`, layout, config
+        # folder choice) -- found wiping the user's favourites.
+        save_config({**load_config(), **self._collect_config()})
         self.after(5000, self._auto_save)
 
     def _apply_config(self, cfg, keys=None):

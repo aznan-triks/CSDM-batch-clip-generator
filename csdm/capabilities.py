@@ -82,7 +82,7 @@ _HAND_WRITTEN: list = [
        level="expert"),
     # ── I2 Choose who ──────────────────────────────────────────────────────
     _C("player_selection", "I2", "Players",
-       ("steam_id", "steam_ids", "player_name", "saved_players"),
+       ("steam_id", "steam_ids", "player_name", "saved_players", "saved_players_imported"),
        level="essential"),
     _C("player_name_override", "I2", "In-game name override", ("player_name_override",),
        level="advanced"),
