@@ -288,6 +288,9 @@ DEFAULT_CONFIG = {
     "dp2_threads": min(8, max(2, os.cpu_count() or 4)),  # auto-scaled to CPU count (1–8)
     # demos kept from EARLIER queries; the current query's demos are never evicted (core._dp2_cache_pin)
     "dp2_cache_max_demos": 150,
+    # player_positions frames kept from EARLIER queries (every tick x every
+    # player: far larger than a dp2 entry); the current query's are never evicted
+    "positions_cache_max_demos": 20,
     # AIRBORNE: a shot's own vertical speed above this (units/s) is a jump or
     # a fall; on the ground it reads 0. Without a speed, the Z change across
     # the few position samples around the tick above this (units) counts.

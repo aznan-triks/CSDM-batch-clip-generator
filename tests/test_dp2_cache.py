@@ -88,6 +88,35 @@ class Dp2CacheTests(unittest.TestCase):
             host._dp2_cache_put_locked("e", {})
         self.assertEqual(list(host._dp2_cache), ["c", "d", "e"])
 
+    def test_player_positions_are_bounded_by_their_own_cap(self):
+        host = _Host({"positions_cache_max_demos": 2})
+        with host._dp2_cache_lock:
+            for path in ("a", "b", "c"):
+                host._positions_cache_put_locked(path, object())
+        self.assertEqual(list(host._player_positions_cache), ["b", "c"])
+
+    def test_positions_of_the_current_query_are_never_evicted(self):
+        # _apply_shared_modifiers reads positions with no re-parse fallback,
+        # so the query being filtered must keep every one of its frames.
+        host = _Host({"positions_cache_max_demos": 1})
+        host._dp2_cache_pin(["a", "b", "c"])
+        with host._dp2_cache_lock:
+            for path in ("a", "b", "c"):
+                host._positions_cache_put_locked(path, object())
+        self.assertEqual(list(host._player_positions_cache), ["a", "b", "c"])
+
+    def test_evicted_positions_are_parsed_again_when_needed(self):
+        # The demo's dp2 entry must stop claiming a "positions" section once
+        # its frame is gone, otherwise the next query skips the parse and
+        # airborne silently reads nothing for that demo.
+        host = _Host({"positions_cache_max_demos": 1})
+        with host._dp2_cache_lock:
+            host._dp2_cache_put_locked("a", {"_sections": {"fire", "positions"}})
+            host._positions_cache_put_locked("a", object())
+            host._positions_cache_put_locked("b", object())
+        self.assertNotIn("a", host._player_positions_cache)
+        self.assertEqual(host._dp2_cache["a"]["_sections"], {"fire"})
+
     def test_preparse_pins_the_demos_of_the_query(self):
         host = _Host({"dp2_cache_max_demos": 1})
         pinned = []
