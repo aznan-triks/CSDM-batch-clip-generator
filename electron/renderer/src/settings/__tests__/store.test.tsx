@@ -160,6 +160,27 @@ describe("SettingsProvider", () => {
     expect(commands.filter((c) => c.name === "save_config")).toHaveLength(1);
   });
 
+  it("sends a pending save on unmount, never from an orphaned timer later", async () => {
+    const { unmount } = render(
+      <SettingsProvider>
+        <Probe settingKey="crf" />
+      </SettingsProvider>,
+    );
+    await waitFor(() => expect(screen.getByRole("button").textContent).toBe("18"));
+    act(() => screen.getByRole("button").click());
+
+    unmount();
+    const saves = commands.filter((c) => c.name === "save_config");
+    expect(saves).toHaveLength(1);
+    expect((saves[0].payload.cfg as Record<string, unknown>).crf).toBe(19);
+
+    // The timer died with the provider: nothing lands after it is gone.
+    await act(async () => {
+      vi.advanceTimersByTime(SAVE_DEBOUNCE_MS * 3);
+    });
+    expect(commands.filter((c) => c.name === "save_config")).toHaveLength(1);
+  });
+
   it("answers a flush at once, without writing, when nothing is pending", async () => {
     render(
       <SettingsProvider>
