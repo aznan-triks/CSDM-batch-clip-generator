@@ -64,7 +64,7 @@ describe("Per-card style", () => {
         "injection-preview",
       ]),
     );
-    expect(ids.slice(0, 10)).toEqual([
+    expect(ids.slice(0, 17)).toEqual([
       "player",
       "demo-selection",
       "weapon-filter",
