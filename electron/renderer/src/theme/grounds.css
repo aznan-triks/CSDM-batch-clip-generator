@@ -33,7 +33,7 @@
  * `:root` (0,1,0), so the more specific rule wins whatever the load order.
  * Measured: all four night grounds came back with the same `rgb(11,18,32)`
  * page while their cards and ink already differed. Same trap as the four
- * surfaces the mock writes literally (context_guide section 10).
+ * surfaces the mock writes literally (CONTEXT.md section 10).
  */
 
 /* -- amoled: true black, for a panel that can switch pixels off entirely.

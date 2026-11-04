@@ -4,7 +4,7 @@
 #  Regle : on ignore TOUT par defaut, puis on autorise UNIQUEMENT
 #  les fichiers du programme. Impossible de publier par accident un
 #  secret (csdm_config.json = mot de passe base), un document de
-#  travail (PLAN, CONTEXT_GUIDE) ou un fichier perso.
+#  travail (PLAN, CONTEXT.md) ou un fichier perso.
 #
 #  Pour publier un NOUVEAU fichier un jour : ajouter une ligne
 #  "!nom_du_fichier" ci-dessous, en pleine conscience.
@@ -62,3 +62,6 @@ codex.json
 atlas.json
 semantic_index.json
 
+
+# Local backup of context files (methode migration)
+_backup_methode_2026-09-28/

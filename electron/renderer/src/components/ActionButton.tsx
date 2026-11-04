@@ -40,7 +40,7 @@ interface ActionButtonProps extends Omit<ComponentPropsWithoutRef<"button">, "on
  *
  * The impact class comes off on a TIMER, never on `onfinish`: `onfinish` does
  * not fire while the window is hidden, and the class would pile up
- * (CONTEXT_GUIDE section 10).
+ * (CONTEXT.md section 10).
  */
 export default function ActionButton({
   label,

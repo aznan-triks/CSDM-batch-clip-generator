@@ -22,7 +22,7 @@ import { MOTION } from "../motion/tokens";
  *
  * THREE -- one interval owns the whole queue, cleared the moment the queue
  * empties. Not a timer per line, and never `onfinish`: a window hidden
- * mid-batch would leave the timers behind (context_guide section 10).
+ * mid-batch would leave the timers behind (CONTEXT.md section 10).
  *
  * @param lengths character count of each line, oldest first
  * @returns how many characters of line `index` to show; `Infinity` means all

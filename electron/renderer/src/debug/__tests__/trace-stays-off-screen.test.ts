@@ -5,7 +5,7 @@
  * `JSON.stringify(message)` for any type it has not heard of -- a deliberate
  * choice so a new engine event cannot go unnoticed -- and the new `trace`
  * type fell straight into it. The console filled with raw protocol JSON, the
- * one thing CONTEXT_GUIDE forbids reaching the screen.
+ * one thing CONTEXT.md forbids reaching the screen.
  *
  * The default branch is right and stays. This is the pairing rule it implies:
  * a message type that must NOT be narrated has to say so explicitly.

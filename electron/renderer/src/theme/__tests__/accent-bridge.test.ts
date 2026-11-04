@@ -27,7 +27,7 @@ describe("--accent is derived from --gold, not left to the mock's literal", () =
   it("is declared after mock-v12.css and mock-bridge.css load (main.tsx import order)", () => {
     // tokens.css must win the cascade over mock-v12.css's own `--accent`
     // literal, which only holds if it imports LAST among the three -- see
-    // context_guide.md's own gotcha on import order deciding cascade order,
+    // CONTEXT.md's own gotcha on import order deciding cascade order,
     // not source position relative to `import App`.
     const main = readFileSync(path.join(__dirname, "..", "..", "main.tsx"), "utf-8");
     const mockIndex = main.indexOf('"./theme/mock-v12.css"');

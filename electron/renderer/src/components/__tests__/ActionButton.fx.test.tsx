@@ -51,7 +51,7 @@ describe("ActionButton impact feedback", () => {
     fireEvent.mouseDown(button);
     expect(button.className).toContain("hit");
     // Cleared by a timer, never by onfinish: onfinish does not fire while the
-    // window is hidden and the class would pile up (CONTEXT_GUIDE section 10).
+    // window is hidden and the class would pile up (CONTEXT.md section 10).
     act(() => {
       vi.advanceTimersByTime(MOTION.buttonImpact.duration * 1000 + 1);
     });

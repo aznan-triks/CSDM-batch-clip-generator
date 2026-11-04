@@ -99,7 +99,7 @@ describe("the field vocabulary has one spelling, and it is the mock's", () => {
   // and labels therefore rendered as bare browser controls (a 16px label
   // above a default-chrome box) on every tab that shows a path or a date,
   // while every other field wore the mock's `.fld` / `.lab`. Same failure as
-  // `chip-selected` (context_guide section 10): a synonym of a styled class
+  // `chip-selected` (CONTEXT.md section 10): a synonym of a styled class
   // is invisible, and nothing fails.
   const SRC = path.join(__dirname, "..", "..");
 

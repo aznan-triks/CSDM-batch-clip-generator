@@ -4,7 +4,7 @@
  * and dumps what the console said, so a reviewer can read the journey
  * without opening the app.
  *
- * Isolation (context_guide §1 P11): refuses to start when the config
+ * Isolation (CONTEXT.md §1 P11): refuses to start when the config
  * folder next to the code under test already exists, and points
  * LOCALAPPDATA at a throwaway folder so an "appdata" pointer can never
  * reach the machine's real profile. Never run from the main checkout.

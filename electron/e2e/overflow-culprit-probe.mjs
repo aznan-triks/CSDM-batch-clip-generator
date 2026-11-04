@@ -3,7 +3,7 @@
  *
  * `surface-audit.mjs` says a Kill Filters row is 238 px wider than its card.
  * It does not say which box inside it is holding the width open, and guessing
- * that from the stylesheet is exactly the move CONTEXT_GUIDE section 10 keeps
+ * that from the stylesheet is exactly the move CONTEXT.md section 10 keeps
  * recording as wrong. This walks the offending card and reports, per element,
  * the width it insists on (`min-content`, measured by asking the browser) next
  * to the width it has been given.

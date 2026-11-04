@@ -18,7 +18,7 @@ def _run(commands, timeout=30):
 
     The bridge runs on a throwaway profile (CSDM_PROFILE_ROOT): a failing command
     writes the error log, and a test must never write into the real settings
-    folder -- not even a log (context_guide.md §1 P11).
+    folder -- not even a log (CONTEXT.md §1 P11).
     """
     proc = subprocess.run(
         [sys.executable, "-m", "csdm.bridge"],

@@ -5,7 +5,7 @@
  *
  * Every class is `cs-` prefixed: the V12 mock owns the global namespace
  * (`.bar`, `.tile`, `.pov`, `.slider`...), and an unprefixed name would
- * inherit its rules (context_guide §10).
+ * inherit its rules (CONTEXT.md §10).
  *
  * Colours are tokens only, so every ground and accent carries them; the
  * concepts' white faces are `--solid`. NO :hover rule here may translate or

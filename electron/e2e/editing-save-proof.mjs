@@ -5,7 +5,7 @@
  * panel, and the presets file the engine wrote is read back to show the
  * selection and its edits were stored.
  *
- * Isolation (context_guide §1 P11): the engine writes the worktree's own
+ * Isolation (CONTEXT.md §1 P11): the engine writes the worktree's own
  * CSDM-batch-clip_config/ (gitignored); LOCALAPPDATA points at a throwaway
  * folder. Refuses to run from a checkout with a flat csdm_config.json.
  */

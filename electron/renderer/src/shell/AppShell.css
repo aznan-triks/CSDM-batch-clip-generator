@@ -33,7 +33,7 @@ body {
  * two classes, and this one wins the property it sets (equal specificity,
  * later in source). Driven by `--split-left`/`--split-right` (from
  * `ui_split_pct`) while keeping hard pixel floors -- the old Tkinter window's
- * own `UI_PANE_LEFT_MIN`/`UI_PANE_RIGHT_MIN` (context_guide.md §3).
+ * own `UI_PANE_LEFT_MIN`/`UI_PANE_RIGHT_MIN` (CONTEXT.md §3).
  */
 .shell-resizable {
   /* Percent, not `fr`: `calc()` multiplying a custom property into an `fr`

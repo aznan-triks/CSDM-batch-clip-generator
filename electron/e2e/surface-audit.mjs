@@ -2,7 +2,7 @@
  * Phase 3 of the 2026-09-01 audit: measure the four shared surfaces, in the
  * real window, at real widths.
  *
- * Why measured rather than read. CONTEXT_GUIDE section 10 records four separate
+ * Why measured rather than read. CONTEXT.md section 10 records four separate
  * occasions where the stylesheet said one thing and the rendered page did
  * another -- a shorthand beating the rule meant to fix it, a `calc()` that is
  * valid syntax and invalid at computation, a `grid-area` inventing implicit

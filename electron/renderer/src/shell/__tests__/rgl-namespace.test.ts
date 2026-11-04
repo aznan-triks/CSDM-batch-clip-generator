@@ -2,7 +2,7 @@
  * Guard: react-grid-layout's own class names must not be owned by the mock.
  * The mock occupies the global class namespace (`shell`, `spark`, `wide`, ...);
  * a library class colliding with one of its rules would inherit layout the
- * mock never meant for it (context_guide §10).
+ * mock never meant for it (CONTEXT.md §10).
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";

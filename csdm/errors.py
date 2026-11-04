@@ -1,6 +1,6 @@
 """The one place an exception becomes the sentence the user reads.
 
-Principle 4 (context_guide.md §1): fail fast inside, clean message outside.
+Principle 4 (CONTEXT.md §1): fail fast inside, clean message outside.
 Every boundary where an exception would otherwise reach the screen -- a bridge
 command, the preview thread, the run thread -- calls `report()`, which:
 

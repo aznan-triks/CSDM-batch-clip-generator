@@ -6,7 +6,7 @@
  *  - how many times the engine banner reached the console (StrictMode dev),
  *  - RUN / PREVIEW state and tip on a fresh profile (no player picked).
  *
- * Isolation (context_guide §1 P11): refuses to run outside a worktree, and
+ * Isolation (CONTEXT.md §1 P11): refuses to run outside a worktree, and
  * points LOCALAPPDATA at a throwaway folder.
  * Usage: node e2e/round2-ui-proof.mjs <label>
  */
