@@ -190,6 +190,14 @@ fn main() {
         let wanted: Vec<i32> = calls["player_ticks"]["wanted"].as_array().expect("wanted ticks").iter().map(|t| t.as_i64().unwrap() as i32).collect();
         let (r, ms) = timed(|| demo.player_ticks(&wanted), tick_row);
         compare_call("player_ticks", &calls["player_ticks"], r, ms, &mut tally);
+        // A tick past the end of the demo yields an empty table (Python: empty DataFrame), not an error.
+        match demo.player_ticks(&[i32::MAX]) {
+            Ok(rows) if rows.is_empty() => println!("   player_ticks past the end: empty, as in python"),
+            other => {
+                tally.unexpected += 1;
+                println!("   player_ticks past the end: DIFFERENT: {other:?}");
+            }
+        }
     }
     println!("== {count} demos; unexpected differences: {}; expected deviations: {:?}", tally.unexpected, tally.expected);
     println!("RESULT: {}", if tally.unexpected == 0 { "identical (apart from the expected deviations)" } else { "DIFFERENCES" });

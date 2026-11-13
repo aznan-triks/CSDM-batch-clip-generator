@@ -24,7 +24,7 @@ impl Drop for TempDemo {
 #[test]
 fn a_missing_demo_is_reported_as_not_found() {
     let path = std::env::temp_dir().join("csdm-demo-test-does-not-exist.dem");
-    let err = Demo::open(&path).err().expect("opening a missing file must fail");
+    let err = Demo::open(&path).expect_err("opening a missing file must fail");
     assert!(matches!(err, DemoError::NotFound { .. }), "{err:?}");
     let msg = err.user_message(RELEASES);
     assert!(msg.contains("csdm-demo-test-does-not-exist.dem") && msg.contains("not found"), "{msg}");
@@ -34,7 +34,7 @@ fn a_missing_demo_is_reported_as_not_found() {
 fn a_csgo_demo_is_refused_with_a_clear_message() {
     // Source 1 demos start with this 8-byte magic; the rest does not matter.
     let demo = TempDemo::new("old.dem", b"HL2DEMO\0\x04\x00\x00\x00some old CS:GO content");
-    let err = Demo::open(&demo.0).err().expect("a CS:GO demo must be refused");
+    let err = Demo::open(&demo.0).expect_err("a CS:GO demo must be refused");
     assert!(matches!(err, DemoError::Source1 { .. }), "{err:?}");
     let msg = err.user_message(RELEASES);
     assert!(msg.contains("CS:GO") && msg.contains("only CS2 demos"), "{msg}");
@@ -44,7 +44,7 @@ fn a_csgo_demo_is_refused_with_a_clear_message() {
 fn an_unreadable_demo_tells_the_user_to_update_the_app() {
     let demo = TempDemo::new("garbage.dem", b"this is not a demo file at all, just text");
     let opened = Demo::open(&demo.0).expect("opening only maps the file");
-    let err = opened.players().err().expect("reading garbage must fail");
+    let err = opened.players().expect_err("reading garbage must fail");
     assert!(matches!(err, DemoError::Unreadable { .. }), "{err:?}");
     let msg = err.user_message(RELEASES);
     for part in ["garbage.dem", "could not be read", PARSER_VERSION, "newer version of the app", RELEASES] {

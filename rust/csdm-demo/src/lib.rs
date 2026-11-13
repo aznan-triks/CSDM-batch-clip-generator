@@ -26,15 +26,14 @@ pub const PARSER_VERSION: &str = include_str!("../../vendor/PARSER_TAG");
 
 /// Player props asked for on `weapon_fire` (3.5.x section "fire").
 const FIRE_PLAYER_PROPS: &[&str] = &["is_scoped", "velocity_X", "velocity_Y", "accuracy_penalty", "player_steamid"];
-/// Props asked for on `player_death` (3.5.x section "death"). The "other" names are not props of the
-/// game; the parser passes them through unchanged. Kept so the parse is the exact same as 3.5.x.
+/// Player props asked for on `player_death` (3.5.x section "death"). 3.5.x also passed event field
+/// names as "other" props for deaths and hurts; they name no prop, and the golden bench shows the
+/// same rows without them, so they are not passed.
 const DEATH_PLAYER_PROPS: &[&str] = &["pitch", "yaw"];
-const DEATH_OTHER_PROPS: &[&str] =
-    &["attacker_steamid", "noscope", "thrusmoke", "attackerblind", "penetrated", "attackerinair"];
-/// Props asked for on `player_hurt` (3.5.x section "hurt"), same remark.
-const HURT_OTHER_PROPS: &[&str] = &["attacker_steamid", "userid_steamid"];
 /// Props read at chosen ticks for Mate POV (3.5.x `_parse_mate_positions`).
 const TICK_PROPS: &[&str] = &["X", "Y", "Z", "pitch", "yaw", "team_num", "health"];
+/// Bytes read to tell a CS:GO demo from a CS2 one (`HL2DEMO\0` / `PBDEMS2\0`).
+const MAGIC_LEN: u64 = 8;
 
 /// Built once: the same table for every demo.
 fn huffman() -> &'static Vec<(u8, u8)> {
@@ -46,12 +45,12 @@ fn huffman() -> &'static Vec<(u8, u8)> {
 struct Wanted<'s> {
     events: &'s [&'s str],
     player_props: &'s [&'s str],
-    other_props: &'s [&'s str],
     ticks: &'s [i32],
     parse_ents: bool,
 }
 
 /// A demo file opened for reading (memory-mapped, never written).
+#[derive(Debug)]
 pub struct Demo {
     path: PathBuf,
     mmap: Mmap,
@@ -63,7 +62,7 @@ impl Demo {
     pub fn open(path: &Path) -> Result<Demo, DemoError> {
         let not_found = |e: std::io::Error| DemoError::NotFound { path: path.to_path_buf(), detail: e.to_string() };
         let mut magic = Vec::new();
-        std::fs::File::open(path).map_err(not_found)?.take(8).read_to_end(&mut magic).map_err(not_found)?;
+        std::fs::File::open(path).map_err(not_found)?.take(MAGIC_LEN).read_to_end(&mut magic).map_err(not_found)?;
         // Format invariant: CS:GO demos start with HL2DEMO, CS2 demos with PBDEMS2.
         if magic.starts_with(b"HL2DEMO") {
             return Err(DemoError::Source1 { path: path.to_path_buf() });
@@ -79,39 +78,34 @@ impl Demo {
 
     /// Every `weapon_fire` event (Python: `parse_event("weapon_fire", player=[...])`).
     pub fn weapon_fires(&self) -> Result<Vec<WeaponFire>, DemoError> {
-        let wanted = Wanted { events: &["weapon_fire"], player_props: FIRE_PLAYER_PROPS, other_props: &[], ticks: &[], parse_ents: true };
+        let wanted = Wanted { events: &["weapon_fire"], player_props: FIRE_PLAYER_PROPS, ticks: &[], parse_ents: true };
         self.call("weapon_fire", &wanted, |out| out.game_events.iter().map(WeaponFire::from_event).collect())
     }
 
     /// Every `player_death` event.
     pub fn player_deaths(&self) -> Result<Vec<PlayerDeath>, DemoError> {
-        let wanted = Wanted {
-            events: &["player_death"],
-            player_props: DEATH_PLAYER_PROPS,
-            other_props: DEATH_OTHER_PROPS,
-            ticks: &[],
-            parse_ents: true,
-        };
+        let wanted = Wanted { events: &["player_death"], player_props: DEATH_PLAYER_PROPS, ticks: &[], parse_ents: true };
         self.call("player_death", &wanted, |out| out.game_events.iter().map(PlayerDeath::from_event).collect())
     }
 
     /// Every `player_hurt` event.
     pub fn player_hurts(&self) -> Result<Vec<PlayerHurt>, DemoError> {
-        let wanted =
-            Wanted { events: &["player_hurt"], player_props: &[], other_props: HURT_OTHER_PROPS, ticks: &[], parse_ents: true };
+        let wanted = Wanted { events: &["player_hurt"], player_props: &[], ticks: &[], parse_ents: true };
         self.call("player_hurt", &wanted, |out| out.game_events.iter().map(PlayerHurt::from_event).collect())
     }
 
-    /// End-of-match player list (Python: `parse_player_info()`, header only, no entities).
+    /// End-of-match player list (Python: `parse_player_info()`, header only). No entities: same list
+    /// with them (golden bench), only slower.
     pub fn players(&self) -> Result<Vec<PlayerInfo>, DemoError> {
-        let wanted = Wanted { events: &[], player_props: &[], other_props: &[], ticks: &[], parse_ents: false };
+        let wanted = Wanted { events: &[], player_props: &[], ticks: &[], parse_ents: false };
         self.call("players", &wanted, |out| Ok(out.player_md.iter().map(PlayerInfo::from_metadata).collect()))
     }
 
     /// Position, view angles, team and health of every player at the given ticks
     /// (Python: `parse_ticks(["X","Y","Z","pitch","yaw","team_num","health"], ticks=...)`).
+    /// An empty `ticks` means every tick of the match (parser rule): 3.5.x never asked for that.
     pub fn player_ticks(&self, ticks: &[i32]) -> Result<Vec<PlayerTick>, DemoError> {
-        let wanted = Wanted { events: &[], player_props: TICK_PROPS, other_props: &[], ticks, parse_ents: true };
+        let wanted = Wanted { events: &[], player_props: TICK_PROPS, ticks, parse_ents: true };
         self.call("player_ticks", &wanted, rows::player_ticks)
     }
 
@@ -136,18 +130,14 @@ impl Demo {
 
     fn parse(&self, wanted: &Wanted) -> Result<DemoOutput, parser::first_pass::read_bits::DemoParserError> {
         let owned = |names: &[&str]| names.iter().map(|s| s.to_string()).collect::<Vec<_>>();
-        let (player, other) = (owned(wanted.player_props), owned(wanted.other_props));
+        let player = owned(wanted.player_props);
         let real_player = rm_user_friendly_names(&player)?;
-        let real_other = rm_user_friendly_names(&other)?;
-        let mut real_name_to_og_name = AHashMap::default();
-        for (real, friendly) in real_player.iter().zip(&player).chain(real_other.iter().zip(&other)) {
-            real_name_to_og_name.insert(real.clone(), friendly.clone());
-        }
+        let real_name_to_og_name = real_player.iter().cloned().zip(player).collect();
         let inputs = ParserInputs {
             real_name_to_og_name,
             wanted_players: vec![],
             wanted_player_props: real_player,
-            wanted_other_props: real_other,
+            wanted_other_props: vec![],
             wanted_prop_states: AHashMap::default(),
             wanted_ticks: wanted.ticks.to_vec(),
             wanted_events: owned(wanted.events),
@@ -182,5 +172,20 @@ fn guarded<T>(f: impl FnOnce() -> Result<T, String>) -> Result<T, Failure> {
                 .or_else(|| payload.downcast_ref::<String>().cloned())
                 .unwrap_or_else(|| "panic without a message".to_string()),
         )),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `unwrap()` on `None` and `panic!("literal")` carry a `&str`; the tests in tests/errors.rs only
+    /// reach the `String` kind (formatted panic), so this one checks the other kind keeps its text too.
+    #[test]
+    fn a_literal_panic_keeps_its_text() {
+        match guarded::<()>(|| panic!("plain text panic")) {
+            Err(Failure::Panic(text)) => assert_eq!(text, "plain text panic"),
+            _ => panic!("the panic was not caught as a panic"),
+        }
     }
 }
