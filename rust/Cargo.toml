@@ -15,8 +15,14 @@ csdm-core = { path = "csdm-core" }
 csdm-db = { path = "csdm-db" }
 csdm-demo = { path = "csdm-demo" }
 csdm-engine = { path = "csdm-engine" }
+serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["preserve_order"] }
+tempfile = "3.27.0"
+sha2 = "0.11.1"
 
+# Same release profile as the measured prototypes (.scratch proto/Cargo.toml, ticket 06).
 [profile.release]
+opt-level = 3
 lto = "thin"
 strip = true
+codegen-units = 16
