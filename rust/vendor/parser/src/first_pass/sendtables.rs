@@ -106,6 +106,7 @@ impl<'a> FirstPassParser<'a> {
             needs_velocity(&self.wanted_player_props),
             &self.wanted_events,
             self.parse_projectiles,
+            self.parse_weapons,
         );
         // Quantalized floats have their own helper struct
         let mut qf_mapper = QfMapper {
@@ -232,6 +233,16 @@ impl<'a> FirstPassParser<'a> {
         };
         if field.encoder == "qangle_precise" {
             field.decoder = QanglePresDecoder;
+        }
+        // CS2 14197 (2026-11-11) sends 8-bit fields (uint8, int8, 8-bit enums, also inside
+        // arrays and vectors) with the "fixed8" encoder: one raw byte instead of a varint.
+        // Only the element decoder changes; vector lengths stay varints (VectorField always uses UnsignedDecoder).
+        if field.encoder == "fixed8" {
+            field.decoder = match field.decoder {
+                SignedDecoder => Fixed8SignedDecoder,
+                Unsigned64Decoder => Fixed8Unsigned64Decoder,
+                _ => Fixed8Decoder,
+            };
         }
         field.field_type = ft;
         Ok(field)

@@ -1,6 +1,8 @@
 use super::entities::PlayerMetaData;
 use super::variants::Sticker;
 use super::variants::Variant;
+use crate::entity_handle::entity_handle_index;
+use crate::entity_handle::INVALID_ENTITY_ID;
 use crate::first_pass::prop_controller::*;
 use crate::first_pass::read_bits::DemoParserError;
 use crate::maps::BUTTONMAP;
@@ -57,10 +59,20 @@ pub enum CoordinateAxis {
 
 impl<'a> SecondPassParser<'a> {
     pub fn collect_entities(&mut self) {
-        if !self.prop_controller.event_with_velocity {
-            if !self.wanted_ticks.contains(&self.tick) && self.wanted_ticks.len() != 0 || self.wanted_events.len() != 0 {
-                return;
+        // Tick filtering used to be switched off whenever velocity was requested
+        // together with events, because `collect_velocity` read the two previous
+        // rows back out of `output` and they had to be adjacent ticks. The two
+        // rows are now kept per player, so the filter always applies and the
+        // history is updated on skipped ticks too.
+        if !self.wanted_ticks.contains(&self.tick) && self.wanted_ticks.len() != 0 || self.wanted_events.len() != 0 {
+            if self.prop_controller.event_with_velocity && !self.parse_projectiles {
+                self.update_velocity_history();
             }
+            return;
+        }
+        if self.parse_weapons {
+            self.collect_weapons();
+            return;
         }
         if self.parse_projectiles {
             self.collect_projectiles();
@@ -111,6 +123,13 @@ impl<'a> SecondPassParser<'a> {
                         .push(val);
                 }
             }
+        }
+        // After collection, not before: at the time `find_prop` computes velocity
+        // the steamid column does not yet contain the current row (len(X) =
+        // len(steamid) + 1), so velocity has always been the delta between the two
+        // PREVIOUS rows. Preserve that.
+        if self.prop_controller.needs_velocity {
+            self.update_velocity_history();
         }
     }
 
@@ -175,18 +194,30 @@ impl<'a> SecondPassParser<'a> {
         }
     }
     pub fn get_button_prop(&self, prop_info: &PropInfo, entity_id: &i32) -> Result<Variant, PropCollectionError> {
-        match self.prop_controller.special_ids.buttons {
-            None => Err(PropCollectionError::ButtonsSpecialIDNone),
-            Some(button_id) => match self.get_prop_from_ent(&button_id, &entity_id) {
-                Ok(Variant::U64(button_mask)) => match BUTTONMAP.get(&prop_info.prop_name) {
-                    Some(button_flag) => Ok(Variant::Bool(button_mask & button_flag != 0)),
-                    None => return Err(PropCollectionError::ButtonsMapNoEntryFound),
-                },
-                Ok(_) => return Err(PropCollectionError::ButtonMaskNotU64Variant),
-                Err(e) => Err(e),
+        match self.get_button_mask(entity_id) {
+            Some(button_mask) => match BUTTONMAP.get(&prop_info.prop_name) {
+                Some(button_flag) => Ok(Variant::Bool(button_mask & button_flag != 0)),
+                None => Err(PropCollectionError::ButtonsMapNoEntryFound),
             },
+            None => Err(PropCollectionError::ButtonsSpecialIDNone),
         }
     }
+
+    fn get_button_mask(&self, entity_id: &i32) -> Option<u64> {
+        if let Some(button_id) = self.prop_controller.special_ids.buttons {
+            if let Ok(Variant::U64(button_mask)) = self.get_prop_from_ent(&button_id, entity_id) {
+                return Some(button_mask);
+            }
+        }
+
+        self.get_prop_from_ent(&USERCMD_BUTTONSTATE_1, entity_id)
+            .ok()
+            .and_then(|value| match value {
+                Variant::U64(button_mask) => Some(button_mask),
+                _ => None,
+            })
+    }
+
     fn get_button_prop_cached(
         &self,
         prop_info: &PropInfo,
@@ -194,13 +225,7 @@ impl<'a> SecondPassParser<'a> {
         button_mask_cache: &mut Option<Option<u64>>,
     ) -> Result<Variant, PropCollectionError> {
         if button_mask_cache.is_none() {
-            *button_mask_cache = Some(match self.prop_controller.special_ids.buttons {
-                Some(button_id) => match self.get_prop_from_ent(&button_id, entity_id) {
-                    Ok(Variant::U64(mask)) => Some(mask),
-                    _ => None,
-                },
-                None => None,
-            });
+            *button_mask_cache = Some(self.get_button_mask(entity_id));
         }
         match button_mask_cache.unwrap_or(None) {
             Some(button_mask) => match BUTTONMAP.get(&prop_info.prop_name) {
@@ -230,7 +255,7 @@ impl<'a> SecondPassParser<'a> {
             None => return Err(PropCollectionError::GrenadeOwnerIdNotSet),
         };
         match self.get_prop_from_ent(&owner_id, entity_id) {
-            Ok(Variant::U32(prop)) => Ok(prop & 0x7FF),
+            Ok(Variant::U32(prop)) => Ok(entity_handle_index(prop) as u32),
             Ok(_) => return Err(PropCollectionError::GrenadeOwnerIdPropIncorrectVariant),
             Err(e) => return Err(e),
         }
@@ -336,6 +361,94 @@ impl<'a> SecondPassParser<'a> {
         }
     }
 
+    /// Weapons lying on the ground this tick: dropped on death, thrown with the drop key
+    /// or never picked up. A weapon with an owner is held (parented to the player, its
+    /// coordinates are relative) and is skipped. steamid/name refer to the previous owner
+    /// (m_hPrevOwner): the player who dropped it, None if it never had one.
+    pub fn collect_weapons(&mut self) {
+        let owner_id = match self.prop_controller.special_ids.h_owner_entity {
+            Some(id) => id,
+            None => return,
+        };
+        for weapon_entid in &self.weapons {
+            match self.get_prop_from_ent(&owner_id, weapon_entid) {
+                Ok(Variant::U32(handle)) => {
+                    if entity_handle_index(handle) != INVALID_ENTITY_ID {
+                        continue;
+                    }
+                }
+                Ok(_) => continue,
+                // Owner never sent: the entity has been ownerless since it was created
+                Err(_) => {}
+            }
+            let (steamid, name) = self.find_weapon_prev_owner(weapon_entid);
+            let weapon_name = self.find_weapon_name_from_weapon_entity(weapon_entid).ok();
+            let x = self.collect_cell_coordinate_grenade(CoordinateAxis::X, weapon_entid).ok();
+            let y = self.collect_cell_coordinate_grenade(CoordinateAxis::Y, weapon_entid).ok();
+            let z = self.collect_cell_coordinate_grenade(CoordinateAxis::Z, weapon_entid).ok();
+
+            // Insert these always
+            let pairs = vec![
+                (WEAPON_ENTITY_NAME_ID, weapon_name),
+                (STEAMID_ID, steamid.map(Variant::U64)),
+                (NAME_ID, name.map(Variant::String)),
+                (TICK_ID, Some(Variant::I32(self.tick))),
+                (ENTITY_ID_ID, Some(Variant::I32(*weapon_entid))),
+                (GRENADE_X, x),
+                (GRENADE_Y, y),
+                (GRENADE_Z, z),
+            ];
+            for pair in pairs {
+                self.output.entry(pair.0).or_insert_with(|| PropColumn::new()).push(pair.1);
+            }
+            // Extra props are read from the weapon entity itself
+            for prop_info in &self.prop_controller.prop_infos {
+                if prop_info.id == STEAMID_ID
+                    || prop_info.id == NAME_ID
+                    || prop_info.id == TICK_ID
+                    || prop_info.id == WEAPON_ENTITY_NAME_ID
+                    || prop_info.id == ENTITY_ID_ID
+                    || prop_info.id == GRENADE_X
+                    || prop_info.id == GRENADE_Y
+                    || prop_info.id == GRENADE_Z
+                {
+                    continue;
+                }
+                let prop = self.get_prop_from_ent(&prop_info.id, weapon_entid).ok();
+                self.output.entry(prop_info.id).or_insert_with(|| PropColumn::new()).push(prop);
+            }
+        }
+    }
+    /// Player who held the weapon last (m_hPrevOwner), if it maps to a known player
+    fn find_weapon_prev_owner(&self, entity_id: &i32) -> (Option<u64>, Option<String>) {
+        let prev_owner_id = match self.prop_controller.special_ids.weapon_prev_owner {
+            Some(id) => id,
+            None => return (None, None),
+        };
+        let pawn_entid = match self.get_prop_from_ent(&prev_owner_id, entity_id) {
+            Ok(Variant::U32(handle)) => entity_handle_index(handle),
+            _ => return (None, None),
+        };
+        match self.find_player_metadata(pawn_entid) {
+            Ok(metadata) => (metadata.steamid, metadata.name.clone()),
+            Err(_) => (None, None),
+        }
+    }
+    /// Weapon name read directly from a weapon entity (find_weapon_name goes through a player)
+    fn find_weapon_name_from_weapon_entity(&self, entity_id: &i32) -> Result<Variant, PropCollectionError> {
+        let item_def_id = match self.prop_controller.special_ids.item_def {
+            Some(x) => x,
+            None => return Err(PropCollectionError::SpecialidsItemDefNotSet),
+        };
+        match self.get_prop_from_ent(&item_def_id, entity_id) {
+            Ok(Variant::U32(def_idx)) => match WEAPINDICIES.get(&def_idx) {
+                Some(v) => Ok(Variant::String(v.to_string())),
+                None => Err(PropCollectionError::WeaponIdxMappingNotFound),
+            },
+            Ok(_) => Err(PropCollectionError::WeaponDefVariantWrongType),
+            Err(e) => Err(e),
+        }
+    }
     fn find_weapon_name(&self, entity_id: &i32) -> Result<Variant, PropCollectionError> {
         let item_def_id = match self.prop_controller.special_ids.item_def {
             Some(x) => x,
@@ -477,8 +590,13 @@ impl<'a> SecondPassParser<'a> {
             IS_ALIVE_ID => self.find_is_alive(entity_id),
             USERID_ID => self.get_userid(player),
             IS_AIRBORNE_ID => self.find_is_airborne(player),
+            STAMINA_ID => {
+                let id = self.prop_controller.special_ids.stamina.ok_or(PropCollectionError::GetPropFromEntPropNotFound)?;
+                self.get_prop_from_ent(&id, entity_id)
+            }
             AGENT_SKIN_ID => self.find_agent_skin(player),
             USERCMD_INPUT_HISTORY_BASEID => self.get_prop_from_ent(&USERCMD_INPUT_HISTORY_BASEID, entity_id),
+            USERCMD_SUBTICK_MOVES_BASEID => self.get_prop_from_ent(&USERCMD_SUBTICK_MOVES_BASEID, entity_id),
             GLOVE_PAINT_ID => self.find_glove_skin_id(entity_id),
             GLOVE_SKIN => self.find_glove_skin(entity_id),
             GLOVE_PAINT_SEED => self.find_glove_paint_seed(entity_id),
@@ -534,7 +652,7 @@ impl<'a> SecondPassParser<'a> {
             return match self.get_prop_from_ent(&p, &eid) {
                 Ok(Variant::U32(weap_handle)) => {
                     // Could be more specific
-                    let weapon_entity_id = (weap_handle & 0x7FF) as i32;
+                    let weapon_entity_id = entity_handle_index(weap_handle);
                     self.find_stickers(&weapon_entity_id)
                 }
                 Ok(_) => Err(PropCollectionError::WeaponHandleIncorrectVariant),
@@ -596,35 +714,84 @@ impl<'a> SecondPassParser<'a> {
             Err(_) => return Err(PropCollectionError::AgentPropNotFound),
         }
     }
+    /// Velocity from the two most recent sampled rows of the player.
+    ///
+    /// Previously these rows were found by scanning the whole accumulated `output`
+    /// backwards (`find_wanted_indicies` over the steamid column), which is why
+    /// `event_with_velocity` had to disable tick filtering: the whole table was
+    /// materialised so that the two rows would be adjacent ticks. They are now
+    /// kept directly, one small record per player.
     pub fn collect_velocity(&self, player: &PlayerMetaData) -> Result<Variant, PropCollectionError> {
         if let Some(s) = player.steamid {
-            let steamids = self.output.get(&STEAMID_ID);
-            let indicies = self.find_wanted_indicies(steamids, s);
-
-            let x = self.velocity_from_indicies(&indicies, CoordinateAxis::X)?;
-            let y = self.velocity_from_indicies(&indicies, CoordinateAxis::Y)?;
-
+            let x = self.velocity_from_history(s, CoordinateAxis::X)?;
+            let y = self.velocity_from_history(s, CoordinateAxis::Y)?;
             if let (Variant::F32(x), Variant::F32(y)) = (x, y) {
                 return Ok(Variant::F32((f32::powi(x, 2) + f32::powi(y, 2)).sqrt()));
             }
         }
         return Err(PropCollectionError::PlayerNotFound);
     }
-    fn collect_velocity_cached(&self, player: &PlayerMetaData, indicies_cache: &mut Option<Vec<usize>>) -> Result<Variant, PropCollectionError> {
-        let indicies = self.cached_velocity_indicies(player, indicies_cache)?;
-        let x = self.velocity_from_indicies(indicies, CoordinateAxis::X)?;
-        let y = self.velocity_from_indicies(indicies, CoordinateAxis::Y)?;
 
-        if let (Variant::F32(x), Variant::F32(y)) = (x, y) {
-            return Ok(Variant::F32((f32::powi(x, 2) + f32::powi(y, 2)).sqrt()));
+    /// Same formula as the old `velocity_from_indicies`: difference between the
+    /// two most recent sampled positions, scaled by the tick rate.
+    fn velocity_from_history(&self, steamid: u64, axis: CoordinateAxis) -> Result<Variant, PropCollectionError> {
+        let h = self.velocity_history.get(&steamid).ok_or(PropCollectionError::VelocityNotFound)?;
+        let (last, prev) = match (h.last, h.prev) {
+            (Some(l), Some(p)) => (l, p),
+            _ => return Err(PropCollectionError::VelocityNotFound),
+        };
+        let i = match axis {
+            CoordinateAxis::X => 0,
+            CoordinateAxis::Y => 1,
+            CoordinateAxis::Z => 2,
+        };
+        Ok(Variant::F32((last[i] * 64.0) - (prev[i] * 64.0)))
+    }
+
+    /// Updates the history. Called exactly once per tick, at the end of the tick,
+    /// and on filtered-out ticks as well -- otherwise consecutive entries would no
+    /// longer be consecutive ticks and velocity would change.
+    pub fn update_velocity_history(&mut self) {
+        // Same player selection as the main collection loop: first the prop-state
+        // filter (which cancels the whole tick), then wanted_players.
+        for wanted_prop_state_info in &self.prop_controller.wanted_prop_state_infos {
+            for (entity_id, player) in &self.players {
+                match self.find_prop(&wanted_prop_state_info.base, entity_id, player) {
+                    Ok(prop) => {
+                        if prop != wanted_prop_state_info.wanted_prop_state {
+                            return;
+                        }
+                    }
+                    Err(_e) => return,
+                }
+            }
         }
-        Err(PropCollectionError::VelocityNotFound)
+        let mut updates: Vec<(u64, Option<[f32; 3]>)> = Vec::with_capacity(self.players.len());
+        for (entity_id, player) in &self.players {
+            let steamid = player.steamid.unwrap_or(0);
+            if !self.wanted_players.is_empty() && !self.wanted_players.contains(&steamid) {
+                continue;
+            }
+            let x = self.collect_cell_coordinate_player(CoordinateAxis::X, entity_id);
+            let y = self.collect_cell_coordinate_player(CoordinateAxis::Y, entity_id);
+            let z = self.collect_cell_coordinate_player(CoordinateAxis::Z, entity_id);
+            let xyz = match (x, y, z) {
+                (Ok(Variant::F32(x)), Ok(Variant::F32(y)), Ok(Variant::F32(z))) => Some([x, y, z]),
+                _ => None,
+            };
+            updates.push((steamid, xyz));
+        }
+        for (steamid, xyz) in updates {
+            self.velocity_history.entry(steamid).or_default().push(xyz);
+        }
+    }
+    fn collect_velocity_cached(&self, player: &PlayerMetaData, _indicies_cache: &mut Option<Vec<usize>>) -> Result<Variant, PropCollectionError> {
+        // The index cache is no longer needed: the history lookup is already O(1).
+        self.collect_velocity(player)
     }
     pub fn collect_velocity_axis(&self, player: &PlayerMetaData, axis: CoordinateAxis) -> Result<Variant, PropCollectionError> {
         if let Some(s) = player.steamid {
-            let steamids = self.output.get(&STEAMID_ID);
-            let indicies = self.find_wanted_indicies(steamids, s);
-            return Ok(self.velocity_from_indicies(&indicies, axis)?);
+            return self.velocity_from_history(s, axis);
         }
         return Err(PropCollectionError::PlayerNotFound);
     }
@@ -632,10 +799,9 @@ impl<'a> SecondPassParser<'a> {
         &self,
         player: &PlayerMetaData,
         axis: CoordinateAxis,
-        indicies_cache: &mut Option<Vec<usize>>,
+        _indicies_cache: &mut Option<Vec<usize>>,
     ) -> Result<Variant, PropCollectionError> {
-        let indicies = self.cached_velocity_indicies(player, indicies_cache)?;
-        self.velocity_from_indicies(indicies, axis)
+        self.collect_velocity_axis(player, axis)
     }
     fn cached_velocity_indicies<'b>(
         &self,
@@ -755,7 +921,7 @@ impl<'a> SecondPassParser<'a> {
             match self.get_prop_from_ent(&(prop_id as u32), entity_id) {
                 Err(_e) => {}
                 Ok(Variant::U32(x)) => {
-                    let eid = (x & ((1 << 14) - 1)) as i32;
+                    let eid = entity_handle_index(x);
                     // Sometimes multiple references to same eid?
                     if unique_eids.contains(&eid) {
                         continue;
@@ -793,7 +959,7 @@ impl<'a> SecondPassParser<'a> {
             match self.get_prop_from_ent(&(prop_id as u32), entity_id) {
                 Err(_e) => {}
                 Ok(Variant::U32(x)) => {
-                    let eid = (x & ((1 << 14) - 1)) as i32;
+                    let eid = entity_handle_index(x);
                     // Sometimes multiple references to same eid?
                     if unique_eids.contains(&eid) {
                         continue;
@@ -830,7 +996,7 @@ impl<'a> SecondPassParser<'a> {
             match self.get_prop_from_ent(&(prop_id as u32), entity_id) {
                 Err(_e) => {}
                 Ok(Variant::U32(x)) => {
-                    let eid = (x & ((1 << 14) - 1)) as i32;
+                    let eid = entity_handle_index(x);
                     // Sometimes multiple references to same eid?
                     if unique_eids.contains(&eid) {
                         continue;
@@ -942,7 +1108,7 @@ impl<'a> SecondPassParser<'a> {
         if let Some(c4ent) = self.c4_entity_id {
             if let Some(id) = self.prop_controller.special_ids.h_owner_entity {
                 if let Ok(Variant::U32(u)) = self.get_prop_from_ent(&id, &c4ent) {
-                    return Some((u & 0x7FF) as i32);
+                    return Some(entity_handle_index(u));
                 }
             }
         }
@@ -996,7 +1162,7 @@ impl<'a> SecondPassParser<'a> {
         };
         return match self.get_prop_from_ent(&p, player_entid) {
             Ok(Variant::U32(weap_handle)) => {
-                let weapon_entity_id = (weap_handle & 0x7FF) as i32;
+                let weapon_entity_id = entity_handle_index(weap_handle);
                 self.find_weapon_skin_id(&weapon_entity_id)
             }
             Ok(_) => Err(PropCollectionError::WeaponHandleIncorrectVariant),
@@ -1024,7 +1190,7 @@ impl<'a> SecondPassParser<'a> {
         };
         return match self.get_prop_from_ent(&p, player_entid) {
             Ok(Variant::U32(weap_handle)) => {
-                let weapon_entity_id = (weap_handle & 0x7FF) as i32;
+                let weapon_entity_id = entity_handle_index(weap_handle);
                 self.find_weapon_skin(&weapon_entity_id)
             }
             Ok(_) => Err(PropCollectionError::WeaponHandleIncorrectVariant),
@@ -1087,7 +1253,7 @@ impl<'a> SecondPassParser<'a> {
         match self.get_prop_from_ent(&p, player_entid) {
             Ok(Variant::U32(weap_handle)) => {
                 // Could be more specific
-                let weapon_entity_id = (weap_handle & 0x7FF) as i32;
+                let weapon_entity_id = entity_handle_index(weap_handle);
                 match self.get_prop_from_ent(&prop, &weapon_entity_id) {
                     Ok(p) => Ok(p),
                     Err(e) => match e {
@@ -1174,7 +1340,7 @@ impl<'a> SecondPassParser<'a> {
             };
             let player_entid = match self.prop_controller.special_ids.player_pawn {
                 Some(id) => match self.get_prop_from_ent(&id, entity_id) {
-                    Ok(Variant::U32(handle)) => Some((handle & 0x7FF) as i32),
+                    Ok(Variant::U32(handle)) => Some(entity_handle_index(handle)),
                     Ok(_) => return Err(DemoParserError::IncorrectMetaDataProp),
                     Err(_) => None,
                 },

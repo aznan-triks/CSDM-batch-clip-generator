@@ -1,6 +1,6 @@
 # Vendored demo parser
 
-Copy of `src/parser` and `src/csgoproto` from https://github.com/LaihoE/demoparser, tag `v0.41.4`, commit `db3ba5f7a1b02b8cb27d0063d52649883a98469c`.
+Copy of `src/parser` and `src/csgoproto` from https://github.com/LaihoE/demoparser, tag `v0.42.2`, commit `dd71c09b32fb7ada7597bd83390a2ec3d3cd3812`.
 MIT licence: `LICENSE-demoparser` (upstream file, unchanged).
 
 Written by `rust/tools/update-parser.ps1`; never edit these folders by hand, rerun the tool with another tag.

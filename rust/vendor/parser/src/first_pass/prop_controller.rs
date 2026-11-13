@@ -9,7 +9,7 @@ use crate::second_pass::parser_settings::SpecialIDs;
 use crate::second_pass::variants::Variant;
 use ahash::AHashMap;
 
-pub const PLAYER_ENTITY_HANDLE_MISSING: i32 = 2047;
+pub const PLAYER_ENTITY_HANDLE_MISSING: i32 = crate::entity_handle::INVALID_ENTITY_ID;
 pub const SPECTATOR_TEAM_NUM: u32 = 1;
 pub const BUTTONS_BASEID: u32 = 100000;
 pub const NORMAL_PROP_BASEID: u32 = 1000;
@@ -76,8 +76,12 @@ pub const USERCMD_SUBTICK_LEFT_HAND_DESIRED: u32 = 100000039;
 pub const USERCMD_ATTACK_START_HISTORY_INDEX_1: u32 = 100000040;
 pub const USERCMD_ATTACK_START_HISTORY_INDEX_2: u32 = 100000041;
 pub const USERCMD_ATTACK_START_HISTORY_INDEX_3: u32 = 100000042;
+pub const USERCMD_BUTTONS_HELD: u32 = 100000043;
+pub const USERCMD_BUTTONS_PRESSED: u32 = 100000044;
+pub const USERCMD_BUTTONS_RELEASED: u32 = 100000045;
 
 pub const USERCMD_INPUT_HISTORY_BASEID: u32 = 100001000;
+pub const USERCMD_SUBTICK_MOVES_BASEID: u32 = 100001001;
 pub const INPUT_HISTORY_X_OFFSET: u32 = 0;
 pub const INPUT_HISTORY_Y_OFFSET: u32 = 1;
 pub const INPUT_HISTORY_Z_OFFSET: u32 = 2;
@@ -93,6 +97,9 @@ pub const GRENADE_X: u32 = 100100023;
 pub const GRENADE_Y: u32 = 100100024;
 pub const GRENADE_Z: u32 = 100100025;
 pub const INVENTORY_AS_IDS_BITMASK: u32 = 100100026;
+/// Name of a weapon lying on the ground (parse_weapons)
+pub const WEAPON_ENTITY_NAME_ID: u32 = 100100027;
+pub const STAMINA_ID: u32 = 100100028;
 
 #[derive(Clone, Debug)]
 pub struct PropController {
@@ -112,6 +119,7 @@ pub struct PropController {
     pub wanted_prop_states: AHashMap<String, Variant>,
     pub wanted_prop_state_infos: Vec<WantedPropStateInfo>,
     pub parse_projectiles: bool,
+    pub parse_weapons: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -144,6 +152,7 @@ impl PropController {
         needs_velocty: bool,
         wanted_events: &[String],
         parse_projectiles: bool,
+        parse_weapons: bool,
     ) -> Self {
         PropController {
             id: NORMAL_PROP_BASEID,
@@ -162,10 +171,16 @@ impl PropController {
             wanted_prop_states,
             wanted_prop_state_infos: vec![],
             parse_projectiles: parse_projectiles,
+            parse_weapons: parse_weapons,
         }
     }
 
     pub fn set_custom_propinfos(&mut self) {
+        // Early demos stored stamina directly on the pawn.
+        self.special_ids.stamina = self.name_to_id
+            .get("CCSPlayerPawn.CCSPlayer_MovementServices.m_flStamina")
+            .or_else(|| self.name_to_id.get("CCSPlayerPawn.m_flStamina"))
+            .copied();
         let button_names = BUTTONMAP.keys();
         let mut someid = BUTTONS_BASEID;
         let mut someid2 = BUTTONS_BASEID;
@@ -324,6 +339,32 @@ impl PropController {
                 prop_friendly_name: "z".to_string(),
                 is_player_prop: true,
             });
+        }
+        // Weapons on the ground specific
+        if self.parse_weapons {
+            self.prop_infos.push(PropInfo {
+                id: ENTITY_ID_ID,
+                prop_type: PropType::Custom,
+                prop_name: "entity_id".to_string(),
+                prop_friendly_name: "entity_id".to_string(),
+                is_player_prop: true,
+            });
+            self.prop_infos.push(PropInfo {
+                id: WEAPON_ENTITY_NAME_ID,
+                prop_type: PropType::Custom,
+                prop_name: "weapon".to_string(),
+                prop_friendly_name: "weapon".to_string(),
+                is_player_prop: true,
+            });
+            for (id, name) in [(GRENADE_X, "x"), (GRENADE_Y, "y"), (GRENADE_Z, "z")] {
+                self.prop_infos.push(PropInfo {
+                    id,
+                    prop_type: PropType::Custom,
+                    prop_name: name.to_string(),
+                    prop_friendly_name: name.to_string(),
+                    is_player_prop: true,
+                });
+            }
         }
         self.prop_infos.push(PropInfo {
             id: TICK_ID,
@@ -497,6 +538,7 @@ impl PropController {
             match name {
                 "m_bIsIncGrenade" => self.special_ids.is_incendiary_grenade = Some(id),
                 "m_hOwnerEntity" => self.special_ids.h_owner_entity = Some(id),
+                "m_hPrevOwner" => self.special_ids.weapon_prev_owner = Some(id),
                 "m_nOwnerId" => self.special_ids.grenade_owner_id = Some(id),
                 "CBodyComponentBaseAnimGraph.m_vecX" => self.special_ids.m_vec_x_grenade = Some(id),
                 "CBodyComponentBaseAnimGraph.m_vecY" => self.special_ids.m_vec_y_grenade = Some(id),

@@ -5,6 +5,7 @@ use crate::first_pass::read_bits::DemoParserError;
 use crate::first_pass::sendtables::Serializer;
 use crate::first_pass::stringtables::StringTable;
 use crate::first_pass::stringtables::UserInfo;
+use crate::maps::BUTTONMAP;
 use crate::second_pass::collect_data::ProjectileRecord;
 use crate::second_pass::decoder::QfMapper;
 use crate::second_pass::entities::Entity;
@@ -19,6 +20,7 @@ use ahash::AHashSet;
 use ahash::HashMap;
 use ahash::RandomState;
 use csgoproto::csvc_msg_game_event_list::DescriptorT;
+use csgoproto::CsgoUserCmdPb;
 use csgoproto::CsvcMsgVoiceData;
 use std::collections::BTreeMap;
 use std::collections::BTreeSet;
@@ -26,7 +28,32 @@ use std::env;
 const HUF_LOOKUPTABLE_MAXVALUE: u32 = (1 << 17) - 1;
 const DEFAULT_MAX_ENTITY_ID: usize = 1024;
 
+/// Two most recent sampled positions of a player, used to derive velocity.
+///
+/// Upstream read these two rows back out of the accumulated `output` columns.
+/// To make sure they were adjacent ticks, `event_with_velocity` disabled tick
+/// filtering entirely in `collect_entities`, so asking for velocity on any event
+/// materialised the whole tick table. Measured on a 492 MB demo: one
+/// `parseEvents` call went from 645 MB to 1634 MB peak RSS purely because three
+/// velocity props were requested, and the cost did not depend on how many events
+/// were asked for. Keeping just the two rows removes that.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct VelocitySample {
+    pub prev: Option<[f32; 3]>,
+    pub last: Option<[f32; 3]>,
+}
+
+impl VelocitySample {
+    #[inline]
+    pub fn push(&mut self, xyz: Option<[f32; 3]>) {
+        self.prev = self.last;
+        self.last = xyz;
+    }
+}
+
 pub struct SecondPassParser<'a> {
+    /// Per-player position history used by `collect_velocity`.
+    pub velocity_history: AHashMap<u64, VelocitySample>,
     pub start_end_offset: Option<StartEndOffset>,
     pub qf_mapper: &'a QfMapper,
     pub prop_controller: &'a PropController,
@@ -53,6 +80,8 @@ pub struct SecondPassParser<'a> {
     pub uniq_prop_names: AHashSet<String>,
     pub baselines: AHashMap<u32, Vec<u8>, RandomState>,
     pub projectiles: BTreeSet<i32>,
+    /// Entity ids of every weapon entity (guns, knives, grenades as items, c4). parse_weapons only.
+    pub weapons: BTreeSet<i32>,
     pub fullpackets_parsed: u32,
     pub wanted_players: AHashSet<u64>,
     pub wanted_ticks: AHashSet<i32>,
@@ -71,11 +100,13 @@ pub struct SecondPassParser<'a> {
     pub parse_entities: bool,
     pub parse_projectiles: bool,
     pub parse_grenades: bool,
+    pub parse_weapons: bool,
     pub is_debug_mode: bool,
     pub df_per_player: AHashMap<u64, AHashMap<u32, PropColumn>>,
     pub order_by_steamid: bool,
     pub last_tick: i32,
     pub parse_usercmd: bool,
+    pub usercmd_baselines: AHashMap<i32, CsgoUserCmdPb>,
     pub list_props: bool,
 }
 #[derive(Debug, Clone)]
@@ -151,7 +182,7 @@ impl<'a> SecondPassParser<'a> {
                 .collect(),
             game_events_counter: self.game_events_counter,
             uniq_prop_names: self.uniq_prop_names,
-            prop_info: PropController::new(vec![], vec![], AHashMap::default(), AHashMap::default(), false, &["none".to_string()], false),
+            prop_info: PropController::new(vec![], vec![], AHashMap::default(), AHashMap::default(), false, &["none".to_string()], false, false),
             projectiles: self.projectile_records,
             ptr: self.ptr,
             df_per_player: self.df_per_player,
@@ -174,8 +205,10 @@ impl<'a> SecondPassParser<'a> {
         let debug = if args.len() > 2 { args[2] == "true" } else { false };
 
         Ok(SecondPassParser {
+            velocity_history: AHashMap::default(),
             uniq_prop_names: AHashSet::default(),
             parse_usercmd: contains_usercmd_prop(&first_pass_output.settings.wanted_player_props),
+            usercmd_baselines: AHashMap::default(),
             last_tick: 0,
             start_end_offset: start_end_offset,
             order_by_steamid: first_pass_output.order_by_steamid,
@@ -213,12 +246,14 @@ impl<'a> SecondPassParser<'a> {
             wanted_events: first_pass_output.settings.wanted_events.clone(),
             parse_entities: first_pass_output.settings.parse_ents,
             projectiles: BTreeSet::default(),
+            weapons: BTreeSet::default(),
             baselines: first_pass_output.baselines.clone(),
             string_tables: first_pass_output.string_tables.clone(),
             teams: Teams::new(),
             game_events_counter: AHashSet::default(),
             parse_projectiles: first_pass_output.settings.parse_projectiles,
             parse_grenades: first_pass_output.settings.parse_grenades,
+            parse_weapons: first_pass_output.settings.parse_weapons,
             rules_entity_id: None,
             convars: AHashMap::default(),
             chat_messages: vec![],
@@ -270,6 +305,7 @@ pub struct SpecialIDs {
     pub life_state: Option<u32>,
 
     pub h_owner_entity: Option<u32>,
+    pub weapon_prev_owner: Option<u32>,
     pub agent_skin_idx: Option<u32>,
     pub total_rounds_played: Option<u32>,
 
@@ -290,11 +326,13 @@ pub struct SpecialIDs {
     pub custom_name: Option<u32>,
 
     pub is_airborn: Option<u32>,
+    pub stamina: Option<u32>,
     pub initial_velocity: Option<u32>,
 }
 impl SpecialIDs {
     pub fn new() -> Self {
         SpecialIDs {
+            weapon_prev_owner: None,
             round_start_count: None,
             round_end_count: None,
             match_end_count: None,
@@ -339,6 +377,7 @@ impl SpecialIDs {
             in_buy_zone: None,
             custom_name: None,
             is_airborn: None,
+            stamina: None,
             initial_velocity: None,
         }
     }
@@ -355,5 +394,5 @@ pub fn create_huffman_lookup_table() -> Vec<(u8, u8)> {
 }
 
 fn contains_usercmd_prop(names: &[String]) -> bool {
-    names.iter().any(|name| name.contains("usercmd"))
+    names.iter().any(|name| name.contains("usercmd") || BUTTONMAP.get(name.as_str()).is_some())
 }

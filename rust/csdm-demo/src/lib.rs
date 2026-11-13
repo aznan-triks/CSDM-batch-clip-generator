@@ -154,6 +154,7 @@ impl Demo {
             parse_ents: wanted.parse_ents,
             parse_projectiles: false,
             parse_grenades: false,
+            parse_weapons: false,
             only_header: true,
             only_convars: false,
             huffman_lookup_table: huffman(),

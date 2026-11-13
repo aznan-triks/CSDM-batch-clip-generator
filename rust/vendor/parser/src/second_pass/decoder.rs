@@ -21,6 +21,9 @@ pub enum Decoder {
     FloatCoordDecoder,
     FloatSimulationTimeDecoder,
     Fixed64Decoder,
+    Fixed8Decoder,
+    Fixed8SignedDecoder,
+    Fixed8Unsigned64Decoder,
     QanglePitchYawDecoder,
     Qangle3Decoder(u8),
     QangleVarDecoder,
@@ -57,6 +60,11 @@ impl<'a> Bitreader<'a> {
             VectorNormalDecoder => Ok(Variant::VecXYZ(self.decode_normal_vec()?)),
             Unsigned64Decoder => Ok(Variant::U64(self.read_varint_u_64()?)),
             Fixed64Decoder => Ok(Variant::U64(self.decode_uint64()?)),
+            // "fixed8" encoder: one raw byte instead of a varint. Each variant keeps the
+            // Variant type the field had before it got the encoder.
+            Fixed8Decoder => Ok(Variant::U32(self.read_nbits(8)?)),
+            Fixed8SignedDecoder => Ok(Variant::I32(self.read_nbits(8)? as u8 as i8 as i32)),
+            Fixed8Unsigned64Decoder => Ok(Variant::U64(self.read_nbits(8)? as u64)),
             VectorFloatCoordDecoder => Ok(Variant::VecXYZ(self.decode_vector_float_coord()?)),
             AmmoDecoder => Ok(Variant::U32(self.decode_ammo()?)),
             QanglePresDecoder => Ok(Variant::VecXYZ(self.decode_qangle_variant_pres()?)),
@@ -126,11 +134,9 @@ impl<'a> Bitreader<'a> {
         Ok(v)
     }
     pub fn decode_uint64(&mut self) -> Result<u64, DemoParserError> {
-        let bytes = self.read_n_bytes(8)?;
-        match bytes.try_into() {
-            Err(_) => Err(DemoParserError::OutOfBytesError),
-            Ok(arr) => Ok(u64::from_ne_bytes(arr)),
-        }
+        let mut bytes = [0_u8; 8];
+        self.read_n_bytes_mut(bytes.len(), &mut bytes)?;
+        Ok(u64::from_ne_bytes(bytes))
     }
     pub fn decode_noscale(&mut self) -> Result<f32, DemoParserError> {
         Ok(f32::from_le_bytes(self.read_nbits(32)?.to_le_bytes()))
@@ -412,6 +418,44 @@ impl QuantalizedFloat {
 #[cfg(test)]
 mod tests {
     use crate::second_pass::decoder::*;
+
+    #[test]
+    fn fixed64_matches_byte_reader_at_all_alignments() {
+        let bytes = [0x53, 0xc8, 0x91, 0xf2, 0x77, 0x04, 0xa5, 0x32, 0xe9, 0x88, 0x20, 0x3a];
+        for len in 0..=bytes.len() {
+            for offset in 0..8 {
+                if len == 0 && offset != 0 {
+                    continue;
+                }
+                let mut decoded = Bitreader::new(&bytes[..len]);
+                let mut reference = Bitreader::new(&bytes[..len]);
+                decoded.read_nbits(offset).unwrap();
+                reference.read_nbits(offset).unwrap();
+                let expected = reference.read_n_bytes(8)
+                    .map(|bytes| u64::from_ne_bytes(bytes.try_into().unwrap()));
+                assert_eq!(decoded.decode_uint64(), expected, "len={len}, offset={offset}");
+                assert_eq!(decoded.bits_remaining(), reference.bits_remaining());
+                if reference.bits_remaining().unwrap_or(0) > 0 {
+                    assert_eq!(decoded.read_nbits(1), reference.read_nbits(1));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn fixed8_reads_one_raw_byte() {
+        let qf_map = QfMapper {
+            idx: 0,
+            map: AHashMap::default(),
+        };
+        // 0x85 as a varint would also consume the next byte. fixed8 must not.
+        let bytes = [0x85, 0x01, 0xff, 0x7f];
+        let mut bitreader = Bitreader::new(&bytes);
+        assert_eq!(bitreader.decode(&Fixed8Decoder, &qf_map), Ok(Variant::U32(0x85)));
+        assert_eq!(bitreader.decode(&Fixed8Unsigned64Decoder, &qf_map), Ok(Variant::U64(1)));
+        assert_eq!(bitreader.decode(&Fixed8SignedDecoder, &qf_map), Ok(Variant::I32(-1)));
+        assert_eq!(bitreader.decode(&Fixed8SignedDecoder, &qf_map), Ok(Variant::I32(127)));
+    }
 
     #[test]
     fn test_qfloat_new() {
