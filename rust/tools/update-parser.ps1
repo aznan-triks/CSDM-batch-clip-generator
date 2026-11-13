@@ -108,7 +108,7 @@ try {
     Invoke-Native $cargo @('build', '-p', 'csdm-demo', '--release', '--example', 'golden')
     if ($Demos -and $References) {
         Write-Host "== golden bench"
-        Invoke-Native $cargo @('run', '-q', '-p', 'csdm-demo', '--release', '--example', 'golden', '--', 'compare', $Demos, $References)
+        Invoke-Native $cargo @('run', '-q', '-p', 'csdm-demo', '--release', '--example', 'golden', '--', $Demos, $References)
     }
     else {
         Write-Host "== golden bench NOT run (pass -Demos and -References): the update is not proven"
