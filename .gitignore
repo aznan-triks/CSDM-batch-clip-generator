@@ -44,6 +44,12 @@ electron/node_modules/
 electron/renderer/dist/
 electron/dist-app/
 
+# 7) App Rust (reecriture v5) : sources, manifestes, verrou ; jamais le dossier
+#    de compilation ni une donnee reelle (les bancs sur donnees reelles vivent
+#    hors depot).
+!rust/
+rust/target/
+
 .worktrees/
 
 # 8) Fichiers de travail / debug jetables — jamais sur GitHub.

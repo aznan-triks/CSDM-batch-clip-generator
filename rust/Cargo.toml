@@ -1,0 +1,22 @@
+# CSDM Batch Clips Generator 5.x -- native Rust rewrite (branch v5).
+# Crate layers and the dependencies each may take: csdm-app/tests/layers.rs.
+[workspace]
+resolver = "2"
+members = ["csdm-core", "csdm-db", "csdm-demo", "csdm-engine", "csdm-app"]
+
+[workspace.package]
+version = "5.0.0-dev"
+edition = "2021"
+license = "Unlicense"
+publish = false
+
+[workspace.dependencies]
+csdm-core = { path = "csdm-core" }
+csdm-db = { path = "csdm-db" }
+csdm-demo = { path = "csdm-demo" }
+csdm-engine = { path = "csdm-engine" }
+serde_json = { version = "1.0.154", features = ["preserve_order"] }
+
+[profile.release]
+lto = "thin"
+strip = true
