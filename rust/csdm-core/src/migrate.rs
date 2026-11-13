@@ -135,6 +135,11 @@ const UNSTAMPED_LAYOUT_VERSION: f64 = 2.0;
 /// Fine rows per v2 block (sectionLayout.ts `ROWS_PER_BLOCK`).
 const ROWS_PER_V2_BLOCK: i64 = 4;
 
+/// Today's reference layout of a tab, if the tab exists.
+fn base_tab(tab: &str) -> Option<Map<String, Value>> {
+    defaults(None)["ui_sections"].get(tab).and_then(Value::as_object).cloned()
+}
+
 fn num(slot: &Map<String, Value>, k: &str) -> Option<f64> {
     slot.get(k).and_then(Value::as_f64)
 }
@@ -173,6 +178,16 @@ fn migrate_card_grid_half_step(saved: &Map<String, Value>, cfg: &mut Settings) {
             continue;
         };
         let version = lay.get("v").and_then(Value::as_f64).unwrap_or(UNSTAMPED_LAYOUT_VERSION);
+        if let (true, None, Some(default_tab)) = (version < HALF_STEP_VERSION, lay.get("cards"), base_tab(tab)) {
+            // Oldest shape (`order`, `wide`, no rectangles): 3.5's renderer drew the
+            // reference layout for it and kept only `collapsed`; same here, stored.
+            let collapsed: Vec<Value> = lay.get("collapsed").and_then(Value::as_array).into_iter().flatten().filter(|v| v.is_string()).cloned().collect();
+            let mut out = default_tab;
+            out.insert("collapsed".into(), Value::Array(collapsed));
+            migrated.insert(tab.clone(), Value::Object(out));
+            touched = true;
+            continue;
+        }
         let Some(Value::Object(cards)) = lay.get("cards").filter(|_| version < HALF_STEP_VERSION) else {
             migrated.insert(tab.clone(), layout.clone());
             continue;
@@ -340,6 +355,19 @@ mod tests {
         assert_eq!((&slot["x"], &slot["y"], &slot["w"], &slot["h"]), (&json!(2), &json!(8), &json!(8), &json!(8)));
         assert_eq!(slot["manual"], json!(true), "8 rows differs from the default 10");
         assert!(slot.get("col").is_none());
+    }
+
+    #[test]
+    fn card_list_layout_becomes_the_default_grid() {
+        // Oldest shape, seen in three real folders: an order and flags, no rectangles.
+        let c = run(json!({"ui_card_block_size": 96, "ui_sections": {
+            "capture": {"order": ["player"], "collapsed": ["player", 3], "wide": {"player": true}}}}));
+        let tab = &c["ui_sections"]["capture"];
+        let d = defaults(None);
+        assert_eq!(tab["cards"], d["ui_sections"]["capture"]["cards"]);
+        assert_eq!((&tab["v"], &tab["collapsed"]), (&json!(5), &json!(["player"])));
+        assert!(tab.get("order").is_none() && tab.get("wide").is_none());
+        assert_eq!(c["ui_card_block_size"], json!(48), "default rectangles count 48 px columns");
     }
 
     #[test]
