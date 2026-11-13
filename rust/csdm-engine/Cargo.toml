@@ -9,4 +9,9 @@ publish.workspace = true
 csdm-core = { workspace = true }
 csdm-db = { workspace = true }
 csdm-demo = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+sha2 = { workspace = true }

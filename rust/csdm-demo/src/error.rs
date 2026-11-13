@@ -1,5 +1,5 @@
 //! Why a demo could not be read.
-//! Local to this crate until the shared error type of csdm-core (T0) exists; align at merge.
+//! Each layer has its own error enum (T0); the engine shows `user_message` and logs `Display`.
 
 use std::fmt;
 use std::path::{Path, PathBuf};

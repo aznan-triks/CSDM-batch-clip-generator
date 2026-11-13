@@ -1,0 +1,1455 @@
+{
+  "kill_filters": [
+    {
+      "key": "kill_mod_through_smoke",
+      "label": "💨 SMOKE:",
+      "badge": "💨 SMOKE",
+      "category": "mods",
+      "tip": "Kill through a smoke grenade (DB column — fast, no demoparser2 needed).",
+      "sql_cols": [
+        "is_through_smoke",
+        "through_smoke"
+      ],
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_no_scope",
+      "label": "🔭 NO-SCOPE:",
+      "badge": "🔭 NOSCOPE",
+      "category": "mods",
+      "tip": "No-scope kill — sniper only (DB column).",
+      "sql_cols": [
+        "is_no_scope",
+        "no_scope"
+      ],
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_assisted_flash",
+      "label": "⚡ VICTIM FLASHED:",
+      "badge": "⚡ VIC.FLASH",
+      "category": "mods",
+      "tip": "Victim was blinded by a flashbang (DB column).",
+      "sql_cols": [
+        "is_assisted_flash",
+        "assisted_flash"
+      ],
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_wall_bang",
+      "label": "🧱 WALLBANG:",
+      "badge": "🧱 WALLBANG",
+      "category": "mods",
+      "tip": "Kill where the bullet penetrated at least one obstacle.\nUses kills.penetrated_objects > 0  or  kills.has_penetrated / kills.penetrated.\nFalls back to demoparser2 if no matching column is found in the DB.",
+      "sql_cols": [
+        "penetrated_objects",
+        "has_penetrated",
+        "penetrated"
+      ],
+      "dp2_filter": "_wall_bang_dp2_filter",
+      "dp2_apply": "_apply_wall_bang_dp2_to_events",
+      "dp2_log": "🧱 WALLBANG",
+      "dp2_result": "wallbang",
+      "dp2_skip": "0 WALLBANG",
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_attacker_blind",
+      "label": "😵 BLIND FIRE:",
+      "badge": "😵 BLIND",
+      "category": "mods",
+      "tip": "Bullet fired while the killer was blinded by a flashbang.\nUses kills.attacker_blinded / kills.is_attacker_blinded / kills.attacker_blind.\nFalls back to demoparser2 if no matching column is found in the DB.",
+      "sql_cols": [
+        "attacker_blinded",
+        "is_attacker_blinded",
+        "attacker_blind",
+        "is_blinded",
+        "attackerblind"
+      ],
+      "dp2_filter": "_attacker_blind_dp2_filter",
+      "dp2_apply": "_apply_attacker_blind_dp2_to_events",
+      "dp2_log": "😵 BLIND FIRE",
+      "dp2_result": "blind fire",
+      "dp2_skip": "0 BLIND FIRE",
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_airborne",
+      "label": "🪂 AIRBORNE:",
+      "badge": "🪂 AIR",
+      "category": "dp2",
+      "tip": "Bullet fired while the killer was in the air (not on ground).\nUses player_death.attackerinair — demoparser2 required, not stored in CSDM DB.",
+      "sql_cols": null,
+      "dp2_filter": "_airborne_dp2_filter",
+      "dp2_apply": "_apply_airborne_dp2_to_events",
+      "dp2_log": "🪂 AIRBORNE",
+      "dp2_result": "airborne",
+      "dp2_skip": "0 AIRBORNE",
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill",
+        "shot"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_collateral",
+      "label": "🎯 COLLATERAL:",
+      "badge": "🎯 COLLAT.",
+      "category": "dp2",
+      "tip": "Single bullet penetrated and killed multiple players in the same shot chain.\nUses player_death.penetrated + shot grouping via demoparser2.",
+      "sql_cols": null,
+      "dp2_filter": "_collateral_dp2_filter",
+      "dp2_apply": "_apply_collateral_dp2_to_events",
+      "dp2_log": "🎯 COLLATERAL",
+      "dp2_result": "collateral",
+      "dp2_skip": "0 COLLATERAL",
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_trois_shot",
+      "label": "🎲 TROIS SHOT:",
+      "badge": "🎲 TROIS SHOT",
+      "category": "dp2",
+      "tip": "Lucky kills on precision weapons — detected via demoparser2.\n\nPer-weapon logic:\n  Deagle / R8   bloom > 0.015 (not a stationary aimed shot)\n  AWP / SSG 08  unscoped at shot time\n  SCAR-20 / G3SG1  unscoped OR bloom > 0.010 OR moving\n\nEnable = keep only lucky kills. Exclude = keep only precise kills on these weapons.\n⚠ Enable and Exclude are mutually exclusive.",
+      "sql_cols": null,
+      "dp2_filter": "_trois_shot_filter",
+      "dp2_apply": "_apply_trois_shot_to_events",
+      "dp2_log": "🎲 TROIS SHOT",
+      "dp2_result": "TROIS SHOT",
+      "dp2_skip": "0 TROIS SHOT",
+      "special": "trois_shot",
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_trois_tap",
+      "label": "🎯🎲 TROIS TAP:",
+      "badge": "🎯🎲 TROIS TAP",
+      "category": "dp2",
+      "tip": "TROIS SHOT + ONE TAP: lucky isolated headshot.\nMust be a headshot, qualify as lucky, and have no other shot within 2s.\nHS is auto-forced only when active logic guarantees HS-only output.",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": "🎯🎲 TROIS TAP",
+      "dp2_result": "TROIS TAP",
+      "dp2_skip": "0 TROIS TAP",
+      "special": "trois_tap",
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_one_tap",
+      "label": "🎯 ONE TAP:",
+      "badge": "🎯 ONE TAP",
+      "category": "dp2",
+      "tip": "Isolated single-shot headshot — no other shot within N seconds before or after.\nHS is auto-forced only when active logic guarantees HS-only output.",
+      "sql_cols": null,
+      "dp2_filter": "_one_tap_filter",
+      "dp2_apply": "_apply_one_tap_to_events",
+      "dp2_log": "🎯 ONE TAP",
+      "dp2_result": "one tap",
+      "dp2_skip": "0 ONE TAP",
+      "special": "one_tap",
+      "hide_ui": false,
+      "extra_config": {
+        "kill_mod_one_tap_s": 2
+      },
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_spray_transfer",
+      "label": "🔫 SPRAY TRANSFER:",
+      "badge": "🔫 SPRAY",
+      "category": "dp2",
+      "tip": "≥2 enemies killed in one continuous spray (no trigger release).\nAuto weapons only: AK-47, M4A4/M4A1-S, Galil AR, FAMAS, SG 553, AUG, SMGs, M249, Negev, CZ75.",
+      "sql_cols": null,
+      "dp2_filter": "_spray_transfer_filter",
+      "dp2_apply": "_apply_spray_transfer_to_events",
+      "dp2_log": "🔫 SPRAY",
+      "dp2_result": "spray transfer",
+      "dp2_skip": "0 SPRAY",
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_high_velocity",
+      "label": "🏎 FERRARI PEEK:",
+      "badge": "🏎 FERRARI",
+      "category": "dp2",
+      "tip": "Moving peek that kills on a single shot then immediately resumes.\nApproach speed ≥ threshold, one shot, resumes movement within 2s.\nCS2 run speeds: knife 250 · pistols 240 · AK-47 215 · AWP 200 u/s",
+      "sql_cols": null,
+      "dp2_filter": "_high_velocity_filter",
+      "dp2_apply": "_apply_high_velocity_to_events",
+      "dp2_log": "🏎 FERRARI PEEK",
+      "dp2_result": "counter-strafe",
+      "dp2_skip": "0 FERRARI PEEK",
+      "special": "high_velocity",
+      "hide_ui": false,
+      "extra_config": {
+        "kill_mod_hv_one_shot": true,
+        "kill_mod_high_vel_thr": 100
+      },
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_flick",
+      "label": "↩ FLICK:",
+      "badge": "↩ FLICK",
+      "category": "dp2",
+      "tip": "Kill preceded by a large view-angle change (~0.5s before kill tick).\nDefault: 50°. Lower = catch smaller corrections, raise = extreme flicks only.",
+      "sql_cols": null,
+      "dp2_filter": "_flick_filter",
+      "dp2_apply": "_apply_flick_to_events",
+      "dp2_log": "↩ FLICK",
+      "dp2_result": "flick",
+      "dp2_skip": "0 FLICK",
+      "special": null,
+      "hide_ui": false,
+      "extra_config": {
+        "kill_mod_flick_deg": 50
+      },
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_savior",
+      "label": "🛡 SAVIOR:",
+      "badge": "🛡 SAVIOR",
+      "category": "dp2",
+      "tip": "Kill an enemy who was actively damaging a teammate in the ~2s prior.\nCaptures last-second rescues.",
+      "sql_cols": null,
+      "dp2_filter": "_savior_filter",
+      "dp2_apply": "_apply_savior_to_events",
+      "dp2_log": "🛡 SAVIOR",
+      "dp2_result": "savior",
+      "dp2_skip": "0 SAVIOR",
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_entry_frag",
+      "label": "🚀 ENTRY FRAG:",
+      "badge": "🚀 ENTRY",
+      "category": "db",
+      "tip": "First kill of the round (earliest tick), regardless of side.",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_ace",
+      "label": "🃏 ACE:",
+      "badge": "🃏 ACE",
+      "category": "db",
+      "tip": "Rounds where the player eliminated all 5 opponents alone.",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_multi_kill",
+      "label": "⚡ MULTI-KILL:",
+      "badge": "⚡ MULTI",
+      "category": "db",
+      "tip": "N or more kills in one round within the time window.",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": {
+        "kill_mod_multi_kill_n": 3,
+        "kill_mod_multi_kill_s": 12
+      },
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_bully",
+      "label": "💀 BULLY:",
+      "badge": "💀 BULLY",
+      "category": "db",
+      "tip": "Kill the same opponent for the Nth time in the match.\ne.g. From kill #3 = captured from the 3rd time you kill the same player.",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": {
+        "kill_mod_bully_n": 3
+      },
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_eco_frag",
+      "label": "💰 ECO FRAG:",
+      "badge": "💰 ECO",
+      "category": "db",
+      "tip": "Pistol kill against a full-buy opponent (rifle / sniper / LMG).\nFalls back to all pistol kills if victim_weapon column is missing.",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "kill_mod_mate_pov",
+      "label": "👥 MATE POV:",
+      "badge": "👥 MATE POV",
+      "category": "dp2",
+      "tip": "Record from the victim's teammate who has the best angular view of the kill.\nUses demoparser2 player positions + view angles at kill tick.\nFilters: victim eye clearly in view (±20°), alive mate, same floor (Z ≤300 u),\nelevation ≤30°, distance 80–550 u. No BSP ray-cast — walls not detected.\n★ Must = skip clips with no qualifying teammate.",
+      "sql_cols": null,
+      "dp2_filter": "_mate_pov_filter",
+      "dp2_apply": null,
+      "dp2_log": "👥 MATE POV",
+      "dp2_result": "mate pov",
+      "dp2_skip": "0 mate POV",
+      "special": null,
+      "hide_ui": true,
+      "extra_config": null,
+      "camera_fn": "_mate_pov_camera_sid",
+      "applies_to": [
+        "kill"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "dmg_mod_headshot_hit",
+      "label": "🎯 HEADSHOT HIT:",
+      "badge": "🎯 HS HIT",
+      "category": "event",
+      "tip": "Damage that landed on the head (damages.hitgroup = 1).",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "damage"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "dmg_mod_body_hit",
+      "label": "🦺 BODY HIT:",
+      "badge": "🦺 BODY HIT",
+      "category": "event",
+      "tip": "Damage that landed on the chest or the stomach (damages.hitgroup = 2 or 3).",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "damage"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "dmg_mod_arm_hit",
+      "label": "💪 ARM HIT:",
+      "badge": "💪 ARM HIT",
+      "category": "event",
+      "tip": "Damage that landed on an arm (damages.hitgroup = 4 or 5).",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "damage"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "dmg_mod_leg_hit",
+      "label": "🦵 LEG HIT:",
+      "badge": "🦵 LEG HIT",
+      "category": "event",
+      "tip": "Damage that landed on a leg (damages.hitgroup = 6 or 7).",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "damage"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "dmg_mod_big_hit",
+      "label": "💥 BIG HIT:",
+      "badge": "💥 BIG HIT",
+      "category": "event",
+      "tip": "One hit dealing at least N health damage (damages.health_damage).",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": {
+        "dmg_mod_big_hit_min": 90
+      },
+      "camera_fn": null,
+      "applies_to": [
+        "damage"
+      ],
+      "extra_ui": {
+        "dmg_mod_big_hit_min": [
+          "Min damage",
+          "HP"
+        ]
+      },
+      "untested": ""
+    },
+    {
+      "key": "dmg_mod_low_hp",
+      "label": "🩸 1 HP SURVIVOR:",
+      "badge": "🩸 LOW HP",
+      "category": "event",
+      "tip": "The hit left the victim alive on 1 to N HP (damages.victim_new_health).\nA hit that killed (0 HP) is a kill, not a survivor.",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": {
+        "dmg_mod_low_hp_max": 5
+      },
+      "camera_fn": null,
+      "applies_to": [
+        "damage"
+      ],
+      "extra_ui": {
+        "dmg_mod_low_hp_max": [
+          "Max HP left",
+          "HP"
+        ]
+      },
+      "untested": ""
+    },
+    {
+      "key": "dmg_mod_multi_nade",
+      "label": "💣 MULTI-NADE:",
+      "badge": "💣 MULTI-NADE",
+      "category": "event",
+      "tip": "One grenade (same damages.weapon_unique_id) hurt N or more distinct players\n(the thrower himself does not count). One clip per grenade, on its first impact.",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": {
+        "dmg_mod_multi_nade_min": 3
+      },
+      "camera_fn": null,
+      "applies_to": [
+        "damage"
+      ],
+      "extra_ui": {
+        "dmg_mod_multi_nade_min": [
+          "Min victims",
+          ""
+        ]
+      },
+      "untested": ""
+    },
+    {
+      "key": "dmg_mod_team_damage",
+      "label": "🤦 TEAM DAMAGE:",
+      "badge": "🤦 TEAM DMG",
+      "category": "event",
+      "tip": "Damage dealt to a teammate (damages.attacker_side = victim_side).\nNeeds Ally ticked in Event Type: with Enemy only, team damage is never fetched.",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "damage"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "shot_mod_knife_swing",
+      "label": "🔪 KNIFE SWING:",
+      "badge": "🔪 SWING",
+      "category": "event",
+      "tip": "A knife swing (shots row fired with the knife).",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": null,
+      "camera_fn": null,
+      "applies_to": [
+        "shot"
+      ],
+      "extra_ui": null,
+      "untested": ""
+    },
+    {
+      "key": "shot_mod_long_spray",
+      "label": "🔫 LONG SPRAY:",
+      "badge": "🔫 LONG SPRAY",
+      "category": "event",
+      "tip": "A burst that reaches shots.recoil_index N (N-th bullet without releasing).\nOne clip per burst, on the shot that reaches N.",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": {
+        "shot_mod_long_spray_min": 10
+      },
+      "camera_fn": null,
+      "applies_to": [
+        "shot"
+      ],
+      "extra_ui": {
+        "shot_mod_long_spray_min": [
+          "Min bullets",
+          ""
+        ]
+      },
+      "untested": ""
+    },
+    {
+      "key": "shot_mod_run_gun",
+      "label": "🏃 RUN & GUN:",
+      "badge": "🏃 RUN&GUN",
+      "category": "event",
+      "tip": "Gun shot (no grenade, no knife) fired while moving at N u/s or more on the ground plane\n(sqrt(player_velocity_x² + player_velocity_y²)). Run speeds: knife 250 · AK 215 · AWP 200.",
+      "sql_cols": null,
+      "dp2_filter": null,
+      "dp2_apply": null,
+      "dp2_log": null,
+      "dp2_result": null,
+      "dp2_skip": null,
+      "special": null,
+      "hide_ui": false,
+      "extra_config": {
+        "shot_mod_run_gun_speed": 200
+      },
+      "camera_fn": null,
+      "applies_to": [
+        "shot"
+      ],
+      "extra_ui": {
+        "shot_mod_run_gun_speed": [
+          "Min speed",
+          "u/s"
+        ]
+      },
+      "untested": ""
+    }
+  ],
+  "no_auto_exclude": [
+    "kill_mod_trois_tap"
+  ],
+  "match_types": [
+    {
+      "db_values": [
+        "premier"
+      ],
+      "key": "match_type_premier",
+      "label": "🏆 Premier",
+      "tip": "CS2 ranked Premier mode — CS Rating, map veto, single map per match."
+    },
+    {
+      "db_values": [
+        "scrimcomp5v5",
+        "competitive"
+      ],
+      "key": "match_type_competitive",
+      "label": "🎯 Competitive",
+      "tip": "Valve/community 5v5 competitive matches (MR12, ranked or unranked)."
+    },
+    {
+      "db_values": [
+        "scrimcomp2v2",
+        "wingman"
+      ],
+      "key": "match_type_wingman",
+      "label": "🤝 Wingman",
+      "tip": "2v2 Wingman matches, played on the wingman-only map pool."
+    },
+    {
+      "db_values": [
+        "casual"
+      ],
+      "key": "match_type_casual",
+      "label": "🎮 Casual",
+      "tip": "Casual mode matches — relaxed rules, no team-damage penalty."
+    },
+    {
+      "db_values": [
+        "deathmatch"
+      ],
+      "key": "match_type_deathmatch",
+      "label": "💀 Deathmatch",
+      "tip": "Free-for-all Deathmatch warm-up matches."
+    },
+    {
+      "db_values": [
+        "training"
+      ],
+      "key": "match_type_training",
+      "label": "🎓 Training",
+      "tip": "Offline training / target-practice matches."
+    },
+    {
+      "db_values": [
+        "new_user_training"
+      ],
+      "key": "match_type_new_user",
+      "label": "🎓 New User",
+      "tip": "Valve's new-player tutorial matches (new_user_training)."
+    },
+    {
+      "db_values": [
+        "armsrace"
+      ],
+      "key": "match_type_armsrace",
+      "label": "🔫 Arms Race",
+      "tip": "Gun Game / Arms Race — weapon unlocks progressively per kill."
+    },
+    {
+      "db_values": [
+        "gungameprogressive"
+      ],
+      "key": "match_type_armsrace_alt",
+      "label": "🔫 Arms Race (alt)",
+      "tip": "Alternate Arms Race variant, stored as gungameprogressive in CSDM."
+    },
+    {
+      "db_values": [
+        "gungametrbomb"
+      ],
+      "key": "match_type_demolition",
+      "label": "💣 Demolition",
+      "tip": "Demolition mode — gun-progression matches on small bomb maps."
+    },
+    {
+      "db_values": [
+        "cooperative"
+      ],
+      "key": "match_type_coop",
+      "label": "🤖 Co-op",
+      "tip": "Co-op Strike/Guardian matches against bots."
+    },
+    {
+      "db_values": [
+        "skirmish"
+      ],
+      "key": "match_type_skirmish",
+      "label": "⚡ Skirmish",
+      "tip": "Short-format Skirmish matches."
+    },
+    {
+      "db_values": [
+        "retake"
+      ],
+      "key": "match_type_retake",
+      "label": "↩ Retakes",
+      "tip": "Retake-mode practice — bombsite retake scenarios only."
+    }
+  ],
+  "weapon_categories": {
+    "Pistols": [
+      "usp_silencer",
+      "hkp2000",
+      "glock",
+      "p250",
+      "fiveseven",
+      "cz75a",
+      "cz75_auto",
+      "tec9",
+      "elite",
+      "deagle",
+      "revolver",
+      "usp-s",
+      "p2000",
+      "glock-18",
+      "five-seven",
+      "cz75-auto",
+      "tec-9",
+      "dual berettas",
+      "desert eagle",
+      "r8 revolver",
+      "USP-S",
+      "P2000",
+      "Glock-18",
+      "P250",
+      "Five-SeveN",
+      "CZ75-Auto",
+      "Tec-9",
+      "Dual Berettas",
+      "Desert Eagle",
+      "R8 Revolver"
+    ],
+    "SMGs": [
+      "mac10",
+      "mp9",
+      "mp7",
+      "mp5sd",
+      "ump45",
+      "p90",
+      "bizon",
+      "mac-10",
+      "mp5-sd",
+      "ump-45",
+      "pp-bizon",
+      "MAC-10",
+      "MP9",
+      "MP7",
+      "MP5-SD",
+      "UMP-45",
+      "P90",
+      "PP-Bizon"
+    ],
+    "Rifles": [
+      "ak47",
+      "m4a1",
+      "m4a1_silencer",
+      "galilar",
+      "famas",
+      "sg556",
+      "aug",
+      "ak-47",
+      "m4a4",
+      "m4a1-s",
+      "galil ar",
+      "sg 553",
+      "AK-47",
+      "M4A4",
+      "M4A1-S",
+      "Galil AR",
+      "FAMAS",
+      "SG 553",
+      "AUG"
+    ],
+    "Snipers": [
+      "awp",
+      "ssg08",
+      "scar20",
+      "g3sg1",
+      "ssg 08",
+      "scar-20",
+      "AWP",
+      "SSG 08",
+      "SCAR-20",
+      "G3SG1"
+    ],
+    "Heavy": [
+      "nova",
+      "xm1014",
+      "mag7",
+      "sawedoff",
+      "m249",
+      "negev",
+      "mag-7",
+      "sawed-off",
+      "Nova",
+      "XM1014",
+      "MAG-7",
+      "Sawed-Off",
+      "M249",
+      "Negev"
+    ],
+    "Knives": [
+      "knife",
+      "knife_t",
+      "knife_karambit",
+      "knife_m9_bayonet",
+      "knife_butterfly",
+      "knife_push",
+      "knife_tactical",
+      "knife_falchion",
+      "knife_survival_bowie",
+      "knife_ursus",
+      "knife_gypsy_jackknife",
+      "knife_stiletto",
+      "knife_widowmaker",
+      "knife_skeleton",
+      "knifegg",
+      "Knife"
+    ],
+    "Grenades & Utility": [
+      "hegrenade",
+      "incgrenade",
+      "molotov",
+      "inferno",
+      "flashbang",
+      "smokegrenade",
+      "decoy",
+      "he grenade",
+      "incendiary grenade",
+      "decoy grenade",
+      "smoke grenade",
+      "flash",
+      "HE Grenade",
+      "Incendiary Grenade",
+      "Molotov",
+      "Decoy Grenade",
+      "Flashbang",
+      "Smoke Grenade",
+      "weapon_hegrenade",
+      "weapon_incgrenade",
+      "weapon_molotov",
+      "weapon_inferno",
+      "weapon_flashbang",
+      "weapon_smokegrenade",
+      "weapon_decoy",
+      "SmokeGrenade",
+      "HeGrenade",
+      "IncGrenade",
+      "smoke_grenade",
+      "he_grenade",
+      "inc_grenade",
+      "frag grenade",
+      "fire bomb",
+      "diversion device",
+      "emp grenade"
+    ],
+    "C4 / World": [
+      "c4",
+      "world",
+      "suicide",
+      "world_entity",
+      "C4"
+    ],
+    "Misc": [
+      "taser",
+      "Zeus x27"
+    ]
+  },
+  "weapon_category_tips": {
+    "Pistols": "Sidearms — cheap, always available, decisive in eco/force rounds.",
+    "SMGs": "Cheap rapid-fire weapons, strong on the move and at close range.",
+    "Rifles": "Primary combat weapons — the main-round standard.",
+    "Snipers": "High-damage precision weapons for long sightlines.",
+    "Heavy": "Shotguns and LMGs — close-range spread and heavy sustained-fire weapons.",
+    "Knives": "Melee kills.",
+    "Grenades & Utility": "Kills from thrown utility: HE, molotov/incendiary, flashbang, decoy.",
+    "C4 / World": "Bomb kills and non-weapon deaths (world damage, suicide, fall).",
+    "Misc": "Taser and Zeus x27 — stun/utility items, not lethal by themselves."
+  },
+  "weapon_icons": {
+    "Pistols": "🔫",
+    "SMGs": "🔫",
+    "Rifles": "🎯",
+    "Snipers": "🎯",
+    "Heavy": "💥",
+    "Knives": "🔪",
+    "Grenades & Utility": "💣",
+    "C4 / World": "💥",
+    "Misc": "⚡",
+    "Other": "❓"
+  },
+  "weapon_lookup": {
+    "usp_silencer": "Pistols",
+    "weapon_usp_silencer": "Pistols",
+    "hkp2000": "Pistols",
+    "weapon_hkp2000": "Pistols",
+    "glock": "Pistols",
+    "weapon_glock": "Pistols",
+    "p250": "Pistols",
+    "weapon_p250": "Pistols",
+    "fiveseven": "Pistols",
+    "weapon_fiveseven": "Pistols",
+    "cz75a": "Pistols",
+    "weapon_cz75a": "Pistols",
+    "cz75_auto": "Pistols",
+    "weapon_cz75_auto": "Pistols",
+    "tec9": "Pistols",
+    "weapon_tec9": "Pistols",
+    "elite": "Pistols",
+    "weapon_elite": "Pistols",
+    "deagle": "Pistols",
+    "weapon_deagle": "Pistols",
+    "revolver": "Pistols",
+    "weapon_revolver": "Pistols",
+    "usp-s": "Pistols",
+    "weapon_usp-s": "Pistols",
+    "p2000": "Pistols",
+    "weapon_p2000": "Pistols",
+    "glock-18": "Pistols",
+    "weapon_glock-18": "Pistols",
+    "five-seven": "Pistols",
+    "weapon_five-seven": "Pistols",
+    "cz75-auto": "Pistols",
+    "weapon_cz75-auto": "Pistols",
+    "tec-9": "Pistols",
+    "weapon_tec-9": "Pistols",
+    "dual berettas": "Pistols",
+    "weapon_dual berettas": "Pistols",
+    "desert eagle": "Pistols",
+    "weapon_desert eagle": "Pistols",
+    "r8 revolver": "Pistols",
+    "weapon_r8 revolver": "Pistols",
+    "mac10": "SMGs",
+    "weapon_mac10": "SMGs",
+    "mp9": "SMGs",
+    "weapon_mp9": "SMGs",
+    "mp7": "SMGs",
+    "weapon_mp7": "SMGs",
+    "mp5sd": "SMGs",
+    "weapon_mp5sd": "SMGs",
+    "ump45": "SMGs",
+    "weapon_ump45": "SMGs",
+    "p90": "SMGs",
+    "weapon_p90": "SMGs",
+    "bizon": "SMGs",
+    "weapon_bizon": "SMGs",
+    "mac-10": "SMGs",
+    "weapon_mac-10": "SMGs",
+    "mp5-sd": "SMGs",
+    "weapon_mp5-sd": "SMGs",
+    "ump-45": "SMGs",
+    "weapon_ump-45": "SMGs",
+    "pp-bizon": "SMGs",
+    "weapon_pp-bizon": "SMGs",
+    "ak47": "Rifles",
+    "weapon_ak47": "Rifles",
+    "m4a1": "Rifles",
+    "weapon_m4a1": "Rifles",
+    "m4a1_silencer": "Rifles",
+    "weapon_m4a1_silencer": "Rifles",
+    "galilar": "Rifles",
+    "weapon_galilar": "Rifles",
+    "famas": "Rifles",
+    "weapon_famas": "Rifles",
+    "sg556": "Rifles",
+    "weapon_sg556": "Rifles",
+    "aug": "Rifles",
+    "weapon_aug": "Rifles",
+    "ak-47": "Rifles",
+    "weapon_ak-47": "Rifles",
+    "m4a4": "Rifles",
+    "weapon_m4a4": "Rifles",
+    "m4a1-s": "Rifles",
+    "weapon_m4a1-s": "Rifles",
+    "galil ar": "Rifles",
+    "weapon_galil ar": "Rifles",
+    "sg 553": "Rifles",
+    "weapon_sg 553": "Rifles",
+    "awp": "Snipers",
+    "weapon_awp": "Snipers",
+    "ssg08": "Snipers",
+    "weapon_ssg08": "Snipers",
+    "scar20": "Snipers",
+    "weapon_scar20": "Snipers",
+    "g3sg1": "Snipers",
+    "weapon_g3sg1": "Snipers",
+    "ssg 08": "Snipers",
+    "weapon_ssg 08": "Snipers",
+    "scar-20": "Snipers",
+    "weapon_scar-20": "Snipers",
+    "nova": "Heavy",
+    "weapon_nova": "Heavy",
+    "xm1014": "Heavy",
+    "weapon_xm1014": "Heavy",
+    "mag7": "Heavy",
+    "weapon_mag7": "Heavy",
+    "sawedoff": "Heavy",
+    "weapon_sawedoff": "Heavy",
+    "m249": "Heavy",
+    "weapon_m249": "Heavy",
+    "negev": "Heavy",
+    "weapon_negev": "Heavy",
+    "mag-7": "Heavy",
+    "weapon_mag-7": "Heavy",
+    "sawed-off": "Heavy",
+    "weapon_sawed-off": "Heavy",
+    "knife": "Knives",
+    "weapon_knife": "Knives",
+    "knife_t": "Knives",
+    "weapon_knife_t": "Knives",
+    "knife_karambit": "Knives",
+    "weapon_knife_karambit": "Knives",
+    "knife_m9_bayonet": "Knives",
+    "weapon_knife_m9_bayonet": "Knives",
+    "knife_butterfly": "Knives",
+    "weapon_knife_butterfly": "Knives",
+    "knife_push": "Knives",
+    "weapon_knife_push": "Knives",
+    "knife_tactical": "Knives",
+    "weapon_knife_tactical": "Knives",
+    "knife_falchion": "Knives",
+    "weapon_knife_falchion": "Knives",
+    "knife_survival_bowie": "Knives",
+    "weapon_knife_survival_bowie": "Knives",
+    "knife_ursus": "Knives",
+    "weapon_knife_ursus": "Knives",
+    "knife_gypsy_jackknife": "Knives",
+    "weapon_knife_gypsy_jackknife": "Knives",
+    "knife_stiletto": "Knives",
+    "weapon_knife_stiletto": "Knives",
+    "knife_widowmaker": "Knives",
+    "weapon_knife_widowmaker": "Knives",
+    "knife_skeleton": "Knives",
+    "weapon_knife_skeleton": "Knives",
+    "knifegg": "Knives",
+    "weapon_knifegg": "Knives",
+    "hegrenade": "Grenades & Utility",
+    "weapon_hegrenade": "Grenades & Utility",
+    "incgrenade": "Grenades & Utility",
+    "weapon_incgrenade": "Grenades & Utility",
+    "molotov": "Grenades & Utility",
+    "weapon_molotov": "Grenades & Utility",
+    "inferno": "Grenades & Utility",
+    "weapon_inferno": "Grenades & Utility",
+    "flashbang": "Grenades & Utility",
+    "weapon_flashbang": "Grenades & Utility",
+    "smokegrenade": "Grenades & Utility",
+    "weapon_smokegrenade": "Grenades & Utility",
+    "decoy": "Grenades & Utility",
+    "weapon_decoy": "Grenades & Utility",
+    "he grenade": "Grenades & Utility",
+    "weapon_he grenade": "Grenades & Utility",
+    "incendiary grenade": "Grenades & Utility",
+    "weapon_incendiary grenade": "Grenades & Utility",
+    "decoy grenade": "Grenades & Utility",
+    "weapon_decoy grenade": "Grenades & Utility",
+    "smoke grenade": "Grenades & Utility",
+    "weapon_smoke grenade": "Grenades & Utility",
+    "flash": "Grenades & Utility",
+    "weapon_flash": "Grenades & Utility",
+    "smoke_grenade": "Grenades & Utility",
+    "weapon_smoke_grenade": "Grenades & Utility",
+    "he_grenade": "Grenades & Utility",
+    "weapon_he_grenade": "Grenades & Utility",
+    "inc_grenade": "Grenades & Utility",
+    "weapon_inc_grenade": "Grenades & Utility",
+    "frag grenade": "Grenades & Utility",
+    "weapon_frag grenade": "Grenades & Utility",
+    "fire bomb": "Grenades & Utility",
+    "weapon_fire bomb": "Grenades & Utility",
+    "diversion device": "Grenades & Utility",
+    "weapon_diversion device": "Grenades & Utility",
+    "emp grenade": "Grenades & Utility",
+    "weapon_emp grenade": "Grenades & Utility",
+    "c4": "C4 / World",
+    "weapon_c4": "C4 / World",
+    "world": "C4 / World",
+    "weapon_world": "C4 / World",
+    "suicide": "C4 / World",
+    "weapon_suicide": "C4 / World",
+    "world_entity": "C4 / World",
+    "weapon_world_entity": "C4 / World",
+    "taser": "Misc",
+    "weapon_taser": "Misc",
+    "zeus x27": "Misc",
+    "weapon_zeus x27": "Misc"
+  },
+  "weapon_substring_fallback": [
+    [
+      "cz75",
+      "Pistols"
+    ],
+    [
+      "glock",
+      "Pistols"
+    ],
+    [
+      "deagle",
+      "Pistols"
+    ],
+    [
+      "desert",
+      "Pistols"
+    ],
+    [
+      "revolver",
+      "Pistols"
+    ],
+    [
+      "usp",
+      "Pistols"
+    ],
+    [
+      "p2000",
+      "Pistols"
+    ],
+    [
+      "fiveseven",
+      "Pistols"
+    ],
+    [
+      "tec",
+      "Pistols"
+    ],
+    [
+      "elite",
+      "Pistols"
+    ],
+    [
+      "p250",
+      "Pistols"
+    ],
+    [
+      "ak",
+      "Rifles"
+    ],
+    [
+      "m4",
+      "Rifles"
+    ],
+    [
+      "awp",
+      "Snipers"
+    ],
+    [
+      "knife",
+      "Knives"
+    ],
+    [
+      "grenade",
+      "Grenades & Utility"
+    ],
+    [
+      "molotov",
+      "Grenades & Utility"
+    ],
+    [
+      "smoke",
+      "Grenades & Utility"
+    ],
+    [
+      "flash",
+      "Grenades & Utility"
+    ]
+  ],
+  "gun_weapons": [
+    "ak-47",
+    "ak47",
+    "aug",
+    "awp",
+    "bizon",
+    "cz75-auto",
+    "cz75_auto",
+    "cz75a",
+    "deagle",
+    "desert eagle",
+    "dual berettas",
+    "elite",
+    "famas",
+    "five-seven",
+    "fiveseven",
+    "g3sg1",
+    "galil ar",
+    "galilar",
+    "glock",
+    "glock-18",
+    "hkp2000",
+    "m249",
+    "m4a1",
+    "m4a1-s",
+    "m4a1_silencer",
+    "m4a4",
+    "mac-10",
+    "mac10",
+    "mag-7",
+    "mag7",
+    "mp5-sd",
+    "mp5sd",
+    "mp7",
+    "mp9",
+    "negev",
+    "nova",
+    "p2000",
+    "p250",
+    "p90",
+    "pp-bizon",
+    "r8 revolver",
+    "revolver",
+    "sawed-off",
+    "sawedoff",
+    "scar-20",
+    "scar20",
+    "sg 553",
+    "sg556",
+    "ssg 08",
+    "ssg08",
+    "tec-9",
+    "tec9",
+    "ump-45",
+    "ump45",
+    "usp-s",
+    "usp_silencer",
+    "xm1014"
+  ],
+  "video_codecs": {
+    "libx264": "H.264 CPU — Universal, compatible everywhere.",
+    "libx265": "H.265/HEVC CPU — Better compression, slower.",
+    "libsvtav1": "AV1 CPU (SVT) — Modern, excellent compression.",
+    "libaom-av1": "AV1 CPU (ref) — Very slow but max quality.",
+    "h264_nvenc": "H.264 GPU NVIDIA — Ultra-fast.",
+    "hevc_nvenc": "HEVC GPU NVIDIA — H.265 accelerated.",
+    "av1_nvenc": "AV1 GPU NVIDIA — RTX 40xx+.",
+    "h264_amf": "H.264 GPU AMD — Fast (RX 5000+).",
+    "hevc_amf": "HEVC GPU AMD — H.265 accelerated.",
+    "av1_amf": "AV1 GPU AMD — RX 7000+.",
+    "libvpx-vp9": "VP9 CPU — Good quality, slow.",
+    "prores_ks": "ProRes — Large files, pro quality.",
+    "utvideo": "UT Video — Lightweight lossless.",
+    "rawvideo": "Raw — Uncompressed raw."
+  },
+  "cpu_video_codecs": [
+    "libaom-av1",
+    "libsvtav1",
+    "libvpx-vp9",
+    "libx264",
+    "libx265",
+    "prores_ks",
+    "utvideo"
+  ],
+  "audio_codecs": {
+    "libmp3lame": "MP3 — Compatible everywhere.",
+    "aac": "AAC — Better than MP3, modern standard.",
+    "pcm_s16le": "PCM WAV — Raw uncompressed.",
+    "libopus": "Opus — Excellent, especially streaming/voice.",
+    "flac": "FLAC — Compressed lossless."
+  },
+  "resolutions": [
+    {
+      "label": "1280x720",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "label": "1920x1080",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "label": "2560x1440",
+      "width": 2560,
+      "height": 1440
+    },
+    {
+      "label": "3840x2160",
+      "width": 3840,
+      "height": 2160
+    }
+  ],
+  "framerates": [
+    30,
+    60,
+    120,
+    240,
+    300
+  ],
+  "perspective_labels": {
+    "killer": "POV Killer",
+    "victim": "POV Victim",
+    "both": "Both"
+  }
+}

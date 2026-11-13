@@ -1,0 +1,2791 @@
+{
+  "settings": [
+    {
+      "key": "pg_host",
+      "type": "text",
+      "default": "127.0.0.1",
+      "owner": "database_connection"
+    },
+    {
+      "key": "pg_port",
+      "type": "text",
+      "default": "5432",
+      "owner": "database_connection"
+    },
+    {
+      "key": "pg_user",
+      "type": "text",
+      "default": "postgres",
+      "owner": "database_connection"
+    },
+    {
+      "key": "pg_pass",
+      "type": "text",
+      "default": "",
+      "owner": "database_connection"
+    },
+    {
+      "key": "pg_db",
+      "type": "text",
+      "default": "csdm",
+      "owner": "database_connection"
+    },
+    {
+      "key": "csdm_exe",
+      "type": "text",
+      "default": "",
+      "owner": "csdm_executable"
+    },
+    {
+      "key": "output_dir",
+      "type": "text",
+      "default": "",
+      "owner": "output_folders"
+    },
+    {
+      "key": "output_dir_clips",
+      "type": "text",
+      "default": "",
+      "owner": "output_folders"
+    },
+    {
+      "key": "output_dir_concat",
+      "type": "text",
+      "default": "",
+      "owner": "output_folders"
+    },
+    {
+      "key": "output_dir_assembled",
+      "type": "text",
+      "default": "",
+      "owner": "output_folders"
+    },
+    {
+      "key": "cs2_cfg_dir",
+      "type": "text",
+      "default": "",
+      "owner": "cs2_cfg_folder"
+    },
+    {
+      "key": "config_dir",
+      "type": "text",
+      "default": "",
+      "owner": "settings_location"
+    },
+    {
+      "key": "ui_window_w",
+      "type": "int",
+      "default": 1600,
+      "owner": "window_layout"
+    },
+    {
+      "key": "ui_window_h",
+      "type": "int",
+      "default": 900,
+      "owner": "window_layout"
+    },
+    {
+      "key": "ui_split_pct",
+      "type": "int",
+      "default": 60,
+      "owner": "window_layout"
+    },
+    {
+      "key": "ui_remember_layout",
+      "type": "bool",
+      "default": true,
+      "owner": "window_layout"
+    },
+    {
+      "key": "ui_always_show_tooltips",
+      "type": "bool",
+      "default": false,
+      "owner": "tooltips"
+    },
+    {
+      "key": "ui_card_style",
+      "type": "text",
+      "default": "timeline",
+      "owner": "card_style"
+    },
+    {
+      "key": "ui_card_style_overrides",
+      "type": "object",
+      "default": {},
+      "owner": "card_style"
+    },
+    {
+      "key": "ui_sections",
+      "type": "object",
+      "default": {
+        "capture": {
+          "v": 5,
+          "cards": {
+            "player": {
+              "x": 0,
+              "y": 0,
+              "w": 15,
+              "h": 9
+            },
+            "demo-selection": {
+              "x": 0,
+              "y": 9,
+              "w": 5,
+              "h": 22
+            },
+            "capture-timing": {
+              "x": 5,
+              "y": 9,
+              "w": 10,
+              "h": 22
+            },
+            "timing-retries": {
+              "x": 10,
+              "y": 74,
+              "w": 5,
+              "h": 12
+            },
+            "weapon-filter": {
+              "x": 0,
+              "y": 31,
+              "w": 15,
+              "h": 17
+            },
+            "kill-filters": {
+              "x": 0,
+              "y": 48,
+              "w": 10,
+              "h": 39
+            },
+            "match-types": {
+              "x": 10,
+              "y": 48,
+              "w": 5,
+              "h": 14
+            },
+            "map-filter": {
+              "x": 10,
+              "y": 62,
+              "w": 5,
+              "h": 12
+            },
+            "damage-filters": {
+              "x": 0,
+              "y": 87,
+              "w": 10,
+              "h": 14
+            },
+            "shot-filters": {
+              "x": 0,
+              "y": 101,
+              "w": 10,
+              "h": 11
+            }
+          },
+          "collapsed": []
+        },
+        "video": {
+          "v": 5,
+          "cards": {
+            "final-assembly": {
+              "x": 0,
+              "y": 0,
+              "w": 7,
+              "h": 9
+            },
+            "recording-system": {
+              "x": 7,
+              "y": 0,
+              "w": 8,
+              "h": 9
+            },
+            "resolution": {
+              "x": 0,
+              "y": 9,
+              "w": 15,
+              "h": 13
+            },
+            "hlae-options": {
+              "x": 0,
+              "y": 22,
+              "w": 7,
+              "h": 13
+            },
+            "in-game-options": {
+              "x": 7,
+              "y": 22,
+              "w": 8,
+              "h": 13
+            },
+            "cs2-effects": {
+              "x": 0,
+              "y": 35,
+              "w": 15,
+              "h": 13
+            },
+            "encoding": {
+              "x": 0,
+              "y": 48,
+              "w": 15,
+              "h": 14
+            }
+          },
+          "collapsed": []
+        },
+        "tags": {
+          "v": 5,
+          "cards": {
+            "tag-grid": {
+              "x": 0,
+              "y": 0,
+              "w": 15,
+              "h": 10
+            },
+            "tag-range": {
+              "x": 0,
+              "y": 10,
+              "w": 6,
+              "h": 10
+            },
+            "operations": {
+              "x": 6,
+              "y": 10,
+              "w": 9,
+              "h": 13
+            }
+          },
+          "collapsed": []
+        },
+        "settings": {
+          "v": 5,
+          "cards": {
+            "postgresql": {
+              "x": 0,
+              "y": 0,
+              "w": 15,
+              "h": 10
+            },
+            "paths": {
+              "x": 0,
+              "y": 10,
+              "w": 15,
+              "h": 14
+            },
+            "config-folder": {
+              "x": 0,
+              "y": 24,
+              "w": 15,
+              "h": 9
+            },
+            "presets": {
+              "x": 0,
+              "y": 52,
+              "w": 7,
+              "h": 15
+            },
+            "ui-theme": {
+              "x": 0,
+              "y": 33,
+              "w": 15,
+              "h": 19
+            },
+            "ui-layout": {
+              "x": 7,
+              "y": 52,
+              "w": 8,
+              "h": 15
+            },
+            "performance": {
+              "x": 0,
+              "y": 67,
+              "w": 7,
+              "h": 7
+            },
+            "injection-preview": {
+              "x": 7,
+              "y": 67,
+              "w": 8,
+              "h": 7
+            }
+          },
+          "collapsed": []
+        }
+      },
+      "owner": "card_layout"
+    },
+    {
+      "key": "theme_bg",
+      "type": "text",
+      "default": "dark",
+      "owner": "theme"
+    },
+    {
+      "key": "theme_accent",
+      "type": "text",
+      "default": "green",
+      "owner": "theme"
+    },
+    {
+      "key": "ui_font_family",
+      "type": "text",
+      "default": "auto",
+      "owner": "font"
+    },
+    {
+      "key": "steam_id",
+      "type": "text",
+      "default": "",
+      "owner": "player_selection"
+    },
+    {
+      "key": "player_name",
+      "type": "text",
+      "default": "",
+      "owner": "player_selection"
+    },
+    {
+      "key": "player_name_override",
+      "type": "text",
+      "default": "",
+      "owner": "player_name_override"
+    },
+    {
+      "key": "saved_players",
+      "type": "list",
+      "default": [],
+      "owner": "player_selection"
+    },
+    {
+      "key": "saved_players_imported",
+      "type": "bool",
+      "default": false,
+      "owner": "player_selection"
+    },
+    {
+      "key": "steam_ids",
+      "type": "list",
+      "default": [],
+      "owner": "player_selection"
+    },
+    {
+      "key": "event_actor",
+      "type": "bool",
+      "default": true,
+      "owner": "event_role"
+    },
+    {
+      "key": "event_target",
+      "type": "bool",
+      "default": false,
+      "owner": "event_role"
+    },
+    {
+      "key": "event_lethal",
+      "type": "bool",
+      "default": true,
+      "owner": "event_kind"
+    },
+    {
+      "key": "event_ally",
+      "type": "bool",
+      "default": false,
+      "owner": "event_side"
+    },
+    {
+      "key": "event_enemy",
+      "type": "bool",
+      "default": true,
+      "owner": "event_side"
+    },
+    {
+      "key": "event_non_lethal",
+      "type": "bool",
+      "default": false,
+      "owner": "event_kind"
+    },
+    {
+      "key": "event_other",
+      "type": "bool",
+      "default": false,
+      "owner": "event_kind"
+    },
+    {
+      "key": "events",
+      "type": "list",
+      "default": [],
+      "owner": "round_clips"
+    },
+    {
+      "key": "weapons",
+      "type": "list",
+      "default": [],
+      "owner": "weapon_filter"
+    },
+    {
+      "key": "date_from",
+      "type": "text",
+      "default": "",
+      "owner": "demo_date_range"
+    },
+    {
+      "key": "date_to",
+      "type": "text",
+      "default": "",
+      "owner": "demo_date_range"
+    },
+    {
+      "key": "before",
+      "type": "int",
+      "default": 3,
+      "owner": "clip_window"
+    },
+    {
+      "key": "after",
+      "type": "int",
+      "default": 5,
+      "owner": "clip_window"
+    },
+    {
+      "key": "encoder",
+      "type": "text",
+      "default": "FFmpeg",
+      "owner": "engine_internals"
+    },
+    {
+      "key": "recsys",
+      "type": "text",
+      "default": "HLAE",
+      "owner": "recording_system"
+    },
+    {
+      "key": "tickrate",
+      "type": "int",
+      "default": 64,
+      "owner": "engine_internals"
+    },
+    {
+      "key": "use_config_file_mode",
+      "type": "bool",
+      "default": true,
+      "owner": "engine_internals"
+    },
+    {
+      "key": "close_game_after",
+      "type": "bool",
+      "default": true,
+      "owner": "close_game_between_demos"
+    },
+    {
+      "key": "subfolder_per_demo",
+      "type": "bool",
+      "default": true,
+      "owner": "output_folders"
+    },
+    {
+      "key": "width",
+      "type": "int",
+      "default": 1920,
+      "owner": "resolution_framerate"
+    },
+    {
+      "key": "height",
+      "type": "int",
+      "default": 1080,
+      "owner": "resolution_framerate"
+    },
+    {
+      "key": "framerate",
+      "type": "int",
+      "default": 60,
+      "owner": "resolution_framerate"
+    },
+    {
+      "key": "crf",
+      "type": "int",
+      "default": 18,
+      "owner": "video_encoding"
+    },
+    {
+      "key": "video_codec",
+      "type": "text",
+      "default": "libx264",
+      "owner": "video_encoding"
+    },
+    {
+      "key": "audio_codec",
+      "type": "text",
+      "default": "libmp3lame",
+      "owner": "audio_encoding"
+    },
+    {
+      "key": "audio_bitrate",
+      "type": "int",
+      "default": 256,
+      "owner": "audio_encoding"
+    },
+    {
+      "key": "video_container",
+      "type": "text",
+      "default": "mp4",
+      "owner": "video_encoding"
+    },
+    {
+      "key": "ffmpeg_input_params",
+      "type": "text",
+      "default": "",
+      "owner": "ffmpeg_raw_params"
+    },
+    {
+      "key": "ffmpeg_output_params",
+      "type": "text",
+      "default": "",
+      "owner": "ffmpeg_raw_params"
+    },
+    {
+      "key": "death_notices_duration",
+      "type": "int",
+      "default": 5,
+      "owner": "in_game_display"
+    },
+    {
+      "key": "show_only_death_notices",
+      "type": "bool",
+      "default": true,
+      "owner": "in_game_display"
+    },
+    {
+      "key": "concatenate_sequences",
+      "type": "bool",
+      "default": false,
+      "owner": "sequence_concatenation"
+    },
+    {
+      "key": "true_view",
+      "type": "bool",
+      "default": true,
+      "owner": "in_game_display"
+    },
+    {
+      "key": "tag_on_export",
+      "type": "text",
+      "default": "",
+      "owner": "tag_on_export"
+    },
+    {
+      "key": "tag_enabled",
+      "type": "bool",
+      "default": false,
+      "owner": "tag_on_export"
+    },
+    {
+      "key": "ui_active_tags",
+      "type": "list",
+      "default": [],
+      "owner": "tag_management"
+    },
+    {
+      "key": "ui_card_block_size",
+      "type": "int",
+      "default": 48,
+      "owner": "card_layout"
+    },
+    {
+      "key": "ui_card_row_height",
+      "type": "int",
+      "default": 24,
+      "owner": "card_layout"
+    },
+    {
+      "key": "ui_card_collapsed_rows",
+      "type": "int",
+      "default": 2,
+      "owner": "card_layout"
+    },
+    {
+      "key": "retry_count",
+      "type": "int",
+      "default": 2,
+      "owner": "retries"
+    },
+    {
+      "key": "retry_delay",
+      "type": "int",
+      "default": 15,
+      "owner": "retries"
+    },
+    {
+      "key": "delay_between_demos",
+      "type": "int",
+      "default": 3,
+      "owner": "batch_pacing"
+    },
+    {
+      "key": "recording_timeout",
+      "type": "int",
+      "default": 0,
+      "owner": "batch_pacing"
+    },
+    {
+      "key": "recording_timeout_auto_factor",
+      "type": "int",
+      "default": 3,
+      "owner": "batch_pacing"
+    },
+    {
+      "key": "recording_timeout_auto_floor_s",
+      "type": "int",
+      "default": 60,
+      "owner": "batch_pacing"
+    },
+    {
+      "key": "assemble_after",
+      "type": "bool",
+      "default": false,
+      "owner": "final_assembly"
+    },
+    {
+      "key": "delete_after_assemble",
+      "type": "bool",
+      "default": false,
+      "owner": "final_assembly"
+    },
+    {
+      "key": "assemble_output",
+      "type": "text",
+      "default": "assembled.mp4",
+      "owner": "final_assembly"
+    },
+    {
+      "key": "perspective",
+      "type": "text",
+      "default": "killer",
+      "owner": "camera_perspective"
+    },
+    {
+      "key": "victim_pre_s",
+      "type": "int",
+      "default": 2,
+      "owner": "camera_perspective"
+    },
+    {
+      "key": "clip_order",
+      "type": "text",
+      "default": "chrono",
+      "owner": "clip_order"
+    },
+    {
+      "key": "headshots_mode",
+      "type": "text",
+      "default": "all",
+      "owner": "headshot_filter"
+    },
+    {
+      "key": "teamkills_mode",
+      "type": "text",
+      "default": "include",
+      "owner": "event_side"
+    },
+    {
+      "key": "suicides_mode",
+      "type": "text",
+      "default": "include",
+      "owner": "suicide_filter"
+    },
+    {
+      "key": "kill_mod_logic_mods",
+      "type": "text",
+      "default": "mixed",
+      "owner": "filter_logic"
+    },
+    {
+      "key": "kill_mod_logic_dp2",
+      "type": "text",
+      "default": "mixed",
+      "owner": "filter_logic"
+    },
+    {
+      "key": "kill_mod_logic_db",
+      "type": "text",
+      "default": "mixed",
+      "owner": "filter_logic"
+    },
+    {
+      "key": "kill_mod_through_smoke",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_through_smoke"
+    },
+    {
+      "key": "kill_mod_through_smoke_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_through_smoke"
+    },
+    {
+      "key": "kill_mod_through_smoke_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_through_smoke"
+    },
+    {
+      "key": "kill_mod_no_scope",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_no_scope"
+    },
+    {
+      "key": "kill_mod_no_scope_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_no_scope"
+    },
+    {
+      "key": "kill_mod_no_scope_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_no_scope"
+    },
+    {
+      "key": "kill_mod_assisted_flash",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_assisted_flash"
+    },
+    {
+      "key": "kill_mod_assisted_flash_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_assisted_flash"
+    },
+    {
+      "key": "kill_mod_assisted_flash_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_assisted_flash"
+    },
+    {
+      "key": "kill_mod_wall_bang",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_wall_bang"
+    },
+    {
+      "key": "kill_mod_wall_bang_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_wall_bang"
+    },
+    {
+      "key": "kill_mod_wall_bang_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_wall_bang"
+    },
+    {
+      "key": "kill_mod_attacker_blind",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_attacker_blind"
+    },
+    {
+      "key": "kill_mod_attacker_blind_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_attacker_blind"
+    },
+    {
+      "key": "kill_mod_attacker_blind_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_attacker_blind"
+    },
+    {
+      "key": "kill_mod_airborne",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_airborne"
+    },
+    {
+      "key": "kill_mod_airborne_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_airborne"
+    },
+    {
+      "key": "kill_mod_airborne_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_airborne"
+    },
+    {
+      "key": "kill_mod_collateral",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_collateral"
+    },
+    {
+      "key": "kill_mod_collateral_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_collateral"
+    },
+    {
+      "key": "kill_mod_collateral_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_collateral"
+    },
+    {
+      "key": "kill_mod_trois_shot",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_trois_shot"
+    },
+    {
+      "key": "kill_mod_trois_shot_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_trois_shot"
+    },
+    {
+      "key": "kill_mod_trois_shot_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_trois_shot"
+    },
+    {
+      "key": "kill_mod_trois_tap",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_trois_tap"
+    },
+    {
+      "key": "kill_mod_trois_tap_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_trois_tap"
+    },
+    {
+      "key": "kill_mod_one_tap",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_one_tap"
+    },
+    {
+      "key": "kill_mod_one_tap_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_one_tap"
+    },
+    {
+      "key": "kill_mod_one_tap_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_one_tap"
+    },
+    {
+      "key": "kill_mod_one_tap_s",
+      "type": "int",
+      "default": 2,
+      "owner": "kill_filter_one_tap"
+    },
+    {
+      "key": "kill_mod_spray_transfer",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_spray_transfer"
+    },
+    {
+      "key": "kill_mod_spray_transfer_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_spray_transfer"
+    },
+    {
+      "key": "kill_mod_spray_transfer_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_spray_transfer"
+    },
+    {
+      "key": "kill_mod_high_velocity",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_high_velocity"
+    },
+    {
+      "key": "kill_mod_high_velocity_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_high_velocity"
+    },
+    {
+      "key": "kill_mod_high_velocity_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_high_velocity"
+    },
+    {
+      "key": "kill_mod_hv_one_shot",
+      "type": "bool",
+      "default": true,
+      "owner": "kill_filter_high_velocity"
+    },
+    {
+      "key": "kill_mod_high_vel_thr",
+      "type": "int",
+      "default": 100,
+      "owner": "kill_filter_high_velocity"
+    },
+    {
+      "key": "kill_mod_flick",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_flick"
+    },
+    {
+      "key": "kill_mod_flick_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_flick"
+    },
+    {
+      "key": "kill_mod_flick_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_flick"
+    },
+    {
+      "key": "kill_mod_flick_deg",
+      "type": "int",
+      "default": 50,
+      "owner": "kill_filter_flick"
+    },
+    {
+      "key": "kill_mod_savior",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_savior"
+    },
+    {
+      "key": "kill_mod_savior_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_savior"
+    },
+    {
+      "key": "kill_mod_savior_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_savior"
+    },
+    {
+      "key": "kill_mod_entry_frag",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_entry_frag"
+    },
+    {
+      "key": "kill_mod_entry_frag_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_entry_frag"
+    },
+    {
+      "key": "kill_mod_entry_frag_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_entry_frag"
+    },
+    {
+      "key": "kill_mod_ace",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_ace"
+    },
+    {
+      "key": "kill_mod_ace_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_ace"
+    },
+    {
+      "key": "kill_mod_ace_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_ace"
+    },
+    {
+      "key": "kill_mod_multi_kill",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_multi_kill"
+    },
+    {
+      "key": "kill_mod_multi_kill_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_multi_kill"
+    },
+    {
+      "key": "kill_mod_multi_kill_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_multi_kill"
+    },
+    {
+      "key": "kill_mod_multi_kill_n",
+      "type": "int",
+      "default": 3,
+      "owner": "kill_filter_multi_kill"
+    },
+    {
+      "key": "kill_mod_multi_kill_s",
+      "type": "int",
+      "default": 12,
+      "owner": "kill_filter_multi_kill"
+    },
+    {
+      "key": "kill_mod_bully",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_bully"
+    },
+    {
+      "key": "kill_mod_bully_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_bully"
+    },
+    {
+      "key": "kill_mod_bully_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_bully"
+    },
+    {
+      "key": "kill_mod_bully_n",
+      "type": "int",
+      "default": 3,
+      "owner": "kill_filter_bully"
+    },
+    {
+      "key": "kill_mod_eco_frag",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_eco_frag"
+    },
+    {
+      "key": "kill_mod_eco_frag_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_eco_frag"
+    },
+    {
+      "key": "kill_mod_eco_frag_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_eco_frag"
+    },
+    {
+      "key": "kill_mod_mate_pov",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_mate_pov"
+    },
+    {
+      "key": "kill_mod_mate_pov_req",
+      "type": "bool",
+      "default": false,
+      "owner": "kill_filter_mate_pov"
+    },
+    {
+      "key": "dmg_mod_headshot_hit",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_headshot_hit"
+    },
+    {
+      "key": "dmg_mod_headshot_hit_req",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_headshot_hit"
+    },
+    {
+      "key": "dmg_mod_headshot_hit_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_headshot_hit"
+    },
+    {
+      "key": "dmg_mod_body_hit",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_body_hit"
+    },
+    {
+      "key": "dmg_mod_body_hit_req",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_body_hit"
+    },
+    {
+      "key": "dmg_mod_body_hit_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_body_hit"
+    },
+    {
+      "key": "dmg_mod_arm_hit",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_arm_hit"
+    },
+    {
+      "key": "dmg_mod_arm_hit_req",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_arm_hit"
+    },
+    {
+      "key": "dmg_mod_arm_hit_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_arm_hit"
+    },
+    {
+      "key": "dmg_mod_leg_hit",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_leg_hit"
+    },
+    {
+      "key": "dmg_mod_leg_hit_req",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_leg_hit"
+    },
+    {
+      "key": "dmg_mod_leg_hit_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_leg_hit"
+    },
+    {
+      "key": "dmg_mod_big_hit",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_big_hit"
+    },
+    {
+      "key": "dmg_mod_big_hit_req",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_big_hit"
+    },
+    {
+      "key": "dmg_mod_big_hit_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_big_hit"
+    },
+    {
+      "key": "dmg_mod_big_hit_min",
+      "type": "int",
+      "default": 90,
+      "owner": "damage_filter_big_hit"
+    },
+    {
+      "key": "dmg_mod_low_hp",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_low_hp"
+    },
+    {
+      "key": "dmg_mod_low_hp_req",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_low_hp"
+    },
+    {
+      "key": "dmg_mod_low_hp_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_low_hp"
+    },
+    {
+      "key": "dmg_mod_low_hp_max",
+      "type": "int",
+      "default": 5,
+      "owner": "damage_filter_low_hp"
+    },
+    {
+      "key": "dmg_mod_multi_nade",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_multi_nade"
+    },
+    {
+      "key": "dmg_mod_multi_nade_req",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_multi_nade"
+    },
+    {
+      "key": "dmg_mod_multi_nade_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_multi_nade"
+    },
+    {
+      "key": "dmg_mod_multi_nade_min",
+      "type": "int",
+      "default": 3,
+      "owner": "damage_filter_multi_nade"
+    },
+    {
+      "key": "dmg_mod_team_damage",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_team_damage"
+    },
+    {
+      "key": "dmg_mod_team_damage_req",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_team_damage"
+    },
+    {
+      "key": "dmg_mod_team_damage_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "damage_filter_team_damage"
+    },
+    {
+      "key": "shot_mod_knife_swing",
+      "type": "bool",
+      "default": false,
+      "owner": "shot_filter_knife_swing"
+    },
+    {
+      "key": "shot_mod_knife_swing_req",
+      "type": "bool",
+      "default": false,
+      "owner": "shot_filter_knife_swing"
+    },
+    {
+      "key": "shot_mod_knife_swing_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "shot_filter_knife_swing"
+    },
+    {
+      "key": "shot_mod_long_spray",
+      "type": "bool",
+      "default": false,
+      "owner": "shot_filter_long_spray"
+    },
+    {
+      "key": "shot_mod_long_spray_req",
+      "type": "bool",
+      "default": false,
+      "owner": "shot_filter_long_spray"
+    },
+    {
+      "key": "shot_mod_long_spray_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "shot_filter_long_spray"
+    },
+    {
+      "key": "shot_mod_long_spray_min",
+      "type": "int",
+      "default": 10,
+      "owner": "shot_filter_long_spray"
+    },
+    {
+      "key": "shot_mod_run_gun",
+      "type": "bool",
+      "default": false,
+      "owner": "shot_filter_run_gun"
+    },
+    {
+      "key": "shot_mod_run_gun_req",
+      "type": "bool",
+      "default": false,
+      "owner": "shot_filter_run_gun"
+    },
+    {
+      "key": "shot_mod_run_gun_exclude",
+      "type": "bool",
+      "default": false,
+      "owner": "shot_filter_run_gun"
+    },
+    {
+      "key": "shot_mod_run_gun_speed",
+      "type": "int",
+      "default": 200,
+      "owner": "shot_filter_run_gun"
+    },
+    {
+      "key": "clutch_enabled",
+      "type": "bool",
+      "default": false,
+      "owner": "clutch_filter"
+    },
+    {
+      "key": "clutch_wins_only",
+      "type": "bool",
+      "default": false,
+      "owner": "clutch_filter"
+    },
+    {
+      "key": "clutch_mode",
+      "type": "text",
+      "default": "kills_only",
+      "owner": "clutch_filter"
+    },
+    {
+      "key": "clutch_1v1",
+      "type": "bool",
+      "default": false,
+      "owner": "clutch_filter"
+    },
+    {
+      "key": "clutch_1v2",
+      "type": "bool",
+      "default": false,
+      "owner": "clutch_filter"
+    },
+    {
+      "key": "clutch_1v3",
+      "type": "bool",
+      "default": false,
+      "owner": "clutch_filter"
+    },
+    {
+      "key": "clutch_1v4",
+      "type": "bool",
+      "default": false,
+      "owner": "clutch_filter"
+    },
+    {
+      "key": "clutch_1v5",
+      "type": "bool",
+      "default": false,
+      "owner": "clutch_filter"
+    },
+    {
+      "key": "match_type_premier",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_competitive",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_wingman",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_casual",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_deathmatch",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_training",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_new_user",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_armsrace",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_armsrace_alt",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_demolition",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_coop",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_skirmish",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_retake",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "match_type_filter_enabled",
+      "type": "bool",
+      "default": false,
+      "owner": "match_type_filter"
+    },
+    {
+      "key": "map_filter_enabled",
+      "type": "bool",
+      "default": false,
+      "owner": "map_filter"
+    },
+    {
+      "key": "map_filter",
+      "type": "list",
+      "default": [],
+      "owner": "map_filter"
+    },
+    {
+      "key": "show_xray",
+      "type": "bool",
+      "default": true,
+      "owner": "in_game_display"
+    },
+    {
+      "key": "video_preset",
+      "type": "text",
+      "default": "medium",
+      "owner": "video_encoding"
+    },
+    {
+      "key": "hlae_fov",
+      "type": "int",
+      "default": 90,
+      "owner": "hlae_options"
+    },
+    {
+      "key": "hlae_slow_motion",
+      "type": "int",
+      "default": 100,
+      "owner": "hlae_options"
+    },
+    {
+      "key": "hlae_afx_stream",
+      "type": "bool",
+      "default": false,
+      "owner": "hlae_options"
+    },
+    {
+      "key": "hlae_no_spectator_ui",
+      "type": "bool",
+      "default": true,
+      "owner": "hlae_options"
+    },
+    {
+      "key": "hlae_fix_scope_fov",
+      "type": "bool",
+      "default": true,
+      "owner": "hlae_options"
+    },
+    {
+      "key": "hlae_extra_args",
+      "type": "text",
+      "default": "",
+      "owner": "hlae_options"
+    },
+    {
+      "key": "phys_ragdoll_gravity",
+      "type": "int",
+      "default": 600,
+      "owner": "cs2_effects"
+    },
+    {
+      "key": "phys_ragdoll_scale",
+      "type": "float",
+      "default": 1.0,
+      "owner": "cs2_effects"
+    },
+    {
+      "key": "phys_ragdoll_enable",
+      "type": "bool",
+      "default": true,
+      "owner": "cs2_effects"
+    },
+    {
+      "key": "phys_sv_gravity",
+      "type": "int",
+      "default": 800,
+      "owner": "cs2_effects"
+    },
+    {
+      "key": "phys_blood",
+      "type": "bool",
+      "default": true,
+      "owner": "cs2_effects"
+    },
+    {
+      "key": "phys_dynamic_lighting",
+      "type": "bool",
+      "default": true,
+      "owner": "cs2_effects"
+    },
+    {
+      "key": "cs2_window_mode",
+      "type": "text",
+      "default": "none",
+      "owner": "cs2_window"
+    },
+    {
+      "key": "cs2_send_to_back",
+      "type": "bool",
+      "default": false,
+      "owner": "cs2_window"
+    },
+    {
+      "key": "dp2_threads",
+      "type": "int",
+      "default": 4,
+      "owner": "demo_parse_threads"
+    },
+    {
+      "key": "dp2_cache_max_demos",
+      "type": "int",
+      "default": 150,
+      "owner": "engine_internals"
+    },
+    {
+      "key": "positions_cache_max_demos",
+      "type": "int",
+      "default": 20,
+      "owner": "engine_internals"
+    },
+    {
+      "key": "airborne_shot_speed_z",
+      "type": "float",
+      "default": 1.0,
+      "owner": "engine_internals"
+    },
+    {
+      "key": "airborne_position_delta_z",
+      "type": "float",
+      "default": 8.0,
+      "owner": "engine_internals"
+    },
+    {
+      "key": "process_exit_poll_interval",
+      "type": "float",
+      "default": 0.5,
+      "owner": "engine_internals"
+    },
+    {
+      "key": "process_exit_timeout",
+      "type": "float",
+      "default": 60.0,
+      "owner": "engine_internals"
+    },
+    {
+      "key": "cs2_process_name",
+      "type": "text",
+      "default": "cs2.exe",
+      "owner": "engine_internals"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "database_connection",
+      "intention": "I1",
+      "label": "Database connection",
+      "level": "essential",
+      "commands": [
+        "connect_db"
+      ]
+    },
+    {
+      "id": "csdm_executable",
+      "intention": "I1",
+      "label": "CS Demo Manager executable",
+      "level": "essential",
+      "commands": []
+    },
+    {
+      "id": "output_folders",
+      "intention": "I1",
+      "label": "Output folders",
+      "level": "essential",
+      "commands": []
+    },
+    {
+      "id": "cs2_cfg_folder",
+      "intention": "I1",
+      "label": "CS2 cfg folder override",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "settings_location",
+      "intention": "I1",
+      "label": "Settings location",
+      "level": "advanced",
+      "commands": [
+        "probe_config_dir",
+        "apply_config_dir"
+      ]
+    },
+    {
+      "id": "demo_parse_threads",
+      "intention": "I1",
+      "label": "Demo pre-parse threads",
+      "level": "expert",
+      "commands": []
+    },
+    {
+      "id": "engine_internals",
+      "intention": "I1",
+      "label": "Engine internals",
+      "level": "expert",
+      "commands": []
+    },
+    {
+      "id": "player_selection",
+      "intention": "I2",
+      "label": "Players",
+      "level": "essential",
+      "commands": []
+    },
+    {
+      "id": "player_name_override",
+      "intention": "I2",
+      "label": "In-game name override",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "demo_date_range",
+      "intention": "I3",
+      "label": "Date range",
+      "level": "essential",
+      "commands": []
+    },
+    {
+      "id": "manual_demo_pick",
+      "intention": "I3",
+      "label": "Pick demos by hand",
+      "level": "advanced",
+      "commands": [
+        "list_demos"
+      ]
+    },
+    {
+      "id": "map_filter",
+      "intention": "I3",
+      "label": "Map filter",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "tagged_demo_search",
+      "intention": "I3",
+      "label": "Find demos by tag",
+      "level": "advanced",
+      "commands": [
+        "tags_search",
+        "tags_calc_range"
+      ]
+    },
+    {
+      "id": "clip_order",
+      "intention": "I3",
+      "label": "Processing order",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "event_role",
+      "intention": "I4",
+      "label": "Event role",
+      "level": "essential",
+      "commands": []
+    },
+    {
+      "id": "event_kind",
+      "intention": "I4",
+      "label": "Event kind",
+      "level": "essential",
+      "commands": []
+    },
+    {
+      "id": "event_side",
+      "intention": "I4",
+      "label": "Other player's side",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "round_clips",
+      "intention": "I4",
+      "label": "Full-round clips",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "weapon_filter",
+      "intention": "I4",
+      "label": "Weapons",
+      "level": "essential",
+      "commands": []
+    },
+    {
+      "id": "headshot_filter",
+      "intention": "I4",
+      "label": "Headshots",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "suicide_filter",
+      "intention": "I4",
+      "label": "Suicides",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "clutch_filter",
+      "intention": "I4",
+      "label": "Clutches",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "filter_logic",
+      "intention": "I4",
+      "label": "Filter logic",
+      "level": "expert",
+      "commands": []
+    },
+    {
+      "id": "camera_perspective",
+      "intention": "I5",
+      "label": "Camera perspective",
+      "level": "essential",
+      "commands": []
+    },
+    {
+      "id": "clip_window",
+      "intention": "I5",
+      "label": "Seconds before and after",
+      "level": "essential",
+      "commands": []
+    },
+    {
+      "id": "recording_system",
+      "intention": "I5",
+      "label": "Recording system",
+      "level": "essential",
+      "commands": []
+    },
+    {
+      "id": "hlae_options",
+      "intention": "I5",
+      "label": "HLAE options",
+      "level": "expert",
+      "commands": []
+    },
+    {
+      "id": "in_game_display",
+      "intention": "I5",
+      "label": "In-game display",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "cs2_effects",
+      "intention": "I5",
+      "label": "CS2 effects",
+      "level": "expert",
+      "commands": []
+    },
+    {
+      "id": "cs2_window",
+      "intention": "I5",
+      "label": "CS2 window",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "retries",
+      "intention": "I6",
+      "label": "Retries",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "batch_pacing",
+      "intention": "I6",
+      "label": "Pacing and timeout",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "close_game_between_demos",
+      "intention": "I6",
+      "label": "Close CS2 after each demo",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "resolution_framerate",
+      "intention": "I7",
+      "label": "Resolution and framerate",
+      "level": "essential",
+      "commands": []
+    },
+    {
+      "id": "video_encoding",
+      "intention": "I7",
+      "label": "Video encoding",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "audio_encoding",
+      "intention": "I7",
+      "label": "Audio encoding",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "ffmpeg_raw_params",
+      "intention": "I7",
+      "label": "Raw FFmpeg parameters",
+      "level": "expert",
+      "commands": []
+    },
+    {
+      "id": "sequence_concatenation",
+      "intention": "I7",
+      "label": "Join a demo's sequences",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "final_assembly",
+      "intention": "I7",
+      "label": "Final assembly",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "preview",
+      "intention": "I8",
+      "label": "Preview",
+      "level": "essential",
+      "commands": [
+        "start_preview",
+        "cancel_preview",
+        "run_inputs_problem",
+        "clip_cameras"
+      ]
+    },
+    {
+      "id": "preview_export",
+      "intention": "I8",
+      "label": "Export the preview clip list",
+      "level": "advanced",
+      "commands": [
+        "export_preview"
+      ]
+    },
+    {
+      "id": "injection_preview",
+      "intention": "I8",
+      "label": "CS2 injection preview",
+      "level": "expert",
+      "commands": [
+        "injection_preview"
+      ]
+    },
+    {
+      "id": "batch_run",
+      "intention": "I9",
+      "label": "Run, stop, kill",
+      "level": "essential",
+      "commands": [
+        "start_run",
+        "request_stop",
+        "request_kill"
+      ]
+    },
+    {
+      "id": "tag_management",
+      "intention": "I10",
+      "label": "Tags",
+      "level": "advanced",
+      "commands": [
+        "tag_create",
+        "tag_delete",
+        "tags_set_active"
+      ]
+    },
+    {
+      "id": "tag_demos",
+      "intention": "I10",
+      "label": "Tag demos",
+      "level": "advanced",
+      "commands": [
+        "tags_apply",
+        "tags_remove"
+      ]
+    },
+    {
+      "id": "tag_on_export",
+      "intention": "I10",
+      "label": "Tag on export",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "tag_transfer",
+      "intention": "I10",
+      "label": "Export and import tags",
+      "level": "expert",
+      "commands": [
+        "tags_export",
+        "tags_import_scan",
+        "tags_import_apply"
+      ]
+    },
+    {
+      "id": "presets",
+      "intention": "I11",
+      "label": "Presets",
+      "level": "advanced",
+      "commands": [
+        "list_presets",
+        "save_preset",
+        "load_preset",
+        "delete_preset"
+      ]
+    },
+    {
+      "id": "config_persistence",
+      "intention": "I11",
+      "label": "Settings saved automatically",
+      "level": "expert",
+      "commands": [
+        "load_config",
+        "save_config"
+      ]
+    },
+    {
+      "id": "theme",
+      "intention": "I13",
+      "label": "Theme",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "window_layout",
+      "intention": "I13",
+      "label": "Window size and split",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "card_layout",
+      "intention": "I13",
+      "label": "Card layout",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "card_style",
+      "intention": "I13",
+      "label": "Card style",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "font",
+      "intention": "I13",
+      "label": "Font",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "tooltips",
+      "intention": "I13",
+      "label": "Tooltips",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "engine_handshake",
+      "intention": "I14",
+      "label": "Engine handshake",
+      "level": "expert",
+      "commands": [
+        "hello",
+        "describe_filters"
+      ]
+    },
+    {
+      "id": "match_type_filter",
+      "intention": "I3",
+      "label": "Match type filter",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_through_smoke",
+      "intention": "I4",
+      "label": "💨 SMOKE",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_no_scope",
+      "intention": "I4",
+      "label": "🔭 NOSCOPE",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_assisted_flash",
+      "intention": "I4",
+      "label": "⚡ VIC.FLASH",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_wall_bang",
+      "intention": "I4",
+      "label": "🧱 WALLBANG",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_attacker_blind",
+      "intention": "I4",
+      "label": "😵 BLIND",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_airborne",
+      "intention": "I4",
+      "label": "🪂 AIR",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_collateral",
+      "intention": "I4",
+      "label": "🎯 COLLAT.",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_trois_shot",
+      "intention": "I4",
+      "label": "🎲 TROIS SHOT",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_trois_tap",
+      "intention": "I4",
+      "label": "🎯🎲 TROIS TAP",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_one_tap",
+      "intention": "I4",
+      "label": "🎯 ONE TAP",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_spray_transfer",
+      "intention": "I4",
+      "label": "🔫 SPRAY",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_high_velocity",
+      "intention": "I4",
+      "label": "🏎 FERRARI",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_flick",
+      "intention": "I4",
+      "label": "↩ FLICK",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_savior",
+      "intention": "I4",
+      "label": "🛡 SAVIOR",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_entry_frag",
+      "intention": "I4",
+      "label": "🚀 ENTRY",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_ace",
+      "intention": "I4",
+      "label": "🃏 ACE",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_multi_kill",
+      "intention": "I4",
+      "label": "⚡ MULTI",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_bully",
+      "intention": "I4",
+      "label": "💀 BULLY",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_eco_frag",
+      "intention": "I4",
+      "label": "💰 ECO",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "kill_filter_mate_pov",
+      "intention": "I5",
+      "label": "👥 MATE POV",
+      "level": "essential",
+      "commands": []
+    },
+    {
+      "id": "damage_filter_headshot_hit",
+      "intention": "I4",
+      "label": "🎯 HS HIT",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "damage_filter_body_hit",
+      "intention": "I4",
+      "label": "🦺 BODY HIT",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "damage_filter_arm_hit",
+      "intention": "I4",
+      "label": "💪 ARM HIT",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "damage_filter_leg_hit",
+      "intention": "I4",
+      "label": "🦵 LEG HIT",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "damage_filter_big_hit",
+      "intention": "I4",
+      "label": "💥 BIG HIT",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "damage_filter_low_hp",
+      "intention": "I4",
+      "label": "🩸 LOW HP",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "damage_filter_multi_nade",
+      "intention": "I4",
+      "label": "💣 MULTI-NADE",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "damage_filter_team_damage",
+      "intention": "I4",
+      "label": "🤦 TEAM DMG",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "shot_filter_knife_swing",
+      "intention": "I4",
+      "label": "🔪 SWING",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "shot_filter_long_spray",
+      "intention": "I4",
+      "label": "🔫 LONG SPRAY",
+      "level": "advanced",
+      "commands": []
+    },
+    {
+      "id": "shot_filter_run_gun",
+      "intention": "I4",
+      "label": "🏃 RUN&GUN",
+      "level": "advanced",
+      "commands": []
+    }
+  ],
+  "intentions": [
+    [
+      "I1",
+      "Set up the tool"
+    ],
+    [
+      "I2",
+      "Choose who"
+    ],
+    [
+      "I3",
+      "Choose which demos"
+    ],
+    [
+      "I4",
+      "Choose which moments"
+    ],
+    [
+      "I5",
+      "Choose how to film"
+    ],
+    [
+      "I6",
+      "Make the batch reliable"
+    ],
+    [
+      "I7",
+      "Tune the video render"
+    ],
+    [
+      "I8",
+      "Check before running"
+    ],
+    [
+      "I9",
+      "Run and control"
+    ],
+    [
+      "I10",
+      "Organise with tags"
+    ],
+    [
+      "I11",
+      "Save and reuse"
+    ],
+    [
+      "I12",
+      "Monitor"
+    ],
+    [
+      "I13",
+      "Personalise the window"
+    ],
+    [
+      "I14",
+      "Diagnose"
+    ]
+  ],
+  "levels": [
+    "essential",
+    "advanced",
+    "expert"
+  ],
+  "ui_sections_version": 5,
+  "presets": {
+    "categories": {
+      "full": "All (full config)",
+      "player": "Player + events + weapons",
+      "video": "Video/encoding settings",
+      "timing": "Timing + robustness"
+    },
+    "keys": {
+      "full": null,
+      "players": [
+        "steam_id",
+        "steam_ids",
+        "player_name",
+        "player_name_override"
+      ],
+      "date": [
+        "date_from",
+        "date_to"
+      ],
+      "filters": [
+        "event_actor",
+        "event_target",
+        "event_lethal",
+        "event_ally",
+        "event_enemy",
+        "event_non_lethal",
+        "event_other",
+        "events",
+        "weapons",
+        "perspective",
+        "victim_pre_s",
+        "headshots_mode",
+        "suicides_mode",
+        "teamkills_mode",
+        "kill_mod_logic_mods",
+        "kill_mod_logic_dp2",
+        "kill_mod_logic_db",
+        "kill_mod_through_smoke",
+        "kill_mod_through_smoke_req",
+        "kill_mod_through_smoke_exclude",
+        "kill_mod_no_scope",
+        "kill_mod_no_scope_req",
+        "kill_mod_no_scope_exclude",
+        "kill_mod_assisted_flash",
+        "kill_mod_assisted_flash_req",
+        "kill_mod_assisted_flash_exclude",
+        "kill_mod_wall_bang",
+        "kill_mod_wall_bang_req",
+        "kill_mod_wall_bang_exclude",
+        "kill_mod_attacker_blind",
+        "kill_mod_attacker_blind_req",
+        "kill_mod_attacker_blind_exclude",
+        "kill_mod_airborne",
+        "kill_mod_airborne_req",
+        "kill_mod_airborne_exclude",
+        "kill_mod_collateral",
+        "kill_mod_collateral_req",
+        "kill_mod_collateral_exclude",
+        "kill_mod_trois_shot",
+        "kill_mod_trois_shot_req",
+        "kill_mod_trois_shot_exclude",
+        "kill_mod_trois_tap",
+        "kill_mod_trois_tap_req",
+        "kill_mod_one_tap",
+        "kill_mod_one_tap_req",
+        "kill_mod_one_tap_exclude",
+        "kill_mod_spray_transfer",
+        "kill_mod_spray_transfer_req",
+        "kill_mod_spray_transfer_exclude",
+        "kill_mod_high_velocity",
+        "kill_mod_high_velocity_req",
+        "kill_mod_high_velocity_exclude",
+        "kill_mod_hv_one_shot",
+        "kill_mod_flick",
+        "kill_mod_flick_req",
+        "kill_mod_flick_exclude",
+        "kill_mod_savior",
+        "kill_mod_savior_req",
+        "kill_mod_savior_exclude",
+        "kill_mod_entry_frag",
+        "kill_mod_entry_frag_req",
+        "kill_mod_entry_frag_exclude",
+        "kill_mod_ace",
+        "kill_mod_ace_req",
+        "kill_mod_ace_exclude",
+        "kill_mod_multi_kill",
+        "kill_mod_multi_kill_req",
+        "kill_mod_multi_kill_exclude",
+        "kill_mod_bully",
+        "kill_mod_bully_req",
+        "kill_mod_bully_exclude",
+        "kill_mod_eco_frag",
+        "kill_mod_eco_frag_req",
+        "kill_mod_eco_frag_exclude",
+        "kill_mod_mate_pov",
+        "kill_mod_mate_pov_req",
+        "dmg_mod_headshot_hit",
+        "dmg_mod_headshot_hit_req",
+        "dmg_mod_headshot_hit_exclude",
+        "dmg_mod_body_hit",
+        "dmg_mod_body_hit_req",
+        "dmg_mod_body_hit_exclude",
+        "dmg_mod_arm_hit",
+        "dmg_mod_arm_hit_req",
+        "dmg_mod_arm_hit_exclude",
+        "dmg_mod_leg_hit",
+        "dmg_mod_leg_hit_req",
+        "dmg_mod_leg_hit_exclude",
+        "dmg_mod_big_hit",
+        "dmg_mod_big_hit_req",
+        "dmg_mod_big_hit_exclude",
+        "dmg_mod_low_hp",
+        "dmg_mod_low_hp_req",
+        "dmg_mod_low_hp_exclude",
+        "dmg_mod_multi_nade",
+        "dmg_mod_multi_nade_req",
+        "dmg_mod_multi_nade_exclude",
+        "dmg_mod_team_damage",
+        "dmg_mod_team_damage_req",
+        "dmg_mod_team_damage_exclude",
+        "shot_mod_knife_swing",
+        "shot_mod_knife_swing_req",
+        "shot_mod_knife_swing_exclude",
+        "shot_mod_long_spray",
+        "shot_mod_long_spray_req",
+        "shot_mod_long_spray_exclude",
+        "shot_mod_run_gun",
+        "shot_mod_run_gun_req",
+        "shot_mod_run_gun_exclude",
+        "kill_mod_one_tap_s",
+        "kill_mod_high_vel_thr",
+        "kill_mod_flick_deg",
+        "kill_mod_multi_kill_n",
+        "kill_mod_multi_kill_s",
+        "kill_mod_bully_n",
+        "dmg_mod_big_hit_min",
+        "dmg_mod_low_hp_max",
+        "dmg_mod_multi_nade_min",
+        "shot_mod_long_spray_min",
+        "shot_mod_run_gun_speed",
+        "clip_order",
+        "show_xray",
+        "clutch_enabled",
+        "clutch_wins_only",
+        "clutch_mode",
+        "clutch_1v1",
+        "clutch_1v2",
+        "clutch_1v3",
+        "clutch_1v4",
+        "clutch_1v5",
+        "map_filter_enabled",
+        "map_filter"
+      ],
+      "mode": [
+        "recsys",
+        "encoder"
+      ],
+      "output_name": [
+        "assemble_output",
+        "output_dir_clips",
+        "output_dir_concat",
+        "output_dir_assembled"
+      ],
+      "encoding": [
+        "width",
+        "height",
+        "framerate",
+        "crf",
+        "video_codec",
+        "video_preset",
+        "audio_codec",
+        "audio_bitrate",
+        "video_container",
+        "ffmpeg_input_params",
+        "ffmpeg_output_params",
+        "death_notices_duration",
+        "show_only_death_notices",
+        "concatenate_sequences",
+        "subfolder_per_demo",
+        "true_view"
+      ],
+      "hlae_opts": [
+        "hlae_fov",
+        "hlae_slow_motion",
+        "hlae_afx_stream",
+        "hlae_no_spectator_ui",
+        "hlae_fix_scope_fov",
+        "hlae_extra_args"
+      ],
+      "physics": [
+        "phys_ragdoll_gravity",
+        "phys_ragdoll_scale",
+        "phys_ragdoll_enable",
+        "phys_sv_gravity",
+        "phys_blood",
+        "phys_dynamic_lighting"
+      ],
+      "timing": [
+        "before",
+        "after",
+        "close_game_after",
+        "retry_count",
+        "retry_delay",
+        "delay_between_demos",
+        "recording_timeout"
+      ],
+      "player": [
+        "steam_id",
+        "steam_ids",
+        "player_name",
+        "event_actor",
+        "event_target",
+        "event_lethal",
+        "event_ally",
+        "event_enemy",
+        "event_non_lethal",
+        "event_other",
+        "events",
+        "weapons",
+        "date_from",
+        "date_to",
+        "perspective",
+        "victim_pre_s",
+        "headshots_mode",
+        "suicides_mode",
+        "teamkills_mode",
+        "kill_mod_logic_mods",
+        "kill_mod_logic_dp2",
+        "kill_mod_logic_db",
+        "kill_mod_through_smoke",
+        "kill_mod_through_smoke_req",
+        "kill_mod_through_smoke_exclude",
+        "kill_mod_no_scope",
+        "kill_mod_no_scope_req",
+        "kill_mod_no_scope_exclude",
+        "kill_mod_assisted_flash",
+        "kill_mod_assisted_flash_req",
+        "kill_mod_assisted_flash_exclude",
+        "kill_mod_wall_bang",
+        "kill_mod_wall_bang_req",
+        "kill_mod_wall_bang_exclude",
+        "kill_mod_attacker_blind",
+        "kill_mod_attacker_blind_req",
+        "kill_mod_attacker_blind_exclude",
+        "kill_mod_airborne",
+        "kill_mod_airborne_req",
+        "kill_mod_airborne_exclude",
+        "kill_mod_collateral",
+        "kill_mod_collateral_req",
+        "kill_mod_collateral_exclude",
+        "kill_mod_trois_shot",
+        "kill_mod_trois_shot_req",
+        "kill_mod_trois_shot_exclude",
+        "kill_mod_trois_tap",
+        "kill_mod_trois_tap_req",
+        "kill_mod_one_tap",
+        "kill_mod_one_tap_req",
+        "kill_mod_one_tap_exclude",
+        "kill_mod_spray_transfer",
+        "kill_mod_spray_transfer_req",
+        "kill_mod_spray_transfer_exclude",
+        "kill_mod_high_velocity",
+        "kill_mod_high_velocity_req",
+        "kill_mod_high_velocity_exclude",
+        "kill_mod_hv_one_shot",
+        "kill_mod_flick",
+        "kill_mod_flick_req",
+        "kill_mod_flick_exclude",
+        "kill_mod_savior",
+        "kill_mod_savior_req",
+        "kill_mod_savior_exclude",
+        "kill_mod_entry_frag",
+        "kill_mod_entry_frag_req",
+        "kill_mod_entry_frag_exclude",
+        "kill_mod_ace",
+        "kill_mod_ace_req",
+        "kill_mod_ace_exclude",
+        "kill_mod_multi_kill",
+        "kill_mod_multi_kill_req",
+        "kill_mod_multi_kill_exclude",
+        "kill_mod_bully",
+        "kill_mod_bully_req",
+        "kill_mod_bully_exclude",
+        "kill_mod_eco_frag",
+        "kill_mod_eco_frag_req",
+        "kill_mod_eco_frag_exclude",
+        "kill_mod_mate_pov",
+        "kill_mod_mate_pov_req",
+        "dmg_mod_headshot_hit",
+        "dmg_mod_headshot_hit_req",
+        "dmg_mod_headshot_hit_exclude",
+        "dmg_mod_body_hit",
+        "dmg_mod_body_hit_req",
+        "dmg_mod_body_hit_exclude",
+        "dmg_mod_arm_hit",
+        "dmg_mod_arm_hit_req",
+        "dmg_mod_arm_hit_exclude",
+        "dmg_mod_leg_hit",
+        "dmg_mod_leg_hit_req",
+        "dmg_mod_leg_hit_exclude",
+        "dmg_mod_big_hit",
+        "dmg_mod_big_hit_req",
+        "dmg_mod_big_hit_exclude",
+        "dmg_mod_low_hp",
+        "dmg_mod_low_hp_req",
+        "dmg_mod_low_hp_exclude",
+        "dmg_mod_multi_nade",
+        "dmg_mod_multi_nade_req",
+        "dmg_mod_multi_nade_exclude",
+        "dmg_mod_team_damage",
+        "dmg_mod_team_damage_req",
+        "dmg_mod_team_damage_exclude",
+        "shot_mod_knife_swing",
+        "shot_mod_knife_swing_req",
+        "shot_mod_knife_swing_exclude",
+        "shot_mod_long_spray",
+        "shot_mod_long_spray_req",
+        "shot_mod_long_spray_exclude",
+        "shot_mod_run_gun",
+        "shot_mod_run_gun_req",
+        "shot_mod_run_gun_exclude",
+        "kill_mod_one_tap_s",
+        "kill_mod_high_vel_thr",
+        "kill_mod_flick_deg",
+        "kill_mod_multi_kill_n",
+        "kill_mod_multi_kill_s",
+        "kill_mod_bully_n",
+        "dmg_mod_big_hit_min",
+        "dmg_mod_low_hp_max",
+        "dmg_mod_multi_nade_min",
+        "shot_mod_long_spray_min",
+        "shot_mod_run_gun_speed",
+        "clip_order",
+        "show_xray",
+        "clutch_enabled",
+        "clutch_wins_only",
+        "clutch_mode",
+        "clutch_1v1",
+        "clutch_1v2",
+        "clutch_1v3",
+        "clutch_1v4",
+        "clutch_1v5"
+      ],
+      "video": [
+        "encoder",
+        "recsys",
+        "width",
+        "height",
+        "framerate",
+        "crf",
+        "video_codec",
+        "video_preset",
+        "audio_codec",
+        "audio_bitrate",
+        "video_container",
+        "ffmpeg_input_params",
+        "ffmpeg_output_params",
+        "death_notices_duration",
+        "show_only_death_notices",
+        "concatenate_sequences",
+        "subfolder_per_demo",
+        "true_view",
+        "hlae_fov",
+        "hlae_slow_motion",
+        "hlae_afx_stream",
+        "hlae_no_spectator_ui",
+        "hlae_fix_scope_fov",
+        "hlae_extra_args",
+        "phys_ragdoll_gravity",
+        "phys_ragdoll_scale",
+        "phys_ragdoll_enable",
+        "phys_sv_gravity",
+        "phys_blood",
+        "phys_dynamic_lighting"
+      ]
+    },
+    "tab_groups": [
+      [
+        "CAPTURE",
+        [
+          [
+            "players",
+            "Active players"
+          ],
+          [
+            "date",
+            "Date range"
+          ],
+          [
+            "filters",
+            "Filters"
+          ]
+        ]
+      ],
+      [
+        "VIDEO",
+        [
+          [
+            "mode",
+            "Mode  (HLAE / CS)"
+          ],
+          [
+            "output_name",
+            "Output name"
+          ],
+          [
+            "encoding",
+            "Encoding"
+          ],
+          [
+            "hlae_opts",
+            "HLAE options"
+          ],
+          [
+            "physics",
+            "Physics"
+          ]
+        ]
+      ],
+      [
+        "TIMING",
+        [
+          [
+            "timing",
+            "Timing & retry"
+          ]
+        ]
+      ]
+    ],
+    "excluded_keys": [
+      "config_dir",
+      "csdm_exe",
+      "pg_db",
+      "pg_host",
+      "pg_pass",
+      "pg_port",
+      "pg_user",
+      "saved_players",
+      "saved_players_imported"
+    ],
+    "excluded_prefixes": [
+      "ui_",
+      "theme_"
+    ]
+  }
+}

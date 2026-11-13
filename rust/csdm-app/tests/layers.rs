@@ -15,8 +15,14 @@ const FORBIDDEN: &[(&str, &[&str])] = &[
     ("csdm-app", &["csdm-db", "csdm-demo", "postgres"]),
 ];
 
-/// Source patterns a layer must not use even through std (the UI never spawns processes).
-const FORBIDDEN_SOURCE: &[(&str, &str)] = &[("csdm-app", "std::process")];
+/// Source patterns a layer must not use even through std: the UI never spawns
+/// processes; csdm-core does no I/O at all (files, processes, network).
+const FORBIDDEN_SOURCE: &[(&str, &str)] = &[
+    ("csdm-app", "std::process"),
+    ("csdm-core", "std::fs"),
+    ("csdm-core", "std::process"),
+    ("csdm-core", "std::net"),
+];
 
 fn metadata() -> Value {
     let out = Command::new(env!("CARGO"))
@@ -51,7 +57,7 @@ fn every_crate_respects_its_layer() {
 }
 
 #[test]
-fn ui_sources_never_spawn_processes() {
+fn no_layer_uses_its_forbidden_std_modules() {
     let root = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/.."));
     let mut hits = Vec::new();
     for (krate, pattern) in FORBIDDEN_SOURCE {
