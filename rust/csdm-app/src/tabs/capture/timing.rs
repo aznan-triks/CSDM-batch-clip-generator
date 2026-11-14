@@ -294,7 +294,9 @@ fn count_word(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, label: &str, unit: 
                 ui.set_width(POP_W);
                 ui.label(egui::RichText::new(label).font(semibold(FONT_TOKEN[1])).color(t.txt));
                 let mut v = value;
-                let s = ui.add(egui::Slider::new(&mut v, 0..=max).suffix(unit.trim()));
+                // The exact box below shows the number; the slider carries the token's name.
+                let s = ui.add(egui::Slider::new(&mut v, 0..=max).show_value(false));
+                s.widget_info(|| egui::WidgetInfo::slider(true, v as f64, format!("{label} slider")));
                 if s.changed() {
                     next = Some(v);
                 }

@@ -36,6 +36,8 @@ const DATE_W: f32 = 96.0;
 const ROW_H: f32 = 22.0;
 const TABLE_H: f32 = 240.0;
 const COL_W: [f32; 3] = [24.0, 120.0, 110.0];
+/// Most of a narrow table Date and Map may take, so the demo name keeps the rest.
+const DEMO_FIXED_SHARE: f32 = 0.6;
 const FONT_ROW: f32 = 11.5;
 const CAL_CELL: f32 = 26.0;
 const WEEK: usize = 7;
@@ -311,52 +313,55 @@ fn date_field(ui: &mut egui::Ui, t: &Theme, label: &str, value: &str, tip: &str,
     out
 }
 
+/// Date, Map and Demo widths for a table `width` wide: Date and Map at their size, shrunk in
+/// proportion when the card is narrow, Demo takes what is left (at least its share).
+fn columns(width: f32) -> [f32; 3] {
+    let room = (width - COL_W[0]).max(0.0);
+    let fixed = COL_W[1] + COL_W[2];
+    let k = (room * DEMO_FIXED_SHARE / fixed).min(1.0);
+    [COL_W[1] * k, COL_W[2] * k, room - fixed * k]
+}
+
 /// The ✓ / Date / Map / Demo table; only the rows in view are drawn.
 fn picker(tab: &mut CaptureTab, ui: &mut egui::Ui, t: &Theme) {
     let rows: Vec<DemoRow> = tab.demos.rows.clone().unwrap_or_default();
     let total = rows.len();
     let on = rows.iter().filter(|r| tab.demos.checked.get(&r.path) == Some(&true)).count();
+    // Wrapped, never right-to-left: four buttons wider than a narrow card pushed the table off its left edge.
     ui.horizontal_wrapped(|ui| {
         let words = if total == 0 { "no demos loaded".to_string() } else { format!("{on}/{total} selected") };
         lab(ui, t, &words);
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let sel: Vec<String> = tab.demos.selected.iter().cloned().collect();
-            if button(ui, t, "✕ Uncheck selected", "Uncheck selected", "Unchecks only the rows currently highlighted (click, Ctrl+click, Shift+click)", true) {
-                for p in &sel {
-                    tab.demos.checked.insert(p.clone(), false);
-                }
+        let sel: Vec<String> = tab.demos.selected.iter().cloned().collect();
+        if button(ui, t, "✓ Check all", "Check all", "Include all listed demos for clip extraction", true) {
+            for r in &rows {
+                tab.demos.checked.insert(r.path.clone(), true);
             }
-            if button(ui, t, "✓ Check selected", "Check selected", "Checks the rows highlighted by click, Ctrl+click or Shift+click", true) {
-                for p in &sel {
-                    tab.demos.checked.insert(p.clone(), true);
-                }
+        }
+        if button(ui, t, "✕ Uncheck all", "Uncheck all", "Exclude all listed demos from clip extraction", true) {
+            for r in &rows {
+                tab.demos.checked.insert(r.path.clone(), false);
             }
-            if button(ui, t, "✕ Uncheck all", "Uncheck all", "Exclude all listed demos from clip extraction", true) {
-                for r in &rows {
-                    tab.demos.checked.insert(r.path.clone(), false);
-                }
+        }
+        if button(ui, t, "✓ Check selected", "Check selected", "Checks the rows highlighted by click, Ctrl+click or Shift+click", true) {
+            for p in &sel {
+                tab.demos.checked.insert(p.clone(), true);
             }
-            if button(ui, t, "✓ Check all", "Check all", "Include all listed demos for clip extraction", true) {
-                for r in &rows {
-                    tab.demos.checked.insert(r.path.clone(), true);
-                }
+        }
+        if button(ui, t, "✕ Uncheck selected", "Uncheck selected", "Unchecks only the rows currently highlighted (click, Ctrl+click, Shift+click)", true) {
+            for p in &sel {
+                tab.demos.checked.insert(p.clone(), false);
             }
-        });
+        }
     });
     egui::Frame::new().fill(t.solid).stroke(Stroke::new(1.0, t.hair)).corner_radius(egui::CornerRadius::same(RADIUS as u8)).inner_margin(egui::Margin::same(DEMO_STRIP_INSET as i8)).show(ui, |ui| {
         ui.set_width(ui.available_width());
-        let head = |ui: &mut egui::Ui| {
-            ui.horizontal(|ui| {
-                ui.add_space(COL_W[0]);
-                for (w, h) in [(COL_W[1], "Date"), (COL_W[2], "Map"), (0.0, "Demo")] {
-                    let r = ui.label(egui::RichText::new(h).font(semibold(FONT_AXIS)).color(t.faint));
-                    if w > 0.0 {
-                        ui.add_space((w - r.rect.width()).max(0.0));
-                    }
-                }
-            });
-        };
-        head(ui);
+        let cols = columns(ui.available_width());
+        let (head, _) = ui.allocate_exact_size(vec2(ui.available_width(), ROW_H), Sense::hover());
+        let mut x = head.left() + COL_W[0];
+        for (w, h) in cols.iter().zip(["Date", "Map", "Demo"]) {
+            ui.painter().with_clip_rect(Rect::from_min_size(pos2(x, head.top()), vec2(*w, ROW_H))).text(pos2(x, head.center().y), egui::Align2::LEFT_CENTER, h, semibold(FONT_AXIS), t.faint);
+            x += w;
+        }
         if rows.is_empty() {
             hint(ui, t, "No demos loaded -- run a Preview, or turn on Manual mode.");
             return;
@@ -394,8 +399,9 @@ fn picker(tab: &mut CaptureTab, ui: &mut egui::Ui, t: &Theme) {
                 let p = ui.painter();
                 p.text(check.center(), egui::Align2::CENTER_CENTER, if checked { "✓" } else { "✕" }, semibold(FONT_ROW), if checked { t.emerald } else { t.faint });
                 let mut x = r.left() + COL_W[0];
-                for (w, s) in [(COL_W[1], &row.date), (COL_W[2], &row.map), (r.width(), &row.name)] {
-                    p.text(pos2(x, r.center().y), egui::Align2::LEFT_CENTER, s, if w == COL_W[1] { mono(FONT_ROW - 1.0) } else { regular(FONT_ROW) }, ink);
+                for (k, (w, s)) in cols.iter().zip([&row.date, &row.map, &row.name]).enumerate() {
+                    let font = if k == 0 { mono(FONT_ROW - 1.0) } else { regular(FONT_ROW) };
+                    p.with_clip_rect(Rect::from_min_size(pos2(x, r.top()), vec2(*w, ROW_H)).intersect(p.clip_rect())).text(pos2(x, r.center().y), egui::Align2::LEFT_CENTER, s, font, ink);
                     x += w;
                 }
                 if cresp.clicked() {

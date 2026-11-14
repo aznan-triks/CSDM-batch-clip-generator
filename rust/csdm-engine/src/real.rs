@@ -137,7 +137,8 @@ impl State {
     fn handle(&mut self, command: Command) -> Result<Option<Value>, EngineError> {
         let no_db = Discovery::default();
         let reply = match command {
-            Command::DescribeFilters => clips::describe_filters(),
+            // 3.5 bridge `_cmd_describe_filters`: the tables under "data", as every reader expects.
+            Command::DescribeFilters => json!({"data": clips::describe_filters()}),
             Command::ConnectDb { pg } => self.connect(pg)?,
             Command::ListDemos => {
                 self.ensure_connected()?;
@@ -272,7 +273,7 @@ mod tests {
     fn preview_commands_answer_without_a_database() {
         let mut engine = RealEngine::start(Settings::new(), Secrets::default(), None);
         let id = engine.send(Command::DescribeFilters);
-        assert!(reply(&engine, id).unwrap().is_object());
+        assert!(reply(&engine, id).unwrap()["data"]["filters"].is_array(), "tables under \"data\", as the 3.5 bridge sent them");
         let id = engine.send(Command::ClipCameras { clip: json!({"demo_path": "a.dem", "start_tick": 1}) });
         assert!(reply(&engine, id).unwrap_err().contains("PREVIEW"), "asks for a preview first");
         let id = engine.send(Command::ExportPreview { format: "html".into() });
