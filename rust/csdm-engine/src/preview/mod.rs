@@ -12,6 +12,7 @@ pub mod dates;
 pub mod dp2;
 pub mod event;
 pub mod sql;
+pub mod worker;
 
 pub use ctx::{CollectPorts, Ctx, NoPorts, Ports};
 pub use event::{Arena, DemoEvents, Event, EventId};

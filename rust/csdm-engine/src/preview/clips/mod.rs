@@ -20,6 +20,7 @@ pub use edits::{apply_clip_edits, edited_clip_cameras, event_key, normalize_clip
 pub use empty::explain_empty_result_with;
 pub use export::{clip_row, preview_clip_rows, preview_export, render_preview, ExportMeta};
 pub use inputs::run_inputs_problem;
+pub(crate) use sequences::whole;
 pub use sequences::{build_sequences, calc_summary, effective_before, fmt_summary, hms, player_str, sequence_totals, summary_counts};
 
 use super::dates::{demo_sort_key, format_demo_date};
