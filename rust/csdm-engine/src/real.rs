@@ -179,10 +179,15 @@ impl State {
         Ok(json!({"data": data}))
     }
 
-    /// 3.5 connected on first use with the saved settings (`_pg`).
+    /// 3.5 `_pg`: connects on first use with the saved settings, and opens a new session when the
+    /// server or the network closed the last one (the discovery is kept, as 3.5 kept it).
     fn ensure_connected(&mut self) -> Result<(), EngineError> {
-        if self.db.is_none() {
-            self.connect(None)?;
+        match &mut self.db {
+            None => {
+                self.connect(None)?;
+            }
+            Some((db, _)) if db.is_closed() => *db = Db::connect(&PgParams::from_settings(&self.settings)?)?,
+            Some(_) => {}
         }
         Ok(())
     }

@@ -96,7 +96,9 @@ fn main() {
         (a.parse::<usize>().expect("range start"), b.parse::<usize>().expect("range end"))
     });
     let user: Value = serde_json::from_str(&std::fs::read_to_string(cfg_path).expect("config copy")).expect("config JSON");
-    let mut db = Db::connect(&PgParams::from_settings(user.as_object().expect("config object")).expect("connection settings")).unwrap_or_else(|e| panic!("{e}"));
+    let params = PgParams::from_settings(user.as_object().expect("config object")).expect("connection settings");
+    let mut db = Db::connect(&params).unwrap_or_else(|e| panic!("{e}"));
+    let mut reconnects = 0;
     let disc = db.discover().unwrap_or_else(|e| panic!("{e}"));
     let (store, cancel) = (DemoStore::default(), AtomicBool::new(false));
 
@@ -119,6 +121,11 @@ fn main() {
         tally.check(&case, "problem", result.get("problem").unwrap_or(&Value::Null), &problem);
         if result.get("events").is_none() {
             continue;
+        }
+        // As the engine does (3.5 `_pg`): a session the server closed is reopened before the next case.
+        if db.is_closed() {
+            db = Db::connect(&params).unwrap_or_else(|e| panic!("{e}"));
+            reconnects += 1;
         }
         let ports = CollectPorts::default();
         let mut cx = Ctx::new(&mut db, &disc, &ports, &store, &cancel);
@@ -152,6 +159,7 @@ fn main() {
         println!("{what:<14} {ok:>4} / {n:<4} same");
     }
     println!("numbers within {FLOAT_READ_ULPS} ulp (JSON float reading): {}", FLOAT_READ.load(Ordering::Relaxed));
+    println!("database sessions reopened after the server closed one: {reconnects}");
     println!("cases with a difference: {}", tally.failed_cases.len());
     for d in tally.diffs.iter().take(SHOWN_DIFFS) {
         println!("DIFF {d}");

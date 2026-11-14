@@ -89,6 +89,12 @@ impl Db {
         Ok(Db { client, trace: None })
     }
 
+    /// True once the server or the network ended the session (3.5 `conn.closed`): the next read
+    /// would fail, a new `connect` is needed.
+    pub fn is_closed(&self) -> bool {
+        self.client.is_closed()
+    }
+
     /// Keeps every executed query and its rows until `take_trace`.
     pub fn start_trace(&mut self) {
         self.trace = Some(Vec::new());
