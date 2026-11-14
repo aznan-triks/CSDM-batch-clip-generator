@@ -11,6 +11,8 @@ csdm-db = { workspace = true }
 csdm-demo = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+# Local time, as 3.5 `datetime.fromtimestamp` (demo dates, date filter bounds).
+chrono = { version = "0.4.45", default-features = false, features = ["std", "clock"] }
 
 [dev-dependencies]
 tempfile = { workspace = true }
