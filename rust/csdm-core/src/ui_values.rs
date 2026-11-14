@@ -301,3 +301,64 @@ pub const STYLED_CARDS: [(&str, &str); 28] = [
     ("performance", "Performance"),
     ("injection-preview", "Injection Preview"),
 ];
+
+// ---- CAPTURE tab (tabs/player, demoSelection, captureTiming, timingRetries, filterCards, weaponFilter, matchTypes, mapFilter) ----
+/// `usePlayerCard.ts::PLAYER_LIST.pageSize`: players drawn per page.
+pub const PLAYER_PAGE_SIZE: usize = 60;
+/// `clipWindow.ts::CLIP_RANGES`: the `tk.Scale` ranges of before / after / switch delay (s).
+pub const CLIP_RANGE_BEFORE: [i64; 2] = [1, 15];
+pub const CLIP_RANGE_AFTER: [i64; 2] = [1, 15];
+pub const CLIP_RANGE_SWITCH: [i64; 2] = [0, 10];
+/// `captureTiming/TimelineView.tsx`: seconds drawn before the clip and after the ghost moment.
+pub const CLIP_TIMELINE_MARGINS_S: [f64; 2] = [2.0, 1.5];
+/// `ClipTimeline.tsx`: inner margin (px) and a labelled tick every N seconds.
+pub const CLIP_TIMELINE_EDGE: f32 = 18.0;
+pub const CLIP_TIMELINE_MAJOR_EVERY: i64 = 5;
+/// `useTimingRetries.ts::DRAG_RANGES`: where a drag stops (retries, retry delay s, timeout min, pause s).
+pub const TIMING_DRAG_MAX: [i64; 4] = [10, 120, 60, 60];
+/// `timingRetries/TimelineView.tsx`: retry blocks drawn before "+N", demo order drawn per order.
+pub const TIMING_SHOWN_RETRIES: i64 = 2;
+pub const TIMING_DEMO_SEQUENCE: [[u8; 3]; 2] = [[1, 2, 3], [3, 1, 2]];
+/// `gapGrow`: a wait's width grows with its seconds up to this many, by 1 per this many.
+pub const TIMING_GAP_GROW: [f64; 2] = [60.0, 15.0];
+/// `RangeStrip.tsx`: least span, span without a From date, label room (px), Monday ticks under N days, handle inset (px).
+pub const DEMO_STRIP_LEAST_SPAN_DAYS: i64 = 60;
+pub const DEMO_STRIP_OPEN_SPAN_DAYS: i64 = 365;
+pub const DEMO_STRIP_LABEL_GAP: f32 = 42.0;
+pub const DEMO_STRIP_MONTHLY_OVER_DAYS: i64 = 100;
+pub const DEMO_STRIP_INSET: f32 = 7.0;
+/// `fitStart`: at least this many days before the From date, else half the range.
+pub const DEMO_STRIP_MIN_LEAD_DAYS: i64 = 7;
+/// Arrow keys on a strip handle: one day; Page Up/Down: this many.
+pub const DEMO_STRIP_PAGE_DAYS: i64 = 30;
+/// The config's date format (`dd-mm-yyyy`, `_qe_epoch_bounds`).
+pub const DATE_FORMAT: &str = "%d-%m-%Y";
+/// `useDemoSelection.ts::DATE_SHORTCUTS` (label, kind, days, title, sentence words), in order.
+pub const DATE_SHORTCUTS: [(&str, &str, i64, &str, &str); 8] = [
+    ("Yesterday", "yesterday", 0, "Set the date range to yesterday", "yesterday"),
+    ("7d", "days", 7, "Set the date range to the last 7 days", "in the last 7 days"),
+    ("30d", "days", 30, "Set the date range to the last 30 days", "in the last 30 days"),
+    ("This month", "month", 0, "Set the date range to the current month", "this month"),
+    ("3m", "days", 90, "Set the date range to the last 3 months", "in the last 3 months"),
+    ("6m", "days", 180, "Set the date range to the last 6 months", "in the last 6 months"),
+    ("Year", "year", 0, "Set the date range to the current year", "this year"),
+    ("All", "all", 0, "Clear the date range and reset the demo list and picker selection", "at any time"),
+];
+/// `useKillFilters.ts::KILL_COUNT_OPTIONS`: the "N kills" pickers.
+pub const KILL_COUNT_OPTIONS: [&str; 4] = ["2", "3", "4", "5"];
+/// `useKillFilters.ts::CLUTCH_SIZES` and the ladder's bar height (`28 + n * 9` px).
+pub const CLUTCH_SIZES: [u8; 5] = [1, 2, 3, 4, 5];
+pub const CLUTCH_RUNG_HEIGHT: [f32; 2] = [28.0, 9.0];
+/// `useKillFilters.ts::NO_EXCLUDE_BOX` (`_NO_AUTO_EXCLUDE`): filters without an Exclude box.
+pub const NO_EXCLUDE_BOX: [&str; 1] = ["kill_mod_trois_tap"];
+/// `useWeaponFilter.ts`: silhouette height of reference, width bounds at that height; rack height.
+pub const GUN_HEIGHT: f32 = 44.0;
+pub const GUN_WIDTH_RANGE: [f32; 2] = [28.0, 150.0];
+pub const GUN_RACK_HEIGHT: f32 = 30.0;
+/// Words shown in a list before "& N more" (`pickedWords`, `weaponSummary`).
+pub const LIST_WORDS_MAX: usize = 3;
+/// `mapShade`: pattern angles a map monogram may wear.
+pub const MAP_SHADES: u32 = 4;
+/// `player/parts.tsx::AVATAR_HUES`, and the Steam ID digits shown after "…".
+pub const AVATAR_HUES: u32 = 5;
+pub const SHORT_ID_DIGITS: usize = 6;
