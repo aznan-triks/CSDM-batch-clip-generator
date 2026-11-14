@@ -278,7 +278,7 @@ impl TagSession<'_> {
             return Ok(None);
         }
         let abs = std::path::absolute(demo_path).map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|_| demo_path.to_string());
-        let spellings = [demo_path.to_string(), abs.clone(), abs.replace('\\', "/"), abs.replace('/', "\\")];
+        let spellings = [demo_path.to_string(), abs.clone(), abs.replace('\\', "/"), abs.replace('/', "\\")]; // allow-hardcode: path separators, 3.5 tries both spellings
         let mut queries: Vec<Query> = spellings.iter().filter_map(|p| reads::checksum_by_path(self.disc, p)).collect();
         queries.extend(reads::checksum_by_file_name(self.disc, basename(demo_path)));
         for q in queries {
