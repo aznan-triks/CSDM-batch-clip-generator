@@ -6,12 +6,15 @@ pub mod error;
 pub mod event;
 pub mod import35;
 pub mod journal;
+pub mod preview;
+pub mod real;
 pub mod scripted;
 pub mod tag_commands;
 
 pub use command::Command;
 pub use error::EngineError;
 pub use event::{EngineEvent, EventSink, Secrets};
+pub use real::RealEngine;
 
 use std::sync::mpsc::Receiver;
 

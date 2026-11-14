@@ -22,6 +22,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", features = ["preserve_order"] }
 tempfile = "3.27.0"
 sha2 = "0.11.1"
+indexmap = "2.14.2"
 
 # Same release profile as the measured prototypes (.scratch proto/Cargo.toml, ticket 06).
 # Never set `panic = "abort"`: csdm-demo turns a parser panic into an error with catch_unwind.

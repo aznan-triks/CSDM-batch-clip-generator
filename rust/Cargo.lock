@@ -847,6 +847,7 @@ dependencies = [
  "csdm-core",
  "csdm-db",
  "csdm-demo",
+ "indexmap",
  "serde",
  "serde_json",
  "sha2",

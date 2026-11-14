@@ -2,6 +2,8 @@
 //! the full detail goes to the journal).
 
 use csdm_core::CoreError;
+use csdm_db::DbError;
+use csdm_demo::DemoError;
 use std::fmt;
 use std::path::PathBuf;
 
@@ -21,6 +23,24 @@ pub enum EngineError {
     Disconnected,
     /// A scripted scenario (UI tests) did not match what the UI sent.
     Scenario(String),
+    /// A database read failed (its own sentence, `DbError`).
+    Db(DbError),
+    /// A demo file could not be read (its own sentence, `DemoError`).
+    Demo(DemoError),
+    /// A refusal the user can act on, already worded for them (3.5 `UserError`).
+    User(String),
+}
+
+impl From<DbError> for EngineError {
+    fn from(e: DbError) -> Self {
+        EngineError::Db(e)
+    }
+}
+
+impl From<DemoError> for EngineError {
+    fn from(e: DemoError) -> Self {
+        EngineError::Demo(e)
+    }
 }
 
 impl EngineError {
@@ -46,6 +66,9 @@ impl EngineError {
             }
             EngineError::Disconnected => "The window stopped listening to the engine.".into(),
             EngineError::Scenario(what) => format!("Test scenario mismatch: {what}"),
+            EngineError::Db(e) => e.to_string(),
+            EngineError::Demo(e) => e.user_message(csdm_core::preview::RELEASES_URL),
+            EngineError::User(text) => text.clone(),
         }
     }
 }
