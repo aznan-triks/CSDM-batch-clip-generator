@@ -1,17 +1,21 @@
 //! The engine's tag commands (T9): the ten `Command::Tag*` of the 3.5 bridge (`host.py`
 //! `_cmd_tags_*` / `_cmd_tag_*`) turned into replies, over csdm-db's `TagSession` (T5).
 //!
-//! Plain functions, no thread of their own: the real engine (T3 `real.rs`) routes a command for
-//! which `is_tag_command` holds to `TagState::serve`, lending its connection, discovery and caches
-//! through `TagCx`. Two pieces belong to the preview and come in as functions:
-//! - the demo date (`TagCx::date_of`): 3.5 `_demo_sort_key` (T3 `preview::dates::demo_sort_key`),
-//!   after storing the database date it is given in `_demo_dates`;
-//! - the config-filtered search (`TagCx::preview_search`): 3.5 `build_run_cfg`,
-//!   `run_inputs_problem`, `_query_events` and `_build_sequences`, demos in `_demo_sort_key` order.
+//! No thread of its own: the real engine (`real.rs`) routes a command for which `is_tag_command`
+//! holds to `TagState::serve`, lending its connection, discovery and ports through `TagCx`. Two
+//! pieces come from the preview (T3) and run in a preview context (`Ctx`) on the same connection:
+//! the demo date (3.5 `_demo_sort_key`, `preview::dates`) and the config-filtered search
+//! (`build_run_cfg`, `run_inputs_problem`, `_query_events`, `_build_sequences`).
 //!
 //! Replies have 3.5's shape: `{"data": …}`.
 
 use crate::command::Command;
+use crate::error::EngineError;
+use crate::preview::cfg::build_run_cfg;
+use crate::preview::clips::{build_sequences, effective_before, run_inputs_problem, whole};
+use crate::preview::dates::demo_sort_key;
+use crate::preview::dp2::DemoStore;
+use crate::preview::{sql, Ctx, Ports};
 use chrono::{Days, Local, TimeZone};
 use csdm_core::Settings;
 use csdm_db::tags::{tag_id_from_json, TagSession, TagWriter};
@@ -19,6 +23,7 @@ use csdm_db::{reads, Db, DbError, DbValue, Discovery, PgParams};
 use serde::Serialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::sync::atomic::AtomicBool;
 
 /// `calc_tag_date_range`: `strftime("%d-%m-%Y")`, the date filter's own spelling.
 const RANGE_DATE: &str = "%d-%m-%Y";
@@ -40,13 +45,10 @@ pub struct TagCx<'a> {
     pub disc: &'a mut Discovery,
     /// The connection settings of `db`: the write door opens with the same ones.
     pub params: &'a PgParams,
-    /// `_demo_checksums`, shared with the preview.
-    pub checksums: &'a mut HashMap<String, DbValue>,
-    /// `_demo_sort_key` of a demo, given the database date read with it (`None`: no date column
-    /// or a NULL date): `(0, seconds)` when known, else `(1, 0.0)`.
-    pub date_of: &'a mut dyn FnMut(&str, Option<&DbValue>) -> (u8, f64),
-    /// The config-filtered search's demos, or the sentence that stops it (input problem).
-    pub preview_search: &'a mut dyn FnMut(&Settings) -> Result<Vec<FoundDemo>, String>,
+    /// The preview's ports, demo store and stop flag (`.info` read warnings, config search).
+    pub ports: &'a dyn Ports,
+    pub demos: &'a DemoStore,
+    pub cancel: &'a AtomicBool,
 }
 
 /// What the tag commands keep between calls.
@@ -56,6 +58,8 @@ pub struct TagState {
     writer: Option<TagWriter>,
     /// `_tags_active`: the batch's auto-tag on export reads it (T4).
     pub active: Vec<Value>,
+    /// `_demo_checksums` of the tag commands, keyed by the current connection.
+    checksums: HashMap<String, DbValue>,
 }
 
 /// Whether the command is one of the ten tag commands.
@@ -131,19 +135,20 @@ impl TagState {
     /// Forget the write door: the next tag command opens one with the new settings (`connect_db`).
     pub fn reset(&mut self) {
         self.writer = None;
+        self.checksums.clear();
     }
 
     /// Serves a tag command. `cx` is `None` when the database is not connected; only
     /// `tags_set_active` answers then. A command that is not a tag command is refused.
-    pub fn serve(&mut self, command: Command, cx: Option<TagCx>) -> Result<Value, DbError> {
+    pub fn serve(&mut self, command: Command, cx: Option<TagCx>) -> Result<Value, EngineError> {
         if let Command::TagsSetActive { tag_ids } = command {
             self.active = tag_ids;
             return Ok(active_reply(&self.active, cx.map(|c| &*c.disc)));
         }
         if !is_tag_command(&command) {
-            return Err(DbError::Invalid(format!("\"{}\" is not a tag command.", command.name())));
+            return Err(EngineError::User(format!("\"{}\" is not a tag command.", command.name())));
         }
-        let cx = cx.ok_or_else(|| DbError::Invalid(format!("Not connected to the database yet. Check {}.", csdm_db::WHERE_DB)))?;
+        let cx = cx.ok_or_else(|| EngineError::User(format!("Not connected to the database yet. Check {}.", csdm_db::WHERE_DB)))?;
         if self.writer.is_none() {
             self.writer = Some(TagWriter::connect(cx.params)?);
         }
@@ -151,22 +156,23 @@ impl TagState {
         // The tag list lives in the discovery; the session edits it while reading the rest.
         let mut tags = std::mem::take(&mut cx.disc.tags);
         let disc: &Discovery = cx.disc;
-        let mut s = TagSession { db: cx.db, writer, disc, tags: &mut tags, checksums: cx.checksums };
-        let out = match command {
-            Command::TagsSearch { tag_ids, cfg: None } => s.search_tagged_demos(&ids(&tag_ids)).map(data),
-            Command::TagsSearch { tag_ids, cfg: Some(cfg) } => search_by_config(&mut s, &ids(&tag_ids), &cfg, cx.preview_search),
-            Command::TagsCalcRange { tag_ids } => calc_range(&mut s, &ids(&tag_ids), cx.date_of),
-            Command::TagsApply { demo_paths, tag_names } => s.apply_tags(&demo_paths, &tag_names).map(data),
-            Command::TagsRemove { demo_paths, tag_names } => s.remove_tags(&demo_paths, &tag_names).map(data),
-            Command::TagCreate { tag_name, color } => s.create_tag(&tag_name, &color).map(data),
-            Command::TagDelete { tag_id } => s.delete_tag(&tag_id_from_json(&tag_id)).map(|()| data(json!({"ok": true}))),
-            Command::TagsExport { path, tag_ids } => s.export_tags(&path, &ids(&tag_ids.unwrap_or_default())).map(data),
-            Command::TagsImportScan { path } => s.scan_tag_import(&path).map(data),
-            Command::TagsImportApply { path, tags_to_create } => s.apply_tag_import(&path, &tags_to_create).map(data),
+        let mut s = TagSession { db: cx.db, writer, disc, tags: &mut tags, checksums: &mut self.checksums };
+        let preview = (cx.ports, cx.demos, cx.cancel);
+        let out: Result<Value, EngineError> = match command {
+            Command::TagsSearch { tag_ids, cfg: None } => s.search_tagged_demos(&ids(&tag_ids)).map(data).map_err(Into::into),
+            Command::TagsSearch { tag_ids, cfg: Some(cfg) } => search_by_config(&mut s, &ids(&tag_ids), &cfg, preview),
+            Command::TagsCalcRange { tag_ids } => calc_range(&mut s, &ids(&tag_ids), preview),
+            Command::TagsApply { demo_paths, tag_names } => s.apply_tags(&demo_paths, &tag_names).map(data).map_err(Into::into),
+            Command::TagsRemove { demo_paths, tag_names } => s.remove_tags(&demo_paths, &tag_names).map(data).map_err(Into::into),
+            Command::TagCreate { tag_name, color } => s.create_tag(&tag_name, &color).map(data).map_err(Into::into),
+            Command::TagDelete { tag_id } => s.delete_tag(&tag_id_from_json(&tag_id)).map(|()| data(json!({"ok": true}))).map_err(Into::into),
+            Command::TagsExport { path, tag_ids } => s.export_tags(&path, &ids(&tag_ids.unwrap_or_default())).map(data).map_err(Into::into),
+            Command::TagsImportScan { path } => s.scan_tag_import(&path).map(data).map_err(Into::into),
+            Command::TagsImportApply { path, tags_to_create } => s.apply_tag_import(&path, &tags_to_create).map(data).map_err(Into::into),
             _ => unreachable!("checked by is_tag_command"),
         };
         cx.disc.tags = tags;
-        if matches!(out, Err(DbError::Connect { .. } | DbError::Lost { .. })) {
+        if matches!(out, Err(EngineError::Db(DbError::Connect { .. } | DbError::Lost { .. }))) {
             // A broken write connection is not reused; the next command opens a fresh one.
             self.writer = None;
         }
@@ -174,18 +180,43 @@ impl TagState {
     }
 }
 
+/// The preview's ports, demo store and stop flag, lent to a preview context.
+type Preview<'a> = (&'a dyn Ports, &'a DemoStore, &'a AtomicBool);
+
 /// `search_tagged_demos` with a config: the preview's demos, kept when they carry one of the tags.
-fn search_by_config(s: &mut TagSession, tag_ids: &[DbValue], cfg: &Settings, preview: &mut dyn FnMut(&Settings) -> Result<Vec<FoundDemo>, String>) -> Result<Value, DbError> {
-    if !tag_ids.is_empty() && reads::matches_with_tags(s.disc, tag_ids).is_none() {
-        return Err(DbError::Invalid("Insufficient DB schema for tag filter.".into()));
+fn search_by_config(s: &mut TagSession, tag_ids: &[DbValue], cfg: &Settings, (ports, store, cancel): Preview) -> Result<Value, EngineError> {
+    // Read through the run model PREVIEW uses (3.5 audit E17), refused on the same input problems.
+    let run = build_run_cfg(cfg);
+    if let Some(problem) = run_inputs_problem(&run) {
+        return Err(EngineError::User(problem));
     }
-    let found = preview(cfg).map_err(DbError::Invalid)?;
+    let tagged_query = reads::matches_with_tags(s.disc, tag_ids);
+    if !tag_ids.is_empty() && tagged_query.is_none() {
+        return Err(EngineError::User("Insufficient DB schema for tag filter.".into()));
+    }
     // 3.5 empties the checksum cache before a config search.
     s.checksums.clear();
-    let tagged: Option<Vec<DbValue>> = match reads::matches_with_tags(s.disc, tag_ids) {
+    let tagged: Option<Vec<DbValue>> = match tagged_query {
         Some(q) => Some(s.db.run(&q)?.into_iter().filter_map(|r| r.into_iter().next()).collect()),
         None => None,
     };
+    let (tickrate, before, after) = (whole(&run, "tickrate", None)?, effective_before(&run)?, whole(&run, "after", None)?);
+    let mut found = Vec::new();
+    {
+        let mut cx = Ctx::new(&mut *s.db, s.disc, ports, store, cancel);
+        let evts = sql::query_events(&mut cx, &run)?;
+        let mut order: Vec<(String, (u8, f64))> = evts.keys().map(|dp| (dp.clone(), (0, 0.0))).collect();
+        for (dp, key) in order.iter_mut() {
+            *key = demo_sort_key(&mut cx, dp);
+        }
+        // Python `sorted(key=_demo_sort_key)`: stable.
+        order.sort_by(|a, b| a.1 .0.cmp(&b.1 .0).then(a.1 .1.partial_cmp(&b.1 .1).unwrap_or(std::cmp::Ordering::Equal)));
+        for (dp, _) in order {
+            let evs = &evts[&dp];
+            let n_seq = build_sequences(&cx.arena, evs, tickrate, before, after).len();
+            found.push(FoundDemo { name: reads::basename(&dp).to_string(), n_events: evs.len(), n_seq, path: dp });
+        }
+    }
     let mut demos = Vec::new();
     for d in found {
         if let Some(tagged) = &tagged {
@@ -200,21 +231,25 @@ fn search_by_config(s: &mut TagSession, tag_ids: &[DbValue], cfg: &Settings, pre
     Ok(json!({"data": {"demos": demos, "tag_names": tag_names}}))
 }
 
-/// `calc_tag_date_range`: read 32, the caches it fills, then the dates.
-fn calc_range(s: &mut TagSession, tag_ids: &[DbValue], date_of: &mut dyn FnMut(&str, Option<&DbValue>) -> (u8, f64)) -> Result<Value, DbError> {
+/// `calc_tag_date_range`: read 32, the caches it fills, then each demo's date (`_demo_sort_key`:
+/// `.info` match time, the file date, then the database date read with it).
+fn calc_range(s: &mut TagSession, tag_ids: &[DbValue], (ports, store, cancel): Preview) -> Result<Value, EngineError> {
     if tag_ids.is_empty() {
-        return Err(select_tag());
+        return Err(select_tag().into());
     }
-    let q = reads::tagged_demo_dates(s.disc, tag_ids).ok_or_else(|| DbError::Invalid("Insufficient DB schema for tags.".into()))?;
+    let q = reads::tagged_demo_dates(s.disc, tag_ids).ok_or_else(|| EngineError::User("Insufficient DB schema for tags.".into()))?;
     let rows = s.db.run(&q)?;
+    let mut cx = Ctx::new(&mut *s.db, s.disc, ports, store, cancel);
     let mut keys = Vec::with_capacity(rows.len());
     for r in rows {
         let path = r[0].py_str();
         if r[1].is_truthy() && !s.checksums.contains_key(&path) {
             s.checksums.insert(path.clone(), r[1].clone());
         }
-        let raw = r.get(2).filter(|v| !v.is_null());
-        keys.push(date_of(&path, raw));
+        if let Some(raw) = r.get(2).filter(|v| !v.is_null()) {
+            cx.host.demo_dates.entry(path.clone()).or_insert_with(|| raw.clone());
+        }
+        keys.push(demo_sort_key(&mut cx, &path));
     }
     Ok(range_reply(keys))
 }
