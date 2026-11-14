@@ -54,6 +54,9 @@ pub struct HostCache {
     pub demo_maps: HashMap<String, String>,
     /// Demo path → `_get_demo_ts` result.
     pub ts: HashMap<String, Option<f64>>,
+    /// Demo path → SteamID → name read in the demo (3.5 `_dp2_cache[path]["demo_names"]`): the
+    /// demo-file stage fills it when it reads a demo, the clip cameras name players from it.
+    pub demo_names: HashMap<String, HashMap<String, String>>,
 }
 
 /// One preview's working set. Each preview starts from fresh caches (T3 Conception, D (f)): the
