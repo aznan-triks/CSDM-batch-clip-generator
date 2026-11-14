@@ -181,3 +181,67 @@ pub const KILL_RETRACT_S: f64 = 0.95;
 pub const KILL_RETRACT_PX: f32 = 160.0;
 pub const RECOIL_PX: f32 = 9.0;
 pub const PROGRESS_BAR: [f32; 2] = [120.0, 4.0];
+
+// ---- SETTINGS tab (T11: tabs/settingsCards/*, PresetSection.tsx) ----
+pub const SETTINGS_LABEL_WIDTH: f32 = 96.0;
+pub const SETTINGS_FIELD_WIDTH: f32 = 220.0;
+pub const SETTINGS_SWITCH: [f32; 2] = [32.0, 18.0];
+pub const SETTINGS_ROW_GAP: f32 = 8.0;
+/// `UiLayoutCard.tsx::clampLayout` (`_clamp_layout_values`): window width and height bounds.
+pub const LAYOUT_WIDTH_RANGE: [f64; 2] = [1000.0, 3840.0];
+pub const LAYOUT_HEIGHT_RANGE: [f64; 2] = [600.0, 2160.0];
+/// Auto: share of the screen's width and height (`UiLayoutCard.tsx::auto`).
+pub const LAYOUT_AUTO_SCREEN: [f64; 2] = [0.86, 0.84];
+/// Screen assumed when the system does not say (`UiLayoutCard.tsx::auto`).
+pub const LAYOUT_AUTO_FALLBACK_SCREEN: [f64; 2] = [1920.0, 1080.0];
+/// The window drawing of UI Layout (`.ul-win`), its height in points.
+pub const LAYOUT_DRAWING_HEIGHT: f32 = 120.0;
+/// Card grid column slider (`UiLayoutCard.tsx::BLOCK`): min, max, step, fallback.
+pub const BLOCK_SLIDER: [i64; 4] = [24, 96, 4, 48];
+/// `PerformanceCard.tsx::THREADS`: min, max, fallback.
+pub const DP2_THREADS_CHOICES: [i64; 3] = [1, 8, 4];
+pub const PERF_CORE_TILE: [f32; 2] = [34.0, 40.0];
+/// UI Theme: swatch size and the mini-window preview (`.settings-swatch`, `.ut-preview` 120 x 70).
+pub const ACCENT_SWATCH: f32 = 22.0;
+pub const THEME_PREVIEW: [f32; 2] = [168.0, 98.0];
+/// Mini-window drawing colours per ground (page, card, ink), `UiThemeCard.tsx::GROUND_LOOK`.
+pub const GROUND_LOOK: [(&str, [&str; 3]); 5] = [
+    ("white", ["#eef2f8", "#ffffff", "#1e293b"]),
+    ("dark", ["#15171c", "#22252c", "#e5e7eb"]),
+    ("amoled", ["#000000", "#0d0d0d", "#e5e7eb"]),
+    ("deepblue", ["#0b1426", "#13213b", "#dbe7ff"]),
+    ("terminal", ["#030a04", "#0a160c", "#4ade80"]),
+];
+/// The three card styles (`components/cardstyle/cardStyle.ts::CARD_STYLES`), the first is the default.
+pub const CARD_STYLES: [&str; 3] = ["timeline", "sentence", "tiles"];
+/// Cards drawn in a card style, (id, title), in tab order (`components/cardstyle/styledCards.ts`).
+pub const STYLED_CARDS: [(&str, &str); 28] = [
+    ("player", "Player"),
+    ("demo-selection", "Demo Selection"),
+    ("weapon-filter", "Weapon Filter"),
+    ("capture-timing", "Capture & Timing"),
+    ("timing-retries", "Timing & Retries"),
+    ("kill-filters", "Kill Filters"),
+    ("damage-filters", "Damage Filters"),
+    ("shot-filters", "Shot Filters"),
+    ("match-types", "Match Types"),
+    ("map-filter", "Map Filter"),
+    ("final-assembly", "Final Assembly"),
+    ("resolution", "Resolution, Framerate & Window"),
+    ("recording-system", "Recording System"),
+    ("hlae-options", "HLAE Options"),
+    ("in-game-options", "In-Game Options"),
+    ("cs2-effects", "CS2 Effects"),
+    ("encoding", "Encoding"),
+    ("tag-grid", "Tags"),
+    ("tag-range", "Tag Range"),
+    ("operations", "Operations"),
+    ("postgresql", "PostgreSQL Connection"),
+    ("paths", "Paths"),
+    ("config-folder", "Configuration Folder"),
+    ("presets", "Presets"),
+    ("ui-theme", "UI Theme"),
+    ("ui-layout", "UI Layout"),
+    ("performance", "Performance"),
+    ("injection-preview", "Injection Preview"),
+];
