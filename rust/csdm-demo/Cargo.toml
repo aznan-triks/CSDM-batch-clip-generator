@@ -7,3 +7,10 @@ publish.workspace = true
 
 [dependencies]
 csdm-core = { workspace = true }
+# Vendored LaihoE/demoparser core; its tag is in vendor/PARSER_TAG (rust/tools/update-parser.ps1).
+parser = { path = "../vendor/parser" }
+ahash = "0.8.3"
+memmap2 = "0.9.4"
+
+[dev-dependencies]
+serde_json = { workspace = true }

@@ -3,6 +3,9 @@
 [workspace]
 resolver = "2"
 members = ["csdm-core", "csdm-db", "csdm-demo", "csdm-engine", "csdm-app"]
+# Vendored demo parser (vendor/VENDOR.md): a path dependency of csdm-demo, never a member, so
+# `cargo clippy --workspace` and `cargo test --workspace` leave the upstream code alone.
+exclude = ["vendor"]
 
 [workspace.package]
 version = "5.0.0-dev"
@@ -21,6 +24,7 @@ tempfile = "3.27.0"
 sha2 = "0.11.1"
 
 # Same release profile as the measured prototypes (.scratch proto/Cargo.toml, ticket 06).
+# Never set `panic = "abort"`: csdm-demo turns a parser panic into an error with catch_unwind.
 [profile.release]
 opt-level = 3
 lto = "thin"
