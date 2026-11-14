@@ -842,9 +842,11 @@ dependencies = [
 name = "csdm-engine"
 version = "5.0.0-dev"
 dependencies = [
+ "chrono",
  "csdm-core",
  "csdm-db",
  "csdm-demo",
+ "indexmap",
  "serde",
  "serde_json",
  "sha2",
