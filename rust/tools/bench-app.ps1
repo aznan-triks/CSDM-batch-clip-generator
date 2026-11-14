@@ -3,9 +3,10 @@
 # Refuses to measure (and kills the app) if the window touches a display or takes the focus.
 #   pwsh tools/bench-app.ps1 -Exe target/release/csdm-app.exe -Ground white -Tab capture -Shot out.png
 #   pwsh tools/bench-app.ps1 -Exe target/release/csdm-app.exe -Motion full -Seconds 10
+#   -Set @{ ui_window_w = 1200 }: extra settings the scripted engine loads.
 param([Parameter(Mandatory)][string]$Exe, [string]$Ground = 'white', [string]$Tab = 'capture',
       [string]$Shot, [ValidateSet('auto', 'full', 'none')][string]$Motion = 'auto',
-      [int]$Seconds = 0, [int]$SettleMs = 4000, [int]$Width = 1600, [int]$Height = 900)
+      [int]$Seconds = 0, [int]$SettleMs = 4000, [int]$Width = 1600, [int]$Height = 900, [hashtable]$Set = @{})
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type @'
@@ -24,6 +25,7 @@ $ready = Join-Path $tmp 'ready.txt'
 $scenario = Join-Path $tmp 'scenario.json'
 $boot = Get-Content -Raw (Join-Path $PSScriptRoot '..\csdm-app\scenarios\boot.json') | ConvertFrom-Json
 $boot.steps[1].reply.ok.data.theme_bg = $Ground
+foreach ($k in $Set.Keys) { $boot.steps[1].reply.ok.data | Add-Member -NotePropertyName $k -NotePropertyValue $Set[$k] -Force }
 $boot | ConvertTo-Json -Depth 20 | Set-Content -Encoding utf8 $scenario
 
 $envs = @{ CSDM_OFFSCREEN = "$x,$y"; CSDM_READY_FILE = $ready; CSDM_SCENARIO = $scenario; CSDM_SHOT_TAB = $Tab; CSDM_MOTION = $Motion }

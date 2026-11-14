@@ -89,6 +89,9 @@ impl Typewriter {
     }
 }
 
+/// Colour runs of the console text: byte range, level, highlight.
+type Sections = Vec<(std::ops::Range<usize>, Level, Option<Color32>)>;
+
 pub struct Console {
     lines: Vec<Line>,
     next_key: u64,
@@ -512,7 +515,7 @@ impl Console {
     }
 
     /// Display text and its colour sections for the visible lines.
-    fn compose(&self, theme: Option<&Theme>, caret_on: bool) -> (String, Vec<(std::ops::Range<usize>, Level, Option<Color32>)>, Option<usize>) {
+    fn compose(&self, theme: Option<&Theme>, caret_on: bool) -> (String, Sections, Option<usize>) {
         let matching = self.matching();
         let visible = &matching[matching.len().saturating_sub(CONSOLE_MAX_RENDERED)..];
         let needle = self.needle();
@@ -590,7 +593,7 @@ impl Console {
         if let Some(wait) = self.typer.tick(&lengths, cx.now, cx.motion) {
             ui.ctx().request_repaint_after_secs(wait as f32);
         }
-        let caret_on = !cx.motion || (cx.now / (CARET_PERIOD_S / 2.0)) as u64 % 2 == 0;
+        let caret_on = !cx.motion || ((cx.now / (CARET_PERIOD_S / 2.0)) as u64).is_multiple_of(2);
         if cx.motion {
             let next_toggle = CARET_PERIOD_S / 2.0 - cx.now % (CARET_PERIOD_S / 2.0);
             ui.ctx().request_repaint_after_secs(next_toggle as f32);
@@ -657,7 +660,7 @@ mod tests {
     #[test]
     fn typewriter_types_then_rests_and_jumps_a_burst() {
         let mut w = Typewriter::default();
-        assert_eq!(w.tick(&[3], 0.0, true).is_some(), true);
+        assert!(w.tick(&[3], 0.0, true).is_some());
         assert_eq!(w.budget(0), 1, "the first character shows at once");
         w.tick(&[3], TYPE_CHAR_S * 2.0, true);
         assert!(w.budget(0) >= 2);

@@ -231,3 +231,36 @@ pub fn png(path: &str, w: u32, h: u32, rgba: Vec<u8>) {
     let pix = Pixmap::from_vec(rgba, size).expect("pixels match the size");
     pix.save_png(path).unwrap_or_else(|e| panic!("cannot write {path}: {e}"));
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A symbol missing from every installed font shows as a box in the app: fail here instead
+    /// (the prototype met it with `▾`). Scans every string the crate's sources can print.
+    #[test]
+    fn every_symbol_the_shell_prints_has_a_glyph_in_its_fonts() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        // One frame builds the font atlas; its texture upload is not needed here.
+        ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+        let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut symbols = std::collections::BTreeSet::new();
+        for entry in std::fs::read_dir(src).unwrap() {
+            let path = entry.unwrap().path();
+            if path.file_name().is_some_and(|n| n == "icons_data.rs") {
+                continue;
+            }
+            for line in std::fs::read_to_string(&path).unwrap().lines() {
+                symbols.extend(line.split("//").next().unwrap_or_default().chars().filter(|c| !c.is_ascii()));
+            }
+        }
+        assert!(!symbols.is_empty(), "the scan found the shell's symbols");
+        let families = [FontFamily::Proportional, FontFamily::Name(SEMIBOLD.into()), FontFamily::Monospace];
+        let missing: Vec<String> = ctx.fonts_mut(|f| {
+            symbols.iter().flat_map(|c| families.iter().filter(|fam| !f.has_glyph(&FontId::new(12.0, (*fam).clone()), *c)).map(move |fam| format!("{c} (U+{:04X}) in {fam:?}", *c as u32)).collect::<Vec<_>>()).collect()
+        });
+        assert!(missing.is_empty(), "no glyph for: {missing:?}");
+        assert!(!ctx.fonts_mut(|f| f.has_glyph(&FontId::proportional(12.0), '\u{10FFFD}')), "the check can fail");
+    }
+}

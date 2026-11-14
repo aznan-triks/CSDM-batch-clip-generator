@@ -126,7 +126,7 @@ impl Shell {
             views,
             grids: TABS.iter().map(|_| GridState::default()).collect(),
             console: Console::new(options.export_dir),
-            bar: ActionBar::new(),
+            bar: ActionBar::default(),
             backdrop: Backdrop::default(),
             cursor: Cursor::default(),
             theme,
@@ -259,7 +259,7 @@ impl Shell {
             crate::paint::radial_glow(&bg, Pos2::new(full.left() + full.width() * at[0], full.top() + full.height() * at[1]), Vec2::from(*radius), color, 1.0 - AMBIENT_FADE / 2.0);
         }
         let pointer = ctx.input(|i| i.pointer.hover_pos());
-        if let Some(wait) = self.backdrop.paint(&bg, full, &theme, tabs::spec(self.active).key, now, motion, pointer) {
+        if let Some(wait) = self.backdrop.paint(&bg, full, &Cx { theme: &theme, now, motion }, tabs::spec(self.active).key, pointer) {
             ctx.request_repaint_after_secs(wait as f32);
         }
 

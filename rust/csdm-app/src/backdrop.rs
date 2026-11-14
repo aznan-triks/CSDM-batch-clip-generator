@@ -6,7 +6,6 @@
 //! `BACKDROP_IDLE_FPS` while a plate is lit, nothing once every plate is dark (pointer
 //! outside, motion off). The idle window therefore costs nothing.
 
-use crate::theme::Theme;
 use eframe::egui;
 use csdm_core::ui_values::{
     BACKDROP_BAND, BACKDROP_BY_TAB, BACKDROP_CELL, BACKDROP_CLUSTER, BACKDROP_DRIFT, BACKDROP_EASE, BACKDROP_GAP, BACKDROP_IDLE_FPS, BACKDROP_RAMP, BACKDROP_SETTLE_S, BACKDROP_SHEEN, BACKDROP_TOP_BAR, BACKDROP_VISIBLE_FLOOR,
@@ -74,8 +73,11 @@ pub struct Backdrop {
     last_move: f64,
     last_pointer: Option<Pos2>,
     /// The unlit plates, built once per size and palette: one mesh instead of a thousand shapes a frame.
-    still: Option<((usize, usize, [i32; 2], Color32, Color32), std::sync::Arc<Mesh>)>,
+    still: Option<(StillKey, std::sync::Arc<Mesh>)>,
 }
+
+/// What the cached unlit mesh depends on: columns, rows, origin cell, plate fill and edge.
+type StillKey = (usize, usize, [i32; 2], Color32, Color32);
 
 /// The unlit field: every plate filled and outlined, as one mesh.
 fn still_mesh(origin: Pos2, cols: usize, rows: usize, fill: Color32, edge: Color32) -> Mesh {
@@ -96,7 +98,8 @@ fn still_mesh(origin: Pos2, cols: usize, rows: usize, fill: Color32, edge: Color
 
 impl Backdrop {
     /// Paints the field over `screen`; returns the delay before the next repaint it needs.
-    pub fn paint(&mut self, p: &Painter, screen: Rect, t: &Theme, tab: &str, now: f64, motion: bool, pointer: Option<Pos2>) -> Option<f64> {
+    pub fn paint(&mut self, p: &Painter, screen: Rect, cx: &crate::Cx, tab: &str, pointer: Option<Pos2>) -> Option<f64> {
+        let (t, now, motion) = (cx.theme, cx.now, cx.motion);
         let cols = (screen.width() / BACKDROP_CELL).ceil() as usize + 1;
         let rows = (screen.height() / BACKDROP_CELL).ceil() as usize + 1;
         if self.cols != cols || self.plates.len() != cols * rows {
@@ -150,10 +153,9 @@ impl Backdrop {
         if !motion {
             return None;
         }
-        if pointer.is_some() && now - self.last_move < BACKDROP_SETTLE_S {
+        // Moving pointer, or a lit field fading out once the pointer left: every frame.
+        if (pointer.is_some() && now - self.last_move < BACKDROP_SETTLE_S) || (lit && pointer.is_none()) {
             Some(0.0)
-        } else if lit && pointer.is_none() {
-            Some(0.0) // fading out
         } else if lit {
             Some(1.0 / BACKDROP_IDLE_FPS)
         } else {

@@ -169,7 +169,7 @@ fn coquille_08_split_handle_drags_and_clamps() {
     let handle = r.h.get_by_label("Resize console").rect().center();
     r.drag(handle, handle - egui::vec2(300.0, 0.0));
     let pct = r.setting("ui_split_pct").and_then(|v| v.as_f64()).unwrap();
-    assert!(pct < 60.0 && pct >= 38.0, "{pct}");
+    assert!((38.0..60.0).contains(&pct), "{pct}");
     let handle = r.h.get_by_label("Resize console").rect().center();
     r.drag(handle, egui::pos2(1590.0, handle.y));
     assert_eq!(r.setting("ui_split_pct"), Some(json!(80)), "clamped to the 3.5 maximum");
@@ -254,6 +254,18 @@ fn coquille_14_settings_saved_400ms_after_the_last_change() {
     assert!(!r.sent().contains(&"save_config".to_string()), "not saved during the burst");
     r.wait(0.5);
     assert_eq!(r.sent().iter().filter(|c| *c == "save_config").count(), 1, "saved once, after the quiet");
+}
+
+#[test]
+fn coquille_14b_pending_save_flushed_when_the_window_closes() {
+    let save = r#"{"on": "save_config", "reply": {"ok": {}}}"#;
+    let check = r#"{"on": "run_inputs_problem", "reply": {"ok": {"problem": null}}}"#;
+    let mut r = rig(&scenario(&[&boot(DEFAULTS), check, save]));
+    let handle = r.h.get_by_label("Resize console").rect().center();
+    r.drag(handle, handle - egui::vec2(100.0, 0.0));
+    assert!(!r.sent().contains(&"save_config".to_string()), "still in the quiet period");
+    eframe::App::on_exit(r.h.state_mut(), None);
+    assert_eq!(r.sent().iter().filter(|c| *c == "save_config").count(), 1, "flushed before closing");
 }
 
 #[test]

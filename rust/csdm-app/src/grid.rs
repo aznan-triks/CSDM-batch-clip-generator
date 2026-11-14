@@ -54,6 +54,14 @@ pub struct CardCx<'a> {
 }
 
 /// A tab's content. T7-T11 implement it; the shell draws the cards it declares.
+/// - `cards()`: one `CardDecl` per card, in 3.5 reading order (`id` = its key in `ui_sections`,
+///   `icon` = a glyph name of `icons_data`, `wide` = full row in the reference layout).
+/// - `body(id, ui, cx)`: draws card `id`. Settings: `cx.link.get(key)` / `cx.link.set(cx.now, key, v)`
+///   (saved 400 ms after the last change); engine: `cx.link.send(cx.now, Command::…)`;
+///   explanations: `widgets::tip(ui, cx.theme, resp, text, cx.always_tips)`.
+/// - Registered with `Shell::with_tab(TabId::…, Box::new(view))` (one line in `main.rs`). Driven
+///   tests: `tests/common::rig_with(scenario, Motion::Still, Some((TabId::…, Box::new(view))), false)`,
+///   then `Rig::click(label)`, `Rig::setting(key)`, `Rig::sent()`.
 pub trait TabView {
     fn cards(&self) -> Vec<CardDecl> {
         Vec::new()

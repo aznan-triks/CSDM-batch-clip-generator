@@ -63,16 +63,13 @@ impl Weapon {
         match name {
             StateName::RunStarted => self.effect = Some((Effect::Shot, now)),
             StateName::PreviewStarted => self.effect = Some((Effect::WeakShot, now)),
-            StateName::StopRequested => {
-                if self.armed_since.is_none() {
-                    self.armed_since = Some(now);
-                    self.effect = None;
-                }
+            StateName::StopRequested if self.armed_since.is_none() => {
+                self.armed_since = Some(now);
+                self.effect = None;
             }
-            StateName::ProcessExited => {
-                if self.armed_since.take().is_some() {
-                    self.effect = Some((Effect::Detonation, now));
-                }
+            StateName::ProcessExited if self.armed_since.is_some() => {
+                self.armed_since = None;
+                self.effect = Some((Effect::Detonation, now));
             }
             StateName::KillRequested => {
                 self.armed_since = None;
@@ -135,16 +132,13 @@ pub struct BarOut {
     pub go_capture: bool,
 }
 
+#[derive(Default)]
 pub struct ActionBar {
     pub weapon: Weapon,
     hit: Option<(String, f64)>,
 }
 
 impl ActionBar {
-    pub fn new() -> Self {
-        Self { weapon: Weapon::default(), hit: None }
-    }
-
     pub fn show(&mut self, ui: &mut egui::Ui, rect: Rect, cx: &Cx, link: &mut Link, tab: TabId) -> BarOut {
         let t = cx.theme;
         let mut out = BarOut::default();
@@ -194,7 +188,7 @@ impl ActionBar {
             let resp = ui.interact(*r, ui.scope_id().with(("action", b.label)), if b.enabled { Sense::click() } else { Sense::hover() });
             let (label, enabled) = (b.label.to_string(), b.enabled);
             resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, enabled, &label));
-            let resp = if b.enabled { resp.on_hover_text(b.tip) } else { resp.on_hover_text(b.tip) };
+            let resp = resp.on_hover_text(b.tip);
             if resp.hovered() {
                 crate::cursor::snap_here(ui.ctx(), *r);
             }
