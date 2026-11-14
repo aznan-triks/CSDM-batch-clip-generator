@@ -11,6 +11,7 @@
 
 use crate::command::Command;
 use crate::error::EngineError;
+use crate::event::Level;
 use crate::preview::cfg::build_run_cfg;
 use crate::preview::clips::{build_sequences, effective_before, run_inputs_problem, whole};
 use crate::preview::dates::demo_sort_key;
@@ -162,7 +163,7 @@ impl TagState {
             Command::TagsSearch { tag_ids, cfg: None } => s.search_tagged_demos(&ids(&tag_ids)).map(data).map_err(Into::into),
             Command::TagsSearch { tag_ids, cfg: Some(cfg) } => search_by_config(&mut s, &ids(&tag_ids), &cfg, preview),
             Command::TagsCalcRange { tag_ids } => calc_range(&mut s, &ids(&tag_ids), preview),
-            Command::TagsApply { demo_paths, tag_names } => s.apply_tags(&demo_paths, &tag_names).map(data).map_err(Into::into),
+            Command::TagsApply { demo_paths, tag_names } => apply_logged(&mut s, &demo_paths, &tag_names, preview.0),
             Command::TagsRemove { demo_paths, tag_names } => s.remove_tags(&demo_paths, &tag_names).map(data).map_err(Into::into),
             Command::TagCreate { tag_name, color } => s.create_tag(&tag_name, &color).map(data).map_err(Into::into),
             Command::TagDelete { tag_id } => s.delete_tag(&tag_id_from_json(&tag_id)).map(|()| data(json!({"ok": true}))).map_err(Into::into),
@@ -178,6 +179,38 @@ impl TagState {
         }
         out
     }
+}
+
+/// `apply_tags` with 3.5's console lines (`_tag_log_line`, dim): one header per tag, one line per
+/// demo and its outcome. The 3.5 lines naming tables and columns are left out (no technical trace).
+fn apply_logged(s: &mut TagSession, demo_paths: &[String], tag_names: &[String], ports: &dyn Ports) -> Result<Value, EngineError> {
+    if demo_paths.is_empty() {
+        return Err(EngineError::User("Select at least one demo.".into()));
+    }
+    if tag_names.is_empty() {
+        return Err(select_tag().into());
+    }
+    let (mut ok_count, mut first_error) = (0usize, String::new());
+    for tag in tag_names {
+        ports.log(&format!("=== Tag '{tag}' on {} demo(s) ===", demo_paths.len()), Level::Dim);
+        for dp in demo_paths {
+            ports.log(&format!("
+-> {}", reads::basename(dp)), Level::Dim);
+            match s.tag_demo(dp, tag) {
+                Ok(l) => {
+                    ok_count += 1;
+                    ports.log(if l.inserted { "   tagged" } else { "   already tagged" }, Level::Dim);
+                }
+                Err(e) => {
+                    ports.log(&format!("   FAILED: {e}"), Level::Dim);
+                    if first_error.is_empty() {
+                        first_error = e;
+                    }
+                }
+            }
+        }
+    }
+    Ok(json!({"data": {"ok_count": ok_count, "total": demo_paths.len() * tag_names.len(), "first_error": first_error}}))
 }
 
 /// The preview's ports, demo store and stop flag, lent to a preview context.

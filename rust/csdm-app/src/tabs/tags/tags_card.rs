@@ -1,7 +1,7 @@
 //! The Tags card, timeline style (3.5 `TagGridCard.tsx` `TimelineView`): the selection as a tray
 //! above the palette of every tag; click a tag to move it in or out.
 
-use super::parts::{kicker, mix, note, separator, switch, tag_chip, tray_pill};
+use super::parts::{fade, kicker, mix, note, separator, switch, tag_chip, tray_pill};
 use super::{active_ids, tags, visible, TagsTab, SORTS};
 use crate::grid::CardCx;
 use crate::widgets::{chip, confirm_dialog, tip, Confirm};
@@ -76,7 +76,7 @@ pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
                 });
             });
         });
-    dashed_border(ui, tray.response.rect, mix(t.accent, Color32::TRANSPARENT, TAG_TRAY_EDGE_PCT));
+    dashed_border(ui, tray.response.rect, fade(t.accent, TAG_TRAY_EDGE_PCT));
     if always {
         note(ui, t, TIP_DESELECT, t.faint);
     }
@@ -84,14 +84,13 @@ pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
 
     // Toolbar: search and sort.
     ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), 0.0), Layout::right_to_left(Align::Center), |ui| {
-        for (sort, word) in SORTS.iter().rev() {
-            let r = chip(ui, t, word, Some(tab.grid.sort == *sort), Some(&format!("sort-{word}")), true);
-            if r.on_hover_text(TIP_SORT).clicked() {
-                tab.grid.sort = *sort;
-            }
+        let words: Vec<&str> = SORTS.iter().map(|(_, w)| *w).collect();
+        let chosen = SORTS.iter().position(|(s, _)| *s == tab.grid.sort).unwrap_or(0);
+        if let Some(k) = super::parts::segmented(ui, t, &words, chosen, "sort", TIP_SORT) {
+            tab.grid.sort = SORTS[k].0;
         }
-        let field = egui::TextEdit::singleline(&mut tab.grid.search).hint_text(SEARCH_HINT).desired_width(ui.available_width());
-        let r = ui.add(field);
+        let w = ui.available_width();
+        let r = super::parts::field(ui, t, &mut tab.grid.search, SEARCH_HINT, w);
         tip(ui, t, r, TIP_SEARCH, false);
     });
     if always {
@@ -124,7 +123,7 @@ pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
     // Foot: create, reload, auto-tag on export.
     let auto = cx.link.get("tag_enabled") == Some(&Value::Bool(true));
     ui.horizontal_wrapped(|ui| {
-        let r = chip(ui, t, "+ New tag", Some(tab.grid.form_open), Some("New tag"), true);
+        let r = chip(ui, t, "+ New tag", tab.grid.form_open.then_some(true), Some("New tag"), true);
         if tip(ui, t, r, TIP_CREATE, false).clicked() {
             acts.push(Act::Form);
         }
@@ -186,7 +185,7 @@ fn new_tag_form(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx, acts: &mu
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
             ui.horizontal_wrapped(|ui| {
-                let name = ui.add(egui::TextEdit::singleline(&mut tab.grid.name).hint_text(NAME_HINT).desired_width(NAME_WIDTH));
+                let name = super::parts::field(ui, t, &mut tab.grid.name, NAME_HINT, NAME_WIDTH);
                 if name.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                     acts.push(Act::Submit);
                 }

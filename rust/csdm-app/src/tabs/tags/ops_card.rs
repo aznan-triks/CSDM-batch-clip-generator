@@ -4,7 +4,7 @@
 use super::parts::{kicker, note};
 use super::{active_ids, names_of, tags, By, TagsTab};
 use crate::grid::CardCx;
-use crate::paint::{regular, semibold};
+use crate::paint::semibold;
 use crate::theme::Theme;
 use crate::widgets::{chip, confirm_dialog, tip, Confirm};
 use csdm_core::ui_values::{FONT_BODY, FONT_SMALL, TAG_ITEM_GAP, TAG_OPS_BADGE, TAG_OPS_GAP, TAG_OPS_PAD, TAG_OPS_RADIUS, TAG_OPS_STEPS, TAG_ROW_GAP};
@@ -178,17 +178,18 @@ fn found_list(tab: &mut TagsTab, ui: &mut egui::Ui, t: &Theme) {
     }
     let mut all = ops.picked.len() == ops.found.len();
     let label = format!("{} of {} picked", ops.picked.len(), ops.found.len());
-    if ui.checkbox(&mut all, egui::RichText::new(label).font(regular(FONT_SMALL)).color(t.muted)).changed() {
+    if super::parts::tick(ui, t, &label, all, t.muted).clicked() {
+        all = !all;
         ops.picked = if all { ops.found.iter().map(|d| d.path.clone()).collect() } else { Vec::new() };
     }
     egui::ScrollArea::vertical().id_salt("tags-found").max_height(LIST_MAX_H).auto_shrink([false, true]).show(ui, |ui| {
         for demo in &ops.found {
-            let mut on = ops.picked.contains(&demo.path);
-            if ui.checkbox(&mut on, egui::RichText::new(&demo.name).font(regular(FONT_SMALL)).color(t.txt)).changed() {
-                if on {
-                    ops.picked.push(demo.path.clone());
-                } else {
+            let picked = ops.picked.contains(&demo.path);
+            if super::parts::tick(ui, t, &demo.name, picked, t.txt).clicked() {
+                if picked {
                     ops.picked.retain(|p| p != &demo.path);
+                } else {
+                    ops.picked.push(demo.path.clone());
                 }
             }
         }

@@ -111,12 +111,36 @@ struct Run {
     h: Harness<'static, Shell>,
     real: bool,
     dir: PathBuf,
+    /// Where `shot` saves the tab, day and night (`CSDM_RENDER_OUT`); `None`: no capture.
+    shots: Option<PathBuf>,
 }
 
-fn build(engine: Box<dyn Engine>, dir: &Path) -> Harness<'static, Shell> {
+/// The tab as drawn, in the day ground and in the night ground. The ground is set without
+/// `Link::set`, so no save and no RUN question join the recorded order of commands.
+fn shot(r: &mut Run, name: &str) {
+    let Some(dir) = r.shots.clone() else { return };
+    for ground in ["white", "dark"] {
+        r.h.state_mut().link.settings.insert("theme_bg".into(), json!(ground));
+        r.h.run();
+        let img = r.h.render().expect("headless render");
+        img.save(dir.join(format!("t9-{name}-{ground}.png"))).expect("save png");
+    }
+    r.h.state_mut().link.settings.insert("theme_bg".into(), json!("white"));
+    r.h.run();
+}
+
+fn build(engine: Box<dyn Engine>, dir: &Path, wgpu: bool) -> Harness<'static, Shell> {
     let (export, import) = (dir.to_path_buf(), dir.join(IMPORT_FILE));
     let export_dir = dir.to_path_buf();
-    Harness::builder().with_size(common::SIZE).with_step_dt(common::STEP_DT).with_max_steps(400).build_eframe(move |cc| {
+    let mut b = Harness::builder().with_size(common::SIZE).with_step_dt(common::STEP_DT).with_max_steps(400);
+    if wgpu {
+        // DX12 crashes headless on the dev machine (rust/PIEGES.md).
+        if std::env::var_os("WGPU_BACKEND").is_none() {
+            std::env::set_var("WGPU_BACKEND", "gl");
+        }
+        b = b.wgpu();
+    }
+    b.build_eframe(move |cc| {
         let tab = TagsTab::with_pickers(Box::new(move || Some(import.clone())), Box::new(move |name: &str| Some(export.join(name))));
         Shell::new(&cc.egui_ctx, engine, ShellOptions { motion: Motion::Still, export_dir }).with_tab(TabId::Tags, Box::new(tab))
     })
@@ -229,11 +253,13 @@ fn flow(r: &mut Run) {
     assert_eq!(ops_status(r), "Tagged 1 demo(s).");
     click(r, "Tag ALL");
     assert_eq!(ops_status(r), "Tagged 2 demo(s).");
+    shot(r, "tab");
     click(r, "Remove sel.");
     assert!(has(r, "Remove tags"), "removing asks first");
     click(r, "Cancel");
     assert!(!has(r, "Remove tags") && ops_status(r) == "Tagged 2 demo(s).", "cancel removes nothing");
     click(r, "Remove sel.");
+    shot(r, "confirm-remove");
     click(r, "Confirm");
     assert_eq!(ops_status(r), "Removed from 1 demo(s).");
 
@@ -262,17 +288,30 @@ fn flow(r: &mut Run) {
     assert!(!has(r, "in-use-Aces"));
 }
 
-#[test]
-fn tags_tab_flow_replayed() {
+fn replay(shots: Option<PathBuf>) {
     let text = std::fs::read_to_string(SCENARIO).expect("tests/scenarios/tags-flow.json: record it with rust/tools/t9_tags_e2e.py --record");
     let dir = tempfile::tempdir().unwrap();
     write_import_file(dir.path());
     let engine = common::Shared::new(&text.replace(TMP_MARK, &dir.path().display().to_string().replace('\\', "\\\\")));
     let script = engine.script.clone();
-    let mut r = Run { h: build(Box::new(engine), dir.path()), real: false, dir: dir.path().to_path_buf() };
+    let wgpu = shots.is_some();
+    let mut r = Run { h: build(Box::new(engine), dir.path(), wgpu), real: false, dir: dir.path().to_path_buf(), shots };
     flow(&mut r);
     assert_eq!(script.lock().unwrap().remaining_steps(), 0, "every recorded command was sent, in order");
     let _ = &r.dir;
+}
+
+#[test]
+fn tags_tab_flow_replayed() {
+    replay(None);
+}
+
+/// `CSDM_RENDER_OUT=<folder>`: the same flow rendered headless (wgpu), the tab saved day and night.
+#[test]
+fn tags_tab_renders_day_and_night() {
+    if let Some(dir) = std::env::var_os("CSDM_RENDER_OUT") {
+        replay(Some(PathBuf::from(dir)));
+    }
 }
 
 #[test]
@@ -287,7 +326,7 @@ fn tags_tab_on_the_real_engine() {
     let (tx, rx) = channel();
     let rec = Arc::new(Mutex::new(Rec::default()));
     let engine = Recorder { real, tx, rx, local: 0, settings, rec: rec.clone() };
-    let mut r = Run { h: build(Box::new(engine), dir.path()), real: true, dir: dir.path().to_path_buf() };
+    let mut r = Run { h: build(Box::new(engine), dir.path(), false), real: true, dir: dir.path().to_path_buf(), shots: None };
     flow(&mut r);
     let export = std::fs::read_to_string(r.dir.join(csdm_core::ui_values::TAG_EXPORT_FILE)).expect("the export file was written");
     assert!(export.contains("\"Aces\"") && export.contains("t9-chk-b") && !export.contains("t9-chk-a"), "the removal reached the database");
@@ -315,7 +354,7 @@ fn cards_wait_for_the_database_and_say_where_to_set_it() {
         r#"{"on": "tags_set_active", "reply": {"ok": {"data": {"active_tag_ids": [], "active_tag_names": []}}}}"#,
     ]);
     let dir = tempfile::tempdir().unwrap();
-    let mut r = Run { h: build(Box::new(common::Shared::new(&json)), dir.path()), real: false, dir: dir.path().to_path_buf() };
+    let mut r = Run { h: build(Box::new(common::Shared::new(&json)), dir.path(), false), real: false, dir: dir.path().to_path_buf(), shots: None };
     settle(&mut r);
     r.h.get_by_label("TAGS").click();
     settle(&mut r);

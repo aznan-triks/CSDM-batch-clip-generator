@@ -1331,7 +1331,45 @@
             "first_error": ""
           }
         }
-      }
+      },
+      "events": [
+        {
+          "log": {
+            "message": "=== Tag 'Aces' on 1 demo(s) ===",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "\n-> ace-ancient.dem",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "   already tagged",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "=== Tag 'Entry' on 1 demo(s) ===",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "\n-> ace-ancient.dem",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "   tagged",
+            "level": "dim"
+          }
+        }
+      ]
     },
     {
       "on": "tags_apply",
@@ -1343,7 +1381,69 @@
             "first_error": ""
           }
         }
-      }
+      },
+      "events": [
+        {
+          "log": {
+            "message": "=== Tag 'Aces' on 2 demo(s) ===",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "\n-> ace-ancient.dem",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "   already tagged",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "\n-> clutch-mirage.dem",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "   already tagged",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "=== Tag 'Entry' on 2 demo(s) ===",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "\n-> ace-ancient.dem",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "   already tagged",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "\n-> clutch-mirage.dem",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "   tagged",
+            "level": "dim"
+          }
+        }
+      ]
     },
     {
       "on": "tags_remove",
