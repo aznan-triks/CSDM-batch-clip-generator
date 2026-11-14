@@ -6,6 +6,7 @@ pub mod error;
 pub mod event;
 pub mod import35;
 pub mod journal;
+pub mod preview;
 pub mod scripted;
 
 pub use command::Command;

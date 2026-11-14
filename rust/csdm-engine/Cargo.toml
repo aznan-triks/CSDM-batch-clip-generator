@@ -11,6 +11,7 @@ csdm-db = { workspace = true }
 csdm-demo = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+indexmap = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }
