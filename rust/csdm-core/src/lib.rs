@@ -5,6 +5,7 @@
 //! (hardcode guard: csdm-app/tests/hardcode.rs).
 
 pub mod card_layout;
+pub mod editing;
 pub mod error;
 pub mod grid;
 pub mod import35;
