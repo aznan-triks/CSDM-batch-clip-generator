@@ -109,7 +109,7 @@ pub enum DbState { Pending, Ok, Error(String) }
 
 /// What a reply is the answer to.
 #[derive(Clone, Debug, PartialEq)]
-enum Pending { Hello, LoadConfig, SaveConfig, ConnectDb, RunInputsProblem(u64), ExportPreview, InjectionPreview, Other(&'static str) }
+enum Pending { Hello, LoadConfig, SaveConfig, ConnectDb, RunInputsProblem(u64), ExportPreview, InjectionPreview, Other(&'static str), Kept }
 
 /// Something the engine said that the console, the weapon band or the shell react to.
 #[derive(Debug)]
@@ -151,6 +151,10 @@ pub struct Link {
     pub settings_loaded: bool,
     pub version: Option<String>,
     pub db: DbState,
+    /// What the last successful `connect_db` read (3.5 `useDatabase().database`: players, tags, maps…).
+    pub database: Option<Value>,
+    /// Answers to the commands sent with `request`, until the asking card takes them.
+    replies: HashMap<u64, Result<Value, String>>,
     pub inputs_problem: Option<String>,
     pub lost: bool,
     pub trace: Trace,
@@ -172,6 +176,8 @@ impl Link {
             settings_loaded: false,
             version: None,
             db: DbState::Pending,
+            database: None,
+            replies: HashMap::new(),
             inputs_problem: None,
             lost: false,
             trace: Trace::default(),
@@ -194,6 +200,21 @@ impl Link {
     pub fn send(&mut self, now: f64, command: Command) -> u64 {
         let name = command.name();
         self.send_as(now, command, Pending::Other(name))
+    }
+
+    /// A command whose answer a card reads itself (`take_reply`); a failure is the card's to show.
+    pub fn request(&mut self, now: f64, command: Command) -> u64 {
+        self.send_as(now, command, Pending::Kept)
+    }
+
+    /// The answer to a `request`, once it has come (taken once).
+    pub fn take_reply(&mut self, id: u64) -> Option<Result<Value, String>> {
+        self.replies.remove(&id)
+    }
+
+    /// Reads the database again (3.5 `useDatabase().reload()`): the shared state follows.
+    pub fn reconnect(&mut self, now: f64) {
+        self.send_as(now, Command::ConnectDb { pg: None }, Pending::ConnectDb);
     }
 
     /// Start-up, in 3.5's order: greeting, settings, the shared connection.
@@ -294,7 +315,11 @@ impl Link {
             EngineEvent::Reply { id, result } => {
                 let what = self.pending.remove(&id).unwrap_or(Pending::Other("unknown"));
                 self.trace.note(now, format!("<- {what:?} {}", if result.is_ok() { "ok" } else { "failed" }));
-                self.answer(now, what, result, out);
+                if what == Pending::Kept {
+                    self.replies.insert(id, result);
+                } else {
+                    self.answer(now, what, result, out);
+                }
             }
         }
     }
@@ -313,7 +338,10 @@ impl Link {
                 // The connection follows the settings it reads (3.5 DatabaseProvider).
                 self.send_as(now, Command::ConnectDb { pg: None }, Pending::ConnectDb);
             }
-            (Pending::ConnectDb, Ok(_)) => self.db = DbState::Ok,
+            (Pending::ConnectDb, Ok(v)) => {
+                self.db = DbState::Ok;
+                self.database = Some(data(&v));
+            }
             (Pending::ConnectDb, Err(e)) => {
                 self.db = DbState::Error(e.clone());
                 out.push(Notice::Failed(e));

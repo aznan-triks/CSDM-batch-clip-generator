@@ -13,6 +13,8 @@ serde_json = { workspace = true }
 eframe = { version = "0.37.0", default-features = false, features = ["glow", "default_fonts", "accesskit"] }
 # The weapon silhouette is the 3.5 SVG, rasterised once at start-up.
 resvg = { version = "0.48.1", default-features = false }
+# Native open / save dialogs (TAGS export and import); Windows only, so no portal backend.
+rfd = { version = "0.18.0", default-features = false }
 
 [dev-dependencies]
 egui_kittest = { version = "0.37.0", features = ["snapshot", "wgpu", "eframe"] }
