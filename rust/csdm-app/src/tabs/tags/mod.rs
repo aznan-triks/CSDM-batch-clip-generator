@@ -145,6 +145,11 @@ impl TagsTab {
         }
     }
 
+    /// Whether a request of the tab is still waiting for its answer.
+    pub fn busy(&self) -> bool {
+        !self.waiting.is_empty()
+    }
+
     fn ask(&mut self, cx: &mut CardCx, command: Command, job: Job) {
         let id = cx.link.request(cx.now, command);
         self.waiting.push((id, job));

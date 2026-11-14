@@ -51,7 +51,7 @@ pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
     ui.horizontal(|ui| {
         kicker(ui, t, "Tagged");
         ui.label(egui::RichText::new(tag_words(&names)).font(semibold(FONT_BODY)).color(t.txt));
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+        ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), 0.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let r = chip(ui, t, "Calculate range", None, None, !tab.range.busy);
             calc = tip(ui, t, r, TIP_CALC, false).clicked();
         });

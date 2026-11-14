@@ -57,12 +57,12 @@ pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
         .show(ui, |ui| {
             ui.set_min_height(TAG_TRAY_MIN_H - TAG_TRAY_PAD[1] * 2.0);
             ui.set_width(ui.available_width());
-            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), 0.0), Layout::right_to_left(Align::Center), |ui| {
                 let r = chip(ui, t, "Deselect all", None, None, true);
                 if tip(ui, t, r, TIP_DESELECT, false).clicked() {
                     acts.push(Act::Deselect);
                 }
-                ui.with_layout(Layout::left_to_right(Align::Center).with_main_wrap(true), |ui| {
+                ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), 0.0), Layout::left_to_right(Align::Center).with_main_wrap(true), |ui| {
                     kicker(ui, t, "In use");
                     let in_use: Vec<_> = all.iter().filter(|x| active.contains(&x.id)).collect();
                     if in_use.is_empty() {
@@ -83,7 +83,7 @@ pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
     ui.add_space(TAG_ROW_GAP - TAG_ITEM_GAP);
 
     // Toolbar: search and sort.
-    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+    ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), 0.0), Layout::right_to_left(Align::Center), |ui| {
         for (sort, word) in SORTS.iter().rev() {
             let r = chip(ui, t, word, Some(tab.grid.sort == *sort), Some(&format!("sort-{word}")), true);
             if r.on_hover_text(TIP_SORT).clicked() {
@@ -92,7 +92,6 @@ pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
         }
         let field = egui::TextEdit::singleline(&mut tab.grid.search).hint_text(SEARCH_HINT).desired_width(ui.available_width());
         let r = ui.add(field);
-        r.widget_info(|| egui::WidgetInfo::text_edit(true, "", SEARCH_HINT, ""));
         tip(ui, t, r, TIP_SEARCH, false);
     });
     if always {
@@ -188,7 +187,6 @@ fn new_tag_form(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx, acts: &mu
             ui.set_width(ui.available_width());
             ui.horizontal_wrapped(|ui| {
                 let name = ui.add(egui::TextEdit::singleline(&mut tab.grid.name).hint_text(NAME_HINT).desired_width(NAME_WIDTH));
-                name.widget_info(|| egui::WidgetInfo::text_edit(true, "", NAME_HINT, ""));
                 if name.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                     acts.push(Act::Submit);
                 }

@@ -88,11 +88,11 @@ pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
 
     ui.horizontal_wrapped(|ui| {
         kicker(ui, t, "Tags file");
-        let r = chip(ui, t, "Export", None, None, true);
+        let r = chip(ui, t, "Export", None, Some("Export tags"), true);
         if tip(ui, t, r, TIP_EXPORT, false).clicked() {
             acts.push(Act::Export);
         }
-        let r = chip(ui, t, "Import", None, None, true);
+        let r = chip(ui, t, "Import", None, Some("Import tags"), true);
         if tip(ui, t, r, TIP_IMPORT, false).clicked() {
             acts.push(Act::Import);
         }
