@@ -1,7 +1,8 @@
 //! T4 golden bench (decisions/08): the whole Rust batch run against the 3.5 engine's, case by case
 //! (`rust/tools/t4_golden_refs.py` writes the references). Read-only on the author's data: the CLI
 //! is never started, each job file is captured instead, and every path the run writes to is a
-//! throwaway folder (written `{ROOT}` on both sides).
+//! throwaway folder (written `{ROOT}` on both sides). The bench overrides of `meta.json` are applied
+//! as the generator applies them, and a guard refuses any path outside the throwaway root.
 //!
 //!     cargo run --release -p csdm-engine --example t4_golden -- <refs dir> <copy of csdm_config.json> [first-last]
 //!
@@ -9,7 +10,11 @@
 //! (arguments, job file, recording timeout), each demo's `demo_entry`, the final counts, the
 //! error lines, the CS2 files of RecSys CS.
 
+#[path = "support/golden_case.rs"]
+mod golden_case;
+
 use csdm_core::Settings;
+use golden_case::{case_settings, swap_root, ROOT_MARK};
 use csdm_db::{Db, PgParams};
 use csdm_engine::batch::{self, RunIo};
 use csdm_engine::event::{Level, StateName};
@@ -25,7 +30,6 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Instant;
 
-const ROOT_MARK: &str = "{ROOT}";
 const SHOWN_DIFFS: usize = 80;
 /// serde_json's float reader can land a unit or two of the last place away from Python's value.
 const FLOAT_READ_ULPS: u64 = 2;
@@ -76,16 +80,6 @@ fn short(v: &Value) -> String {
     if s.chars().count() > 200 { format!("{}…", s.chars().take(200).collect::<String>()) } else { s }
 }
 
-/// `v` with `from` replaced by `to` in every text.
-fn swap_root(v: &Value, from: &str, to: &str) -> Value {
-    match v {
-        Value::String(s) => Value::String(s.replace(from, to)),
-        Value::Array(a) => Value::Array(a.iter().map(|x| swap_root(x, from, to)).collect()),
-        Value::Object(o) => Value::Object(o.iter().map(|(k, x)| (k.clone(), swap_root(x, from, to))).collect()),
-        other => other.clone(),
-    }
-}
-
 /// Captures the job file instead of starting the CLI (3.5 bench `capture`).
 #[derive(Default)]
 struct Capture {
@@ -111,13 +105,14 @@ struct Tally {
 }
 
 impl Tally {
-    fn check(&mut self, case: &str, what: &'static str, want: &Value, got: &Value) {
+    /// `case` is the case the verdict line names; `label` adds the run.
+    fn check(&mut self, case: &str, label: &str, what: &'static str, want: &Value, got: &Value) {
         let entry = self.checks.entry(what).or_default();
         entry.0 += 1;
         match first_diff(want, got, what) {
             None => entry.1 += 1,
             Some(d) => {
-                self.diffs.push(format!("{case}: {d}"));
+                self.diffs.push(format!("{label}: {d}"));
                 self.failed_cases.insert(case.to_string());
             }
         }
@@ -167,14 +162,10 @@ fn main() {
             }
             let root = tempfile::tempdir().expect("throwaway root");
             let root_text = root.path().to_string_lossy().into_owned();
-            for sub in ["cli", "clips", "cs2cfg"] {
-                std::fs::create_dir_all(root.path().join(sub)).expect("root folders");
-            }
-            std::fs::write(root.path().join("cli").join("csdm.CMD"), "").expect("stand-in CLI file");
-            let raw: Settings = serde_json::from_value(swap_root(&rec["cfg"], ROOT_MARK, &root_text)).expect("case cfg");
+            let raw = case_settings(refs, &rec, root.path());
             let cfg = build_run_cfg(&raw);
             let problem = run_inputs_problem(&cfg).map_or(Value::Null, Value::String);
-            tally.check(&label, "problem", want.get("problem").unwrap_or(&Value::Null), &problem);
+            tally.check(&case, &label, "problem", want.get("problem").unwrap_or(&Value::Null), &problem);
             if want.get("jobs").is_none() {
                 continue;
             }
@@ -215,7 +206,7 @@ fn main() {
             let got = swap_root(&json!({"jobs": capture.jobs, "demo_entries": entries, "counts": count_lines, "errors": errors, "cs_runtime": runtime}), &root_text, ROOT_MARK);
             for what in ["jobs", "demo_entries", "counts", "errors", "cs_runtime"] {
                 let key: &'static str = what;
-                tally.check(&label, key, &want[what], &got[what]);
+                tally.check(&case, &label, key, &want[what], &got[what]);
             }
         }
         let ok = !tally.failed_cases.contains(&case);

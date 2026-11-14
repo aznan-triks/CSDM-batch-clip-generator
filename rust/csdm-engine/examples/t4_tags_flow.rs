@@ -3,7 +3,10 @@
 //! are a stand-in that records every call: nothing is written. `DbRunTags` itself is T5's
 //! `TagSession` behind a trait (T5 bench); this checks what the run asks of it.
 //!
-//!     cargo run --release -p csdm-engine --example t4_tags_flow -- <copy of csdm_config.json> <T4 golden case JSON with 2+ jobs>
+//!     cargo run --release -p csdm-engine --example t4_tags_flow -- <copy of csdm_config.json> <T4 refs dir> <case number with 2+ jobs>
+
+#[path = "support/golden_case.rs"]
+mod golden_case;
 
 use csdm_core::Settings;
 use csdm_db::tags::{Linked, RollbackReport};
@@ -104,18 +107,15 @@ fn has(logs: &[String], text: &str) -> bool {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let user: Value = serde_json::from_str(&std::fs::read_to_string(&args[1]).expect("config copy")).expect("config JSON");
-    let case: Value = serde_json::from_str(&std::fs::read_to_string(&args[2]).expect("case")).expect("case JSON");
+    let refs = std::path::Path::new(&args[2]);
+    let case_file = refs.join("cases").join(format!("{:04}.json", args[3].parse::<usize>().expect("case number")));
+    let case: Value = serde_json::from_str(&std::fs::read_to_string(case_file).expect("case")).expect("case JSON");
     let params = PgParams::from_settings(user.as_object().expect("config object")).expect("connection settings");
     let mut db = Db::connect(&params).unwrap_or_else(|e| panic!("{e}"));
     let disc = db.discover().unwrap_or_else(|e| panic!("{e}"));
     let store = DemoStore::default();
     let root = tempfile::tempdir().expect("root");
-    for sub in ["cli", "clips", "cs2cfg"] {
-        std::fs::create_dir_all(root.path().join(sub)).expect("root folders");
-    }
-    std::fs::write(root.path().join("cli").join("csdm.CMD"), "").expect("stand-in CLI");
-    let text = case["cfg"].to_string().replace("{ROOT}", &root.path().to_string_lossy().replace('\\', "\\\\"));
-    let mut raw: Settings = serde_json::from_str(&text).expect("case cfg");
+    let mut raw: Settings = golden_case::case_settings(refs, &case, root.path());
     raw.insert("tag_enabled".into(), json!(true));
     raw.insert("tag_on_export".into(), json!("Exported"));
     let cfg = build_run_cfg(&raw);
