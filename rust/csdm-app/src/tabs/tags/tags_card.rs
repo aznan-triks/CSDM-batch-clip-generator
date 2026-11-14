@@ -207,7 +207,7 @@ fn new_tag_form(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx, acts: &mu
                 let r = ui.color_edit_button_srgb(&mut rgb).on_hover_text(TIP_CUSTOM);
                 r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "Custom colour"));
                 if r.changed() {
-                    tab.grid.color = format!("#{:02x}{:02x}{:02x}", rgb[0], rgb[1], rgb[2]);
+                    tab.grid.color = free_colour(rgb);
                 }
                 if chip(ui, t, "Create", Some(true), Some("Create"), true).clicked() {
                     acts.push(Act::Submit);
@@ -217,6 +217,11 @@ fn new_tag_form(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx, acts: &mu
 }
 
 /// `.tg-tray`'s `1px dashed` border, rounded like the tray.
+/// The picker's colour as the `#rrggbb` text `tag_create` stores (3.5 `<input type="color">`).
+fn free_colour(rgb: [u8; 3]) -> String { // allow-hardcode: three RGB channels
+    format!("#{:02x}{:02x}{:02x}", rgb[0], rgb[1], rgb[2])
+}
+
 fn dashed_border(ui: &egui::Ui, r: egui::Rect, color: Color32) {
     let rad = TAG_TRAY_RADIUS;
     let mut pts = Vec::new();
@@ -233,4 +238,13 @@ fn dashed_border(ui: &egui::Ui, r: egui::Rect, color: Color32) {
     corner(egui::pos2(r.left() + rad, r.top() + rad), std::f32::consts::PI, &mut pts);
     pts.push(pts[0]);
     ui.painter().extend(Shape::dashed_line(&pts, Stroke::new(1.0, color), TAG_TRAY_DASH[0], TAG_TRAY_DASH[1]));
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn free_colour_is_lowercase_hex_and_reads_back() {
+        assert_eq!(super::free_colour([0x8B, 0x5C, 0xF6]), "#8b5cf6");
+        assert_eq!(crate::theme::parse_hex(&super::free_colour([1, 2, 255])), Some([1, 2, 255]));
+    }
 }

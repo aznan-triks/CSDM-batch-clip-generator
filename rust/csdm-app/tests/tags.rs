@@ -222,6 +222,11 @@ fn flow(r: &mut Run) {
     assert!(has(r, "tag-Wallbang"), "the new tag is read back from the database");
     assert_eq!(tab(r).grid.status, "Created \"Wallbang\".");
 
+    // Tags: reload reads the list again from the database.
+    click(r, "Reload");
+    assert!(has(r, "tag-Wallbang") && has(r, "tag-Aces"), "the reloaded list still holds every tag");
+    assert_eq!(tab(r).grid.status, "Reloaded.");
+
     // Tags: activate; the three cards share the selection.
     click(r, "tag-Aces");
     assert_eq!(setting(r, "ui_active_tags").as_array().map(Vec::len), Some(1));

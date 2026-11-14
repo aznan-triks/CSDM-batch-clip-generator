@@ -125,7 +125,7 @@ fn apply_value(r: Option<&Range>, part: Part) -> Option<Apply> {
 }
 
 /// Each part's two lines: the value, then what clicking does.
-fn labels(r: Option<&Range>) -> [(String, &'static str); 4] {
+fn labels(r: Option<&Range>) -> [(String, &'static str); 4] { // allow-hardcode: one label pair per Part (four variants)
     let start = r.and_then(|r| r.start.clone()).unwrap_or_else(|| "first demo".into());
     let end = r.and_then(|r| r.end.clone()).unwrap_or_else(|| "last demo".into());
     let span = r.map_or_else(|| "tagged demos".into(), |r| format!("{} demo(s)", r.count));

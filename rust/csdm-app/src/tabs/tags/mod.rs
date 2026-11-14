@@ -380,8 +380,8 @@ pub fn visible(tags: &[TagRow], search: &str, sort: Sort, active: &[Value]) -> V
     let mut out: Vec<TagRow> = tags.iter().filter(|t| t.name.to_lowercase().contains(&needle)).cloned().collect();
     let key = |s: &str| s.to_lowercase();
     match sort {
-        Sort::Name => out.sort_by(|a, b| key(&a.name).cmp(&key(&b.name))),
-        Sort::Color => out.sort_by(|a, b| key(&a.color).cmp(&key(&b.color))),
+        Sort::Name => out.sort_by_key(|t| key(&t.name)),
+        Sort::Color => out.sort_by_key(|t| key(&t.color)),
         Sort::ActiveFirst => out.sort_by(|a, b| {
             let rank = |t: &TagRow| usize::from(!active.contains(&t.id));
             rank(a).cmp(&rank(b)).then(key(&a.name).cmp(&key(&b.name)))

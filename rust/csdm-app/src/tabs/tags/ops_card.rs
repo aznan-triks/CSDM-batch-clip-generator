@@ -67,7 +67,7 @@ pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
             });
         });
         step(ui, t, widths[1], 2, "Pick", |ui| found_list(tab, ui, t));
-        step(ui, t, widths[2], 3, &format!("Apply {}", tag_words(&names)), |ui| {
+        step(ui, t, widths[2], 3, &format!("Apply {}", tag_words(&names)), |ui| { // allow-hardcode: the third of the card's three numbered steps
             ui.horizontal_wrapped(|ui| {
                 let r = chip(ui, t, "Tag sel.", None, None, true);
                 if tip(ui, t, r, TIP_TAG_SEL, always).clicked() {
