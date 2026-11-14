@@ -96,14 +96,6 @@ impl Secrets {
         list.iter().fold(text.to_string(), |t, s| t.replace(s.as_str(), SECRET_MASK))
     }
 
-    fn scrub_value(&self, v: &mut Value) {
-        match v {
-            Value::String(s) => *s = self.scrub(s),
-            Value::Array(a) => a.iter_mut().for_each(|x| self.scrub_value(x)),
-            Value::Object(o) => o.values_mut().for_each(|x| self.scrub_value(x)),
-            _ => {}
-        }
-    }
 }
 
 /// Removes every secret key, at any depth.
@@ -157,8 +149,10 @@ impl EventSink {
                 if let Some(Value::Object(cfg)) = payload.get_mut("cfg") {
                     cfg.retain(|k, _| PREVIEW_CFG_KEYS.contains(&k.as_str()));
                 }
+                // Data, not text: secrets go by key (3.5 `for_pipe` + trace `secret_keys`). Masking by
+                // substring here would also rewrite filter keys or demo names that merely contain a
+                // short password (a filter key in `_mf` reached the window as `kill_mod_***_…`).
                 drop_secret_keys(&mut payload);
-                s.scrub_value(&mut payload);
                 EngineEvent::State { name, payload }
             }
             EngineEvent::Ask(ask) => EngineEvent::Ask(Ask {
@@ -209,6 +203,20 @@ mod tests {
         assert!(!shown[2].contains("pg_pass") && !shown[2].contains("pg_host"), "preview cfg not trimmed");
         assert!(shown[2].contains("tickrate") && shown[2].contains("player_name"));
         assert!(!shown[3].contains("password") && !shown[3].contains("\"pass\""));
+    }
+
+    #[test]
+    fn state_data_that_merely_contains_a_short_secret_is_untouched() {
+        let (tx, rx) = channel();
+        let secrets = Secrets::default();
+        secrets.add("smoke");
+        let sink = EventSink::new(tx, secrets);
+        let payload = json!({"events": {"a.dem": [{"_mf": ["kill_mod_through_smoke"]}]}});
+        sink.emit(EngineEvent::State { name: StateName::PreviewReady, payload: payload.clone() }).unwrap();
+        match rx.try_recv().unwrap() {
+            EngineEvent::State { payload: got, .. } => assert_eq!(got, payload),
+            other => panic!("{other:?}"),
+        }
     }
 
     #[test]
