@@ -185,8 +185,11 @@ fn base() -> Value {
 #[test]
 fn settings_01_postgres_test_and_reload_uses_the_typed_values_and_keeps_the_help() {
     let mut r = rig(Some(base()), |_| {});
+    // What an earlier connection read: Test & Reload must replace it, not only the pill.
+    r.h.state_mut().link.database = Some(json!({"players": [], "tags": [{"id": 1, "name": "stale"}]}));
     r.type_into("Host", "10.1.2.3");
     r.click("Test & Reload");
+    assert_eq!(r.h.state().link.database, Some(json!({"players": [], "tags": []})), "the cards read the new database");
     let sent = r.sent_named("connect_db");
     let Command::ConnectDb { pg: Some(pg) } = sent.last().unwrap() else { panic!("Test & Reload sends the typed values") };
     assert_eq!(pg["pg_host"], json!("10.1.2.3"), "typed, not yet saved");

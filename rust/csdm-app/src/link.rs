@@ -151,6 +151,8 @@ pub struct Link {
     pub settings_loaded: bool,
     pub version: Option<String>,
     pub db: DbState,
+    /// What the last successful `connect_db` read (3.5 `useDatabase().database`: players, tags, maps…).
+    pub database: Option<Value>,
     pub inputs_problem: Option<String>,
     pub lost: bool,
     pub trace: Trace,
@@ -174,6 +176,7 @@ impl Link {
             settings_loaded: false,
             version: None,
             db: DbState::Pending,
+            database: None,
             inputs_problem: None,
             lost: false,
             trace: Trace::default(),
@@ -204,8 +207,21 @@ impl Link {
         self.send_as(now, command, Pending::Kept)
     }
 
+    /// The answer to a `request`, once it has come (taken once).
     pub fn take_reply(&mut self, id: u64) -> Option<Result<Value, String>> {
         self.replies.remove(&id)
+    }
+
+    /// A `connect_db` that succeeded, whoever sent it (start-up, a card's reload, SETTINGS
+    /// Test & Reload): the pill and every card's view of the database follow.
+    pub fn connected(&mut self, reply: &Value) {
+        self.db = DbState::Ok;
+        self.database = Some(reply.get("data").cloned().unwrap_or(Value::Null));
+    }
+
+    /// Reads the database again (3.5 `useDatabase().reload()`): the shared state follows.
+    pub fn reconnect(&mut self, now: f64) {
+        self.send_as(now, Command::ConnectDb { pg: None }, Pending::ConnectDb);
     }
 
     /// Start-up, in 3.5's order: greeting, settings, the shared connection.
@@ -325,7 +341,7 @@ impl Link {
                 // The connection follows the settings it reads (3.5 DatabaseProvider).
                 self.send_as(now, Command::ConnectDb { pg: None }, Pending::ConnectDb);
             }
-            (Pending::ConnectDb, Ok(_)) => self.db = DbState::Ok,
+            (Pending::ConnectDb, Ok(v)) => self.connected(&v),
             (Pending::ConnectDb, Err(e)) => {
                 self.db = DbState::Error(e.clone());
                 out.push(Notice::Failed(e));

@@ -41,7 +41,7 @@ impl RealEngine {
         let sink = EventSink::new(tx, secrets.clone());
         let (commands, inbox) = channel::<(u64, Command)>();
         let cancel = Arc::new(AtomicBool::new(false));
-        let mut state = State { sink: sink.clone(), secrets, journal, settings, db: None, demos: DemoStore::default(), last: None, cancel: cancel.clone(), home };
+        let mut state = State { sink: sink.clone(), secrets, journal, settings, db: None, demos: DemoStore::default(), last: None, cancel: cancel.clone(), home, tags: Default::default() };
         std::thread::spawn(move || {
             for (id, command) in inbox {
                 state.serve(id, command);
@@ -111,6 +111,7 @@ struct State {
     last: Option<LastPreview>,
     cancel: Arc<AtomicBool>,
     home: Option<SettingsHome>,
+    tags: crate::tag_commands::TagState,
 }
 
 impl State {
@@ -168,6 +169,7 @@ impl State {
                 json!({"data": clips::preview_export(self.last.as_ref(), disc, &format)?})
             }
             c @ (Command::LoadConfig | Command::SaveConfig { .. } | Command::ProbeConfigDir { .. } | Command::ApplyConfigDir { .. } | Command::ListPresets | Command::SavePreset { .. } | Command::LoadPreset { .. } | Command::DeletePreset { .. }) => return self.settings_command(c),
+            c if crate::tag_commands::is_tag_command(&c) => self.tag_command(c)?,
             other => return Err(EngineError::User(format!("\"{}\" is not available in this build yet.", other.name()))),
         };
         Ok(Some(reply))
@@ -202,7 +204,21 @@ impl State {
         let data = disc.to_json();
         self.settings = params;
         self.db = Some((db, disc));
+        self.tags.reset();
         Ok(json!({"data": data}))
+    }
+
+    /// The ten tag commands (T9, `tag_commands.rs`); only `tags_set_active` works unconnected.
+    fn tag_command(&mut self, command: Command) -> Result<Value, EngineError> {
+        if !crate::tag_commands::needs_database(&command) {
+            return self.tags.serve(command, None);
+        }
+        self.ensure_connected()?;
+        let params = PgParams::from_settings(&self.settings)?;
+        let ports = SinkPorts { sink: &self.sink, journal: self.journal.as_ref(), cancel: &self.cancel };
+        let (db, disc) = self.db.as_mut().expect("connected above");
+        let cx = crate::tag_commands::TagCx { db, disc, params: &params, ports: &ports, demos: &self.demos, cancel: &self.cancel };
+        self.tags.serve(command, Some(cx))
     }
 
     /// 3.5 `_pg`: connects on first use with the saved settings, and opens a new session when the
