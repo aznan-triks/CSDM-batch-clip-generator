@@ -313,7 +313,6 @@ fn settings_05_ui_theme_ground_accent_card_styles_font() {
     assert_eq!(r.setting("theme_accent"), Some(json!("#EF4444")));
     r.click("Card style: tiles");
     assert_eq!(r.setting("ui_card_style"), Some(json!("tiles")));
-    r.click("Per-card style");
     r.click("Demo Selection");
     r.h.run();
     r.click("sentence");

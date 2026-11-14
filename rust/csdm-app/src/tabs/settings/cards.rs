@@ -9,7 +9,7 @@ use crate::theme::{parse_hex, resolve_accent, Theme};
 use crate::widgets::{chip, confirm_dialog, tip, Confirm};
 use csdm_core::theme_v12::{ACCENT_PRESETS, GROUNDS};
 use csdm_core::ui_values::{
-    ACCENT_SWATCH, BLOCK_SLIDER, CARD_STYLES, DP2_THREADS_CHOICES, FONT_BODY, FONT_SMALL, GROUND_LOOK, LAYOUT_AUTO_FALLBACK_SCREEN, LAYOUT_AUTO_SCREEN, LAYOUT_DRAWING_HEIGHT, LAYOUT_HEIGHT_RANGE,
+    ACCENT_SWATCH, BLOCK_SLIDER, CARD_STYLES, DP2_THREADS_CHOICES, FONT_BODY, FONT_SMALL, FONT_SWATCH, GROUND_LOOK, LAYOUT_AUTO_FALLBACK_SCREEN, LAYOUT_AUTO_SCREEN, LAYOUT_DRAWING_HEIGHT, LAYOUT_HEIGHT_RANGE,
     LAYOUT_WIDTH_RANGE, PERF_CORE_TILE, SETTINGS_ROW_GAP, SPLIT_PCT_DEFAULT, SPLIT_PCT_MAX, SPLIT_PCT_MIN, STYLED_CARDS, THEME_PREVIEW,
 };
 use csdm_engine::Command;
@@ -18,6 +18,9 @@ use serde_json::{json, Value};
 
 const PCT: f64 = 100.0;
 const LIGHT: f32 = 4.5;
+const PG_NODES: usize = 3;
+/// Per-card style: (title, choice) pairs per row, as 3.5's grid.
+const STYLE_PAIRS_PER_ROW: usize = 3;
 const FULL: &str = "full";
 
 fn gap(ui: &mut egui::Ui) {
@@ -48,19 +51,21 @@ fn light(ui: &mut egui::Ui, t: &Theme, state: PgState) {
 
 pub fn postgres(tab: &mut SettingsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
     let t = cx.theme;
-    kick(ui, t, "You");
-    text_box(ui, cx, "pg_user", "User", "postgres", "PostgreSQL user name", false);
-    text_box(ui, cx, "pg_pass", "Pass", "no password", "PostgreSQL password", true);
-    gap(ui);
-    kick(ui, t, "Server");
-    text_box(ui, cx, "pg_host", "Host", "localhost", "Machine running the PostgreSQL server of CS Demo Manager", false);
-    text_box(ui, cx, "pg_port", "Port", "5432", "Port the PostgreSQL server listens on", false);
-    gap(ui);
-    ui.horizontal(|ui| {
-        kick(ui, t, "Database");
-        light(ui, t, tab.pg_state);
+    // The chain of 3.5's timeline: you -> the server -> the database, its light at the end.
+    let state = tab.pg_state;
+    ui.columns(PG_NODES, |cols| {
+        kick(&mut cols[0], t, "You →");
+        text_box(&mut cols[0], cx, "pg_user", "User", "postgres", "PostgreSQL user name", false);
+        text_box(&mut cols[0], cx, "pg_pass", "Pass", "no password", "PostgreSQL password", true);
+        kick(&mut cols[1], t, "Server →");
+        text_box(&mut cols[1], cx, "pg_host", "Host", "localhost", "Machine running the PostgreSQL server of CS Demo Manager", false);
+        text_box(&mut cols[1], cx, "pg_port", "Port", "5432", "Port the PostgreSQL server listens on", false);
+        cols[2].horizontal(|ui| {
+            kick(ui, t, "Database");
+            light(ui, t, state);
+        });
+        text_box(&mut cols[2], cx, "pg_db", "Base", "csdm", "PostgreSQL database name (the one created by CS Demo Manager)", false);
     });
-    text_box(ui, cx, "pg_db", "Base", "csdm", "PostgreSQL database name (the one created by CS Demo Manager)", false);
     gap(ui);
     let busy = tab.pg_state == PgState::Busy;
     if action(ui, t, "Test & Reload", "Tests the PostgreSQL connection and reloads players/tables from the database", !busy) {
@@ -356,9 +361,10 @@ fn style_controls(ui: &mut egui::Ui, cx: &mut CardCx) {
     }
     let overrides = cx.link.get("ui_card_style_overrides").and_then(Value::as_object).cloned().unwrap_or_default();
     let mut next = overrides.clone();
-    egui::CollapsingHeader::new(egui::RichText::new("Per-card style").font(regular(FONT_BODY)).color(t.muted)).id_salt("per-card-style").show(ui, |ui| {
-        egui::Grid::new("per-card-style-grid").num_columns(2).show(ui, |ui| {
-            for (id, title) in STYLED_CARDS {
+    // Open like 3.5: it is how a user leaves a style, it must never be hidden.
+    egui::CollapsingHeader::new(egui::RichText::new("Per-card style").font(regular(FONT_BODY)).color(t.muted)).id_salt("per-card-style").default_open(true).show(ui, |ui| {
+        egui::Grid::new("per-card-style-grid").num_columns(STYLE_PAIRS_PER_ROW * 2).show(ui, |ui| {
+            for (k, &(id, title)) in STYLED_CARDS.iter().enumerate() {
                 let l = ui.label(egui::RichText::new(title).font(regular(FONT_SMALL)).color(t.txt));
                 let own = overrides.get(id).and_then(Value::as_str).filter(|s| CARD_STYLES.contains(s)).unwrap_or(DEFAULT_STYLE).to_string();
                 let shown = if own == DEFAULT_STYLE { format!("Default: {global}") } else { own.clone() };
@@ -376,7 +382,9 @@ fn style_controls(ui: &mut egui::Ui, cx: &mut CardCx) {
                         next.insert(id.to_string(), json!(pick));
                     }
                 }
-                ui.end_row();
+                if (k + 1) % STYLE_PAIRS_PER_ROW == 0 {
+                    ui.end_row();
+                }
             }
         });
     });
@@ -402,12 +410,17 @@ pub fn ui_theme(ui: &mut egui::Ui, cx: &mut CardCx) {
                 for (name, hex) in ACCENT_PRESETS {
                     let c = parse_hex(hex).unwrap_or(accent);
                     let selected = c == accent;
-                    let (rect, r) = ui.allocate_exact_size(Vec2::splat(ACCENT_SWATCH), Sense::click());
+                    // 3.5 `.settings-swatch`: the colour with its name written on it.
+                    let word = ui.painter().layout_no_wrap(name.to_uppercase(), semibold(FONT_SWATCH), Color32::WHITE);
+                    let size = Vec2::new(word.size().x + ACCENT_SWATCH, ACCENT_SWATCH);
+                    let (rect, r) = ui.allocate_exact_size(size, Sense::click());
                     r.widget_info(|| egui::WidgetInfo::selected(egui::Role::RadioButton, true, selected, format!("{name} accent")));
-                    ui.painter().circle_filled(rect.center(), ACCENT_SWATCH / 2.0 - 1.0, rgb(c));
-                    if selected {
-                        ui.painter().circle_stroke(rect.center(), ACCENT_SWATCH / 2.0, Stroke::new(2.0, t.txt));
+                    let corner = crate::CORNER_SMALL as f32 / 2.0;
+                    ui.painter().rect_filled(rect, corner, rgb(c));
+                    if selected || r.hovered() {
+                        ui.painter().rect_stroke(rect.expand(1.0), corner, Stroke::new(2.0, t.txt), StrokeKind::Outside);
                     }
+                    ui.painter().galley(rect.center() - word.size() / 2.0, word, Color32::WHITE);
                     if r.on_hover_text(format!("Select {name} accent ({hex})")).clicked() {
                         cx.link.set(cx.now, "theme_accent", json!(hex));
                     }
@@ -540,6 +553,17 @@ pub fn performance(ui: &mut egui::Ui, cx: &mut CardCx) {
     let read = if value == 1 { "1 thread -- parallel pre-parse off".to_string() } else { format!("{value} threads in parallel") };
     ui.label(egui::RichText::new(read).font(semibold(FONT_BODY)).color(t.txt));
     hint(ui, t, PERF_TIP);
+}
+
+// ---------------------------------------------------------------- Header counts
+
+/// 3.5 header `count`s: the card style, the window size, the thread count.
+pub fn counts(cx: &CardCx) -> [Option<String>; 3] {
+    let style = text_of(cx, "ui_card_style");
+    let style = if CARD_STYLES.contains(&style.as_str()) { style } else { CARD_STYLES[0].to_string() };
+    let (w, h) = (num_of(cx, "ui_window_w", default_of("ui_window_w")), num_of(cx, "ui_window_h", default_of("ui_window_h")));
+    let threads = num_of(cx, "dp2_threads", DP2_THREADS_CHOICES[2] as f64);
+    [Some(style), Some(format!("{w} by {h}")), Some(format!("{threads} threads"))]
 }
 
 // ---------------------------------------------------------------- Injection Preview

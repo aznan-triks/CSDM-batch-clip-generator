@@ -69,6 +69,8 @@ pub struct SettingsTab {
     pub switch: Option<PendingSwitch>,
     // Injection preview
     pub injection: Option<Result<Vec<(String, String)>, String>>,
+    /// Header counts read from the settings at the last draw (UI Theme, UI Layout, Performance).
+    counts: [Option<String>; 3],
 }
 
 impl SettingsTab {
@@ -97,6 +99,7 @@ impl SettingsTab {
             folder_error: String::new(),
             switch: None,
             injection: None,
+            counts: [None, None, None],
         }
     }
 
@@ -245,9 +248,9 @@ impl TabView for SettingsTab {
             decl("paths", "Paths", "paths", None, true),
             decl("config-folder", "Configuration Folder", "paths", None, true),
             decl("presets", "Presets", "presets", Some(format!("{n} saved")), false),
-            decl("ui-theme", "UI Theme", "uiTheme", None, false),
-            decl("ui-layout", "UI Layout", "uiLayout", None, false),
-            decl("performance", "Performance", "performance", None, false),
+            decl("ui-theme", "UI Theme", "uiTheme", self.counts[0].clone(), false),
+            decl("ui-layout", "UI Layout", "uiLayout", self.counts[1].clone(), false),
+            decl("performance", "Performance", "performance", self.counts[2].clone(), false),
             decl("injection-preview", "Injection Preview", "injectionPreview", None, false),
         ]
     }
@@ -255,6 +258,7 @@ impl TabView for SettingsTab {
     fn body(&mut self, id: &str, ui: &mut eframe::egui::Ui, cx: &mut CardCx) {
         self.start(cx);
         self.collect(cx);
+        self.counts = cards::counts(cx);
         match id {
             "postgresql" => cards::postgres(self, ui, cx),
             "paths" => cards::paths(self, ui, cx),

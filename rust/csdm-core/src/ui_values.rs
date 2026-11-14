@@ -205,6 +205,7 @@ pub const DP2_THREADS_CHOICES: [i64; 3] = [1, 8, 4];
 pub const PERF_CORE_TILE: [f32; 2] = [34.0, 40.0];
 /// UI Theme: swatch size and the mini-window preview (`.settings-swatch`, `.ut-preview` 120 x 70).
 pub const ACCENT_SWATCH: f32 = 22.0;
+pub const FONT_SWATCH: f32 = 9.5;
 pub const THEME_PREVIEW: [f32; 2] = [168.0, 98.0];
 /// Mini-window drawing colours per ground (page, card, ink), `UiThemeCard.tsx::GROUND_LOOK`.
 pub const GROUND_LOOK: [(&str, [&str; 3]); 5] = [
