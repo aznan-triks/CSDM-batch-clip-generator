@@ -10,7 +10,7 @@ use crate::Cx;
 use csdm_core::card_layout::{migrate, Decl, TabLayout};
 use csdm_core::grid::{self, Geom, Item};
 use csdm_core::ui_values::{
-    CARD_BODY_PAD, CARD_BRACKET, CARD_BRACKET_INSET, CARD_GLYPH, CARD_HANDLE, CARD_HEADER_PAD, CARD_RADIUS, CARD_SPOT_RADIUS, FONT_CARD_COUNT, FONT_CARD_TITLE, GRID_GAP, SHADOW_ALPHA, SHADOW_BLUR, SHADOW_OFFSET, SPACING_COUNT,
+    CARD_BODY_PAD, CARD_BRACKET, CARD_BRACKET_INSET, CARD_GLYPH, CARD_GLYPH_ICON, CARD_HANDLE, CARD_HEADER_PAD, CARD_RADIUS, CARD_SPOT_RADIUS, FONT_CARD_COUNT, FONT_CARD_TITLE, GRID_GAP, SHADOW_ALPHA, SHADOW_BLUR, SHADOW_OFFSET, SPACING_COUNT,
 };
 use eframe::egui::{self, epaint, Align2, Color32, Pos2, Rect, Sense, Stroke, StrokeKind, Vec2};
 use serde_json::{Map, Value};
@@ -35,6 +35,8 @@ const FALLBACK_COLLAPSED: f64 = 2.0;
 pub struct CardDecl {
     pub id: &'static str,
     pub title: String,
+    /// Glyph of `icons_data` shown in the header tile (3.5 `Card.tsx` `.gl`); `None`: no tile.
+    pub icon: Option<&'static str>,
     pub count: Option<String>,
     /// Full width in the reference layout (the mock's `wide`).
     pub wide: bool,
@@ -285,10 +287,13 @@ fn paint_card(ui: &egui::Ui, t: &Theme, rect: Rect, decl: &CardDecl, folded: boo
     let mut x = rect.left() + CARD_HEADER_PAD[0];
     grip(p, Rect::from_center_size(Pos2::new(x + GRIP.x / 2.0, cy), GRIP), t.faint);
     x += GRIP.x + CARD_HEADER_PAD[1] / 2.0;
-    let glyph = Rect::from_min_size(Pos2::new(x, cy - CARD_GLYPH / 2.0), Vec2::splat(CARD_GLYPH));
-    cut_plate(p, glyph, GLYPH_CUT, t.accent_soft, Stroke::NONE);
-    p.circle_stroke(glyph.center(), CARD_GLYPH / (2.0 + 2.0 + 2.0), Stroke::new(2.0, t.accent));
-    x = glyph.right() + CARD_HEADER_PAD[1] - 2.0;
+    if let Some(icon) = decl.icon {
+        // `.sh .gl`: 30 px tile, 16 px glyph in the accent.
+        let glyph = Rect::from_min_size(Pos2::new(x, cy - CARD_GLYPH / 2.0), Vec2::splat(CARD_GLYPH));
+        cut_plate(p, glyph, GLYPH_CUT, t.accent_soft, Stroke::NONE);
+        crate::icons::paint(p, icon, Rect::from_center_size(glyph.center(), Vec2::splat(CARD_GLYPH_ICON)), t.accent);
+        x = glyph.right() + CARD_HEADER_PAD[1] - 2.0;
+    }
     p.text(Pos2::new(x, cy), Align2::LEFT_CENTER, &decl.title, semibold(FONT_CARD_TITLE), t.txt);
     let right = rect.right() - CARD_HEADER_PAD[0];
     caret(p, Pos2::new(right - CARET_SIZE / 2.0, cy), CARET_SIZE, t.faint, !folded);

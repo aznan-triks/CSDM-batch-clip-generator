@@ -44,6 +44,8 @@ pub const SHELL_GAP: f32 = 12.0;
 pub const CARD_RADIUS: f32 = 18.0;
 pub const CARD_HEADER_PAD: [f32; 2] = [15.0, 12.0];
 pub const CARD_GLYPH: f32 = 30.0;
+/// `.sh .gl{font-size:16px}`.
+pub const CARD_GLYPH_ICON: f32 = 16.0;
 pub const CARD_BODY_PAD: [f32; 2] = [15.0, 14.0];
 pub const CARD_BRACKET: f32 = 8.0;
 pub const CARD_BRACKET_INSET: f32 = 7.0;
@@ -59,6 +61,8 @@ pub const BTN_PAD: [f32; 2] = [20.0, 11.0];
 pub const BTN_CUT: f32 = 8.0;
 pub const BTN_ICON_GAP: f32 = 8.0;
 pub const CHIP_PAD: [f32; 2] = [13.0, 7.0];
+/// 3.5 `.console .ch .chip`: `padding: var(--sp-1) var(--sp-3)`.
+pub const TOOL_CHIP_PAD: [f32; 2] = [7.0, 3.0];
 pub const SHADOW_OFFSET: [i8; 2] = [0, 8];
 pub const SHADOW_BLUR: u8 = 22;
 pub const SHADOW_ALPHA: u8 = 41;
@@ -69,6 +73,9 @@ pub const DIALOG_WIDTH: f32 = 420.0;
 pub const FONT_BRAND: f32 = 12.5;
 pub const FONT_BRAND_SUB: f32 = 9.0;
 pub const FONT_TAB: f32 = 11.5;
+/// `.tab .ic{font-size:15px;opacity:.6}`.
+pub const TAB_ICON: f32 = 15.0;
+pub const TAB_ICON_REST_ALPHA: f32 = 0.6;
 pub const FONT_PILL: f32 = 11.0;
 pub const FONT_CARD_TITLE: f32 = 13.5;
 pub const FONT_CARD_COUNT: f32 = 10.5;
@@ -77,7 +84,11 @@ pub const FONT_SMALL: f32 = 11.0;
 pub const FONT_CONSOLE: f32 = 11.0;
 pub const FONT_CONSOLE_TITLE: f32 = 10.5;
 pub const FONT_BUTTON: f32 = 11.5;
+/// `.btn .ic{font-size:15px}` (gap: `BTN_ICON_GAP`).
+pub const BTN_ICON: f32 = 15.0;
 pub const FONT_CHIP: f32 = 12.0;
+/// `--fs-xs`.
+pub const FONT_TOOL_CHIP: f32 = 10.5;
 pub const FONT_BAND: f32 = 11.5;
 /// Letter spacing in em (mock `letter-spacing`).
 pub const SPACING_TAB: f32 = 0.16;
@@ -86,6 +97,8 @@ pub const SPACING_BRAND_SUB: f32 = 0.18;
 pub const SPACING_COUNT: f32 = 0.07;
 pub const SPACING_BUTTON: f32 = 0.06;
 pub const SPACING_CONSOLE_TITLE: f32 = 0.16;
+/// `--tr-snug`.
+pub const SPACING_TOOL_CHIP: f32 = 0.12;
 
 /// Fonts, by preference: Inter (the mock's first choice, not on every Windows), then Segoe UI.
 pub const FONT_DIR: &str = "C:/Windows/Fonts";

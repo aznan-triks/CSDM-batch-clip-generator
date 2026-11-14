@@ -10,7 +10,7 @@ use crate::tabs::TabId;
 use crate::theme::Theme;
 use crate::Cx;
 use csdm_core::ui_values::{
-    ACTBAR_GAP, ACTBAR_PAD, BTN_CUT, BTN_PAD, BUTTON_HIT_S, C4_BEAT_S, C4_SIZE, DETONATION_S, FONT_BAND, FONT_BUTTON, KILL_RETRACT_PX, KILL_RETRACT_S, PROGRESS_BAR, RECOIL_PX, RETICLE_IN_S, RETICLE_IN_SIZE, RING_PERIOD_S, SHOT_S, SPACING_BUTTON,
+    ACTBAR_GAP, ACTBAR_PAD, BTN_CUT, BTN_ICON, BTN_ICON_GAP, BTN_PAD, BUTTON_HIT_S, C4_BEAT_S, C4_SIZE, DETONATION_S, FONT_BAND, FONT_BUTTON, KILL_RETRACT_PX, KILL_RETRACT_S, PROGRESS_BAR, RECOIL_PX, RETICLE_IN_S, RETICLE_IN_SIZE, RING_PERIOD_S, SHOT_S, SPACING_BUTTON,
     WEAK_SHOT_FACTOR, WEAPON_SIZE, WEAPON_SVG_SCALE,
 };
 use csdm_engine::event::StateName;
@@ -122,6 +122,8 @@ enum Face { Primary, Ghost, Danger }
 
 struct Btn<'a> {
     label: &'a str,
+    /// Glyph of `icons_data` (3.5 `ActionBar.tsx`).
+    icon: &'a str,
     face: Face,
     enabled: bool,
     tip: &'a str,
@@ -162,17 +164,17 @@ impl ActionBar {
             let gen_tip = if busy { busy_tip } else if !has_preview { no_preview } else if !has_selected { "Check at least one clip below" } else { problem.as_deref().unwrap_or("Run only the clips checked below, not a full batch") };
             let save_tip = if busy { busy_tip } else if !has_preview { no_preview } else { "Save the current settings and selection as a reusable preset" };
             vec![
-                Btn { label: "GENERATE", face: Face::Primary, enabled: has_selected && !busy && problem.is_none(), tip: gen_tip },
-                Btn { label: "SAVE", face: Face::Ghost, enabled: has_preview && !busy, tip: save_tip },
-                Btn { label: "CANCEL", face: Face::Ghost, enabled: true, tip: "Discard this preview and return to the Capture tab" },
+                Btn { label: "GENERATE", icon: "run", face: Face::Primary, enabled: has_selected && !busy && problem.is_none(), tip: gen_tip },
+                Btn { label: "SAVE", icon: "presets", face: Face::Ghost, enabled: has_preview && !busy, tip: save_tip },
+                Btn { label: "CANCEL", icon: "editing", face: Face::Ghost, enabled: true, tip: "Discard this preview and return to the Capture tab" },
             ]
         } else {
             let stop = if s.stop_label.to_lowercase().contains("preview") { "STOP PREVIEW" } else { "STOP" };
             vec![
-                Btn { label: "PREVIEW", face: Face::Ghost, enabled: problem.is_none(), tip: problem.as_deref().unwrap_or("Scan and list candidate clips for review, without recording video yet") },
-                Btn { label: stop, face: Face::Danger, enabled: s.stop_enabled, tip: "Ask the current run to stop gracefully after the in-progress clip" },
-                Btn { label: "KILL", face: Face::Danger, enabled: s.kill_enabled, tip: "Force-terminate the run immediately, without a clean shutdown" },
-                Btn { label: "RUN", face: Face::Primary, enabled: s.run_enabled && problem.is_none(), tip: problem.as_deref().unwrap_or("Start a full batch run using the current settings") },
+                Btn { label: "PREVIEW", icon: "preview", face: Face::Ghost, enabled: problem.is_none(), tip: problem.as_deref().unwrap_or("Scan and list candidate clips for review, without recording video yet") },
+                Btn { label: stop, icon: "stop", face: Face::Danger, enabled: s.stop_enabled, tip: "Ask the current run to stop gracefully after the in-progress clip" },
+                Btn { label: "KILL", icon: "kill", face: Face::Danger, enabled: s.kill_enabled, tip: "Force-terminate the run immediately, without a clean shutdown" },
+                Btn { label: "RUN", icon: "run", face: Face::Primary, enabled: s.run_enabled && problem.is_none(), tip: problem.as_deref().unwrap_or("Start a full batch run using the current settings") },
             ]
         };
 
@@ -181,7 +183,7 @@ impl ActionBar {
         let mut placed = Vec::new();
         for b in buttons.iter().rev() {
             let g = crate::paint::spaced_galley(&p, b.label, mono(FONT_BUTTON), Color32::WHITE, SPACING_BUTTON);
-            let size = Vec2::new(g.size().x + BTN_PAD[0] * 2.0, inner.height().min(g.size().y + BTN_PAD[1] * 2.0));
+            let size = Vec2::new(BTN_ICON + BTN_ICON_GAP + g.size().x + BTN_PAD[0] * 2.0, inner.height().min(g.size().y.max(BTN_ICON) + BTN_PAD[1] * 2.0));
             let r = Rect::from_min_size(Pos2::new(x - size.x, inner.center().y - size.y / 2.0), size);
             x = r.left() - ACTBAR_GAP;
             placed.push((r, b));
@@ -254,7 +256,11 @@ impl ActionBar {
                 dim(t.rose)
             }
         };
-        spaced(p, r.center(), Align2::CENTER_CENTER, b.label, mono(FONT_BUTTON), ink, SPACING_BUTTON);
+        // `.btn`: glyph, 8 px gap, label, centred together.
+        let g = crate::paint::spaced_galley(p, b.label, mono(FONT_BUTTON), ink, SPACING_BUTTON);
+        let left = r.center().x - (BTN_ICON + BTN_ICON_GAP + g.size().x) / 2.0;
+        crate::icons::paint(p, b.icon, Rect::from_min_size(Pos2::new(left, r.center().y - BTN_ICON / 2.0), Vec2::splat(BTN_ICON)), ink);
+        spaced(p, Pos2::new(left + BTN_ICON + BTN_ICON_GAP, r.center().y), Align2::LEFT_CENTER, b.label, mono(FONT_BUTTON), ink, SPACING_BUTTON);
         if let Some(k) = hit {
             // Flash and conic burst of the click (`.btn.hit`): the button took the click.
             p.rect_filled(r, r.height() / 2.0, Color32::WHITE.gamma_multiply((1.0 - k) * FLASH_PEAK));
@@ -354,7 +360,7 @@ impl ActionBar {
         let status = s.progress.clone().unwrap_or_else(|| if s.busy { "working…".into() } else { "idle".into() });
         let mut x = gun.right() + ACTBAR_GAP + if self.weapon.armed_since.is_some() { C4_SIZE[0] + ACTBAR_GAP } else { 0.0 };
         let cy = band.center().y;
-        let r = spaced(&p, Pos2::new(x, cy), Align2::LEFT_CENTER, &status, regular(FONT_BAND), t.muted, 0.0);
+        let r = spaced(&p, Pos2::new(x, cy), Align2::LEFT_CENTER, &status, mono(FONT_BAND), t.muted, 0.0);
         let st = ui.interact(r, ui.scope_id().with("band-status"), Sense::hover());
         st.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Label, true, &status));
         x = r.right() + META_GAP;
@@ -374,7 +380,7 @@ impl ActionBar {
         let m = s.summary.clone().unwrap_or_default();
         let count = |v: Option<f64>| v.map(|n| format!("{}", n.round() as i64)).unwrap_or_else(|| NOTHING_YET.into());
         let time = |v: Option<f64>| v.map(hms).unwrap_or_else(|| NOTHING_YET.into());
-        let stats = [("DEMOS", count(m.demos), t.txt), ("CLIPS", count(m.clips), t.accent), ("TOTAL", time(m.total_s), t.emerald), ("AVG/CLIP", time(m.avg_s), t.txt)];
+        let stats = [("DEMOS", count(m.demos), t.txt), ("CLIPS", count(m.clips), t.accent), ("TOTAL", time(m.total_s), t.emerald), ("AVG / CLIP", time(m.avg_s), t.txt)];
         for (k, v, c) in stats {
             if x > band.right() - META_GAP * 2.0 { break; }
             let r = spaced(&p, Pos2::new(x, cy), Align2::LEFT_CENTER, k, regular(FONT_BAND - 2.0), t.faint, SPACING_BUTTON);

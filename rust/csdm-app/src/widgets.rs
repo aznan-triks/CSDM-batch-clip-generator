@@ -1,9 +1,9 @@
 //! Small V12 controls shared by the shell and the tabs: chip, tip, confirm dialog,
 //! the "waiting for the database" note.
 
-use crate::paint::{regular, semibold};
+use crate::paint::{mono, regular, semibold, spaced_galley};
 use crate::theme::Theme;
-use csdm_core::ui_values::{CHIP_PAD, DIALOG_WIDTH, FONT_BODY, FONT_CHIP, FONT_SMALL};
+use csdm_core::ui_values::{CHIP_PAD, DIALOG_WIDTH, FONT_BODY, FONT_CHIP, FONT_SMALL, FONT_TOOL_CHIP, SPACING_TOOL_CHIP, TOOL_CHIP_PAD};
 use eframe::egui::{self, Color32, Pos2, Response, Sense, Stroke, StrokeKind, Vec2};
 
 const DOT: f32 = 3.5;
@@ -16,11 +16,21 @@ const HOVER_EDGE_PCT: f32 = 28.0;
 pub fn chip(ui: &mut egui::Ui, t: &Theme, text: &str, on: Option<bool>, label: Option<&str>, enabled: bool) -> Response {
     let lit = on == Some(true);
     let font = if lit { semibold(FONT_CHIP) } else { regular(FONT_CHIP) };
+    draw_chip(ui, t, text, on, label, enabled, font, 0.0, CHIP_PAD, on.is_some())
+}
+
+/// The console header's compact chip (3.5 `.console .ch .chip`): mono, tracked, no dot.
+pub fn tool_chip(ui: &mut egui::Ui, t: &Theme, text: &str, on: Option<bool>, label: Option<&str>, enabled: bool) -> Response {
+    draw_chip(ui, t, text, on, label, enabled, mono(FONT_TOOL_CHIP), SPACING_TOOL_CHIP, TOOL_CHIP_PAD, false)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn draw_chip(ui: &mut egui::Ui, t: &Theme, text: &str, on: Option<bool>, label: Option<&str>, enabled: bool, font: egui::FontId, spacing_em: f32, pad: [f32; 2], dot: bool) -> Response {
+    let lit = on == Some(true);
     let ink = if lit { t.lime_ink } else if enabled { t.muted } else { t.faint };
-    let galley = ui.painter().layout_no_wrap(text.to_string(), font, ink);
-    let dot = on.is_some();
+    let galley = spaced_galley(ui.painter(), text, font, ink, spacing_em);
     let extra = if dot { DOT * 2.0 + DOT_GAP } else { 0.0 };
-    let size = Vec2::new(galley.size().x + CHIP_PAD[0] * 2.0 + extra, galley.size().y + CHIP_PAD[1] * 2.0);
+    let size = Vec2::new(galley.size().x + pad[0] * 2.0 + extra, galley.size().y + pad[1] * 2.0);
     let sense = if enabled { Sense::click() } else { Sense::hover() };
     let (rect, resp) = ui.allocate_exact_size(size, sense);
     let name = label.unwrap_or(text).to_string();
@@ -36,7 +46,7 @@ pub fn chip(ui: &mut egui::Ui, t: &Theme, text: &str, on: Option<bool>, label: O
     let (fill, stroke) = if lit { (t.lime, t.lime_glow) } else { (t.solid, t.hair) };
     let stroke = if resp.hovered() && enabled && !lit { t.accent_alpha(HOVER_EDGE_PCT) } else { stroke };
     p.rect(rect, radius, fill, Stroke::new(1.0, stroke), StrokeKind::Inside);
-    let mut x = rect.left() + CHIP_PAD[0];
+    let mut x = rect.left() + pad[0];
     if dot {
         p.circle_filled(Pos2::new(x + DOT, rect.center().y), DOT, if lit { t.lime_ink } else { ink.gamma_multiply(1.0 / 2.0) });
         x += extra;

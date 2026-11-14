@@ -9,6 +9,8 @@ pub mod backdrop;
 pub mod console;
 pub mod cursor;
 pub mod grid;
+pub mod icons;
+mod icons_data;
 pub mod link;
 pub mod narrate;
 pub mod nav;

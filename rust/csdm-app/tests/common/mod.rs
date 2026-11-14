@@ -76,6 +76,11 @@ pub fn rig_with(json: &str, motion: Motion, tab: Option<(csdm_app::tabs::TabId, 
     let dir = export.path().to_path_buf();
     let mut b = Harness::builder().with_size(SIZE).with_step_dt(STEP_DT).with_max_steps(400);
     if wgpu {
+        // wgpu's default DX12 backend crashes (access violation) headless on the dev machine;
+        // GL is also what the app's own window renders with.
+        if std::env::var_os("WGPU_BACKEND").is_none() {
+            std::env::set_var("WGPU_BACKEND", "gl");
+        }
         b = b.wgpu();
     }
     let h = b.build_eframe(move |cc| {
@@ -167,7 +172,7 @@ impl TabView for Cards {
     }
 
     fn cards(&self) -> Vec<CardDecl> {
-        self.decls.iter().map(|(id, title, wide)| CardDecl { id, title: title.to_string(), count: Some("2 rules".into()), wide: *wide }).collect()
+        self.decls.iter().map(|(id, title, wide)| CardDecl { id, title: title.to_string(), icon: Some("killFilters"), count: Some("2 rules".into()), wide: *wide }).collect()
     }
 
     fn body(&mut self, id: &str, ui: &mut egui::Ui, cx: &mut CardCx) {

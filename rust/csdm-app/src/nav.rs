@@ -6,7 +6,7 @@ use crate::paint::{cut_plate, hrule, regular, semibold, spaced, vgradient};
 use crate::tabs::{TabId, TABS};
 use crate::Cx;
 use csdm_core::ui_values::{
-    BRAND_CUT, BRAND_MARK, FONT_BRAND, FONT_BRAND_SUB, FONT_PILL, FONT_TAB, NAV_GAP, NAV_PAD_X, PILL_PAD, SPACING_BRAND, SPACING_BRAND_SUB, SPACING_TAB, TAB_ICON_GAP, TAB_LIFT, TAB_OVERLAP, TAB_PAD_LEFT, TAB_PAD_RIGHT, TAB_SLANT,
+    BRAND_CUT, BRAND_MARK, FONT_BRAND, FONT_BRAND_SUB, FONT_PILL, FONT_TAB, NAV_GAP, NAV_PAD_X, PILL_PAD, SPACING_BRAND, SPACING_BRAND_SUB, SPACING_TAB, TAB_ICON, TAB_ICON_GAP, TAB_ICON_REST_ALPHA, TAB_LIFT, TAB_OVERLAP, TAB_PAD_LEFT, TAB_PAD_RIGHT, TAB_SLANT,
 };
 use eframe::egui::{self, Align2, Color32, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Vec2};
 use serde_json::Value;
@@ -56,7 +56,7 @@ pub fn show(ui: &mut egui::Ui, rect: Rect, cx: &Cx, link: &Link, active: TabId, 
     for (k, tab) in TABS.iter().enumerate() {
         let is_active = tab.id == active;
         let g = crate::paint::spaced_galley(&p, tab.label, semibold(FONT_TAB), t.muted, SPACING_TAB);
-        let w = TAB_PAD_LEFT + TICK * 2.0 + TAB_ICON_GAP + g.size().x + TAB_PAD_RIGHT;
+        let w = TAB_PAD_LEFT + TAB_ICON + TAB_ICON_GAP + TICK * 2.0 + TAB_ICON_GAP + g.size().x + TAB_PAD_RIGHT;
         let left = if k == 0 { x } else { x - TAB_OVERLAP };
         let lift = if is_active { TAB_LIFT } else { 0.0 };
         let r = Rect::from_min_max(Pos2::new(left, rect.top() - lift), Pos2::new(left + w, rect.bottom() - lift));
@@ -74,7 +74,10 @@ pub fn show(ui: &mut egui::Ui, rect: Rect, cx: &Cx, link: &Link, active: TabId, 
             active_rect = Some(r);
         }
         let ink = if is_active || resp.hovered() { t.txt } else { t.muted };
-        let tick_c = Pos2::new(r.left() + TAB_PAD_LEFT + TICK, cy - lift);
+        // `.tab .ic`: 15 px, 60 % until active, then the accent.
+        let icon = Rect::from_min_size(Pos2::new(r.left() + TAB_PAD_LEFT, cy - lift - TAB_ICON / 2.0), Vec2::splat(TAB_ICON));
+        crate::icons::paint(&p, tab.icon, icon, if is_active { t.accent } else { ink.gamma_multiply(TAB_ICON_REST_ALPHA) });
+        let tick_c = Pos2::new(icon.right() + TAB_ICON_GAP + TICK, cy - lift);
         let tick_color = if is_active { t.accent } else { ink.gamma_multiply(1.0 / 2.0) };
         p.add(Shape::convex_polygon(vec![tick_c - Vec2::new(0.0, TICK), tick_c + Vec2::new(TICK, 0.0), tick_c + Vec2::new(0.0, TICK), tick_c - Vec2::new(TICK, 0.0)], tick_color, Stroke::NONE));
         let tr = spaced(&p, Pos2::new(tick_c.x + TICK + TAB_ICON_GAP, cy - lift), Align2::LEFT_CENTER, tab.label, semibold(FONT_TAB), ink, SPACING_TAB);

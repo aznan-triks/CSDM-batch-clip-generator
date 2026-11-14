@@ -6,16 +6,17 @@
 
 use crate::link::{Link, Notice};
 use crate::narrate::{narrate, prompt_for, recite_selection, Narrated};
-use crate::paint::{mono, regular, semibold, spaced};
+use crate::paint::{mono, regular, semibold};
 use crate::theme::Theme;
-use crate::widgets::chip;
+use crate::widgets::{chip, tool_chip};
 use crate::Cx;
 use csdm_core::ui_values::{
+    FONT_TOOL_CHIP,
     CARET_PERIOD_S, CONSOLE_BODY_PAD, CONSOLE_FLASH_S, CONSOLE_HEADER_PAD, CONSOLE_HTML_FILE, CONSOLE_LINE_HEIGHT, CONSOLE_LOG_FILE, CONSOLE_MAX_RENDERED, CONSOLE_TOOL_GAP, FONT_CONSOLE,
     FONT_CONSOLE_TITLE, FONT_SMALL, SPACING_CONSOLE_TITLE, TRACE_FILE, TYPE_CHAR_S, TYPE_LINE_GAP_S, TYPE_MAX_TYPED,
 };
 use csdm_engine::event::{Ask, AskKind, Level};
-use eframe::egui::{self, text::LayoutJob, Align2, Color32, Pos2, Rect, Stroke, TextFormat, Vec2};
+use eframe::egui::{self, text::LayoutJob, Color32, Pos2, Rect, Stroke, TextFormat, Vec2};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 
@@ -295,9 +296,11 @@ impl Console {
         let t = cx.theme;
         ui.horizontal_wrapped(|ui| {
             ui.spacing_mut().item_spacing.x = CONSOLE_TOOL_GAP;
-            let r = ui.allocate_space(Vec2::new(ui.available_width().min(SEARCH_WIDTH), FONT_CONSOLE_TITLE * 2.0)).1;
-            spaced(ui.painter(), r.left_center(), Align2::LEFT_CENTER, "CONSOLE", semibold(FONT_CONSOLE_TITLE), t.accent.lerp_to_gamma(t.muted, 1.0 - TITLE_ACCENT_SHARE), SPACING_CONSOLE_TITLE);
-            let search = egui::TextEdit::singleline(&mut self.search).hint_text("filter…").desired_width(SEARCH_WIDTH).font(regular(FONT_SMALL));
+            let ink = t.accent.lerp_to_gamma(t.muted, 1.0 - TITLE_ACCENT_SHARE);
+            let title = crate::paint::spaced_galley(ui.painter(), "CONSOLE", semibold(FONT_CONSOLE_TITLE), ink, SPACING_CONSOLE_TITLE);
+            let r = ui.allocate_space(Vec2::new(title.size().x, FONT_CONSOLE_TITLE * 2.0)).1;
+            ui.painter().galley(Pos2::new(r.left(), r.center().y - title.size().y / 2.0), title, ink);
+            let search = egui::TextEdit::singleline(&mut self.search).hint_text("filter…").desired_width(SEARCH_WIDTH).font(mono(FONT_CONSOLE));
             let resp = ui.add(search).on_hover_text("Search the console (Ctrl+F). Enter: next match, Shift+Enter: previous, Esc: close");
             resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::TextInput, true, "Search"));
             if self.focus_search {
@@ -325,7 +328,7 @@ impl Console {
                 ("DEBUG", "Debug trace", "Record every command sent to the engine, every answer and every state event, with timings. Off by default; export the recording from the Export menu", link.trace.on),
             ];
             for (k, (text, label, tip, on)) in toggles.into_iter().enumerate() {
-                if chip(ui, t, text, Some(on), Some(label), true).on_hover_text(tip).clicked() {
+                if tool_chip(ui, t, text, Some(on), Some(label), true).on_hover_text(tip).clicked() {
                     match k {
                         0 => self.autoscroll = !on,
                         1 => self.timestamps = !on,
@@ -337,12 +340,12 @@ impl Console {
                     }
                 }
             }
-            if chip(ui, t, "Copy all", None, None, true).on_hover_text("Copy all console output to clipboard").clicked() {
+            if tool_chip(ui, t, "Copy all", None, None, true).on_hover_text("Copy all console output to clipboard").clicked() {
                 let all = self.texts().join("\n");
                 self.copy_status = if all.is_empty() { String::new() } else { "✓ All copied".into() };
                 self.copy(ui.ctx(), all);
             }
-            if chip(ui, t, "Copy sel.", None, None, true).on_hover_text("Copy the currently highlighted console text").clicked() {
+            if tool_chip(ui, t, "Copy sel.", None, None, true).on_hover_text("Copy the currently highlighted console text").clicked() {
                 let sel = self.selection(ui.ctx());
                 self.copy_status = if sel.is_empty() { "Nothing selected".into() } else { "✓ Selection copied".into() };
                 if !sel.is_empty() {
@@ -364,7 +367,7 @@ impl Console {
     fn export_menu(&mut self, ui: &mut egui::Ui, cx: &Cx, link: &mut Link) {
         let t = cx.theme;
         let now = cx.now;
-        let button = ui.menu_button(egui::RichText::new("Export ▾").font(regular(FONT_SMALL)).color(t.muted), |ui| {
+        let button = ui.menu_button(egui::RichText::new("Export ▾").font(mono(FONT_TOOL_CHIP)).color(t.muted), |ui| {
             let group = |ui: &mut egui::Ui, s: &str| ui.label(egui::RichText::new(s).font(semibold(FONT_SMALL)).color(t.faint));
             let item = |ui: &mut egui::Ui, text: &str, label: &str, tip: &str, enabled: bool| {
                 let r = ui.add_enabled(enabled, egui::Button::new(text)).on_hover_text(tip).on_disabled_hover_text(tip);
@@ -560,7 +563,10 @@ impl Console {
                 add(&shown[cursor..], *level, bg, &mut text);
                 byte += piece.len();
             }
+            // Every character belongs to a section: the layout job drops what none covers.
+            let nl = text.len();
             text.push('\n');
+            sections.push((nl..text.len(), Level::Plain, None));
         }
         let start = text.len();
         text.push_str("csdm>");
@@ -629,6 +635,24 @@ impl Console {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sections_cover_every_character_so_lines_stay_apart() {
+        let mut c = Console::new(std::path::PathBuf::new());
+        c.timestamps = true;
+        for m in ["engine ready", "second line"] {
+            c.push(Narrated { runs: vec![(m.into(), Level::Ok)], level: Level::Ok }, None);
+        }
+        c.typer.tick(&[usize::MAX; 2], 0.0, false); // no motion: every line shown whole
+        let (text, sections, _) = c.compose(None, false);
+        assert!(text.contains("engine ready\n"), "{text:?}");
+        let mut at = 0;
+        for (r, _, _) in &sections {
+            assert_eq!(r.start, at, "gap before {r:?} in {text:?}");
+            at = r.end;
+        }
+        assert_eq!(at, text.len());
+    }
 
     #[test]
     fn typewriter_types_then_rests_and_jumps_a_burst() {
