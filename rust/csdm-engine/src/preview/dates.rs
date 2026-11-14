@@ -99,17 +99,17 @@ pub fn demo_ts(cx: &mut Ctx, demo_path: &str) -> Option<f64> {
     ts
 }
 
-fn local(ts: i64) -> Option<DateTime<Local>> {
+pub(crate) fn local(ts: i64) -> Option<DateTime<Local>> {
     Local.timestamp_opt(ts, 0).earliest()
 }
 
 /// Seconds from a number that may be milliseconds (3.5 rule).
-fn seconds(t: i64) -> i64 {
+pub(crate) fn seconds(t: i64) -> i64 {
     if t > MS_TIMESTAMP_ABOVE { t.div_euclid(MS_PER_S) } else { t }
 }
 
 /// Python `datetime.strptime(s[:len(fmt)], fmt)` for the formats 3.5 tries.
-fn strptime_prefix(s: &str, fmt: &str) -> Option<NaiveDateTime> {
+pub(crate) fn strptime_prefix(s: &str, fmt: &str) -> Option<NaiveDateTime> {
     let head: String = s.chars().take(fmt.chars().count()).collect();
     NaiveDateTime::parse_from_str(&head, fmt)
         .ok()
