@@ -63,3 +63,20 @@ fn settings_table_equals_35() {
 fn registries_equal_35() {
     assert_eq!(exported()["registries"], embedded(include_str!("../data/registries.json")));
 }
+
+/// `data/preview.json` (fixed tables of the preview chain, T3) equals what
+/// `tools/export_preview_reference.py` reads from 3.5's source now.
+#[test]
+fn preview_tables_equal_35() {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let python = std::env::var("CSDM_REFERENCE_PYTHON").unwrap_or_else(|_| "python".into());
+    let out = Command::new(&python)
+        .arg(manifest.join("../tools/export_preview_reference.py"))
+        .arg(manifest.join("../.."))
+        .env("PYTHONIOENCODING", "utf-8")
+        .output()
+        .unwrap_or_else(|e| panic!("could not run {python}: {e}"));
+    assert!(out.status.success(), "export_preview_reference.py failed:\n{}", String::from_utf8_lossy(&out.stderr));
+    let python: Value = serde_json::from_slice(&out.stdout).expect("export_preview_reference.py did not print JSON");
+    assert_eq!(python, embedded(include_str!("../data/preview.json")), "re-run export_preview_reference.py --write and review");
+}
