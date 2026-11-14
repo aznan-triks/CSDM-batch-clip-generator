@@ -1,0 +1,857 @@
+{
+  "trois_shot_thresholds": {
+    "weapon_deagle": {
+      "acc": 0.015,
+      "scope": false,
+      "vel": false
+    },
+    "weapon_revolver": {
+      "acc": 0.015,
+      "scope": false,
+      "vel": false
+    },
+    "weapon_awp": {
+      "acc": 0.01,
+      "scope": true,
+      "vel": false
+    },
+    "weapon_scar20": {
+      "acc": 0.01,
+      "scope": true,
+      "vel": true
+    },
+    "weapon_g3sg1": {
+      "acc": 0.01,
+      "scope": true,
+      "vel": true
+    },
+    "weapon_ssg08": {
+      "acc": 0.01,
+      "scope": true,
+      "vel": false
+    }
+  },
+  "csdm_to_dp2_weapon": {
+    "deagle": "weapon_deagle",
+    "desert eagle": "weapon_deagle",
+    "revolver": "weapon_revolver",
+    "r8 revolver": "weapon_revolver",
+    "awp": "weapon_awp",
+    "scar-20": "weapon_scar20",
+    "scar20": "weapon_scar20",
+    "g3sg1": "weapon_g3sg1",
+    "ssg 08": "weapon_ssg08",
+    "ssg08": "weapon_ssg08",
+    "ssg-08": "weapon_ssg08"
+  },
+  "dp2_tick_window": 128,
+  "spray_transfer_weapons": [
+    "ak-47",
+    "ak47",
+    "aug",
+    "bizon",
+    "cz75-auto",
+    "cz75a",
+    "famas",
+    "galil ar",
+    "galilar",
+    "m249",
+    "m4a1",
+    "m4a1-s",
+    "m4a1_silencer",
+    "m4a4",
+    "mac-10",
+    "mac10",
+    "mp5-sd",
+    "mp5sd",
+    "mp7",
+    "mp9",
+    "negev",
+    "p90",
+    "pp-bizon",
+    "sg 553",
+    "sg556",
+    "ump-45",
+    "ump45"
+  ],
+  "spray_max_gap_ticks": 22,
+  "delayed_effect_weapons": [
+    "he grenade",
+    "hegrenade",
+    "incendiary grenade",
+    "incgrenade",
+    "inferno",
+    "molotov"
+  ],
+  "suicide_weapons": [
+    "world",
+    "suicide",
+    "world_entity",
+    "trigger_hurt",
+    "fall",
+    "env_fire",
+    "planted_c4"
+  ],
+  "damage_hitgroups": {
+    "head": [
+      1
+    ],
+    "body": [
+      2,
+      3
+    ],
+    "arm": [
+      4,
+      5
+    ],
+    "leg": [
+      6,
+      7
+    ]
+  },
+  "map_name_prefixes": [
+    "de_",
+    "cs_",
+    "ar_",
+    "gg_",
+    "dz_",
+    "tr_"
+  ],
+  "cs2_demo_breaks": [
+    {
+      "cutoff": "2025-07-28",
+      "label": "AnimGraph2",
+      "tip": "Valve's AnimGraph2 engine update (Jul 28 2025) made all older demos incompatible. You need CS2 <= 1.40.8.8 (Steam beta depot) to replay them."
+    },
+    {
+      "cutoff": "2024-02-06",
+      "label": "Feb 2024 update",
+      "tip": "The February 6 2024 major update changed the demo file format. Demos recorded before this date cannot be replayed on current CS2."
+    }
+  ],
+  "event_categories": {
+    "kill": "kill",
+    "death": "kill",
+    "damage_actor": "damage",
+    "damage_target": "damage",
+    "shot": "shot",
+    "knife_swing": "shot",
+    "round": "round",
+    "clutch_round": "round"
+  },
+  "fixed_filter_logic_keys": [
+    "kill_mod_logic_mods",
+    "kill_mod_logic_dp2",
+    "kill_mod_logic_db"
+  ],
+  "empty_result": {
+    "stages": [
+      {
+        "label": "date range {date_from} → {date_to} (Demo Selection)",
+        "neutral": {
+          "date_from": "",
+          "date_to": ""
+        }
+      },
+      {
+        "label": "Ally / Enemy (Capture & Timing > Event Type)",
+        "neutral": {
+          "event_ally": true,
+          "event_enemy": true
+        }
+      },
+      {
+        "label": "Weapon Filter",
+        "neutral": {
+          "weapons": []
+        }
+      },
+      {
+        "label": "headshots setting (Kill Filters)",
+        "neutral": {
+          "headshots_mode": "all"
+        }
+      },
+      {
+        "label": "suicides setting (Kill Filters)",
+        "neutral": {
+          "suicides_mode": "include"
+        }
+      },
+      {
+        "label": "Match Types",
+        "neutral": {
+          "match_type_filter_enabled": false
+        }
+      },
+      {
+        "label": "Map Filter",
+        "neutral": {
+          "map_filter_enabled": false
+        }
+      },
+      {
+        "label": "Kill / Damage / Shot Filters",
+        "neutral": {
+          "kill_mod_through_smoke": false,
+          "kill_mod_through_smoke_req": false,
+          "kill_mod_through_smoke_exclude": false,
+          "kill_mod_no_scope": false,
+          "kill_mod_no_scope_req": false,
+          "kill_mod_no_scope_exclude": false,
+          "kill_mod_assisted_flash": false,
+          "kill_mod_assisted_flash_req": false,
+          "kill_mod_assisted_flash_exclude": false,
+          "kill_mod_wall_bang": false,
+          "kill_mod_wall_bang_req": false,
+          "kill_mod_wall_bang_exclude": false,
+          "kill_mod_attacker_blind": false,
+          "kill_mod_attacker_blind_req": false,
+          "kill_mod_attacker_blind_exclude": false,
+          "kill_mod_airborne": false,
+          "kill_mod_airborne_req": false,
+          "kill_mod_airborne_exclude": false,
+          "kill_mod_collateral": false,
+          "kill_mod_collateral_req": false,
+          "kill_mod_collateral_exclude": false,
+          "kill_mod_trois_shot": false,
+          "kill_mod_trois_shot_req": false,
+          "kill_mod_trois_shot_exclude": false,
+          "kill_mod_trois_tap": false,
+          "kill_mod_trois_tap_req": false,
+          "kill_mod_trois_tap_exclude": false,
+          "kill_mod_one_tap": false,
+          "kill_mod_one_tap_req": false,
+          "kill_mod_one_tap_exclude": false,
+          "kill_mod_spray_transfer": false,
+          "kill_mod_spray_transfer_req": false,
+          "kill_mod_spray_transfer_exclude": false,
+          "kill_mod_high_velocity": false,
+          "kill_mod_high_velocity_req": false,
+          "kill_mod_high_velocity_exclude": false,
+          "kill_mod_flick": false,
+          "kill_mod_flick_req": false,
+          "kill_mod_flick_exclude": false,
+          "kill_mod_savior": false,
+          "kill_mod_savior_req": false,
+          "kill_mod_savior_exclude": false,
+          "kill_mod_entry_frag": false,
+          "kill_mod_entry_frag_req": false,
+          "kill_mod_entry_frag_exclude": false,
+          "kill_mod_ace": false,
+          "kill_mod_ace_req": false,
+          "kill_mod_ace_exclude": false,
+          "kill_mod_multi_kill": false,
+          "kill_mod_multi_kill_req": false,
+          "kill_mod_multi_kill_exclude": false,
+          "kill_mod_bully": false,
+          "kill_mod_bully_req": false,
+          "kill_mod_bully_exclude": false,
+          "kill_mod_eco_frag": false,
+          "kill_mod_eco_frag_req": false,
+          "kill_mod_eco_frag_exclude": false,
+          "kill_mod_mate_pov": false,
+          "kill_mod_mate_pov_req": false,
+          "kill_mod_mate_pov_exclude": false,
+          "dmg_mod_headshot_hit": false,
+          "dmg_mod_headshot_hit_req": false,
+          "dmg_mod_headshot_hit_exclude": false,
+          "dmg_mod_body_hit": false,
+          "dmg_mod_body_hit_req": false,
+          "dmg_mod_body_hit_exclude": false,
+          "dmg_mod_arm_hit": false,
+          "dmg_mod_arm_hit_req": false,
+          "dmg_mod_arm_hit_exclude": false,
+          "dmg_mod_leg_hit": false,
+          "dmg_mod_leg_hit_req": false,
+          "dmg_mod_leg_hit_exclude": false,
+          "dmg_mod_big_hit": false,
+          "dmg_mod_big_hit_req": false,
+          "dmg_mod_big_hit_exclude": false,
+          "dmg_mod_low_hp": false,
+          "dmg_mod_low_hp_req": false,
+          "dmg_mod_low_hp_exclude": false,
+          "dmg_mod_multi_nade": false,
+          "dmg_mod_multi_nade_req": false,
+          "dmg_mod_multi_nade_exclude": false,
+          "dmg_mod_team_damage": false,
+          "dmg_mod_team_damage_req": false,
+          "dmg_mod_team_damage_exclude": false,
+          "shot_mod_knife_swing": false,
+          "shot_mod_knife_swing_req": false,
+          "shot_mod_knife_swing_exclude": false,
+          "shot_mod_long_spray": false,
+          "shot_mod_long_spray_req": false,
+          "shot_mod_long_spray_exclude": false,
+          "shot_mod_run_gun": false,
+          "shot_mod_run_gun_req": false,
+          "shot_mod_run_gun_exclude": false
+        }
+      },
+      {
+        "label": "clutch filter (Kill Filters)",
+        "neutral": {
+          "clutch_enabled": false
+        }
+      }
+    ],
+    "base_label": "events for this player and event types (any date, no filter)",
+    "rest_label": "the remaining settings combined"
+  },
+  "mate_pov": {
+    "eye_height": 54,
+    "fov_half_deg": 20.0,
+    "max_dist": 550,
+    "min_dist": 80,
+    "max_z_delta": 300,
+    "max_elevation": 30.0,
+    "sid_tolerance": 16
+  },
+  "tick_match_window": 2,
+  "clutch_cols": {
+    "match": [
+      "match_checksum",
+      "match_id",
+      "checksum"
+    ],
+    "round": [
+      "round_number",
+      "round_num",
+      "round"
+    ],
+    "tick": [
+      "tick"
+    ],
+    "sid": [
+      "clutcher_steam_id",
+      "steam_id"
+    ],
+    "won": [
+      "won",
+      "has_won"
+    ],
+    "opponents": [
+      "opponent_count",
+      "opponents"
+    ]
+  },
+  "export": {
+    "formats": {
+      "html": [
+        "csdm_preview.html",
+        "text/html"
+      ],
+      "txt": [
+        "csdm_preview.txt",
+        "text/plain"
+      ],
+      "json": [
+        "csdm_preview.json",
+        "application/json"
+      ]
+    },
+    "txt_columns": [
+      12,
+      36,
+      6,
+      18,
+      30,
+      8
+    ],
+    "txt_headers": [
+      "Date",
+      "Demo",
+      "Clip",
+      "Weapon",
+      "Filters found",
+      "Tick"
+    ]
+  },
+  "db_postfilters": {
+    "PISTOLS": [
+      "cz75-auto",
+      "cz75a",
+      "deagle",
+      "desert eagle",
+      "dual berettas",
+      "duals",
+      "elite",
+      "five-seven",
+      "fiveseven",
+      "glock",
+      "glock-18",
+      "hkp2000",
+      "p2000",
+      "p250",
+      "r8 revolver",
+      "revolver",
+      "tec-9",
+      "tec9",
+      "usp-s",
+      "usp_silencer"
+    ],
+    "FULL_BUY": [
+      "ak-47",
+      "ak47",
+      "aug",
+      "awp",
+      "famas",
+      "g3sg1",
+      "galil ar",
+      "galil-ar",
+      "galilar",
+      "m249",
+      "m4a1",
+      "m4a1-s",
+      "m4a1_silencer",
+      "m4a4",
+      "negev",
+      "scar-20",
+      "scar20",
+      "sg 553",
+      "sg553",
+      "sg556",
+      "ssg 08",
+      "ssg-08",
+      "ssg08"
+    ]
+  },
+  "high_velocity": {
+    "RESUME_THR": 80.0,
+    "PRE_WINDOW": 48,
+    "APPROACH_WIN": 64,
+    "RESUME_WIN": 128,
+    "SHOT_WINDOW": 24
+  },
+  "flick": {
+    "LOOK_BACK": 32
+  },
+  "savior": {
+    "SAVIOR_WINDOW": 128
+  },
+  "filters": {
+    "kill_mod_through_smoke": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": true,
+      "auto_exclude": true
+    },
+    "kill_mod_no_scope": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": true,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": true,
+      "auto_exclude": true
+    },
+    "kill_mod_assisted_flash": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": true,
+      "auto_exclude": true
+    },
+    "kill_mod_wall_bang": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": true,
+      "auto_exclude": true
+    },
+    "kill_mod_attacker_blind": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": true,
+      "auto_exclude": true
+    },
+    "kill_mod_airborne": {
+      "dp2_sections": [
+        "death",
+        "names"
+      ],
+      "dp2_sections_exclude": [
+        "death",
+        "names"
+      ],
+      "dp2_sections_nonkill": [
+        "death",
+        "names",
+        "positions"
+      ],
+      "needs_positions": true,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_collateral": {
+      "dp2_sections": [
+        "death",
+        "names"
+      ],
+      "dp2_sections_exclude": [
+        "death",
+        "names"
+      ],
+      "dp2_sections_nonkill": [
+        "death",
+        "names"
+      ],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_trois_shot": {
+      "dp2_sections": [
+        "fire",
+        "names"
+      ],
+      "dp2_sections_exclude": [
+        "fire",
+        "names"
+      ],
+      "dp2_sections_nonkill": [
+        "fire",
+        "names"
+      ],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_trois_tap": {
+      "dp2_sections": [
+        "fire",
+        "names"
+      ],
+      "dp2_sections_exclude": [
+        "fire",
+        "names"
+      ],
+      "dp2_sections_nonkill": [
+        "fire",
+        "names"
+      ],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": false
+    },
+    "kill_mod_one_tap": {
+      "dp2_sections": [
+        "fire",
+        "names"
+      ],
+      "dp2_sections_exclude": [
+        "fire",
+        "names"
+      ],
+      "dp2_sections_nonkill": [
+        "fire",
+        "names"
+      ],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_spray_transfer": {
+      "dp2_sections": [
+        "fire",
+        "names"
+      ],
+      "dp2_sections_exclude": [
+        "fire",
+        "names"
+      ],
+      "dp2_sections_nonkill": [
+        "fire",
+        "names"
+      ],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_high_velocity": {
+      "dp2_sections": [
+        "fire",
+        "names"
+      ],
+      "dp2_sections_exclude": [
+        "fire",
+        "names"
+      ],
+      "dp2_sections_nonkill": [
+        "fire",
+        "names"
+      ],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_flick": {
+      "dp2_sections": [
+        "death",
+        "names"
+      ],
+      "dp2_sections_exclude": [
+        "death",
+        "names"
+      ],
+      "dp2_sections_nonkill": [
+        "death",
+        "names"
+      ],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_savior": {
+      "dp2_sections": [
+        "hurt",
+        "names"
+      ],
+      "dp2_sections_exclude": [
+        "hurt",
+        "names"
+      ],
+      "dp2_sections_nonkill": [
+        "hurt",
+        "names"
+      ],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_entry_frag": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_ace": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_multi_kill": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_bully": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_eco_frag": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "kill_mod_mate_pov": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": false
+    },
+    "dmg_mod_headshot_hit": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": true,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "dmg_mod_body_hit": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": true,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "dmg_mod_arm_hit": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": true,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "dmg_mod_leg_hit": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": true,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "dmg_mod_big_hit": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": true,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "dmg_mod_low_hp": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": true,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "dmg_mod_multi_nade": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": true,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "dmg_mod_team_damage": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": true,
+      "group_rule": false,
+      "never_matching": true,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "shot_mod_knife_swing": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": true,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "shot_mod_long_spray": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": false,
+      "group_rule": true,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    },
+    "shot_mod_run_gun": {
+      "dp2_sections": [],
+      "dp2_sections_exclude": [],
+      "dp2_sections_nonkill": [],
+      "needs_positions": false,
+      "event_rule": true,
+      "group_rule": false,
+      "never_matching": false,
+      "sql_mod": false,
+      "auto_exclude": true
+    }
+  }
+}
