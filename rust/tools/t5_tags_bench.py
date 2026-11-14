@@ -14,6 +14,7 @@ the author's server).
 import argparse
 import json
 import os
+import secrets
 import shutil
 import subprocess
 import sys
@@ -74,7 +75,8 @@ def self_test():
 
 def run(cmd, **kw):
     """Runs a tool; its output goes to the bench log, a failure stops the bench."""
-    r = subprocess.run(cmd, capture_output=True, text=True, **kw)
+    # errors=replace: tool output in the console code page must not crash the bench
+    r = subprocess.run(cmd, capture_output=True, text=True, errors="replace", **kw)
     if r.returncode != 0:
         raise SystemExit(f"{Path(cmd[0]).name} failed ({r.returncode}):\n{r.stdout}\n{r.stderr}")
     return r.stdout
@@ -133,6 +135,19 @@ class Cluster:
     def fresh(self):
         self.psql("postgres", "-c", f"DROP DATABASE IF EXISTS {BENCH_DB}")
         self.psql("postgres", "-c", f"CREATE DATABASE {BENCH_DB} TEMPLATE {SEED_DB}")
+
+
+def make_root():
+    """A new folder under TEMP that inherits TEMP's permissions.
+
+    Not `tempfile.mkdtemp`: since Python 3.12.4 it gives the folder a protected ACL (SYSTEM,
+    Administrators, OWNER RIGHTS). From an elevated shell the owner is the Administrators group, and
+    initdb, which restarts itself with Administrators disabled, can no longer read the folder:
+    "could not create directory ...: File exists" (rust/PIEGES.md).
+    """
+    root = Path(tempfile.gettempdir()) / f"csdm_t5_{secrets.token_hex(8)}"
+    root.mkdir()   # fails loudly if the name exists
+    return root
 
 
 def connect(target):
@@ -432,7 +447,7 @@ def main():
         raise SystemExit(f"bench refused: {why}. It only writes to a throwaway local copy.")
     check_rollback_source()
 
-    root = Path(tempfile.mkdtemp(prefix="csdm_t5_"))
+    root = make_root()
     os.environ["CSDM_PROFILE_ROOT"] = str(root / "profile")   # the 3.5 engine never touches the real profile
     cluster = Cluster(a.pg_bin, root)
     t0 = time.time()
