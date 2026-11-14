@@ -7,6 +7,7 @@ pub mod event;
 pub mod import35;
 pub mod journal;
 pub mod scripted;
+pub mod settings_home;
 
 pub use command::Command;
 pub use error::EngineError;
