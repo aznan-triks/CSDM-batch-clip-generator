@@ -7,18 +7,18 @@
 
 use crate::error::EngineError;
 use csdm_core::values::{PREVIEW_CFG_KEYS, SECRET_KEYS, SECRET_MASK};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, RwLock};
 
-#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum Level { Info, Warn, Err, Ok, Dim, Plain }
 
 /// The 13 states 3.5's engine emits (research/03 §5.2).
-#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum StateName {
     Progress, Summary, Buttons, ButtonsIdle, ButtonsBusy, RunStarted, PreviewStarted,
@@ -32,7 +32,7 @@ pub const STATE_NAMES: [&str; 13] = [
 
 /// `error`: no option, answered "ok"; `confirm`: options[0] is the title, Cancel → `None`;
 /// `text`: a typed answer (preset name). The reply channel must always be served.
-#[derive(Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Deserialize, Serialize, Debug, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum AskKind { Error, Confirm, Text }
 
