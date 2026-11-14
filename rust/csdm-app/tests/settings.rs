@@ -87,6 +87,10 @@ struct Rig {
 
 /// A throwaway profile whose 5.x folder holds `settings`, then the window on the SETTINGS tab.
 fn rig(settings: Option<Value>, tweak: impl FnOnce(&mut HashMap<&'static str, Result<Value, String>>)) -> Rig {
+    rig_sized(settings, tweak, SIZE, false)
+}
+
+fn rig_sized(settings: Option<Value>, tweak: impl FnOnce(&mut HashMap<&'static str, Result<Value, String>>), size: egui::Vec2, wgpu: bool) -> Rig {
     let (profile, lad, export) = (tempfile::tempdir().unwrap(), tempfile::tempdir().unwrap(), tempfile::tempdir().unwrap());
     if let Some(s) = settings {
         let dir = profile.path().join(V5_CONFIG_SUBDIR);
@@ -104,7 +108,15 @@ fn rig(settings: Option<Value>, tweak: impl FnOnce(&mut HashMap<&'static str, Re
     let picks: Arc<Mutex<Vec<Option<String>>>> = Arc::default();
     let queue = picks.clone();
     let dir = export.path().to_path_buf();
-    let h = Harness::builder().with_size(SIZE).with_step_dt(STEP_DT).with_max_steps(400).build_eframe(move |cc| {
+    let mut b = Harness::builder().with_size(size).with_step_dt(STEP_DT).with_max_steps(400);
+    if wgpu {
+        // DX12 crashes headless on the dev machine (rust/PIEGES.md); GL is what the window uses.
+        if std::env::var_os("WGPU_BACKEND").is_none() {
+            std::env::set_var("WGPU_BACKEND", "gl");
+        }
+        b = b.wgpu();
+    }
+    let h = b.build_eframe(move |cc| {
         let picker = Box::new(move |_kind: PickKind| queue.lock().unwrap().pop().flatten());
         Shell::new(&cc.egui_ctx, Box::new(engine), ShellOptions { motion: Motion::Still, export_dir: dir }).with_tab(TabId::Settings, Box::new(SettingsTab::with_picker(picker)))
     });
@@ -383,4 +395,24 @@ fn settings_first_run_without_database_says_where_to_connect() {
     r.h.get_by_label(PG_HINT);
     assert_eq!(r.tab().default_csdm_exe, None, "CS Demo Manager not found: the box says to Browse");
     assert!(!r.v5().exists(), "nothing written before the first change");
+}
+
+/// Headless captures of the tab, day and night, at the window size and tall (every card).
+/// `CSDM_RENDER_OUT=<folder>` saves them.
+#[test]
+fn settings_renders_headless_day_and_night() {
+    let out = std::env::var_os("CSDM_RENDER_OUT").map(PathBuf::from);
+    for ground in ["white", "dark"] {
+        let mut s = base();
+        s["theme_bg"] = json!(ground);
+        for (name, size) in [("window", egui::Vec2::new(1600.0, 900.0)), ("all", SIZE)] {
+            let mut r = rig_sized(Some(s.clone()), |_| {}, size, true);
+            r.h.run();
+            let img = r.h.render().expect("headless render");
+            assert_eq!((img.width(), img.height()), (size.x as u32, size.y as u32));
+            if let Some(dir) = &out {
+                img.save(dir.join(format!("t11-settings-{ground}-{name}.png"))).expect("save png");
+            }
+        }
+    }
 }

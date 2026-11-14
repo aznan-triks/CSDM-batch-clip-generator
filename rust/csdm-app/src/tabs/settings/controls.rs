@@ -6,7 +6,7 @@ use crate::grid::CardCx;
 use crate::paint::{regular, semibold};
 use crate::theme::Theme;
 use crate::widgets::{chip, tip};
-use csdm_core::ui_values::{FONT_BODY, FONT_SMALL, SETTINGS_FIELD_WIDTH, SETTINGS_LABEL_WIDTH, SETTINGS_SWITCH};
+use csdm_core::ui_values::{FONT_BODY, FONT_SMALL, SETTINGS_FIELD_WIDTH, SETTINGS_LABEL_WIDTH, SETTINGS_PATH_LABEL_WIDTH, SETTINGS_SWITCH};
 use eframe::egui::{self, Response, Sense, Stroke, StrokeKind, Vec2};
 use serde_json::{json, Value};
 
@@ -62,9 +62,18 @@ pub fn hint(ui: &mut egui::Ui, t: &Theme, text: &str) {
     ui.add(egui::Label::new(egui::RichText::new(text).font(regular(FONT_SMALL)).color(t.muted)).wrap());
 }
 
-/// The field's label, fixed width so the boxes of a card line up.
+/// The field's label, fixed width and left-aligned so the boxes of a card line up.
+fn label_w(ui: &mut egui::Ui, t: &Theme, text: &str, width: f32) -> Response {
+    let size = Vec2::new(width, ui.spacing().interact_size.y);
+    ui.allocate_ui_with_layout(size, egui::Layout::left_to_right(egui::Align::Center), |ui| {
+        ui.set_min_width(width);
+        ui.add(egui::Label::new(egui::RichText::new(text).font(regular(FONT_BODY)).color(t.muted)).truncate())
+    })
+    .inner
+}
+
 fn label(ui: &mut egui::Ui, t: &Theme, text: &str) -> Response {
-    ui.add_sized([SETTINGS_LABEL_WIDTH, ui.spacing().interact_size.y], egui::Label::new(egui::RichText::new(text).font(regular(FONT_BODY)).color(t.muted)).truncate())
+    label_w(ui, t, text, SETTINGS_LABEL_WIDTH)
 }
 
 /// A text setting's box. `hint_text` says what an empty value means. Returns whether it changed.
@@ -94,7 +103,7 @@ pub fn path_box(ui: &mut egui::Ui, cx: &mut CardCx, picker: &mut Picker, key: &s
     let mut browse = false;
     let mut changed = false;
     ui.horizontal(|ui| {
-        let l = label(ui, cx.theme, name);
+        let l = label_w(ui, cx.theme, name, SETTINGS_PATH_LABEL_WIDTH);
         let width = (ui.available_width() - SETTINGS_LABEL_WIDTH).max(SETTINGS_LABEL_WIDTH);
         let r = ui.add(egui::TextEdit::singleline(&mut value).hint_text(hint_text).desired_width(width)).labelled_by(l.id);
         changed = r.changed();

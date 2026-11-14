@@ -184,6 +184,8 @@ pub const PROGRESS_BAR: [f32; 2] = [120.0, 4.0];
 
 // ---- SETTINGS tab (T11: tabs/settingsCards/*, PresetSection.tsx) ----
 pub const SETTINGS_LABEL_WIDTH: f32 = 96.0;
+/// Path labels are longer ("Concatenated clips folder").
+pub const SETTINGS_PATH_LABEL_WIDTH: f32 = 172.0;
 pub const SETTINGS_FIELD_WIDTH: f32 = 220.0;
 pub const SETTINGS_SWITCH: [f32; 2] = [32.0, 18.0];
 pub const SETTINGS_ROW_GAP: f32 = 8.0;
