@@ -70,7 +70,7 @@ pub struct SettingsTab {
     // Injection preview
     pub injection: Option<Result<Vec<(String, String)>, String>>,
     /// Header counts read from the settings at the last draw (UI Theme, UI Layout, Performance).
-    counts: [Option<String>; 3],
+    counts: [Option<String>; cards::HEADER_COUNTS],
 }
 
 impl SettingsTab {

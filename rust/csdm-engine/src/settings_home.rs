@@ -85,7 +85,7 @@ fn backup_name() -> String {
 
 /// Windows paths compare without case (3.5 `os.path.normcase`).
 fn same_dir(a: &Path, b: &Path) -> bool {
-    let norm = |p: &Path| p.to_string_lossy().replace('/', "\\").trim_end_matches('\\').to_lowercase();
+    let norm = |p: &Path| p.to_string_lossy().replace('/', std::path::MAIN_SEPARATOR_STR).trim_end_matches(std::path::MAIN_SEPARATOR).to_lowercase();
     norm(a) == norm(b)
 }
 

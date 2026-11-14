@@ -19,6 +19,12 @@ use serde_json::{json, Value};
 const PCT: f64 = 100.0;
 const LIGHT: f32 = 4.5;
 const PG_NODES: usize = 3;
+/// Header counts: UI Theme, UI Layout, Performance.
+pub const HEADER_COUNTS: usize = 3;
+/// Words shown in empty boxes and examples (3.5's), never used as addresses or paths.
+const HOST_HINT: &str = "localhost";
+const CS2_CFG_HINT: &str = "Optional override (…\\Counter-Strike Global Offensive\\game\\csgo\\cfg)";
+const SUBFOLDER_EXAMPLE: [&str; 2] = ["…\\clips\\<demo>\\clip.mp4", "…\\clips\\clip.mp4"];
 /// Per-card style: (title, choice) pairs per row, as 3.5's grid.
 const STYLE_PAIRS_PER_ROW: usize = 3;
 const FULL: &str = "full";
@@ -58,7 +64,7 @@ pub fn postgres(tab: &mut SettingsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
         text_box(&mut cols[0], cx, "pg_user", "User", "postgres", "PostgreSQL user name", false);
         text_box(&mut cols[0], cx, "pg_pass", "Pass", "no password", "PostgreSQL password", true);
         kick(&mut cols[1], t, "Server →");
-        text_box(&mut cols[1], cx, "pg_host", "Host", "localhost", "Machine running the PostgreSQL server of CS Demo Manager", false);
+        text_box(&mut cols[1], cx, "pg_host", "Host", HOST_HINT, "Machine running the PostgreSQL server of CS Demo Manager", false);
         text_box(&mut cols[1], cx, "pg_port", "Port", "5432", "Port the PostgreSQL server listens on", false);
         cols[2].horizontal(|ui| {
             kick(ui, t, "Database");
@@ -109,13 +115,13 @@ pub fn paths(tab: &mut SettingsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
     path_box(ui, cx, pick, "csdm_exe", "CSDM Executable", &exe_hint, "CS Demo Manager's csdm.CMD (or csdm.exe), which records the clips", PickKind::File);
     gap(ui);
     kick(ui, t, "Injects commands");
-    path_box(ui, cx, pick, "cs2_cfg_dir", "CS2 cfg folder", "Optional override (…\\Counter-Strike Global Offensive\\game\\csgo\\cfg)", "Where CSDM writes injected CS2 console commands before recording. Leave empty to auto-detect", PickKind::Folder);
+    path_box(ui, cx, pick, "cs2_cfg_dir", "CS2 cfg folder", CS2_CFG_HINT, "Where CSDM writes injected CS2 console commands before recording. Leave empty to auto-detect", PickKind::Folder);
     gap(ui);
     kick(ui, t, "Writes raw clips");
     path_box(ui, cx, pick, "output_dir_clips", "Raw clips folder", &clips_hint, "Where the recorded clips are written", PickKind::Folder);
     ui.horizontal(|ui| {
         switch(ui, cx, "subfolder_per_demo", "Subfolder per demo", "When on, each demo's clips go in their own subfolder instead of sharing the raw clips folder");
-        let eg = if bool_of(cx, "subfolder_per_demo") { "…\\clips\\<demo>\\clip.mp4" } else { "…\\clips\\clip.mp4" };
+        let eg = if bool_of(cx, "subfolder_per_demo") { SUBFOLDER_EXAMPLE[0] } else { SUBFOLDER_EXAMPLE[1] };
         ui.label(egui::RichText::new(eg).font(mono(FONT_SMALL)).color(t.faint));
     });
     gap(ui);
@@ -307,7 +313,7 @@ const FONT_TIP: &str = "Monospace font used across the UI. \"auto\" keeps the bu
 const STYLE_TIP: &str = "How cards with variants draw their settings: timeline = a clip you drag, sentence = a sentence with fill-in words, tiles = big picture tiles. Every style changes the same settings";
 const DEFAULT_STYLE: &str = "default";
 
-fn rgb(c: [u8; 3]) -> Color32 {
+fn rgb(c: [u8; crate::theme::RGB]) -> Color32 {
     Color32::from_rgb(c[0], c[1], c[2])
 }
 
@@ -558,7 +564,7 @@ pub fn performance(ui: &mut egui::Ui, cx: &mut CardCx) {
 // ---------------------------------------------------------------- Header counts
 
 /// 3.5 header `count`s: the card style, the window size, the thread count.
-pub fn counts(cx: &CardCx) -> [Option<String>; 3] {
+pub fn counts(cx: &CardCx) -> [Option<String>; HEADER_COUNTS] {
     let style = text_of(cx, "ui_card_style");
     let style = if CARD_STYLES.contains(&style.as_str()) { style } else { CARD_STYLES[0].to_string() };
     let (w, h) = (num_of(cx, "ui_window_w", default_of("ui_window_w")), num_of(cx, "ui_window_h", default_of("ui_window_h")));
