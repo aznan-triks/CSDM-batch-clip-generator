@@ -312,3 +312,39 @@ impl ProcessExec<'_> {
         out
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::preview::CollectPorts;
+
+    #[test]
+    fn lines_end_like_python_text_mode_even_across_reads() {
+        let mut s = LineSplitter::default();
+        assert_eq!(s.push(b"a\r"), vec!["a"]);
+        // The "\n" of a "\r\n" split across two reads is not a second, empty line.
+        assert_eq!(s.push(b"\nb\rc\n\xffd"), vec!["b", "c"]);
+        assert_eq!(s.finish().as_deref(), Some("\u{fffd}d"));
+    }
+
+    #[test]
+    fn known_cli_lines_get_their_sentence_and_errors_their_kind() {
+        assert!(csdm_cli_message("Error: HLAE is not installed").is_some_and(|m| m.contains("cannot find HLAE")));
+        assert_eq!(csdm_cli_message("frame=12"), None);
+        let ports = CollectPorts::default();
+        let mut out = ExecOutcome::default();
+        for line in ["no errors found", "", "Game crashed", "Raw files not found"] {
+            take_line(&ports, line, &mut out);
+        }
+        assert_eq!(out.errs, vec!["Game crashed".to_string(), "Raw files not found".to_string()]);
+        assert!(out.retryable && out.raw_not_found);
+        assert_eq!(ports.logs.lock().unwrap().len(), 3, "an empty line is not shown");
+    }
+
+    #[test]
+    fn a_defined_variable_between_percent_signs_is_caught() {
+        assert_eq!(expanding_pair(r"C:\x\%PATH%\csdm.CMD").as_deref(), Some("%PATH%"));
+        assert_eq!(expanding_pair(r"C:\100% sure\csdm.CMD"), None);
+        assert_eq!(expanding_pair(r"C:\a%b%c\csdm.CMD"), None, "b is not a variable");
+    }
+}
