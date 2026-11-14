@@ -151,6 +151,8 @@ pub struct Link {
     pub settings_loaded: bool,
     pub version: Option<String>,
     pub db: DbState,
+    /// What the last successful `connect_db` read (3.5 `useDatabase().database`: players, tags, maps…).
+    pub database: Option<Value>,
     pub inputs_problem: Option<String>,
     pub lost: bool,
     pub trace: Trace,
@@ -174,6 +176,7 @@ impl Link {
             settings_loaded: false,
             version: None,
             db: DbState::Pending,
+            database: None,
             inputs_problem: None,
             lost: false,
             trace: Trace::default(),
@@ -325,7 +328,10 @@ impl Link {
                 // The connection follows the settings it reads (3.5 DatabaseProvider).
                 self.send_as(now, Command::ConnectDb { pg: None }, Pending::ConnectDb);
             }
-            (Pending::ConnectDb, Ok(_)) => self.db = DbState::Ok,
+            (Pending::ConnectDb, Ok(v)) => {
+                self.db = DbState::Ok;
+                self.database = Some(data(&v));
+            }
             (Pending::ConnectDb, Err(e)) => {
                 self.db = DbState::Error(e.clone());
                 out.push(Notice::Failed(e));
