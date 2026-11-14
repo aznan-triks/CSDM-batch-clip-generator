@@ -10,6 +10,7 @@ pub mod preview;
 pub mod real;
 pub mod scripted;
 pub mod tag_commands;
+pub mod settings_home;
 
 pub use command::Command;
 pub use error::EngineError;

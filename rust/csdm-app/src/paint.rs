@@ -247,19 +247,20 @@ mod tests {
         let mut dirs = vec![std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src")];
         let mut symbols = std::collections::BTreeSet::new();
         while let Some(dir) = dirs.pop() {
-          for entry in std::fs::read_dir(dir).unwrap() {
-            let path = entry.unwrap().path();
-            if path.is_dir() {
-                dirs.push(path);
-                continue;
+            for entry in std::fs::read_dir(dir).unwrap() {
+                let path = entry.unwrap().path();
+                // Tabs live in sub-folders (`tabs/settings/`): their symbols are printed too.
+                if path.is_dir() {
+                    dirs.push(path);
+                    continue;
+                }
+                if path.file_name().is_some_and(|n| n == "icons_data.rs") {
+                    continue;
+                }
+                for line in std::fs::read_to_string(&path).unwrap().lines() {
+                    symbols.extend(line.split("//").next().unwrap_or_default().chars().filter(|c| !c.is_ascii()));
+                }
             }
-            if path.file_name().is_some_and(|n| n == "icons_data.rs") {
-                continue;
-            }
-            for line in std::fs::read_to_string(&path).unwrap().lines() {
-                symbols.extend(line.split("//").next().unwrap_or_default().chars().filter(|c| !c.is_ascii()));
-            }
-          }
         }
         assert!(!symbols.is_empty(), "the scan found the shell's symbols");
         let families = [FontFamily::Proportional, FontFamily::Name(SEMIBOLD.into()), FontFamily::Monospace];

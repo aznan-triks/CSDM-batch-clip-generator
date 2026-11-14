@@ -106,6 +106,8 @@ pub struct Shell {
     accent_warned: bool,
     window_applied: bool,
     reduced: (bool, f64),
+    /// `ui_font_family` last applied (T11).
+    font_key: Option<String>,
 }
 
 fn text_setting(link: &Link, key: &str) -> String {
@@ -137,6 +139,7 @@ impl Shell {
             accent_warned: false,
             window_applied: false,
             reduced: (false, f64::NEG_INFINITY),
+            font_key: None,
         }
     }
 
@@ -239,6 +242,14 @@ impl Shell {
         self.react(&notices, now, motion);
         self.console.take(&mut notices, &self.link, now);
         self.refresh_theme(&ctx, now);
+        let font = text_setting(&self.link, "ui_font_family");
+        // Applied once typing has settled (no save pending): one font load, one message.
+        if self.link.settings_loaded && self.link.save_due_in(now).is_none() && self.font_key.as_ref() != Some(&font) {
+            if let Err(e) = tabs::settings::font::apply_mono(&ctx, &font) {
+                self.console.flash(&e, Level::Warn, now);
+            }
+            self.font_key = Some(font);
+        }
         self.remember_window(&ctx, now);
         if ctx.input(|i| i.viewport().close_requested()) {
             self.link.flush(now);

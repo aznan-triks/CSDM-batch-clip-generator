@@ -109,7 +109,7 @@ pub enum DbState { Pending, Ok, Error(String) }
 
 /// What a reply is the answer to.
 #[derive(Clone, Debug, PartialEq)]
-enum Pending { Hello, LoadConfig, SaveConfig, ConnectDb, RunInputsProblem(u64), ExportPreview, InjectionPreview, Other(&'static str), Kept }
+enum Pending { Hello, LoadConfig, SaveConfig, ConnectDb, RunInputsProblem(u64), ExportPreview, InjectionPreview, Kept, Other(&'static str) }
 
 /// Something the engine said that the console, the weapon band or the shell react to.
 #[derive(Debug)]
@@ -153,8 +153,6 @@ pub struct Link {
     pub db: DbState,
     /// What the last successful `connect_db` read (3.5 `useDatabase().database`: players, tags, maps…).
     pub database: Option<Value>,
-    /// Answers to the commands sent with `request`, until the asking card takes them.
-    replies: HashMap<u64, Result<Value, String>>,
     pub inputs_problem: Option<String>,
     pub lost: bool,
     pub trace: Trace,
@@ -164,6 +162,8 @@ pub struct Link {
     problem_in_flight: bool,
     /// Settings generation the RUN question was last asked for (`None`: never asked).
     problem_asked: Option<u64>,
+    /// Answers to `request`, until the tab takes them.
+    replies: HashMap<u64, Result<Value, String>>,
 }
 
 impl Link {
@@ -177,7 +177,6 @@ impl Link {
             version: None,
             db: DbState::Pending,
             database: None,
-            replies: HashMap::new(),
             inputs_problem: None,
             lost: false,
             trace: Trace::default(),
@@ -186,6 +185,7 @@ impl Link {
             last_edit: 0.0,
             problem_in_flight: false,
             problem_asked: None,
+            replies: HashMap::new(),
         }
     }
 
@@ -202,7 +202,7 @@ impl Link {
         self.send_as(now, command, Pending::Other(name))
     }
 
-    /// A command whose answer a card reads itself (`take_reply`); a failure is the card's to show.
+    /// A command whose answer the tab reads itself with `take_reply` (no console line on failure).
     pub fn request(&mut self, now: f64, command: Command) -> u64 {
         self.send_as(now, command, Pending::Kept)
     }
@@ -210,6 +210,13 @@ impl Link {
     /// The answer to a `request`, once it has come (taken once).
     pub fn take_reply(&mut self, id: u64) -> Option<Result<Value, String>> {
         self.replies.remove(&id)
+    }
+
+    /// A `connect_db` that succeeded, whoever sent it (start-up, a card's reload, SETTINGS
+    /// Test & Reload): the pill and every card's view of the database follow.
+    pub fn connected(&mut self, reply: &Value) {
+        self.db = DbState::Ok;
+        self.database = Some(reply.get("data").cloned().unwrap_or(Value::Null));
     }
 
     /// Reads the database again (3.5 `useDatabase().reload()`): the shared state follows.
@@ -315,16 +322,12 @@ impl Link {
             EngineEvent::Reply { id, result } => {
                 let what = self.pending.remove(&id).unwrap_or(Pending::Other("unknown"));
                 self.trace.note(now, format!("<- {what:?} {}", if result.is_ok() { "ok" } else { "failed" }));
-                if what == Pending::Kept {
-                    self.replies.insert(id, result);
-                } else {
-                    self.answer(now, what, result, out);
-                }
+                self.answer(now, id, what, result, out);
             }
         }
     }
 
-    fn answer(&mut self, now: f64, what: Pending, result: Result<Value, String>, out: &mut Vec<Notice>) {
+    fn answer(&mut self, now: f64, id: u64, what: Pending, result: Result<Value, String>, out: &mut Vec<Notice>) {
         let data = |v: &Value| v.get("data").cloned().unwrap_or(Value::Null);
         match (what, result) {
             (Pending::Hello, Ok(v)) => self.version = data(&v).get("app_version").and_then(Value::as_str).map(String::from),
@@ -338,10 +341,7 @@ impl Link {
                 // The connection follows the settings it reads (3.5 DatabaseProvider).
                 self.send_as(now, Command::ConnectDb { pg: None }, Pending::ConnectDb);
             }
-            (Pending::ConnectDb, Ok(v)) => {
-                self.db = DbState::Ok;
-                self.database = Some(data(&v));
-            }
+            (Pending::ConnectDb, Ok(v)) => self.connected(&v),
             (Pending::ConnectDb, Err(e)) => {
                 self.db = DbState::Error(e.clone());
                 out.push(Notice::Failed(e));
@@ -363,6 +363,9 @@ impl Link {
                     a.iter().map(|l| (l.get(0).and_then(Value::as_str).unwrap_or_default().to_string(), l.get(1).and_then(Value::as_str).unwrap_or_default().to_string())).collect()
                 });
                 out.push(Notice::Injection(lines.unwrap_or_default()));
+            }
+            (Pending::Kept, r) => {
+                self.replies.insert(id, r);
             }
             (_, Err(e)) => out.push(Notice::Failed(e)),
             (_, Ok(_)) => {}
