@@ -39,3 +39,7 @@ pub const PREVIEW_CFG_KEYS: [&str; 2] = ["tickrate", "player_name"];
 pub const DP2_THREADS_MIN: usize = 2;
 pub const DP2_THREADS_MAX: usize = 8;
 pub const DP2_THREADS_UNKNOWN_CPU: usize = 4;
+/// 5.x settings folder name: 5.x never writes into the 3.5 folder (`CONFIG_SUBDIR`), it imports it once.
+pub const V5_CONFIG_SUBDIR: &str = "CSDM-batch-clips-5_config";
+/// Prefix of the folder that keeps the files a settings-folder switch overwrote (3.5 `backup-<stamp>`).
+pub const CONFIG_BACKUP_PREFIX: &str = "backup-";

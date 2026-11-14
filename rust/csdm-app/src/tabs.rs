@@ -1,6 +1,8 @@
 //! The five tabs, as data (3.5 `shell/tabs.ts`). The fixed frame of the app: never renamed,
 //! never removed; a sixth cannot appear without touching this table.
 
+pub mod settings;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TabId { Capture, Editing, Tags, Video, Settings }
 

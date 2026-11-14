@@ -9,6 +9,7 @@ pub mod journal;
 pub mod preview;
 pub mod real;
 pub mod scripted;
+pub mod settings_home;
 
 pub use command::Command;
 pub use error::EngineError;

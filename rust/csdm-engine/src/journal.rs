@@ -65,9 +65,9 @@ impl Journal {
     }
 }
 
-const SECS_PER_DAY: u64 = 86_400;
-const SECS_PER_HOUR: u64 = 3_600;
-const SECS_PER_MINUTE: u64 = 60;
+pub(crate) const SECS_PER_DAY: u64 = 86_400;
+pub(crate) const SECS_PER_HOUR: u64 = 3_600;
+pub(crate) const SECS_PER_MINUTE: u64 = 60;
 
 /// `YYYY-MM-DD HH:MM:SSZ` in UTC, without a date crate.
 fn utc_now() -> String {
@@ -78,7 +78,7 @@ fn utc_now() -> String {
 }
 
 /// Days since 1970-01-01 → (year, month, day), H. Hinnant's algorithm.
-fn civil_from_days(z: i64) -> (i64, u32, u32) {
+pub(crate) fn civil_from_days(z: i64) -> (i64, u32, u32) {
     let z = z + 719_468; // allow-hardcode: epoch shift of the published algorithm
     let era = z.div_euclid(146_097); // allow-hardcode: days per 400-year era
     let doe = z.rem_euclid(146_097); // allow-hardcode: days per 400-year era

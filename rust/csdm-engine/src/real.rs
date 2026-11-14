@@ -8,6 +8,7 @@ use crate::journal::Journal;
 use crate::preview::clips::{self, LastPreview, Segment};
 use crate::preview::dp2::DemoStore;
 use crate::preview::{cfg::build_run_cfg, worker, Ctx, Ports};
+use crate::settings_home::SettingsHome;
 use crate::{Engine, EngineError};
 use csdm_core::Settings;
 use csdm_db::{Db, Discovery, PgParams};
@@ -31,11 +32,16 @@ impl RealEngine {
     /// Starts the engine thread. `settings` gives the connection (`pg_*`) until `connect_db` brings
     /// other values; `journal` receives the detail of every failure.
     pub fn start(settings: Settings, secrets: Secrets, journal: Option<Journal>) -> Self {
+        Self::start_with_home(settings, secrets, journal, None)
+    }
+
+    /// `start`, with the settings folder the settings commands work on (T11 `settings_home`).
+    pub fn start_with_home(settings: Settings, secrets: Secrets, journal: Option<Journal>, home: Option<SettingsHome>) -> Self {
         let (tx, events) = channel();
         let sink = EventSink::new(tx, secrets.clone());
         let (commands, inbox) = channel::<(u64, Command)>();
         let cancel = Arc::new(AtomicBool::new(false));
-        let mut state = State { sink: sink.clone(), secrets, journal, settings, db: None, demos: DemoStore::default(), last: None, cancel: cancel.clone() };
+        let mut state = State { sink: sink.clone(), secrets, journal, settings, db: None, demos: DemoStore::default(), last: None, cancel: cancel.clone(), home };
         std::thread::spawn(move || {
             for (id, command) in inbox {
                 state.serve(id, command);
@@ -104,6 +110,7 @@ struct State {
     demos: DemoStore,
     last: Option<LastPreview>,
     cancel: Arc<AtomicBool>,
+    home: Option<SettingsHome>,
 }
 
 impl State {
@@ -160,8 +167,27 @@ impl State {
                 let disc = self.db.as_ref().map_or(&no_db, |(_, d)| d);
                 json!({"data": clips::preview_export(self.last.as_ref(), disc, &format)?})
             }
+            c @ (Command::LoadConfig | Command::SaveConfig { .. } | Command::ProbeConfigDir { .. } | Command::ApplyConfigDir { .. } | Command::ListPresets | Command::SavePreset { .. } | Command::LoadPreset { .. } | Command::DeletePreset { .. }) => return self.settings_command(c),
             other => return Err(EngineError::User(format!("\"{}\" is not available in this build yet.", other.name()))),
         };
+        Ok(Some(reply))
+    }
+
+    /// T11: settings, presets and the settings folder. The settings the engine connects with follow
+    /// what is loaded and saved.
+    fn settings_command(&mut self, command: Command) -> Result<Option<Value>, EngineError> {
+        let refused = || EngineError::User(format!("\"{}\" is not available in this build yet.", command.name()));
+        let home = self.home.as_mut().ok_or_else(refused)?;
+        let reply = home.handle(&command, &self.sink).ok_or_else(refused)?.map_err(EngineError::User)?;
+        match &command {
+            Command::SaveConfig { cfg } => self.settings = cfg.clone(),
+            Command::LoadConfig => {
+                if let Some(cfg) = reply.get("data").and_then(Value::as_object) {
+                    self.settings = cfg.clone();
+                }
+            }
+            _ => {}
+        }
         Ok(Some(reply))
     }
 

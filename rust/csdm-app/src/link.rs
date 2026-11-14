@@ -109,7 +109,7 @@ pub enum DbState { Pending, Ok, Error(String) }
 
 /// What a reply is the answer to.
 #[derive(Clone, Debug, PartialEq)]
-enum Pending { Hello, LoadConfig, SaveConfig, ConnectDb, RunInputsProblem(u64), ExportPreview, InjectionPreview, Other(&'static str) }
+enum Pending { Hello, LoadConfig, SaveConfig, ConnectDb, RunInputsProblem(u64), ExportPreview, InjectionPreview, Kept, Other(&'static str) }
 
 /// Something the engine said that the console, the weapon band or the shell react to.
 #[derive(Debug)]
@@ -160,6 +160,8 @@ pub struct Link {
     problem_in_flight: bool,
     /// Settings generation the RUN question was last asked for (`None`: never asked).
     problem_asked: Option<u64>,
+    /// Answers to `request`, until the tab takes them.
+    replies: HashMap<u64, Result<Value, String>>,
 }
 
 impl Link {
@@ -180,6 +182,7 @@ impl Link {
             last_edit: 0.0,
             problem_in_flight: false,
             problem_asked: None,
+            replies: HashMap::new(),
         }
     }
 
@@ -194,6 +197,15 @@ impl Link {
     pub fn send(&mut self, now: f64, command: Command) -> u64 {
         let name = command.name();
         self.send_as(now, command, Pending::Other(name))
+    }
+
+    /// A command whose answer the tab reads itself with `take_reply` (no console line on failure).
+    pub fn request(&mut self, now: f64, command: Command) -> u64 {
+        self.send_as(now, command, Pending::Kept)
+    }
+
+    pub fn take_reply(&mut self, id: u64) -> Option<Result<Value, String>> {
+        self.replies.remove(&id)
     }
 
     /// Start-up, in 3.5's order: greeting, settings, the shared connection.
@@ -294,12 +306,12 @@ impl Link {
             EngineEvent::Reply { id, result } => {
                 let what = self.pending.remove(&id).unwrap_or(Pending::Other("unknown"));
                 self.trace.note(now, format!("<- {what:?} {}", if result.is_ok() { "ok" } else { "failed" }));
-                self.answer(now, what, result, out);
+                self.answer(now, id, what, result, out);
             }
         }
     }
 
-    fn answer(&mut self, now: f64, what: Pending, result: Result<Value, String>, out: &mut Vec<Notice>) {
+    fn answer(&mut self, now: f64, id: u64, what: Pending, result: Result<Value, String>, out: &mut Vec<Notice>) {
         let data = |v: &Value| v.get("data").cloned().unwrap_or(Value::Null);
         match (what, result) {
             (Pending::Hello, Ok(v)) => self.version = data(&v).get("app_version").and_then(Value::as_str).map(String::from),
@@ -335,6 +347,9 @@ impl Link {
                     a.iter().map(|l| (l.get(0).and_then(Value::as_str).unwrap_or_default().to_string(), l.get(1).and_then(Value::as_str).unwrap_or_default().to_string())).collect()
                 });
                 out.push(Notice::Injection(lines.unwrap_or_default()));
+            }
+            (Pending::Kept, r) => {
+                self.replies.insert(id, r);
             }
             (_, Err(e)) => out.push(Notice::Failed(e)),
             (_, Ok(_)) => {}
