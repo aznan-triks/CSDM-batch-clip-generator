@@ -36,6 +36,10 @@ pub(crate) fn tables_named(sql: &str) -> Vec<String> {
         if !matches!(kw.as_str(), "from" | "join" | "into" | "update") {
             continue;
         }
+        // `a IS [NOT] DISTINCT FROM b` compares values: no table follows.
+        if kw == "from" && i >= 2 && tokens[i - 2].eq_ignore_ascii_case("distinct") {
+            continue;
+        }
         // A table, an optional alias, then "," for another table of the same FROM list.
         while i < tokens.len() && tokens[i] != "(" {
             out.push(tokens[i].to_ascii_lowercase());
@@ -135,5 +139,6 @@ mod tests {
         check_tables(r#"SELECT COUNT(DISTINCT "date") FROM (SELECT "date" FROM matches  WHERE "date" IS NOT NULL LIMIT 30) sub"#).unwrap();
         check_tables("SELECT column_name, data_type FROM information_schema.columns WHERE table_name=$1").unwrap();
         check_tables(r#"SELECT 1 FROM rounds r WHERE r."m" IN (SELECT p."m" FROM players p WHERE p.steam_id IN ($1))"#).unwrap();
+        check_tables(r#"SELECT 1 FROM damages dg WHERE dg."hitgroup" IS DISTINCT FROM 1 AND dg."x" IS NOT DISTINCT FROM 2"#).unwrap();
     }
 }

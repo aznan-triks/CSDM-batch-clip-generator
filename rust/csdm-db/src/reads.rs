@@ -7,13 +7,13 @@ use crate::conn::Query;
 use crate::discovery::{tags_query, Discovery};
 use crate::value::DbValue;
 
-const DEMO_PATH_COLS: [&str; 4] = ["demo_path", "demo_file_path", "demo_filepath", "share_code"];
+pub const DEMO_PATH_COLS: [&str; 4] = ["demo_path", "demo_file_path", "demo_filepath", "share_code"];
 /// Wider list used by the clutch and tag code paths.
 const DEMO_PATH_COLS_WIDE: [&str; 6] = ["demo_path", "demo_file_path", "demo_filepath", "share_code", "file_path", "path"];
 /// `export_tags` list (no share_code).
 const DEMO_PATH_COLS_EXPORT: [&str; 5] = ["demo_path", "demo_file_path", "demo_filepath", "file_path", "path"];
-const MATCH_KEY_COLS: [&str; 3] = ["checksum", "id", "match_id"];
-const CHILD_MATCH_KEY_COLS: [&str; 3] = ["match_checksum", "match_id", "checksum"];
+pub const MATCH_KEY_COLS: [&str; 3] = ["checksum", "id", "match_id"];
+pub const CHILD_MATCH_KEY_COLS: [&str; 3] = ["match_checksum", "match_id", "checksum"];
 /// Rows shown when a demo path is not found (`_get_demo_checksum` diagnostic).
 const SAMPLE_ROWS: u32 = 5;
 

@@ -10,6 +10,7 @@ pub mod grid;
 pub mod import35;
 pub mod migrate;
 pub mod presets;
+pub mod preview;
 pub mod registries;
 pub mod settings;
 pub mod theme_v12;
