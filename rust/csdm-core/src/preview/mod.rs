@@ -31,6 +31,9 @@ pub const DISPLAY_DATE_FORMATS: [&str; 2] = ["%d-%m-%Y", "%Y-%m-%d"];
 /// `date_to` includes its whole day.
 pub const DAY_LAST_SECOND: (u32, u32, u32) = (23, 59, 59);
 
+/// Time of day in the preview banner (3.5 `strftime('%H:%M:%S')`).
+pub const BANNER_TIME_FORMAT: &str = "%H:%M:%S";
+
 /// The whole table, as exported (`preview()["mate_pov"]["eye_height"]`).
 pub fn preview() -> &'static Value {
     static TABLE: OnceLock<Value> = OnceLock::new();

@@ -1,6 +1,7 @@
 //! Non-kill events of the database query: damages (3.5 `_query_damages`) and shots
 //! (`_query_shots`).
 
+use csdm_db::reads::{CHILD_MATCH_KEY_COLS, DEMO_PATH_COLS, MATCH_KEY_COLS};
 use super::{clauses, int_db, marks, run, tie, val, Ctx};
 use crate::preview::cfg;
 use crate::preview::event::Event;
@@ -58,7 +59,7 @@ pub fn damages(cx: &mut Ctx, cfg: &Settings, sids: &[String], results: &mut Demo
     let d = cx.disc;
     let dc = d.find_col("matches", &["demo_path", "demo_file_path", "share_code"]);
     let mkk = d.find_col("damages", &["match_checksum", "match_id"]);
-    let mkm = d.find_col("matches", &["checksum", "id", "match_id"]);
+    let mkm = d.find_col("matches", &MATCH_KEY_COLS);
     let tc = d.find_col("damages", &["tick"]);
     let ak = d.find_col("damages", &["attacker_steam_id", "attacker_steamid"]);
     let vk = d.find_col("damages", &["victim_steam_id", "victim_steamid"]);
@@ -125,9 +126,9 @@ pub fn shots(cx: &mut Ctx, cfg: &Settings, sids: &[String], results: &mut DemoEv
         return Ok(());
     }
     let d = cx.disc;
-    let dc = d.find_col("matches", &["demo_path", "demo_file_path", "demo_filepath", "share_code"]);
-    let mkk = d.find_col("shots", &["match_checksum", "match_id", "checksum"]);
-    let mkm = d.find_col("matches", &["checksum", "id", "match_id"]);
+    let dc = d.find_col("matches", &DEMO_PATH_COLS);
+    let mkk = d.find_col("shots", &CHILD_MATCH_KEY_COLS);
+    let mkm = d.find_col("matches", &MATCH_KEY_COLS);
     let tc = d.find_col("shots", &["tick"]);
     let pk = d.find_col("shots", &["player_steam_id", "attacker_steam_id", "shooter_steam_id", "steam_id"]);
     let wc = d.find_col("shots", &["weapon_name", "weapon", "weapon_type"]);

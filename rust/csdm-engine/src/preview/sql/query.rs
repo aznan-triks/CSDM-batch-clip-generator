@@ -1,5 +1,6 @@
 //! The kills / deaths query and the rounds query of 3.5 `_query_events`.
 
+use csdm_db::reads::{CHILD_MATCH_KEY_COLS, DEMO_PATH_COLS, MATCH_KEY_COLS};
 use super::{behaviour, clauses, int_db, marks, run, tie, val, Ctx};
 use crate::preview::cfg;
 use crate::preview::event::Event;
@@ -48,9 +49,9 @@ pub fn kills_and_rounds(cx: &mut Ctx, cfg: &Settings, sids: &[String], results: 
     let tc = d.find_col("kills", &["tick", "killer_tick", "round_tick"]);
     // Victim death tick: for grenades / molotovs the kill tick is the throw.
     let dtc = d.find_col("kills", &["victim_death_tick", "death_tick", "killed_tick", "victim_tick"]);
-    let dc = d.find_col("matches", &["demo_path", "demo_file_path", "demo_filepath", "share_code"]);
-    let mkk = d.find_col("kills", &["match_checksum", "match_id", "checksum"]);
-    let mkm = d.find_col("matches", &["checksum", "id", "match_id"]);
+    let dc = d.find_col("matches", &DEMO_PATH_COLS);
+    let mkk = d.find_col("kills", &CHILD_MATCH_KEY_COLS);
+    let mkm = d.find_col("matches", &MATCH_KEY_COLS);
     let kc = d.find_col("kills", &["killer_steam_id", "attacker_steam_id"]);
     let mut vc = d.find_col("kills", &["victim_steam_id", "killed_steam_id"]);
     let wc = d.find_col("kills", &["weapon_name", "weapon", "weapon_type"]);
@@ -223,7 +224,7 @@ pub fn kills_and_rounds(cx: &mut Ctx, cfg: &Settings, sids: &[String], results: 
     // (h) rounds follow `_events_rounds` (3.5 read `events_rounds`, never set); errors raise.
     if cfg::on(cfg, "_events_rounds") && cx.disc.has_table("rounds") {
         let rtc = cx.disc.find_col("rounds", &["start_tick", "freeze_time_end_tick", "tick", "end_tick"]);
-        let rmk = cx.disc.find_col("rounds", &["match_checksum", "match_id", "checksum"]);
+        let rmk = cx.disc.find_col("rounds", &CHILD_MATCH_KEY_COLS);
         let pmk = cx.disc.find_col("players", &["match_checksum", "match_id"]);
         if let (Some(rtc), Some(rmk), Some(pmk)) = (rtc, rmk, pmk) {
             let mut params = sid_params.clone();

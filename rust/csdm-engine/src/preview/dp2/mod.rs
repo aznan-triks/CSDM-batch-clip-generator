@@ -12,7 +12,7 @@ mod store;
 pub use filters::no_trois_shot;
 pub use store::{Cache, DemoStore, Names, Section, Sections};
 
-use super::cfg::{cfg_int, on};
+use super::cfg::{cfg_int, on, split_required_optional};
 use super::ctx::Ports;
 use super::event::{Arena, DemoEvents, Event, EventId};
 use super::Ctx;
@@ -134,11 +134,6 @@ fn stamp_mf(arena: &mut Arena, events: &[EventId], key: &str) {
     for &id in events {
         arena.get_mut(id).stamp_mf(key);
     }
-}
-
-/// `_split_required_optional`: (★ Must keys, optional keys), each in the given order.
-fn split_required_optional<'k>(cfg: &Settings, keys: &[&'k str]) -> (Vec<&'k str>, Vec<&'k str>) {
-    keys.iter().copied().partition(|k| on(cfg, &format!("{k}_req")))
 }
 
 /// `_dp2_required_sections`: the sections the active and excluded filters read, "positions" when a

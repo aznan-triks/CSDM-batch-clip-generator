@@ -199,7 +199,7 @@ impl State {
         {
             let ports = self.ports();
             ports.log(&format!("\n{rule}"), Level::Dim);
-            ports.log(&format!("  🔍 PREVIEW  —  {}", chrono::Local::now().format("%H:%M:%S")), Level::Info);
+            ports.log(&format!("  🔍 PREVIEW  —  {}", chrono::Local::now().format(csdm_core::preview::BANNER_TIME_FORMAT)), Level::Info);
             ports.log(&rule, Level::Dim);
             ports.state(StateName::Summary, json!({"text": "  Computing…", "level": "running"}));
             ports.state(StateName::Buttons, json!({"stop": true, "stop_label": "⏸ Stop Preview"}));

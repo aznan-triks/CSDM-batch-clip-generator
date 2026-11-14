@@ -20,7 +20,7 @@ const NEVER_MATCHING_FILTERS: [NeverMatching; 1] = [(
 /// event must match every ★ filter that applies to it and at least one optional one.
 fn dead_filter_reason(cfg: &Settings, flags: &Settings, category: &str) -> Option<&'static str> {
     let active: Vec<&str> = registries().kill_filters.iter().filter(|f| on(cfg, &f.key) && f.applies_to.iter().any(|c| c == category)).map(|f| f.key.as_str()).collect();
-    let (required, optional): (Vec<&str>, Vec<&str>) = active.into_iter().partition(|k| on(cfg, &format!("{k}_req")));
+    let (required, optional) = crate::preview::cfg::split_required_optional(cfg, &active);
     let dead = |k: &str| NEVER_MATCHING_FILTERS.iter().find(|(key, is_dead, _)| *key == k && is_dead(flags)).map(|(_, _, why)| *why);
     if let Some(why) = required.iter().find_map(|k| dead(k)) {
         return Some(why);

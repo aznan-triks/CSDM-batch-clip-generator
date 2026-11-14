@@ -112,6 +112,11 @@ pub fn sids(cfg: &Settings) -> Vec<String> {
     }
 }
 
+/// `_split_required_optional`: (★ Must keys, optional keys), each in the given order.
+pub fn split_required_optional<'k>(cfg: &Settings, keys: &[&'k str]) -> (Vec<&'k str>, Vec<&'k str>) {
+    keys.iter().copied().partition(|k| on(cfg, &format!("{k}_req")))
+}
+
 /// Python `a and b` / `a or b` on values (3.5 stores the operand, not a bool).
 fn py_and(a: Value, b: Value) -> Value {
     if truthy(&a) { b } else { a }

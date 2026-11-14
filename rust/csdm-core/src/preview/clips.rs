@@ -22,9 +22,6 @@ pub const PICKER_UNKNOWN_DATE: &str = "??-??-???? ??:??";
 /// `_CS2_DEMO_BREAKS` cutoffs (`data/preview.json`) are dates in this form.
 pub const DEMO_BREAK_CUTOFF_FORMAT: &str = "%Y-%m-%d";
 
-/// `list_all_demos`: the match key columns `_find_col` tries (same list as `csdm_db::reads`),
-/// to know whether the demo read selects one.
-pub const MATCH_KEY_COLS: [&str; 3] = ["checksum", "id", "match_id"];
 
 /// `describe_filters` `default_paths` (3.5 `csdm/config.py`): where the CS Demo Manager installer
 /// puts its command-line entry point under %LOCALAPPDATA%, most likely first.
