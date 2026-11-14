@@ -76,6 +76,12 @@ pub fn postgres(tab: &mut SettingsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
         _ => t.muted,
     };
     status_line(ui, &tab.pg_status, color);
+    // Before any test, a start-up connection that failed is said here, where it is fixed (first run).
+    if tab.pg_state == PgState::Idle {
+        if let crate::link::DbState::Error(e) = &cx.link.db {
+            status_line(ui, &format!("Not connected: {e}"), t.rose);
+        }
+    }
     // The guidance stays after a test: a failed test is when it is needed most.
     hint(ui, t, PG_HINT);
 }
@@ -353,7 +359,7 @@ fn style_controls(ui: &mut egui::Ui, cx: &mut CardCx) {
     egui::CollapsingHeader::new(egui::RichText::new("Per-card style").font(regular(FONT_BODY)).color(t.muted)).id_salt("per-card-style").show(ui, |ui| {
         egui::Grid::new("per-card-style-grid").num_columns(2).show(ui, |ui| {
             for (id, title) in STYLED_CARDS {
-                ui.label(egui::RichText::new(title).font(regular(FONT_SMALL)).color(t.txt));
+                let l = ui.label(egui::RichText::new(title).font(regular(FONT_SMALL)).color(t.txt));
                 let own = overrides.get(id).and_then(Value::as_str).filter(|s| CARD_STYLES.contains(s)).unwrap_or(DEFAULT_STYLE).to_string();
                 let shown = if own == DEFAULT_STYLE { format!("Default: {global}") } else { own.clone() };
                 let mut pick = own.clone();
@@ -362,7 +368,7 @@ fn style_controls(ui: &mut egui::Ui, cx: &mut CardCx) {
                     for s in CARD_STYLES {
                         ui.selectable_value(&mut pick, s.to_string(), s);
                     }
-                }).response.on_hover_text(format!("How the {title} card draws its settings. Default follows Card style above"));
+                }).response.labelled_by(l.id).on_hover_text(format!("How the {title} card draws its settings. Default follows Card style above"));
                 if pick != own {
                     if pick == DEFAULT_STYLE {
                         next.remove(id);

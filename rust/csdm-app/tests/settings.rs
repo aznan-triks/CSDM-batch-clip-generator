@@ -14,7 +14,7 @@ use csdm_engine::import35::SearchPlaces;
 use csdm_engine::settings_home::{SettingsEngine, SettingsHome};
 use csdm_engine::{Command, Engine, EngineEvent, Secrets};
 use eframe::egui;
-use egui_kittest::kittest::{NodeT, Queryable};
+use egui_kittest::kittest::Queryable;
 use egui_kittest::Harness;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -22,7 +22,8 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 
-const SIZE: egui::Vec2 = egui::Vec2::new(1600.0, 1400.0);
+/// Tall enough that every card of the tab is on screen: clicks land where the node is drawn.
+const SIZE: egui::Vec2 = egui::Vec2::new(1600.0, 3200.0);
 const STEP_DT: f32 = 1.0 / 60.0;
 const SECRET: &str = "pw-t11-driven-secret";
 const PG_HINT: &str = "Use the values shown in CS Demo Manager › Settings › Database. CS Demo Manager must be installed and its database running.";
@@ -121,6 +122,16 @@ impl Rig {
 
     fn type_into(&mut self, label: &str, text: &str) {
         self.h.get_by_label(label).click();
+        self.h.run();
+        self.h.get_by_label(label).type_text(text);
+        self.h.run();
+    }
+
+    /// Selects the box's text first, then types over it.
+    fn replace_in(&mut self, label: &str, text: &str) {
+        self.h.get_by_label(label).click();
+        self.h.run();
+        self.h.key_press_modifiers(egui::Modifiers::COMMAND, egui::Key::A);
         self.h.run();
         self.h.get_by_label(label).type_text(text);
         self.h.run();
@@ -291,12 +302,12 @@ fn settings_05_ui_theme_ground_accent_card_styles_font() {
     r.click("Card style: tiles");
     assert_eq!(r.setting("ui_card_style"), Some(json!("tiles")));
     r.click("Per-card style");
-    r.h.get_all_by_label("Default: tiles").nth(1).expect("Demo Selection's choice").click();
+    r.click("Demo Selection");
     r.h.run();
     r.click("sentence");
     assert_eq!(r.setting("ui_card_style_overrides"), Some(json!({"demo-selection": "sentence"})));
-    r.type_into("Font family", "Consolas");
-    assert_eq!(r.setting("ui_font_family"), Some(json!("autoConsolas")), "typed after the stored word");
+    r.replace_in("Font family", "Consolas");
+    assert_eq!(r.setting("ui_font_family"), Some(json!("Consolas")));
     r.settle();
     let saved = read(&r.v5().join(CONFIG_FILE));
     assert_eq!((&saved["theme_bg"], &saved["ui_card_style"]), (&json!("amoled"), &json!("tiles")));
@@ -305,13 +316,20 @@ fn settings_05_ui_theme_ground_accent_card_styles_font() {
 #[test]
 fn settings_06_ui_layout_apply_clamps_auto_reset_cards_tooltips() {
     let mut r = rig(Some(base()), |_| {});
-    r.type_into("Window width", "0");
+    r.replace_in("Window width", "500");
     r.click("Apply");
     assert_eq!((r.setting("ui_window_w"), r.setting("ui_split_pct")), (Some(json!(1000)), Some(json!(60))), "clamped like 3.5");
+    // Apply resized the window itself; give the test its tall window back to reach the next buttons.
+    r.h.set_size(SIZE);
+    r.h.run();
     r.click("Auto");
     assert_eq!((r.setting("ui_window_w"), r.setting("ui_window_h")), (Some(json!(1651)), Some(json!(907))), "86 % x 84 % of the screen");
+    r.h.set_size(SIZE);
+    r.h.run();
     r.click("Reset default");
     assert_eq!((r.setting("ui_window_w"), r.setting("ui_window_h")), (Some(json!(1600)), Some(json!(900))));
+    r.h.set_size(SIZE);
+    r.h.run();
     r.click("Reset card layout");
     assert_eq!(r.setting("ui_sections"), Some(json!({})));
     assert!(r.h.query_by_label("PostgreSQL user name").is_none(), "hover only by default");

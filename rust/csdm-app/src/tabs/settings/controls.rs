@@ -120,18 +120,21 @@ pub fn path_box(ui: &mut egui::Ui, cx: &mut CardCx, picker: &mut Picker, key: &s
 pub fn switch(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, tip_text: &str) {
     let on = bool_of(cx, key);
     let t = cx.theme;
-    let r = ui.horizontal(|ui| {
-        let (rect, r) = ui.allocate_exact_size(Vec2::from(SETTINGS_SWITCH), Sense::click());
-        r.widget_info(|| egui::WidgetInfo::selected(egui::Role::CheckBox, true, on, name));
-        let radius = rect.height() / 2.0;
-        let (fill, edge) = if on { (t.accent, t.accent) } else { (t.surface2, t.hair) };
-        ui.painter().rect(rect, radius, fill, Stroke::new(1.0, edge), StrokeKind::Inside);
-        let x = if on { rect.right() - radius } else { rect.left() + radius };
-        ui.painter().circle_filled(egui::pos2(x, rect.center().y), radius - 2.0, if on { t.on_accent } else { t.muted });
-        let words = ui.add(egui::Label::new(egui::RichText::new(name).font(regular(FONT_BODY)).color(t.txt)).sense(Sense::click()));
-        r.union(words)
-    });
-    let r = tip(ui, t, r.inner, tip_text, cx.always_tips);
+    // One widget for the track and its words: one accessible checkbox, clickable on both.
+    let galley = ui.painter().layout_no_wrap(name.to_string(), regular(FONT_BODY), t.txt);
+    let track = Vec2::from(SETTINGS_SWITCH);
+    let gap = ui.spacing().item_spacing.x;
+    let size = Vec2::new(track.x + gap + galley.size().x, track.y.max(galley.size().y));
+    let (whole, r) = ui.allocate_exact_size(size, Sense::click());
+    r.widget_info(|| egui::WidgetInfo::selected(egui::Role::CheckBox, true, on, name));
+    let rect = egui::Rect::from_min_size(egui::pos2(whole.left(), whole.center().y - track.y / 2.0), track);
+    let radius = rect.height() / 2.0;
+    let (fill, edge) = if on { (t.accent, t.accent) } else { (t.surface2, if r.hovered() { t.accent } else { t.hair }) };
+    ui.painter().rect(rect, radius, fill, Stroke::new(1.0, edge), StrokeKind::Inside);
+    let x = if on { rect.right() - radius } else { rect.left() + radius };
+    ui.painter().circle_filled(egui::pos2(x, rect.center().y), radius - 2.0, if on { t.on_accent } else { t.muted });
+    ui.painter().galley(egui::pos2(rect.right() + gap, whole.center().y - galley.size().y / 2.0), galley, t.txt);
+    let r = tip(ui, t, r, tip_text, cx.always_tips);
     if r.clicked() {
         cx.link.set(cx.now, key, json!(!on));
     }
