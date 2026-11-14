@@ -35,6 +35,8 @@ pub enum DbError {
     UnsupportedType { column: String, type_name: String },
     /// A parameter value that cannot be sent as the type the server expects.
     BadParam { index: usize, type_name: String, detail: String },
+    /// A request this layer refuses (empty selection, unusable file): the sentence itself.
+    Invalid(String),
 }
 
 impl DbError {
@@ -160,6 +162,7 @@ impl fmt::Display for DbError {
                 f,
                 "The database column '{column}' has the type '{type_name}', which this app cannot read. Please report this bug."
             ),
+            DbError::Invalid(sentence) => f.write_str(sentence),
             DbError::BadParam { .. } => write!(
                 f,
                 "Internal error: a value sent to the database does not match the column it is compared with. Please report this bug."

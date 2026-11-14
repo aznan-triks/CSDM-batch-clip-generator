@@ -9,8 +9,12 @@ publish.workspace = true
 csdm-core = { workspace = true }
 postgres = { version = "0.19.14", features = ["with-chrono-0_4", "with-uuid-1"] }
 bytes = "1"
-chrono = { version = "0.4.45", default-features = false, features = ["std"] }
+chrono = { version = "0.4.45", default-features = false, features = ["std", "clock"] }
 uuid = "1.29.2"
 rust_decimal = { version = "1.43.0", features = ["db-postgres"] }
 log = "0.4.35"
 serde_json = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

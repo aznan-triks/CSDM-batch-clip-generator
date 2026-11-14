@@ -39,6 +39,23 @@ $env:CSDM_REFERENCE_PYTHON = "<python with the 3.5 requirements>"   # e.g. C:/Py
 The golden bench (Python 3.5 vs Rust on real data, read-only) joins this
 command with T1.
 
+## Tag writes bench (T5, by hand)
+
+`Db` cannot write. Tag writes go through `csdm_db::tags::TagWriter`, a separate connection
+whose statements are built only in `tags.rs`. Proof that they match 3.5, on a throwaway copy:
+
+```powershell
+python tools/t5_tags_bench.py --self-test
+python tools/t5_tags_bench.py --config <copy of csdm_config.json> --pg-bin <PostgreSQL 16 bin>
+```
+
+The bench creates a local cluster (`initdb`, loopback only, port 54329), copies the schema and
+the tag tables from the author's database with a read-only `pg_dump`, replays one scenario
+through the 3.5 engine and through `examples/t5_tags.rs`, compares tags, links and the id
+sequence, then stops the cluster and deletes everything. It refuses any target that is not the
+loopback or that carries the author's database name. Intended differences are listed in the
+script (`EXPECTED`) and checked.
+
 ## Data exported from 3.5
 
 `csdm-core/data/settings.json` and `registries.json` were exported from the

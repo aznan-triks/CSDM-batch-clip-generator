@@ -275,7 +275,9 @@ dependencies = [
  "log",
  "postgres",
  "rust_decimal",
+ "serde",
  "serde_json",
+ "tempfile",
  "uuid",
 ]
 
