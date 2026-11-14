@@ -244,15 +244,22 @@ mod tests {
         install_fonts(&ctx);
         // One frame builds the font atlas; its texture upload is not needed here.
         ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
-        let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut dirs = vec![std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src")];
         let mut symbols = std::collections::BTreeSet::new();
-        for entry in std::fs::read_dir(src).unwrap() {
-            let path = entry.unwrap().path();
-            if path.file_name().is_some_and(|n| n == "icons_data.rs") {
-                continue;
-            }
-            for line in std::fs::read_to_string(&path).unwrap().lines() {
-                symbols.extend(line.split("//").next().unwrap_or_default().chars().filter(|c| !c.is_ascii()));
+        while let Some(dir) = dirs.pop() {
+            for entry in std::fs::read_dir(dir).unwrap() {
+                let path = entry.unwrap().path();
+                // Tabs live in sub-folders (`tabs/settings/`): their symbols are printed too.
+                if path.is_dir() {
+                    dirs.push(path);
+                    continue;
+                }
+                if path.file_name().is_some_and(|n| n == "icons_data.rs") {
+                    continue;
+                }
+                for line in std::fs::read_to_string(&path).unwrap().lines() {
+                    symbols.extend(line.split("//").next().unwrap_or_default().chars().filter(|c| !c.is_ascii()));
+                }
             }
         }
         assert!(!symbols.is_empty(), "the scan found the shell's symbols");

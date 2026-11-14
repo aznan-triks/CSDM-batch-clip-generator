@@ -7,6 +7,7 @@
 
 pub mod controls;
 mod cards;
+pub mod font;
 
 use crate::grid::{CardCx, CardDecl, TabView};
 use controls::{native_picker, Picker};

@@ -308,6 +308,12 @@ fn settings_05_ui_theme_ground_accent_card_styles_font() {
     assert_eq!(r.setting("ui_card_style_overrides"), Some(json!({"demo-selection": "sentence"})));
     r.replace_in("Font family", "Consolas");
     assert_eq!(r.setting("ui_font_family"), Some(json!("Consolas")));
+    // A family Windows does not list is said in the console; the built-in font stays.
+    r.replace_in("Font family", "No Such Font 7f3a");
+    r.settle();
+    let said = "The font \"No Such Font 7f3a\" is not installed: the built-in font is used. Check its name in Windows › Fonts.";
+    let told: Vec<String> = r.h.state().console.texts().into_iter().filter(|l| l.contains("is not installed")).collect();
+    assert_eq!(told, [said], "said once, for the settled name");
     r.settle();
     let saved = read(&r.v5().join(CONFIG_FILE));
     assert_eq!((&saved["theme_bg"], &saved["ui_card_style"]), (&json!("amoled"), &json!("tiles")));
