@@ -16,6 +16,12 @@ pub trait Ports: Sync {
     fn state(&self, name: StateName, payload: Value);
     /// Full detail of a failure, for the journal only (never shown on screen).
     fn trace(&self, _detail: &str) {}
+    /// 3.5 `log_parts`: one console line in several colours. Without a console that draws them,
+    /// the line in the first part's level.
+    fn log_parts(&self, parts: &[(String, Level)]) {
+        let text: String = parts.iter().map(|(t, _)| t.as_str()).collect();
+        self.log(&text, parts.first().map_or(Level::Plain, |p| p.1));
+    }
 }
 
 /// Drops everything (unit tests).

@@ -1,13 +1,16 @@
 //! Orchestration: the only API the UI talks to (commands in, events out).
 //! Threads and channels, no async runtime (ticket 07).
 
+pub mod batch;
 pub mod command;
 pub mod error;
 pub mod event;
 pub mod import35;
 pub mod journal;
 pub mod preview;
+pub mod process;
 pub mod real;
+pub mod run;
 pub mod scripted;
 
 pub use command::Command;

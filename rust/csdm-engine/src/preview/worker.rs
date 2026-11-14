@@ -40,7 +40,7 @@ pub fn run_preview(cx: &mut Ctx, cfg: &Settings) -> Option<Outcome> {
         }
     };
     cx.ports.state(StateName::Buttons, json!({"stop": false, "stop_label": "⏸ Stop"}));
-    // No batch run exists in this build (T4): the busy state always ends here.
+    // Previews and runs share the engine thread: no run can be busy here, the busy state ends.
     cx.ports.state(StateName::ButtonsIdle, Value::Null);
     outcome
 }

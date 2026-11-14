@@ -4,6 +4,7 @@
 //! (`values`, `data/*.json`); every other crate names them from here
 //! (hardcode guard: csdm-app/tests/hardcode.rs).
 
+pub mod batch;
 pub mod card_layout;
 pub mod error;
 pub mod grid;
