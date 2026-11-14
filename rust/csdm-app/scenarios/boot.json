@@ -1,0 +1,9 @@
+{"steps": [
+  {"on": "hello", "events": [
+    {"log": {"message": "CSDM Batch Clips Generator 5.0.0-dev -- engine ready", "level": "ok"}},
+    {"log": {"message": "Development build: the window runs on a scripted engine until the real one lands.", "level": "dim"}}
+  ], "reply": {"ok": {"data": {"app_version": "5.0.0-dev"}}}},
+  {"on": "load_config", "reply": {"ok": {"data": {"theme_bg": "white", "theme_accent": "#2563EB"}}}},
+  {"on": "connect_db", "reply": {"ok": {"data": {}}}},
+  {"on": "run_inputs_problem", "reply": {"ok": {"problem": null}}}
+]}

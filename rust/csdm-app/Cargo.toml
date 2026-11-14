@@ -8,6 +8,12 @@ publish.workspace = true
 [dependencies]
 csdm-core = { workspace = true }
 csdm-engine = { workspace = true }
+serde_json = { workspace = true }
+# Same toolkit and features as the measured prototype (ticket 06): glow renderer, accessibility tree.
+eframe = { version = "0.37.0", default-features = false, features = ["glow", "default_fonts", "accesskit"] }
+# The weapon silhouette is the 3.5 SVG, rasterised once at start-up.
+resvg = { version = "0.48.1", default-features = false }
 
 [dev-dependencies]
-serde_json = { workspace = true }
+egui_kittest = { version = "0.37.0", features = ["snapshot", "wgpu", "eframe"] }
+tempfile = { workspace = true }
