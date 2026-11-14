@@ -6,7 +6,7 @@ use crate::error::DbError;
 use crate::guard::check_tables;
 use crate::value::{decode, DbValue, Param, Raw, Row};
 use postgres::types::ToSql;
-use postgres::{Client, Config, NoTls};
+use postgres::{Client, Config, NoTls, Transaction};
 use std::time::Duration;
 
 /// 3.5 passes `connect_timeout=5` to psycopg2 (`core.py` `_pg_connect`).
@@ -100,42 +100,13 @@ impl Db {
 
     /// Runs one read in its own READ ONLY transaction; every cell decoded by its SQL type.
     pub fn run(&mut self, q: &Query) -> Result<Vec<Row>, DbError> {
-        check_tables(&q.sql)?;
         let mut tx = self
             .client
             .build_transaction()
             .read_only(true)
             .start()
             .map_err(|e| DbError::query(&e, &q.sql))?;
-        let stmt = tx.prepare(&q.sql).map_err(|e| DbError::query(&e, &q.sql))?;
-        let params: Vec<Param> = q.params.iter().map(Param).collect();
-        let refs: Vec<&(dyn ToSql + Sync)> = params.iter().map(|p| p as &(dyn ToSql + Sync)).collect();
-        let rows = tx.query(&stmt, &refs).map_err(|e| match bad_param(&e, &stmt) {
-            Some(err) => err,
-            None => DbError::query(&e, &q.sql),
-        })?;
-        let columns: Vec<String> = stmt.columns().iter().map(|c| c.name().to_string()).collect();
-        let mut out = Vec::with_capacity(rows.len());
-        for row in &rows {
-            let mut cells = Vec::with_capacity(columns.len());
-            for (i, col) in row.columns().iter().enumerate() {
-                let raw: Raw = row.try_get(i).map_err(|e| DbError::query(&e, &q.sql))?;
-                let cell = match raw.0 {
-                    None => DbValue::Null,
-                    Some(bytes) => match decode(col.type_(), bytes) {
-                        Ok(Some(v)) => v,
-                        Ok(None) => {
-                            return Err(DbError::UnsupportedType { column: col.name().into(), type_name: col.type_().name().into() })
-                        }
-                        Err(e) => {
-                            return Err(DbError::Server { detail: format!("cannot decode column '{}': {e}", col.name()) })
-                        }
-                    },
-                };
-                cells.push(cell);
-            }
-            out.push(cells);
-        }
+        let (columns, out) = fetch(&mut tx, q)?;
         tx.rollback().map_err(|e| DbError::query(&e, &q.sql))?;
         if let Some(t) = self.trace.as_mut() {
             t.push(Executed { query: q.clone(), columns, rows: out.clone() });
@@ -144,22 +115,56 @@ impl Db {
     }
 }
 
-/// The session every connection opens: read-only by default, 3.5's timeout.
+/// Runs `q` inside `tx` (tables guarded): column names and every cell decoded by its SQL type.
+pub(crate) fn fetch(tx: &mut Transaction<'_>, q: &Query) -> Result<(Vec<String>, Vec<Row>), DbError> {
+    check_tables(&q.sql)?;
+    let stmt = tx.prepare(&q.sql).map_err(|e| DbError::query(&e, &q.sql))?;
+    let params: Vec<Param> = q.params.iter().map(Param).collect();
+    let refs: Vec<&(dyn ToSql + Sync)> = params.iter().map(|p| p as &(dyn ToSql + Sync)).collect();
+    let rows = tx.query(&stmt, &refs).map_err(|e| match bad_param(&e, &stmt) {
+        Some(err) => err,
+        None => DbError::query(&e, &q.sql),
+    })?;
+    let columns: Vec<String> = stmt.columns().iter().map(|c| c.name().to_string()).collect();
+    let mut out = Vec::with_capacity(rows.len());
+    for row in &rows {
+        let mut cells = Vec::with_capacity(columns.len());
+        for (i, col) in row.columns().iter().enumerate() {
+            let raw: Raw = row.try_get(i).map_err(|e| DbError::query(&e, &q.sql))?;
+            let cell = match raw.0 {
+                None => DbValue::Null,
+                Some(bytes) => match decode(col.type_(), bytes) {
+                    Ok(Some(v)) => v,
+                    Ok(None) => {
+                        return Err(DbError::UnsupportedType { column: col.name().into(), type_name: col.type_().name().into() })
+                    }
+                    Err(e) => return Err(DbError::Server { detail: format!("cannot decode column '{}': {e}", col.name()) }),
+                },
+            };
+            cells.push(cell);
+        }
+        out.push(cells);
+    }
+    Ok((columns, out))
+}
+
+/// The session every read connection opens: read-only by default, 3.5's timeout.
 pub(crate) fn session_config(p: &PgParams) -> Result<Config, DbError> {
+    let mut cfg = writable_config(p)?;
+    cfg.options(READ_ONLY_SESSION);
+    Ok(cfg)
+}
+
+/// The tag writer's session (`tags.rs`): same server and timeout, without the read-only lock.
+pub(crate) fn writable_config(p: &PgParams) -> Result<Config, DbError> {
     let port = p.port_number()?;
     let mut cfg = Config::new();
-    cfg.host(&p.host)
-        .port(port)
-        .user(&p.user)
-        .password(&p.pass)
-        .dbname(&p.db)
-        .options(READ_ONLY_SESSION)
-        .connect_timeout(CONNECT_TIMEOUT);
+    cfg.host(&p.host).port(port).user(&p.user).password(&p.pass).dbname(&p.db).connect_timeout(CONNECT_TIMEOUT);
     Ok(cfg)
 }
 
 /// A parameter the driver refused to encode (no SQLSTATE, conversion error).
-fn bad_param(e: &postgres::Error, stmt: &postgres::Statement) -> Option<DbError> {
+pub(crate) fn bad_param(e: &postgres::Error, stmt: &postgres::Statement) -> Option<DbError> {
     if e.code().is_some() || e.is_closed() {
         return None;
     }
