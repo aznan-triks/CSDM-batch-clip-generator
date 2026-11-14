@@ -14,6 +14,8 @@ use std::sync::Mutex;
 pub trait Ports: Sync {
     fn log(&self, message: &str, level: Level);
     fn state(&self, name: StateName, payload: Value);
+    /// Full detail of a failure, for the journal only (never shown on screen).
+    fn trace(&self, _detail: &str) {}
 }
 
 /// Drops everything (unit tests).
