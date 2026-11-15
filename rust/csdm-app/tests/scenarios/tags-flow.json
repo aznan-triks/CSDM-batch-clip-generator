@@ -1,0 +1,3229 @@
+{
+  "steps": [
+    {
+      "on": "hello",
+      "reply": {
+        "ok": {
+          "data": {
+            "app_version": "5.0.0-dev"
+          }
+        }
+      }
+    },
+    {
+      "on": "load_config",
+      "reply": {
+        "ok": {
+          "data": {
+            "pg_host": "127.0.0.1",
+            "pg_port": 54329,
+            "pg_user": "csdm_bench",
+            "pg_pass": "trust",
+            "pg_db": "csdm_t9"
+          }
+        }
+      }
+    },
+    {
+      "on": "connect_db",
+      "reply": {
+        "ok": {
+          "data": {
+            "players": [],
+            "names": {},
+            "date_col": "overtime_count",
+            "date_col_type": "integer",
+            "weapons": [],
+            "schema": {
+              "kills": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "killer_steam_id",
+                "killer_name",
+                "killer_team_name",
+                "killer_side",
+                "victim_steam_id",
+                "victim_name",
+                "victim_team_name",
+                "victim_side",
+                "assister_steam_id",
+                "assister_name",
+                "assister_team_name",
+                "assister_side",
+                "is_headshot",
+                "is_assisted_flash",
+                "penetrated_objects",
+                "killer_x",
+                "killer_y",
+                "killer_z",
+                "is_killer_airborne",
+                "is_killer_blinded",
+                "victim_x",
+                "victim_y",
+                "victim_z",
+                "is_victim_airborne",
+                "is_victim_blinded",
+                "is_victim_inspecting_weapon",
+                "assister_x",
+                "assister_y",
+                "assister_z",
+                "weapon_name",
+                "weapon_type",
+                "is_killer_controlling_bot",
+                "is_victim_controlling_bot",
+                "is_assister_controlling_bot",
+                "is_trade_kill",
+                "is_trade_death",
+                "is_through_smoke",
+                "is_no_scope",
+                "distance"
+              ],
+              "matches": [
+                "checksum",
+                "demo_path",
+                "game_type",
+                "game_mode",
+                "game_mode_str",
+                "is_ranked",
+                "kill_count",
+                "death_count",
+                "assist_count",
+                "shot_count",
+                "analyze_date",
+                "winner_name",
+                "winner_side",
+                "overtime_count",
+                "max_rounds",
+                "has_vac_live_ban"
+              ],
+              "demos": [
+                "checksum",
+                "name",
+                "game",
+                "source",
+                "type",
+                "date",
+                "map_name",
+                "tick_count",
+                "tickrate",
+                "framerate",
+                "duration",
+                "server_name",
+                "client_name",
+                "network_protocol",
+                "build_number",
+                "share_code"
+              ],
+              "rounds": [
+                "id",
+                "match_checksum",
+                "number",
+                "start_tick",
+                "start_frame",
+                "freeze_time_end_tick",
+                "freeze_time_end_frame",
+                "end_tick",
+                "end_frame",
+                "end_officially_tick",
+                "end_officially_frame",
+                "team_a_name",
+                "team_b_name",
+                "team_a_score",
+                "team_b_score",
+                "team_a_side",
+                "team_b_side",
+                "team_a_start_money",
+                "team_b_start_money",
+                "team_a_equipment_value",
+                "team_b_equipment_value",
+                "team_a_money_spent",
+                "team_b_money_spent",
+                "team_a_economy_type",
+                "team_b_economy_type",
+                "duration",
+                "end_reason",
+                "winner_name",
+                "winner_side",
+                "overtime_number"
+              ],
+              "players": [
+                "id",
+                "match_checksum",
+                "steam_id",
+                "index",
+                "team_name",
+                "name",
+                "kill_count",
+                "death_count",
+                "assist_count",
+                "kill_death_ratio",
+                "headshot_count",
+                "headshot_percentage",
+                "damage_health",
+                "damage_armor",
+                "first_kill_count",
+                "first_death_count",
+                "mvp_count",
+                "average_damage_per_round",
+                "average_kill_per_round",
+                "average_death_per_round",
+                "utility_damage_per_round",
+                "rank_type",
+                "rank",
+                "old_rank",
+                "wins_count",
+                "bomb_planted_count",
+                "bomb_defused_count",
+                "hostage_rescued_count",
+                "score",
+                "kast",
+                "hltv_rating",
+                "hltv_rating_2",
+                "utility_damage",
+                "trade_kill_count",
+                "trade_death_count",
+                "first_trade_kill_count",
+                "first_trade_death_count",
+                "one_kill_count",
+                "two_kill_count",
+                "three_kill_count",
+                "four_kill_count",
+                "five_kill_count",
+                "inspect_weapon_count",
+                "color",
+                "crosshair_share_code"
+              ],
+              "tags": [
+                "id",
+                "name",
+                "color"
+              ],
+              "checksum_tags": [
+                "checksum",
+                "tag_id"
+              ],
+              "damages": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "health_damage",
+                "armor_damage",
+                "victim_health",
+                "victim_new_health",
+                "victim_armor",
+                "victim_new_armor",
+                "is_victim_controlling_bot",
+                "hitgroup",
+                "weapon_name",
+                "weapon_type",
+                "attacker_steam_id",
+                "attacker_side",
+                "attacker_team_name",
+                "is_attacker_controlling_bot",
+                "victim_steam_id",
+                "victim_side",
+                "victim_team_name",
+                "weapon_unique_id"
+              ],
+              "shots": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "weapon_name",
+                "weapon_id",
+                "projectile_id",
+                "player_steam_id",
+                "player_side",
+                "player_name",
+                "player_team_name",
+                "is_player_controlling_bot",
+                "x",
+                "y",
+                "z",
+                "player_velocity_x",
+                "player_velocity_y",
+                "player_velocity_z",
+                "player_yaw",
+                "player_pitch",
+                "recoil_index",
+                "aim_punch_angle_x",
+                "aim_punch_angle_y",
+                "view_punch_angle_x",
+                "view_punch_angle_y"
+              ],
+              "clutches": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "clutcher_name",
+                "clutcher_steam_id",
+                "won",
+                "side",
+                "opponent_count",
+                "has_clutcher_survived",
+                "clutcher_kill_count"
+              ]
+            },
+            "col_types": {
+              "kills": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "killer_steam_id": "character varying",
+                "killer_name": "character varying",
+                "killer_team_name": "character varying",
+                "killer_side": "smallint",
+                "victim_steam_id": "character varying",
+                "victim_name": "character varying",
+                "victim_team_name": "character varying",
+                "victim_side": "smallint",
+                "assister_steam_id": "character varying",
+                "assister_name": "character varying",
+                "assister_team_name": "character varying",
+                "assister_side": "smallint",
+                "is_headshot": "boolean",
+                "is_assisted_flash": "boolean",
+                "penetrated_objects": "integer",
+                "killer_x": "double precision",
+                "killer_y": "double precision",
+                "killer_z": "double precision",
+                "is_killer_airborne": "boolean",
+                "is_killer_blinded": "boolean",
+                "victim_x": "double precision",
+                "victim_y": "double precision",
+                "victim_z": "double precision",
+                "is_victim_airborne": "boolean",
+                "is_victim_blinded": "boolean",
+                "is_victim_inspecting_weapon": "boolean",
+                "assister_x": "double precision",
+                "assister_y": "double precision",
+                "assister_z": "double precision",
+                "weapon_name": "character varying",
+                "weapon_type": "character varying",
+                "is_killer_controlling_bot": "boolean",
+                "is_victim_controlling_bot": "boolean",
+                "is_assister_controlling_bot": "boolean",
+                "is_trade_kill": "boolean",
+                "is_trade_death": "boolean",
+                "is_through_smoke": "boolean",
+                "is_no_scope": "boolean",
+                "distance": "double precision"
+              },
+              "matches": {
+                "checksum": "character varying",
+                "demo_path": "character varying",
+                "game_type": "integer",
+                "game_mode": "integer",
+                "game_mode_str": "character varying",
+                "is_ranked": "boolean",
+                "kill_count": "integer",
+                "death_count": "integer",
+                "assist_count": "integer",
+                "shot_count": "integer",
+                "analyze_date": "timestamp with time zone",
+                "winner_name": "character varying",
+                "winner_side": "smallint",
+                "overtime_count": "integer",
+                "max_rounds": "integer",
+                "has_vac_live_ban": "boolean"
+              },
+              "demos": {
+                "checksum": "character varying",
+                "name": "character varying",
+                "game": "character varying",
+                "source": "character varying",
+                "type": "character varying",
+                "date": "timestamp with time zone",
+                "map_name": "character varying",
+                "tick_count": "integer",
+                "tickrate": "double precision",
+                "framerate": "double precision",
+                "duration": "double precision",
+                "server_name": "character varying",
+                "client_name": "character varying",
+                "network_protocol": "integer",
+                "build_number": "integer",
+                "share_code": "character varying"
+              },
+              "rounds": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "number": "integer",
+                "start_tick": "integer",
+                "start_frame": "integer",
+                "freeze_time_end_tick": "integer",
+                "freeze_time_end_frame": "integer",
+                "end_tick": "integer",
+                "end_frame": "integer",
+                "end_officially_tick": "integer",
+                "end_officially_frame": "integer",
+                "team_a_name": "character varying",
+                "team_b_name": "character varying",
+                "team_a_score": "integer",
+                "team_b_score": "integer",
+                "team_a_side": "smallint",
+                "team_b_side": "smallint",
+                "team_a_start_money": "integer",
+                "team_b_start_money": "integer",
+                "team_a_equipment_value": "integer",
+                "team_b_equipment_value": "integer",
+                "team_a_money_spent": "integer",
+                "team_b_money_spent": "integer",
+                "team_a_economy_type": "character varying",
+                "team_b_economy_type": "character varying",
+                "duration": "integer",
+                "end_reason": "smallint",
+                "winner_name": "character varying",
+                "winner_side": "smallint",
+                "overtime_number": "integer"
+              },
+              "players": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "steam_id": "character varying",
+                "index": "smallint",
+                "team_name": "character varying",
+                "name": "character varying",
+                "kill_count": "integer",
+                "death_count": "integer",
+                "assist_count": "integer",
+                "kill_death_ratio": "real",
+                "headshot_count": "integer",
+                "headshot_percentage": "real",
+                "damage_health": "integer",
+                "damage_armor": "integer",
+                "first_kill_count": "integer",
+                "first_death_count": "integer",
+                "mvp_count": "integer",
+                "average_damage_per_round": "real",
+                "average_kill_per_round": "real",
+                "average_death_per_round": "real",
+                "utility_damage_per_round": "real",
+                "rank_type": "integer",
+                "rank": "integer",
+                "old_rank": "integer",
+                "wins_count": "integer",
+                "bomb_planted_count": "integer",
+                "bomb_defused_count": "integer",
+                "hostage_rescued_count": "integer",
+                "score": "integer",
+                "kast": "real",
+                "hltv_rating": "real",
+                "hltv_rating_2": "real",
+                "utility_damage": "integer",
+                "trade_kill_count": "integer",
+                "trade_death_count": "integer",
+                "first_trade_kill_count": "integer",
+                "first_trade_death_count": "integer",
+                "one_kill_count": "integer",
+                "two_kill_count": "integer",
+                "three_kill_count": "integer",
+                "four_kill_count": "integer",
+                "five_kill_count": "integer",
+                "inspect_weapon_count": "integer",
+                "color": "integer",
+                "crosshair_share_code": "character varying"
+              },
+              "tags": {
+                "id": "bigint",
+                "name": "character varying",
+                "color": "character varying"
+              },
+              "checksum_tags": {
+                "checksum": "character varying",
+                "tag_id": "bigint"
+              },
+              "damages": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "health_damage": "integer",
+                "armor_damage": "integer",
+                "victim_health": "integer",
+                "victim_new_health": "integer",
+                "victim_armor": "integer",
+                "victim_new_armor": "integer",
+                "is_victim_controlling_bot": "boolean",
+                "hitgroup": "smallint",
+                "weapon_name": "character varying",
+                "weapon_type": "character varying",
+                "attacker_steam_id": "character varying",
+                "attacker_side": "smallint",
+                "attacker_team_name": "character varying",
+                "is_attacker_controlling_bot": "boolean",
+                "victim_steam_id": "character varying",
+                "victim_side": "smallint",
+                "victim_team_name": "character varying",
+                "weapon_unique_id": "character varying"
+              },
+              "shots": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "weapon_name": "character varying",
+                "weapon_id": "character varying",
+                "projectile_id": "character varying",
+                "player_steam_id": "character varying",
+                "player_side": "smallint",
+                "player_name": "character varying",
+                "player_team_name": "character varying",
+                "is_player_controlling_bot": "boolean",
+                "x": "double precision",
+                "y": "double precision",
+                "z": "double precision",
+                "player_velocity_x": "double precision",
+                "player_velocity_y": "double precision",
+                "player_velocity_z": "double precision",
+                "player_yaw": "double precision",
+                "player_pitch": "double precision",
+                "recoil_index": "double precision",
+                "aim_punch_angle_x": "double precision",
+                "aim_punch_angle_y": "double precision",
+                "view_punch_angle_x": "double precision",
+                "view_punch_angle_y": "double precision"
+              },
+              "clutches": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "clutcher_name": "character varying",
+                "clutcher_steam_id": "character varying",
+                "won": "boolean",
+                "side": "smallint",
+                "opponent_count": "integer",
+                "has_clutcher_survived": "boolean",
+                "clutcher_kill_count": "integer"
+              }
+            },
+            "tags": [
+              [
+                1,
+                "Aces",
+                "#22c55e"
+              ],
+              [
+                2,
+                "Clutch",
+                "#3b82f6"
+              ],
+              [
+                3,
+                "Entry",
+                "#ef4444"
+              ]
+            ],
+            "tags_schema": {
+              "table": "tags",
+              "id_col": "id",
+              "id_col_type": "bigint",
+              "name_col": "name",
+              "color_col": "color",
+              "junction_table": "checksum_tags",
+              "jt_tag_col": "tag_id",
+              "jt_match_col": "checksum",
+              "jt_col_types": {
+                "checksum": "character varying",
+                "tag_id": "bigint"
+              }
+            },
+            "match_types": [],
+            "maps": [
+              [
+                "t9-1",
+                [
+                  "t9-1"
+                ]
+              ],
+              [
+                "t9-2",
+                [
+                  "t9-2"
+                ]
+              ],
+              [
+                "t9-3",
+                [
+                  "t9-3"
+                ]
+              ],
+              [
+                "t9-4",
+                [
+                  "t9-4"
+                ]
+              ]
+            ],
+            "map_col": "map_name",
+            "map_alias": "d",
+            "map_join": "LEFT JOIN demos d ON d.\"checksum\" = m.\"checksum\""
+          }
+        }
+      }
+    },
+    {
+      "on": "run_inputs_problem",
+      "reply": {
+        "ok": {
+          "problem": "Pick at least one player: CAPTURE › Player, search your name or Steam ID, then click the row."
+        }
+      }
+    },
+    {
+      "on": "tags_set_active",
+      "reply": {
+        "ok": {
+          "data": {
+            "active_tag_ids": [],
+            "active_tag_names": []
+          }
+        }
+      }
+    },
+    {
+      "on": "tag_create",
+      "reply": {
+        "ok": {
+          "data": {
+            "tag_id": 4,
+            "tag_name": "Wallbang"
+          }
+        }
+      }
+    },
+    {
+      "on": "connect_db",
+      "reply": {
+        "ok": {
+          "data": {
+            "players": [],
+            "names": {},
+            "date_col": "overtime_count",
+            "date_col_type": "integer",
+            "weapons": [],
+            "schema": {
+              "kills": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "killer_steam_id",
+                "killer_name",
+                "killer_team_name",
+                "killer_side",
+                "victim_steam_id",
+                "victim_name",
+                "victim_team_name",
+                "victim_side",
+                "assister_steam_id",
+                "assister_name",
+                "assister_team_name",
+                "assister_side",
+                "is_headshot",
+                "is_assisted_flash",
+                "penetrated_objects",
+                "killer_x",
+                "killer_y",
+                "killer_z",
+                "is_killer_airborne",
+                "is_killer_blinded",
+                "victim_x",
+                "victim_y",
+                "victim_z",
+                "is_victim_airborne",
+                "is_victim_blinded",
+                "is_victim_inspecting_weapon",
+                "assister_x",
+                "assister_y",
+                "assister_z",
+                "weapon_name",
+                "weapon_type",
+                "is_killer_controlling_bot",
+                "is_victim_controlling_bot",
+                "is_assister_controlling_bot",
+                "is_trade_kill",
+                "is_trade_death",
+                "is_through_smoke",
+                "is_no_scope",
+                "distance"
+              ],
+              "matches": [
+                "checksum",
+                "demo_path",
+                "game_type",
+                "game_mode",
+                "game_mode_str",
+                "is_ranked",
+                "kill_count",
+                "death_count",
+                "assist_count",
+                "shot_count",
+                "analyze_date",
+                "winner_name",
+                "winner_side",
+                "overtime_count",
+                "max_rounds",
+                "has_vac_live_ban"
+              ],
+              "demos": [
+                "checksum",
+                "name",
+                "game",
+                "source",
+                "type",
+                "date",
+                "map_name",
+                "tick_count",
+                "tickrate",
+                "framerate",
+                "duration",
+                "server_name",
+                "client_name",
+                "network_protocol",
+                "build_number",
+                "share_code"
+              ],
+              "rounds": [
+                "id",
+                "match_checksum",
+                "number",
+                "start_tick",
+                "start_frame",
+                "freeze_time_end_tick",
+                "freeze_time_end_frame",
+                "end_tick",
+                "end_frame",
+                "end_officially_tick",
+                "end_officially_frame",
+                "team_a_name",
+                "team_b_name",
+                "team_a_score",
+                "team_b_score",
+                "team_a_side",
+                "team_b_side",
+                "team_a_start_money",
+                "team_b_start_money",
+                "team_a_equipment_value",
+                "team_b_equipment_value",
+                "team_a_money_spent",
+                "team_b_money_spent",
+                "team_a_economy_type",
+                "team_b_economy_type",
+                "duration",
+                "end_reason",
+                "winner_name",
+                "winner_side",
+                "overtime_number"
+              ],
+              "players": [
+                "id",
+                "match_checksum",
+                "steam_id",
+                "index",
+                "team_name",
+                "name",
+                "kill_count",
+                "death_count",
+                "assist_count",
+                "kill_death_ratio",
+                "headshot_count",
+                "headshot_percentage",
+                "damage_health",
+                "damage_armor",
+                "first_kill_count",
+                "first_death_count",
+                "mvp_count",
+                "average_damage_per_round",
+                "average_kill_per_round",
+                "average_death_per_round",
+                "utility_damage_per_round",
+                "rank_type",
+                "rank",
+                "old_rank",
+                "wins_count",
+                "bomb_planted_count",
+                "bomb_defused_count",
+                "hostage_rescued_count",
+                "score",
+                "kast",
+                "hltv_rating",
+                "hltv_rating_2",
+                "utility_damage",
+                "trade_kill_count",
+                "trade_death_count",
+                "first_trade_kill_count",
+                "first_trade_death_count",
+                "one_kill_count",
+                "two_kill_count",
+                "three_kill_count",
+                "four_kill_count",
+                "five_kill_count",
+                "inspect_weapon_count",
+                "color",
+                "crosshair_share_code"
+              ],
+              "tags": [
+                "id",
+                "name",
+                "color"
+              ],
+              "checksum_tags": [
+                "checksum",
+                "tag_id"
+              ],
+              "damages": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "health_damage",
+                "armor_damage",
+                "victim_health",
+                "victim_new_health",
+                "victim_armor",
+                "victim_new_armor",
+                "is_victim_controlling_bot",
+                "hitgroup",
+                "weapon_name",
+                "weapon_type",
+                "attacker_steam_id",
+                "attacker_side",
+                "attacker_team_name",
+                "is_attacker_controlling_bot",
+                "victim_steam_id",
+                "victim_side",
+                "victim_team_name",
+                "weapon_unique_id"
+              ],
+              "shots": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "weapon_name",
+                "weapon_id",
+                "projectile_id",
+                "player_steam_id",
+                "player_side",
+                "player_name",
+                "player_team_name",
+                "is_player_controlling_bot",
+                "x",
+                "y",
+                "z",
+                "player_velocity_x",
+                "player_velocity_y",
+                "player_velocity_z",
+                "player_yaw",
+                "player_pitch",
+                "recoil_index",
+                "aim_punch_angle_x",
+                "aim_punch_angle_y",
+                "view_punch_angle_x",
+                "view_punch_angle_y"
+              ],
+              "clutches": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "clutcher_name",
+                "clutcher_steam_id",
+                "won",
+                "side",
+                "opponent_count",
+                "has_clutcher_survived",
+                "clutcher_kill_count"
+              ]
+            },
+            "col_types": {
+              "kills": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "killer_steam_id": "character varying",
+                "killer_name": "character varying",
+                "killer_team_name": "character varying",
+                "killer_side": "smallint",
+                "victim_steam_id": "character varying",
+                "victim_name": "character varying",
+                "victim_team_name": "character varying",
+                "victim_side": "smallint",
+                "assister_steam_id": "character varying",
+                "assister_name": "character varying",
+                "assister_team_name": "character varying",
+                "assister_side": "smallint",
+                "is_headshot": "boolean",
+                "is_assisted_flash": "boolean",
+                "penetrated_objects": "integer",
+                "killer_x": "double precision",
+                "killer_y": "double precision",
+                "killer_z": "double precision",
+                "is_killer_airborne": "boolean",
+                "is_killer_blinded": "boolean",
+                "victim_x": "double precision",
+                "victim_y": "double precision",
+                "victim_z": "double precision",
+                "is_victim_airborne": "boolean",
+                "is_victim_blinded": "boolean",
+                "is_victim_inspecting_weapon": "boolean",
+                "assister_x": "double precision",
+                "assister_y": "double precision",
+                "assister_z": "double precision",
+                "weapon_name": "character varying",
+                "weapon_type": "character varying",
+                "is_killer_controlling_bot": "boolean",
+                "is_victim_controlling_bot": "boolean",
+                "is_assister_controlling_bot": "boolean",
+                "is_trade_kill": "boolean",
+                "is_trade_death": "boolean",
+                "is_through_smoke": "boolean",
+                "is_no_scope": "boolean",
+                "distance": "double precision"
+              },
+              "matches": {
+                "checksum": "character varying",
+                "demo_path": "character varying",
+                "game_type": "integer",
+                "game_mode": "integer",
+                "game_mode_str": "character varying",
+                "is_ranked": "boolean",
+                "kill_count": "integer",
+                "death_count": "integer",
+                "assist_count": "integer",
+                "shot_count": "integer",
+                "analyze_date": "timestamp with time zone",
+                "winner_name": "character varying",
+                "winner_side": "smallint",
+                "overtime_count": "integer",
+                "max_rounds": "integer",
+                "has_vac_live_ban": "boolean"
+              },
+              "demos": {
+                "checksum": "character varying",
+                "name": "character varying",
+                "game": "character varying",
+                "source": "character varying",
+                "type": "character varying",
+                "date": "timestamp with time zone",
+                "map_name": "character varying",
+                "tick_count": "integer",
+                "tickrate": "double precision",
+                "framerate": "double precision",
+                "duration": "double precision",
+                "server_name": "character varying",
+                "client_name": "character varying",
+                "network_protocol": "integer",
+                "build_number": "integer",
+                "share_code": "character varying"
+              },
+              "rounds": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "number": "integer",
+                "start_tick": "integer",
+                "start_frame": "integer",
+                "freeze_time_end_tick": "integer",
+                "freeze_time_end_frame": "integer",
+                "end_tick": "integer",
+                "end_frame": "integer",
+                "end_officially_tick": "integer",
+                "end_officially_frame": "integer",
+                "team_a_name": "character varying",
+                "team_b_name": "character varying",
+                "team_a_score": "integer",
+                "team_b_score": "integer",
+                "team_a_side": "smallint",
+                "team_b_side": "smallint",
+                "team_a_start_money": "integer",
+                "team_b_start_money": "integer",
+                "team_a_equipment_value": "integer",
+                "team_b_equipment_value": "integer",
+                "team_a_money_spent": "integer",
+                "team_b_money_spent": "integer",
+                "team_a_economy_type": "character varying",
+                "team_b_economy_type": "character varying",
+                "duration": "integer",
+                "end_reason": "smallint",
+                "winner_name": "character varying",
+                "winner_side": "smallint",
+                "overtime_number": "integer"
+              },
+              "players": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "steam_id": "character varying",
+                "index": "smallint",
+                "team_name": "character varying",
+                "name": "character varying",
+                "kill_count": "integer",
+                "death_count": "integer",
+                "assist_count": "integer",
+                "kill_death_ratio": "real",
+                "headshot_count": "integer",
+                "headshot_percentage": "real",
+                "damage_health": "integer",
+                "damage_armor": "integer",
+                "first_kill_count": "integer",
+                "first_death_count": "integer",
+                "mvp_count": "integer",
+                "average_damage_per_round": "real",
+                "average_kill_per_round": "real",
+                "average_death_per_round": "real",
+                "utility_damage_per_round": "real",
+                "rank_type": "integer",
+                "rank": "integer",
+                "old_rank": "integer",
+                "wins_count": "integer",
+                "bomb_planted_count": "integer",
+                "bomb_defused_count": "integer",
+                "hostage_rescued_count": "integer",
+                "score": "integer",
+                "kast": "real",
+                "hltv_rating": "real",
+                "hltv_rating_2": "real",
+                "utility_damage": "integer",
+                "trade_kill_count": "integer",
+                "trade_death_count": "integer",
+                "first_trade_kill_count": "integer",
+                "first_trade_death_count": "integer",
+                "one_kill_count": "integer",
+                "two_kill_count": "integer",
+                "three_kill_count": "integer",
+                "four_kill_count": "integer",
+                "five_kill_count": "integer",
+                "inspect_weapon_count": "integer",
+                "color": "integer",
+                "crosshair_share_code": "character varying"
+              },
+              "tags": {
+                "id": "bigint",
+                "name": "character varying",
+                "color": "character varying"
+              },
+              "checksum_tags": {
+                "checksum": "character varying",
+                "tag_id": "bigint"
+              },
+              "damages": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "health_damage": "integer",
+                "armor_damage": "integer",
+                "victim_health": "integer",
+                "victim_new_health": "integer",
+                "victim_armor": "integer",
+                "victim_new_armor": "integer",
+                "is_victim_controlling_bot": "boolean",
+                "hitgroup": "smallint",
+                "weapon_name": "character varying",
+                "weapon_type": "character varying",
+                "attacker_steam_id": "character varying",
+                "attacker_side": "smallint",
+                "attacker_team_name": "character varying",
+                "is_attacker_controlling_bot": "boolean",
+                "victim_steam_id": "character varying",
+                "victim_side": "smallint",
+                "victim_team_name": "character varying",
+                "weapon_unique_id": "character varying"
+              },
+              "shots": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "weapon_name": "character varying",
+                "weapon_id": "character varying",
+                "projectile_id": "character varying",
+                "player_steam_id": "character varying",
+                "player_side": "smallint",
+                "player_name": "character varying",
+                "player_team_name": "character varying",
+                "is_player_controlling_bot": "boolean",
+                "x": "double precision",
+                "y": "double precision",
+                "z": "double precision",
+                "player_velocity_x": "double precision",
+                "player_velocity_y": "double precision",
+                "player_velocity_z": "double precision",
+                "player_yaw": "double precision",
+                "player_pitch": "double precision",
+                "recoil_index": "double precision",
+                "aim_punch_angle_x": "double precision",
+                "aim_punch_angle_y": "double precision",
+                "view_punch_angle_x": "double precision",
+                "view_punch_angle_y": "double precision"
+              },
+              "clutches": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "clutcher_name": "character varying",
+                "clutcher_steam_id": "character varying",
+                "won": "boolean",
+                "side": "smallint",
+                "opponent_count": "integer",
+                "has_clutcher_survived": "boolean",
+                "clutcher_kill_count": "integer"
+              }
+            },
+            "tags": [
+              [
+                1,
+                "Aces",
+                "#22c55e"
+              ],
+              [
+                2,
+                "Clutch",
+                "#3b82f6"
+              ],
+              [
+                3,
+                "Entry",
+                "#ef4444"
+              ],
+              [
+                4,
+                "Wallbang",
+                "#8b5cf6"
+              ]
+            ],
+            "tags_schema": {
+              "table": "tags",
+              "id_col": "id",
+              "id_col_type": "bigint",
+              "name_col": "name",
+              "color_col": "color",
+              "junction_table": "checksum_tags",
+              "jt_tag_col": "tag_id",
+              "jt_match_col": "checksum",
+              "jt_col_types": {
+                "checksum": "character varying",
+                "tag_id": "bigint"
+              }
+            },
+            "match_types": [],
+            "maps": [
+              [
+                "t9-1",
+                [
+                  "t9-1"
+                ]
+              ],
+              [
+                "t9-2",
+                [
+                  "t9-2"
+                ]
+              ],
+              [
+                "t9-3",
+                [
+                  "t9-3"
+                ]
+              ],
+              [
+                "t9-4",
+                [
+                  "t9-4"
+                ]
+              ]
+            ],
+            "map_col": "map_name",
+            "map_alias": "d",
+            "map_join": "LEFT JOIN demos d ON d.\"checksum\" = m.\"checksum\""
+          }
+        }
+      }
+    },
+    {
+      "on": "connect_db",
+      "reply": {
+        "ok": {
+          "data": {
+            "players": [],
+            "names": {},
+            "date_col": "overtime_count",
+            "date_col_type": "integer",
+            "weapons": [],
+            "schema": {
+              "kills": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "killer_steam_id",
+                "killer_name",
+                "killer_team_name",
+                "killer_side",
+                "victim_steam_id",
+                "victim_name",
+                "victim_team_name",
+                "victim_side",
+                "assister_steam_id",
+                "assister_name",
+                "assister_team_name",
+                "assister_side",
+                "is_headshot",
+                "is_assisted_flash",
+                "penetrated_objects",
+                "killer_x",
+                "killer_y",
+                "killer_z",
+                "is_killer_airborne",
+                "is_killer_blinded",
+                "victim_x",
+                "victim_y",
+                "victim_z",
+                "is_victim_airborne",
+                "is_victim_blinded",
+                "is_victim_inspecting_weapon",
+                "assister_x",
+                "assister_y",
+                "assister_z",
+                "weapon_name",
+                "weapon_type",
+                "is_killer_controlling_bot",
+                "is_victim_controlling_bot",
+                "is_assister_controlling_bot",
+                "is_trade_kill",
+                "is_trade_death",
+                "is_through_smoke",
+                "is_no_scope",
+                "distance"
+              ],
+              "matches": [
+                "checksum",
+                "demo_path",
+                "game_type",
+                "game_mode",
+                "game_mode_str",
+                "is_ranked",
+                "kill_count",
+                "death_count",
+                "assist_count",
+                "shot_count",
+                "analyze_date",
+                "winner_name",
+                "winner_side",
+                "overtime_count",
+                "max_rounds",
+                "has_vac_live_ban"
+              ],
+              "demos": [
+                "checksum",
+                "name",
+                "game",
+                "source",
+                "type",
+                "date",
+                "map_name",
+                "tick_count",
+                "tickrate",
+                "framerate",
+                "duration",
+                "server_name",
+                "client_name",
+                "network_protocol",
+                "build_number",
+                "share_code"
+              ],
+              "rounds": [
+                "id",
+                "match_checksum",
+                "number",
+                "start_tick",
+                "start_frame",
+                "freeze_time_end_tick",
+                "freeze_time_end_frame",
+                "end_tick",
+                "end_frame",
+                "end_officially_tick",
+                "end_officially_frame",
+                "team_a_name",
+                "team_b_name",
+                "team_a_score",
+                "team_b_score",
+                "team_a_side",
+                "team_b_side",
+                "team_a_start_money",
+                "team_b_start_money",
+                "team_a_equipment_value",
+                "team_b_equipment_value",
+                "team_a_money_spent",
+                "team_b_money_spent",
+                "team_a_economy_type",
+                "team_b_economy_type",
+                "duration",
+                "end_reason",
+                "winner_name",
+                "winner_side",
+                "overtime_number"
+              ],
+              "players": [
+                "id",
+                "match_checksum",
+                "steam_id",
+                "index",
+                "team_name",
+                "name",
+                "kill_count",
+                "death_count",
+                "assist_count",
+                "kill_death_ratio",
+                "headshot_count",
+                "headshot_percentage",
+                "damage_health",
+                "damage_armor",
+                "first_kill_count",
+                "first_death_count",
+                "mvp_count",
+                "average_damage_per_round",
+                "average_kill_per_round",
+                "average_death_per_round",
+                "utility_damage_per_round",
+                "rank_type",
+                "rank",
+                "old_rank",
+                "wins_count",
+                "bomb_planted_count",
+                "bomb_defused_count",
+                "hostage_rescued_count",
+                "score",
+                "kast",
+                "hltv_rating",
+                "hltv_rating_2",
+                "utility_damage",
+                "trade_kill_count",
+                "trade_death_count",
+                "first_trade_kill_count",
+                "first_trade_death_count",
+                "one_kill_count",
+                "two_kill_count",
+                "three_kill_count",
+                "four_kill_count",
+                "five_kill_count",
+                "inspect_weapon_count",
+                "color",
+                "crosshair_share_code"
+              ],
+              "tags": [
+                "id",
+                "name",
+                "color"
+              ],
+              "checksum_tags": [
+                "checksum",
+                "tag_id"
+              ],
+              "damages": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "health_damage",
+                "armor_damage",
+                "victim_health",
+                "victim_new_health",
+                "victim_armor",
+                "victim_new_armor",
+                "is_victim_controlling_bot",
+                "hitgroup",
+                "weapon_name",
+                "weapon_type",
+                "attacker_steam_id",
+                "attacker_side",
+                "attacker_team_name",
+                "is_attacker_controlling_bot",
+                "victim_steam_id",
+                "victim_side",
+                "victim_team_name",
+                "weapon_unique_id"
+              ],
+              "shots": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "weapon_name",
+                "weapon_id",
+                "projectile_id",
+                "player_steam_id",
+                "player_side",
+                "player_name",
+                "player_team_name",
+                "is_player_controlling_bot",
+                "x",
+                "y",
+                "z",
+                "player_velocity_x",
+                "player_velocity_y",
+                "player_velocity_z",
+                "player_yaw",
+                "player_pitch",
+                "recoil_index",
+                "aim_punch_angle_x",
+                "aim_punch_angle_y",
+                "view_punch_angle_x",
+                "view_punch_angle_y"
+              ],
+              "clutches": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "clutcher_name",
+                "clutcher_steam_id",
+                "won",
+                "side",
+                "opponent_count",
+                "has_clutcher_survived",
+                "clutcher_kill_count"
+              ]
+            },
+            "col_types": {
+              "kills": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "killer_steam_id": "character varying",
+                "killer_name": "character varying",
+                "killer_team_name": "character varying",
+                "killer_side": "smallint",
+                "victim_steam_id": "character varying",
+                "victim_name": "character varying",
+                "victim_team_name": "character varying",
+                "victim_side": "smallint",
+                "assister_steam_id": "character varying",
+                "assister_name": "character varying",
+                "assister_team_name": "character varying",
+                "assister_side": "smallint",
+                "is_headshot": "boolean",
+                "is_assisted_flash": "boolean",
+                "penetrated_objects": "integer",
+                "killer_x": "double precision",
+                "killer_y": "double precision",
+                "killer_z": "double precision",
+                "is_killer_airborne": "boolean",
+                "is_killer_blinded": "boolean",
+                "victim_x": "double precision",
+                "victim_y": "double precision",
+                "victim_z": "double precision",
+                "is_victim_airborne": "boolean",
+                "is_victim_blinded": "boolean",
+                "is_victim_inspecting_weapon": "boolean",
+                "assister_x": "double precision",
+                "assister_y": "double precision",
+                "assister_z": "double precision",
+                "weapon_name": "character varying",
+                "weapon_type": "character varying",
+                "is_killer_controlling_bot": "boolean",
+                "is_victim_controlling_bot": "boolean",
+                "is_assister_controlling_bot": "boolean",
+                "is_trade_kill": "boolean",
+                "is_trade_death": "boolean",
+                "is_through_smoke": "boolean",
+                "is_no_scope": "boolean",
+                "distance": "double precision"
+              },
+              "matches": {
+                "checksum": "character varying",
+                "demo_path": "character varying",
+                "game_type": "integer",
+                "game_mode": "integer",
+                "game_mode_str": "character varying",
+                "is_ranked": "boolean",
+                "kill_count": "integer",
+                "death_count": "integer",
+                "assist_count": "integer",
+                "shot_count": "integer",
+                "analyze_date": "timestamp with time zone",
+                "winner_name": "character varying",
+                "winner_side": "smallint",
+                "overtime_count": "integer",
+                "max_rounds": "integer",
+                "has_vac_live_ban": "boolean"
+              },
+              "demos": {
+                "checksum": "character varying",
+                "name": "character varying",
+                "game": "character varying",
+                "source": "character varying",
+                "type": "character varying",
+                "date": "timestamp with time zone",
+                "map_name": "character varying",
+                "tick_count": "integer",
+                "tickrate": "double precision",
+                "framerate": "double precision",
+                "duration": "double precision",
+                "server_name": "character varying",
+                "client_name": "character varying",
+                "network_protocol": "integer",
+                "build_number": "integer",
+                "share_code": "character varying"
+              },
+              "rounds": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "number": "integer",
+                "start_tick": "integer",
+                "start_frame": "integer",
+                "freeze_time_end_tick": "integer",
+                "freeze_time_end_frame": "integer",
+                "end_tick": "integer",
+                "end_frame": "integer",
+                "end_officially_tick": "integer",
+                "end_officially_frame": "integer",
+                "team_a_name": "character varying",
+                "team_b_name": "character varying",
+                "team_a_score": "integer",
+                "team_b_score": "integer",
+                "team_a_side": "smallint",
+                "team_b_side": "smallint",
+                "team_a_start_money": "integer",
+                "team_b_start_money": "integer",
+                "team_a_equipment_value": "integer",
+                "team_b_equipment_value": "integer",
+                "team_a_money_spent": "integer",
+                "team_b_money_spent": "integer",
+                "team_a_economy_type": "character varying",
+                "team_b_economy_type": "character varying",
+                "duration": "integer",
+                "end_reason": "smallint",
+                "winner_name": "character varying",
+                "winner_side": "smallint",
+                "overtime_number": "integer"
+              },
+              "players": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "steam_id": "character varying",
+                "index": "smallint",
+                "team_name": "character varying",
+                "name": "character varying",
+                "kill_count": "integer",
+                "death_count": "integer",
+                "assist_count": "integer",
+                "kill_death_ratio": "real",
+                "headshot_count": "integer",
+                "headshot_percentage": "real",
+                "damage_health": "integer",
+                "damage_armor": "integer",
+                "first_kill_count": "integer",
+                "first_death_count": "integer",
+                "mvp_count": "integer",
+                "average_damage_per_round": "real",
+                "average_kill_per_round": "real",
+                "average_death_per_round": "real",
+                "utility_damage_per_round": "real",
+                "rank_type": "integer",
+                "rank": "integer",
+                "old_rank": "integer",
+                "wins_count": "integer",
+                "bomb_planted_count": "integer",
+                "bomb_defused_count": "integer",
+                "hostage_rescued_count": "integer",
+                "score": "integer",
+                "kast": "real",
+                "hltv_rating": "real",
+                "hltv_rating_2": "real",
+                "utility_damage": "integer",
+                "trade_kill_count": "integer",
+                "trade_death_count": "integer",
+                "first_trade_kill_count": "integer",
+                "first_trade_death_count": "integer",
+                "one_kill_count": "integer",
+                "two_kill_count": "integer",
+                "three_kill_count": "integer",
+                "four_kill_count": "integer",
+                "five_kill_count": "integer",
+                "inspect_weapon_count": "integer",
+                "color": "integer",
+                "crosshair_share_code": "character varying"
+              },
+              "tags": {
+                "id": "bigint",
+                "name": "character varying",
+                "color": "character varying"
+              },
+              "checksum_tags": {
+                "checksum": "character varying",
+                "tag_id": "bigint"
+              },
+              "damages": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "health_damage": "integer",
+                "armor_damage": "integer",
+                "victim_health": "integer",
+                "victim_new_health": "integer",
+                "victim_armor": "integer",
+                "victim_new_armor": "integer",
+                "is_victim_controlling_bot": "boolean",
+                "hitgroup": "smallint",
+                "weapon_name": "character varying",
+                "weapon_type": "character varying",
+                "attacker_steam_id": "character varying",
+                "attacker_side": "smallint",
+                "attacker_team_name": "character varying",
+                "is_attacker_controlling_bot": "boolean",
+                "victim_steam_id": "character varying",
+                "victim_side": "smallint",
+                "victim_team_name": "character varying",
+                "weapon_unique_id": "character varying"
+              },
+              "shots": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "weapon_name": "character varying",
+                "weapon_id": "character varying",
+                "projectile_id": "character varying",
+                "player_steam_id": "character varying",
+                "player_side": "smallint",
+                "player_name": "character varying",
+                "player_team_name": "character varying",
+                "is_player_controlling_bot": "boolean",
+                "x": "double precision",
+                "y": "double precision",
+                "z": "double precision",
+                "player_velocity_x": "double precision",
+                "player_velocity_y": "double precision",
+                "player_velocity_z": "double precision",
+                "player_yaw": "double precision",
+                "player_pitch": "double precision",
+                "recoil_index": "double precision",
+                "aim_punch_angle_x": "double precision",
+                "aim_punch_angle_y": "double precision",
+                "view_punch_angle_x": "double precision",
+                "view_punch_angle_y": "double precision"
+              },
+              "clutches": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "clutcher_name": "character varying",
+                "clutcher_steam_id": "character varying",
+                "won": "boolean",
+                "side": "smallint",
+                "opponent_count": "integer",
+                "has_clutcher_survived": "boolean",
+                "clutcher_kill_count": "integer"
+              }
+            },
+            "tags": [
+              [
+                1,
+                "Aces",
+                "#22c55e"
+              ],
+              [
+                2,
+                "Clutch",
+                "#3b82f6"
+              ],
+              [
+                3,
+                "Entry",
+                "#ef4444"
+              ],
+              [
+                4,
+                "Wallbang",
+                "#8b5cf6"
+              ]
+            ],
+            "tags_schema": {
+              "table": "tags",
+              "id_col": "id",
+              "id_col_type": "bigint",
+              "name_col": "name",
+              "color_col": "color",
+              "junction_table": "checksum_tags",
+              "jt_tag_col": "tag_id",
+              "jt_match_col": "checksum",
+              "jt_col_types": {
+                "checksum": "character varying",
+                "tag_id": "bigint"
+              }
+            },
+            "match_types": [],
+            "maps": [
+              [
+                "t9-1",
+                [
+                  "t9-1"
+                ]
+              ],
+              [
+                "t9-2",
+                [
+                  "t9-2"
+                ]
+              ],
+              [
+                "t9-3",
+                [
+                  "t9-3"
+                ]
+              ],
+              [
+                "t9-4",
+                [
+                  "t9-4"
+                ]
+              ]
+            ],
+            "map_col": "map_name",
+            "map_alias": "d",
+            "map_join": "LEFT JOIN demos d ON d.\"checksum\" = m.\"checksum\""
+          }
+        }
+      }
+    },
+    {
+      "on": "tags_set_active",
+      "reply": {
+        "ok": {
+          "data": {
+            "active_tag_ids": [
+              1
+            ],
+            "active_tag_names": []
+          }
+        }
+      }
+    },
+    {
+      "on": "run_inputs_problem",
+      "reply": {
+        "ok": {
+          "problem": "Pick at least one player: CAPTURE › Player, search your name or Steam ID, then click the row."
+        }
+      }
+    },
+    {
+      "on": "save_config",
+      "reply": {
+        "ok": {}
+      }
+    },
+    {
+      "on": "tags_calc_range",
+      "reply": {
+        "ok": {
+          "data": {
+            "date_start": "05-01-2024",
+            "date_end": "10-02-2024",
+            "date_after": "11-02-2024",
+            "demo_count": 2
+          }
+        }
+      }
+    },
+    {
+      "on": "run_inputs_problem",
+      "reply": {
+        "ok": {
+          "problem": "Pick at least one player: CAPTURE › Player, search your name or Steam ID, then click the row."
+        }
+      }
+    },
+    {
+      "on": "save_config",
+      "reply": {
+        "ok": {}
+      }
+    },
+    {
+      "on": "run_inputs_problem",
+      "reply": {
+        "ok": {
+          "problem": "Pick at least one player: CAPTURE › Player, search your name or Steam ID, then click the row."
+        }
+      }
+    },
+    {
+      "on": "save_config",
+      "reply": {
+        "ok": {}
+      }
+    },
+    {
+      "on": "run_inputs_problem",
+      "reply": {
+        "ok": {
+          "problem": "Pick at least one player: CAPTURE › Player, search your name or Steam ID, then click the row."
+        }
+      }
+    },
+    {
+      "on": "save_config",
+      "reply": {
+        "ok": {}
+      }
+    },
+    {
+      "on": "run_inputs_problem",
+      "reply": {
+        "ok": {
+          "problem": "Pick at least one player: CAPTURE › Player, search your name or Steam ID, then click the row."
+        }
+      }
+    },
+    {
+      "on": "save_config",
+      "reply": {
+        "ok": {}
+      }
+    },
+    {
+      "on": "tags_search",
+      "reply": {
+        "ok": {
+          "data": {
+            "demos": [
+              {
+                "path": "D:/csdm-t9-fixture/demos/ace-ancient.dem",
+                "name": "ace-ancient.dem",
+                "n_events": 0,
+                "n_seq": 0
+              },
+              {
+                "path": "D:/csdm-t9-fixture/demos/clutch-mirage.dem",
+                "name": "clutch-mirage.dem",
+                "n_events": 0,
+                "n_seq": 0
+              }
+            ],
+            "tag_names": [
+              "Aces"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "on": "tags_search",
+      "reply": {
+        "err": "Pick at least one player: CAPTURE › Player, search your name or Steam ID, then click the row."
+      }
+    },
+    {
+      "on": "tags_set_active",
+      "reply": {
+        "ok": {
+          "data": {
+            "active_tag_ids": [
+              1,
+              3
+            ],
+            "active_tag_names": []
+          }
+        }
+      }
+    },
+    {
+      "on": "run_inputs_problem",
+      "reply": {
+        "ok": {
+          "problem": "Pick at least one player: CAPTURE › Player, search your name or Steam ID, then click the row."
+        }
+      }
+    },
+    {
+      "on": "save_config",
+      "reply": {
+        "ok": {}
+      }
+    },
+    {
+      "on": "tags_apply",
+      "reply": {
+        "ok": {
+          "data": {
+            "ok_count": 2,
+            "total": 2,
+            "first_error": ""
+          }
+        }
+      },
+      "events": [
+        {
+          "log": {
+            "message": "=== Tag 'Aces' on 1 demo(s) ===",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "\n-> ace-ancient.dem",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "   already tagged",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "=== Tag 'Entry' on 1 demo(s) ===",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "\n-> ace-ancient.dem",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "   tagged",
+            "level": "dim"
+          }
+        }
+      ]
+    },
+    {
+      "on": "tags_apply",
+      "reply": {
+        "ok": {
+          "data": {
+            "ok_count": 4,
+            "total": 4,
+            "first_error": ""
+          }
+        }
+      },
+      "events": [
+        {
+          "log": {
+            "message": "=== Tag 'Aces' on 2 demo(s) ===",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "\n-> ace-ancient.dem",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "   already tagged",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "\n-> clutch-mirage.dem",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "   already tagged",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "=== Tag 'Entry' on 2 demo(s) ===",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "\n-> ace-ancient.dem",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "   already tagged",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "\n-> clutch-mirage.dem",
+            "level": "dim"
+          }
+        },
+        {
+          "log": {
+            "message": "   tagged",
+            "level": "dim"
+          }
+        }
+      ]
+    },
+    {
+      "on": "tags_remove",
+      "reply": {
+        "ok": {
+          "data": {
+            "ok_count": 2,
+            "total": 2,
+            "first_error": ""
+          }
+        }
+      }
+    },
+    {
+      "on": "tags_export",
+      "reply": {
+        "ok": {
+          "data": {
+            "tag_count": 2,
+            "demo_count": 1,
+            "path": "<tmp>\\tags-export.json"
+          }
+        }
+      }
+    },
+    {
+      "on": "tags_import_scan",
+      "reply": {
+        "ok": {
+          "data": {
+            "missing_tags": [
+              {
+                "name": "Imported",
+                "color": "#d946ef"
+              }
+            ],
+            "assignment_count": 1
+          }
+        }
+      }
+    },
+    {
+      "on": "tags_import_apply",
+      "reply": {
+        "ok": {
+          "data": {
+            "ok_count": 1,
+            "skip_count": 0,
+            "fail_count": 0
+          }
+        }
+      }
+    },
+    {
+      "on": "connect_db",
+      "reply": {
+        "ok": {
+          "data": {
+            "players": [],
+            "names": {},
+            "date_col": "overtime_count",
+            "date_col_type": "integer",
+            "weapons": [],
+            "schema": {
+              "kills": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "killer_steam_id",
+                "killer_name",
+                "killer_team_name",
+                "killer_side",
+                "victim_steam_id",
+                "victim_name",
+                "victim_team_name",
+                "victim_side",
+                "assister_steam_id",
+                "assister_name",
+                "assister_team_name",
+                "assister_side",
+                "is_headshot",
+                "is_assisted_flash",
+                "penetrated_objects",
+                "killer_x",
+                "killer_y",
+                "killer_z",
+                "is_killer_airborne",
+                "is_killer_blinded",
+                "victim_x",
+                "victim_y",
+                "victim_z",
+                "is_victim_airborne",
+                "is_victim_blinded",
+                "is_victim_inspecting_weapon",
+                "assister_x",
+                "assister_y",
+                "assister_z",
+                "weapon_name",
+                "weapon_type",
+                "is_killer_controlling_bot",
+                "is_victim_controlling_bot",
+                "is_assister_controlling_bot",
+                "is_trade_kill",
+                "is_trade_death",
+                "is_through_smoke",
+                "is_no_scope",
+                "distance"
+              ],
+              "matches": [
+                "checksum",
+                "demo_path",
+                "game_type",
+                "game_mode",
+                "game_mode_str",
+                "is_ranked",
+                "kill_count",
+                "death_count",
+                "assist_count",
+                "shot_count",
+                "analyze_date",
+                "winner_name",
+                "winner_side",
+                "overtime_count",
+                "max_rounds",
+                "has_vac_live_ban"
+              ],
+              "demos": [
+                "checksum",
+                "name",
+                "game",
+                "source",
+                "type",
+                "date",
+                "map_name",
+                "tick_count",
+                "tickrate",
+                "framerate",
+                "duration",
+                "server_name",
+                "client_name",
+                "network_protocol",
+                "build_number",
+                "share_code"
+              ],
+              "rounds": [
+                "id",
+                "match_checksum",
+                "number",
+                "start_tick",
+                "start_frame",
+                "freeze_time_end_tick",
+                "freeze_time_end_frame",
+                "end_tick",
+                "end_frame",
+                "end_officially_tick",
+                "end_officially_frame",
+                "team_a_name",
+                "team_b_name",
+                "team_a_score",
+                "team_b_score",
+                "team_a_side",
+                "team_b_side",
+                "team_a_start_money",
+                "team_b_start_money",
+                "team_a_equipment_value",
+                "team_b_equipment_value",
+                "team_a_money_spent",
+                "team_b_money_spent",
+                "team_a_economy_type",
+                "team_b_economy_type",
+                "duration",
+                "end_reason",
+                "winner_name",
+                "winner_side",
+                "overtime_number"
+              ],
+              "players": [
+                "id",
+                "match_checksum",
+                "steam_id",
+                "index",
+                "team_name",
+                "name",
+                "kill_count",
+                "death_count",
+                "assist_count",
+                "kill_death_ratio",
+                "headshot_count",
+                "headshot_percentage",
+                "damage_health",
+                "damage_armor",
+                "first_kill_count",
+                "first_death_count",
+                "mvp_count",
+                "average_damage_per_round",
+                "average_kill_per_round",
+                "average_death_per_round",
+                "utility_damage_per_round",
+                "rank_type",
+                "rank",
+                "old_rank",
+                "wins_count",
+                "bomb_planted_count",
+                "bomb_defused_count",
+                "hostage_rescued_count",
+                "score",
+                "kast",
+                "hltv_rating",
+                "hltv_rating_2",
+                "utility_damage",
+                "trade_kill_count",
+                "trade_death_count",
+                "first_trade_kill_count",
+                "first_trade_death_count",
+                "one_kill_count",
+                "two_kill_count",
+                "three_kill_count",
+                "four_kill_count",
+                "five_kill_count",
+                "inspect_weapon_count",
+                "color",
+                "crosshair_share_code"
+              ],
+              "tags": [
+                "id",
+                "name",
+                "color"
+              ],
+              "checksum_tags": [
+                "checksum",
+                "tag_id"
+              ],
+              "damages": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "health_damage",
+                "armor_damage",
+                "victim_health",
+                "victim_new_health",
+                "victim_armor",
+                "victim_new_armor",
+                "is_victim_controlling_bot",
+                "hitgroup",
+                "weapon_name",
+                "weapon_type",
+                "attacker_steam_id",
+                "attacker_side",
+                "attacker_team_name",
+                "is_attacker_controlling_bot",
+                "victim_steam_id",
+                "victim_side",
+                "victim_team_name",
+                "weapon_unique_id"
+              ],
+              "shots": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "weapon_name",
+                "weapon_id",
+                "projectile_id",
+                "player_steam_id",
+                "player_side",
+                "player_name",
+                "player_team_name",
+                "is_player_controlling_bot",
+                "x",
+                "y",
+                "z",
+                "player_velocity_x",
+                "player_velocity_y",
+                "player_velocity_z",
+                "player_yaw",
+                "player_pitch",
+                "recoil_index",
+                "aim_punch_angle_x",
+                "aim_punch_angle_y",
+                "view_punch_angle_x",
+                "view_punch_angle_y"
+              ],
+              "clutches": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "clutcher_name",
+                "clutcher_steam_id",
+                "won",
+                "side",
+                "opponent_count",
+                "has_clutcher_survived",
+                "clutcher_kill_count"
+              ]
+            },
+            "col_types": {
+              "kills": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "killer_steam_id": "character varying",
+                "killer_name": "character varying",
+                "killer_team_name": "character varying",
+                "killer_side": "smallint",
+                "victim_steam_id": "character varying",
+                "victim_name": "character varying",
+                "victim_team_name": "character varying",
+                "victim_side": "smallint",
+                "assister_steam_id": "character varying",
+                "assister_name": "character varying",
+                "assister_team_name": "character varying",
+                "assister_side": "smallint",
+                "is_headshot": "boolean",
+                "is_assisted_flash": "boolean",
+                "penetrated_objects": "integer",
+                "killer_x": "double precision",
+                "killer_y": "double precision",
+                "killer_z": "double precision",
+                "is_killer_airborne": "boolean",
+                "is_killer_blinded": "boolean",
+                "victim_x": "double precision",
+                "victim_y": "double precision",
+                "victim_z": "double precision",
+                "is_victim_airborne": "boolean",
+                "is_victim_blinded": "boolean",
+                "is_victim_inspecting_weapon": "boolean",
+                "assister_x": "double precision",
+                "assister_y": "double precision",
+                "assister_z": "double precision",
+                "weapon_name": "character varying",
+                "weapon_type": "character varying",
+                "is_killer_controlling_bot": "boolean",
+                "is_victim_controlling_bot": "boolean",
+                "is_assister_controlling_bot": "boolean",
+                "is_trade_kill": "boolean",
+                "is_trade_death": "boolean",
+                "is_through_smoke": "boolean",
+                "is_no_scope": "boolean",
+                "distance": "double precision"
+              },
+              "matches": {
+                "checksum": "character varying",
+                "demo_path": "character varying",
+                "game_type": "integer",
+                "game_mode": "integer",
+                "game_mode_str": "character varying",
+                "is_ranked": "boolean",
+                "kill_count": "integer",
+                "death_count": "integer",
+                "assist_count": "integer",
+                "shot_count": "integer",
+                "analyze_date": "timestamp with time zone",
+                "winner_name": "character varying",
+                "winner_side": "smallint",
+                "overtime_count": "integer",
+                "max_rounds": "integer",
+                "has_vac_live_ban": "boolean"
+              },
+              "demos": {
+                "checksum": "character varying",
+                "name": "character varying",
+                "game": "character varying",
+                "source": "character varying",
+                "type": "character varying",
+                "date": "timestamp with time zone",
+                "map_name": "character varying",
+                "tick_count": "integer",
+                "tickrate": "double precision",
+                "framerate": "double precision",
+                "duration": "double precision",
+                "server_name": "character varying",
+                "client_name": "character varying",
+                "network_protocol": "integer",
+                "build_number": "integer",
+                "share_code": "character varying"
+              },
+              "rounds": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "number": "integer",
+                "start_tick": "integer",
+                "start_frame": "integer",
+                "freeze_time_end_tick": "integer",
+                "freeze_time_end_frame": "integer",
+                "end_tick": "integer",
+                "end_frame": "integer",
+                "end_officially_tick": "integer",
+                "end_officially_frame": "integer",
+                "team_a_name": "character varying",
+                "team_b_name": "character varying",
+                "team_a_score": "integer",
+                "team_b_score": "integer",
+                "team_a_side": "smallint",
+                "team_b_side": "smallint",
+                "team_a_start_money": "integer",
+                "team_b_start_money": "integer",
+                "team_a_equipment_value": "integer",
+                "team_b_equipment_value": "integer",
+                "team_a_money_spent": "integer",
+                "team_b_money_spent": "integer",
+                "team_a_economy_type": "character varying",
+                "team_b_economy_type": "character varying",
+                "duration": "integer",
+                "end_reason": "smallint",
+                "winner_name": "character varying",
+                "winner_side": "smallint",
+                "overtime_number": "integer"
+              },
+              "players": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "steam_id": "character varying",
+                "index": "smallint",
+                "team_name": "character varying",
+                "name": "character varying",
+                "kill_count": "integer",
+                "death_count": "integer",
+                "assist_count": "integer",
+                "kill_death_ratio": "real",
+                "headshot_count": "integer",
+                "headshot_percentage": "real",
+                "damage_health": "integer",
+                "damage_armor": "integer",
+                "first_kill_count": "integer",
+                "first_death_count": "integer",
+                "mvp_count": "integer",
+                "average_damage_per_round": "real",
+                "average_kill_per_round": "real",
+                "average_death_per_round": "real",
+                "utility_damage_per_round": "real",
+                "rank_type": "integer",
+                "rank": "integer",
+                "old_rank": "integer",
+                "wins_count": "integer",
+                "bomb_planted_count": "integer",
+                "bomb_defused_count": "integer",
+                "hostage_rescued_count": "integer",
+                "score": "integer",
+                "kast": "real",
+                "hltv_rating": "real",
+                "hltv_rating_2": "real",
+                "utility_damage": "integer",
+                "trade_kill_count": "integer",
+                "trade_death_count": "integer",
+                "first_trade_kill_count": "integer",
+                "first_trade_death_count": "integer",
+                "one_kill_count": "integer",
+                "two_kill_count": "integer",
+                "three_kill_count": "integer",
+                "four_kill_count": "integer",
+                "five_kill_count": "integer",
+                "inspect_weapon_count": "integer",
+                "color": "integer",
+                "crosshair_share_code": "character varying"
+              },
+              "tags": {
+                "id": "bigint",
+                "name": "character varying",
+                "color": "character varying"
+              },
+              "checksum_tags": {
+                "checksum": "character varying",
+                "tag_id": "bigint"
+              },
+              "damages": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "health_damage": "integer",
+                "armor_damage": "integer",
+                "victim_health": "integer",
+                "victim_new_health": "integer",
+                "victim_armor": "integer",
+                "victim_new_armor": "integer",
+                "is_victim_controlling_bot": "boolean",
+                "hitgroup": "smallint",
+                "weapon_name": "character varying",
+                "weapon_type": "character varying",
+                "attacker_steam_id": "character varying",
+                "attacker_side": "smallint",
+                "attacker_team_name": "character varying",
+                "is_attacker_controlling_bot": "boolean",
+                "victim_steam_id": "character varying",
+                "victim_side": "smallint",
+                "victim_team_name": "character varying",
+                "weapon_unique_id": "character varying"
+              },
+              "shots": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "weapon_name": "character varying",
+                "weapon_id": "character varying",
+                "projectile_id": "character varying",
+                "player_steam_id": "character varying",
+                "player_side": "smallint",
+                "player_name": "character varying",
+                "player_team_name": "character varying",
+                "is_player_controlling_bot": "boolean",
+                "x": "double precision",
+                "y": "double precision",
+                "z": "double precision",
+                "player_velocity_x": "double precision",
+                "player_velocity_y": "double precision",
+                "player_velocity_z": "double precision",
+                "player_yaw": "double precision",
+                "player_pitch": "double precision",
+                "recoil_index": "double precision",
+                "aim_punch_angle_x": "double precision",
+                "aim_punch_angle_y": "double precision",
+                "view_punch_angle_x": "double precision",
+                "view_punch_angle_y": "double precision"
+              },
+              "clutches": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "clutcher_name": "character varying",
+                "clutcher_steam_id": "character varying",
+                "won": "boolean",
+                "side": "smallint",
+                "opponent_count": "integer",
+                "has_clutcher_survived": "boolean",
+                "clutcher_kill_count": "integer"
+              }
+            },
+            "tags": [
+              [
+                1,
+                "Aces",
+                "#22c55e"
+              ],
+              [
+                2,
+                "Clutch",
+                "#3b82f6"
+              ],
+              [
+                3,
+                "Entry",
+                "#ef4444"
+              ],
+              [
+                5,
+                "Imported",
+                "#d946ef"
+              ],
+              [
+                4,
+                "Wallbang",
+                "#8b5cf6"
+              ]
+            ],
+            "tags_schema": {
+              "table": "tags",
+              "id_col": "id",
+              "id_col_type": "bigint",
+              "name_col": "name",
+              "color_col": "color",
+              "junction_table": "checksum_tags",
+              "jt_tag_col": "tag_id",
+              "jt_match_col": "checksum",
+              "jt_col_types": {
+                "checksum": "character varying",
+                "tag_id": "bigint"
+              }
+            },
+            "match_types": [],
+            "maps": [
+              [
+                "t9-1",
+                [
+                  "t9-1"
+                ]
+              ],
+              [
+                "t9-2",
+                [
+                  "t9-2"
+                ]
+              ],
+              [
+                "t9-3",
+                [
+                  "t9-3"
+                ]
+              ],
+              [
+                "t9-4",
+                [
+                  "t9-4"
+                ]
+              ]
+            ],
+            "map_col": "map_name",
+            "map_alias": "d",
+            "map_join": "LEFT JOIN demos d ON d.\"checksum\" = m.\"checksum\""
+          }
+        }
+      }
+    },
+    {
+      "on": "tag_delete",
+      "reply": {
+        "ok": {
+          "data": {
+            "ok": true
+          }
+        }
+      }
+    },
+    {
+      "on": "connect_db",
+      "reply": {
+        "ok": {
+          "data": {
+            "players": [],
+            "names": {},
+            "date_col": "overtime_count",
+            "date_col_type": "integer",
+            "weapons": [],
+            "schema": {
+              "kills": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "killer_steam_id",
+                "killer_name",
+                "killer_team_name",
+                "killer_side",
+                "victim_steam_id",
+                "victim_name",
+                "victim_team_name",
+                "victim_side",
+                "assister_steam_id",
+                "assister_name",
+                "assister_team_name",
+                "assister_side",
+                "is_headshot",
+                "is_assisted_flash",
+                "penetrated_objects",
+                "killer_x",
+                "killer_y",
+                "killer_z",
+                "is_killer_airborne",
+                "is_killer_blinded",
+                "victim_x",
+                "victim_y",
+                "victim_z",
+                "is_victim_airborne",
+                "is_victim_blinded",
+                "is_victim_inspecting_weapon",
+                "assister_x",
+                "assister_y",
+                "assister_z",
+                "weapon_name",
+                "weapon_type",
+                "is_killer_controlling_bot",
+                "is_victim_controlling_bot",
+                "is_assister_controlling_bot",
+                "is_trade_kill",
+                "is_trade_death",
+                "is_through_smoke",
+                "is_no_scope",
+                "distance"
+              ],
+              "matches": [
+                "checksum",
+                "demo_path",
+                "game_type",
+                "game_mode",
+                "game_mode_str",
+                "is_ranked",
+                "kill_count",
+                "death_count",
+                "assist_count",
+                "shot_count",
+                "analyze_date",
+                "winner_name",
+                "winner_side",
+                "overtime_count",
+                "max_rounds",
+                "has_vac_live_ban"
+              ],
+              "demos": [
+                "checksum",
+                "name",
+                "game",
+                "source",
+                "type",
+                "date",
+                "map_name",
+                "tick_count",
+                "tickrate",
+                "framerate",
+                "duration",
+                "server_name",
+                "client_name",
+                "network_protocol",
+                "build_number",
+                "share_code"
+              ],
+              "rounds": [
+                "id",
+                "match_checksum",
+                "number",
+                "start_tick",
+                "start_frame",
+                "freeze_time_end_tick",
+                "freeze_time_end_frame",
+                "end_tick",
+                "end_frame",
+                "end_officially_tick",
+                "end_officially_frame",
+                "team_a_name",
+                "team_b_name",
+                "team_a_score",
+                "team_b_score",
+                "team_a_side",
+                "team_b_side",
+                "team_a_start_money",
+                "team_b_start_money",
+                "team_a_equipment_value",
+                "team_b_equipment_value",
+                "team_a_money_spent",
+                "team_b_money_spent",
+                "team_a_economy_type",
+                "team_b_economy_type",
+                "duration",
+                "end_reason",
+                "winner_name",
+                "winner_side",
+                "overtime_number"
+              ],
+              "players": [
+                "id",
+                "match_checksum",
+                "steam_id",
+                "index",
+                "team_name",
+                "name",
+                "kill_count",
+                "death_count",
+                "assist_count",
+                "kill_death_ratio",
+                "headshot_count",
+                "headshot_percentage",
+                "damage_health",
+                "damage_armor",
+                "first_kill_count",
+                "first_death_count",
+                "mvp_count",
+                "average_damage_per_round",
+                "average_kill_per_round",
+                "average_death_per_round",
+                "utility_damage_per_round",
+                "rank_type",
+                "rank",
+                "old_rank",
+                "wins_count",
+                "bomb_planted_count",
+                "bomb_defused_count",
+                "hostage_rescued_count",
+                "score",
+                "kast",
+                "hltv_rating",
+                "hltv_rating_2",
+                "utility_damage",
+                "trade_kill_count",
+                "trade_death_count",
+                "first_trade_kill_count",
+                "first_trade_death_count",
+                "one_kill_count",
+                "two_kill_count",
+                "three_kill_count",
+                "four_kill_count",
+                "five_kill_count",
+                "inspect_weapon_count",
+                "color",
+                "crosshair_share_code"
+              ],
+              "tags": [
+                "id",
+                "name",
+                "color"
+              ],
+              "checksum_tags": [
+                "checksum",
+                "tag_id"
+              ],
+              "damages": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "health_damage",
+                "armor_damage",
+                "victim_health",
+                "victim_new_health",
+                "victim_armor",
+                "victim_new_armor",
+                "is_victim_controlling_bot",
+                "hitgroup",
+                "weapon_name",
+                "weapon_type",
+                "attacker_steam_id",
+                "attacker_side",
+                "attacker_team_name",
+                "is_attacker_controlling_bot",
+                "victim_steam_id",
+                "victim_side",
+                "victim_team_name",
+                "weapon_unique_id"
+              ],
+              "shots": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "weapon_name",
+                "weapon_id",
+                "projectile_id",
+                "player_steam_id",
+                "player_side",
+                "player_name",
+                "player_team_name",
+                "is_player_controlling_bot",
+                "x",
+                "y",
+                "z",
+                "player_velocity_x",
+                "player_velocity_y",
+                "player_velocity_z",
+                "player_yaw",
+                "player_pitch",
+                "recoil_index",
+                "aim_punch_angle_x",
+                "aim_punch_angle_y",
+                "view_punch_angle_x",
+                "view_punch_angle_y"
+              ],
+              "clutches": [
+                "id",
+                "match_checksum",
+                "round_number",
+                "tick",
+                "frame",
+                "clutcher_name",
+                "clutcher_steam_id",
+                "won",
+                "side",
+                "opponent_count",
+                "has_clutcher_survived",
+                "clutcher_kill_count"
+              ]
+            },
+            "col_types": {
+              "kills": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "killer_steam_id": "character varying",
+                "killer_name": "character varying",
+                "killer_team_name": "character varying",
+                "killer_side": "smallint",
+                "victim_steam_id": "character varying",
+                "victim_name": "character varying",
+                "victim_team_name": "character varying",
+                "victim_side": "smallint",
+                "assister_steam_id": "character varying",
+                "assister_name": "character varying",
+                "assister_team_name": "character varying",
+                "assister_side": "smallint",
+                "is_headshot": "boolean",
+                "is_assisted_flash": "boolean",
+                "penetrated_objects": "integer",
+                "killer_x": "double precision",
+                "killer_y": "double precision",
+                "killer_z": "double precision",
+                "is_killer_airborne": "boolean",
+                "is_killer_blinded": "boolean",
+                "victim_x": "double precision",
+                "victim_y": "double precision",
+                "victim_z": "double precision",
+                "is_victim_airborne": "boolean",
+                "is_victim_blinded": "boolean",
+                "is_victim_inspecting_weapon": "boolean",
+                "assister_x": "double precision",
+                "assister_y": "double precision",
+                "assister_z": "double precision",
+                "weapon_name": "character varying",
+                "weapon_type": "character varying",
+                "is_killer_controlling_bot": "boolean",
+                "is_victim_controlling_bot": "boolean",
+                "is_assister_controlling_bot": "boolean",
+                "is_trade_kill": "boolean",
+                "is_trade_death": "boolean",
+                "is_through_smoke": "boolean",
+                "is_no_scope": "boolean",
+                "distance": "double precision"
+              },
+              "matches": {
+                "checksum": "character varying",
+                "demo_path": "character varying",
+                "game_type": "integer",
+                "game_mode": "integer",
+                "game_mode_str": "character varying",
+                "is_ranked": "boolean",
+                "kill_count": "integer",
+                "death_count": "integer",
+                "assist_count": "integer",
+                "shot_count": "integer",
+                "analyze_date": "timestamp with time zone",
+                "winner_name": "character varying",
+                "winner_side": "smallint",
+                "overtime_count": "integer",
+                "max_rounds": "integer",
+                "has_vac_live_ban": "boolean"
+              },
+              "demos": {
+                "checksum": "character varying",
+                "name": "character varying",
+                "game": "character varying",
+                "source": "character varying",
+                "type": "character varying",
+                "date": "timestamp with time zone",
+                "map_name": "character varying",
+                "tick_count": "integer",
+                "tickrate": "double precision",
+                "framerate": "double precision",
+                "duration": "double precision",
+                "server_name": "character varying",
+                "client_name": "character varying",
+                "network_protocol": "integer",
+                "build_number": "integer",
+                "share_code": "character varying"
+              },
+              "rounds": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "number": "integer",
+                "start_tick": "integer",
+                "start_frame": "integer",
+                "freeze_time_end_tick": "integer",
+                "freeze_time_end_frame": "integer",
+                "end_tick": "integer",
+                "end_frame": "integer",
+                "end_officially_tick": "integer",
+                "end_officially_frame": "integer",
+                "team_a_name": "character varying",
+                "team_b_name": "character varying",
+                "team_a_score": "integer",
+                "team_b_score": "integer",
+                "team_a_side": "smallint",
+                "team_b_side": "smallint",
+                "team_a_start_money": "integer",
+                "team_b_start_money": "integer",
+                "team_a_equipment_value": "integer",
+                "team_b_equipment_value": "integer",
+                "team_a_money_spent": "integer",
+                "team_b_money_spent": "integer",
+                "team_a_economy_type": "character varying",
+                "team_b_economy_type": "character varying",
+                "duration": "integer",
+                "end_reason": "smallint",
+                "winner_name": "character varying",
+                "winner_side": "smallint",
+                "overtime_number": "integer"
+              },
+              "players": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "steam_id": "character varying",
+                "index": "smallint",
+                "team_name": "character varying",
+                "name": "character varying",
+                "kill_count": "integer",
+                "death_count": "integer",
+                "assist_count": "integer",
+                "kill_death_ratio": "real",
+                "headshot_count": "integer",
+                "headshot_percentage": "real",
+                "damage_health": "integer",
+                "damage_armor": "integer",
+                "first_kill_count": "integer",
+                "first_death_count": "integer",
+                "mvp_count": "integer",
+                "average_damage_per_round": "real",
+                "average_kill_per_round": "real",
+                "average_death_per_round": "real",
+                "utility_damage_per_round": "real",
+                "rank_type": "integer",
+                "rank": "integer",
+                "old_rank": "integer",
+                "wins_count": "integer",
+                "bomb_planted_count": "integer",
+                "bomb_defused_count": "integer",
+                "hostage_rescued_count": "integer",
+                "score": "integer",
+                "kast": "real",
+                "hltv_rating": "real",
+                "hltv_rating_2": "real",
+                "utility_damage": "integer",
+                "trade_kill_count": "integer",
+                "trade_death_count": "integer",
+                "first_trade_kill_count": "integer",
+                "first_trade_death_count": "integer",
+                "one_kill_count": "integer",
+                "two_kill_count": "integer",
+                "three_kill_count": "integer",
+                "four_kill_count": "integer",
+                "five_kill_count": "integer",
+                "inspect_weapon_count": "integer",
+                "color": "integer",
+                "crosshair_share_code": "character varying"
+              },
+              "tags": {
+                "id": "bigint",
+                "name": "character varying",
+                "color": "character varying"
+              },
+              "checksum_tags": {
+                "checksum": "character varying",
+                "tag_id": "bigint"
+              },
+              "damages": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "health_damage": "integer",
+                "armor_damage": "integer",
+                "victim_health": "integer",
+                "victim_new_health": "integer",
+                "victim_armor": "integer",
+                "victim_new_armor": "integer",
+                "is_victim_controlling_bot": "boolean",
+                "hitgroup": "smallint",
+                "weapon_name": "character varying",
+                "weapon_type": "character varying",
+                "attacker_steam_id": "character varying",
+                "attacker_side": "smallint",
+                "attacker_team_name": "character varying",
+                "is_attacker_controlling_bot": "boolean",
+                "victim_steam_id": "character varying",
+                "victim_side": "smallint",
+                "victim_team_name": "character varying",
+                "weapon_unique_id": "character varying"
+              },
+              "shots": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "weapon_name": "character varying",
+                "weapon_id": "character varying",
+                "projectile_id": "character varying",
+                "player_steam_id": "character varying",
+                "player_side": "smallint",
+                "player_name": "character varying",
+                "player_team_name": "character varying",
+                "is_player_controlling_bot": "boolean",
+                "x": "double precision",
+                "y": "double precision",
+                "z": "double precision",
+                "player_velocity_x": "double precision",
+                "player_velocity_y": "double precision",
+                "player_velocity_z": "double precision",
+                "player_yaw": "double precision",
+                "player_pitch": "double precision",
+                "recoil_index": "double precision",
+                "aim_punch_angle_x": "double precision",
+                "aim_punch_angle_y": "double precision",
+                "view_punch_angle_x": "double precision",
+                "view_punch_angle_y": "double precision"
+              },
+              "clutches": {
+                "id": "bigint",
+                "match_checksum": "character varying",
+                "round_number": "integer",
+                "tick": "integer",
+                "frame": "integer",
+                "clutcher_name": "character varying",
+                "clutcher_steam_id": "character varying",
+                "won": "boolean",
+                "side": "smallint",
+                "opponent_count": "integer",
+                "has_clutcher_survived": "boolean",
+                "clutcher_kill_count": "integer"
+              }
+            },
+            "tags": [
+              [
+                1,
+                "Aces",
+                "#22c55e"
+              ],
+              [
+                2,
+                "Clutch",
+                "#3b82f6"
+              ],
+              [
+                3,
+                "Entry",
+                "#ef4444"
+              ],
+              [
+                5,
+                "Imported",
+                "#d946ef"
+              ]
+            ],
+            "tags_schema": {
+              "table": "tags",
+              "id_col": "id",
+              "id_col_type": "bigint",
+              "name_col": "name",
+              "color_col": "color",
+              "junction_table": "checksum_tags",
+              "jt_tag_col": "tag_id",
+              "jt_match_col": "checksum",
+              "jt_col_types": {
+                "checksum": "character varying",
+                "tag_id": "bigint"
+              }
+            },
+            "match_types": [],
+            "maps": [
+              [
+                "t9-1",
+                [
+                  "t9-1"
+                ]
+              ],
+              [
+                "t9-2",
+                [
+                  "t9-2"
+                ]
+              ],
+              [
+                "t9-3",
+                [
+                  "t9-3"
+                ]
+              ],
+              [
+                "t9-4",
+                [
+                  "t9-4"
+                ]
+              ]
+            ],
+            "map_col": "map_name",
+            "map_alias": "d",
+            "map_join": "LEFT JOIN demos d ON d.\"checksum\" = m.\"checksum\""
+          }
+        }
+      }
+    },
+    {
+      "on": "run_inputs_problem",
+      "reply": {
+        "ok": {
+          "problem": "Pick at least one player: CAPTURE › Player, search your name or Steam ID, then click the row."
+        }
+      }
+    },
+    {
+      "on": "save_config",
+      "reply": {
+        "ok": {}
+      }
+    },
+    {
+      "on": "tags_set_active",
+      "reply": {
+        "ok": {
+          "data": {
+            "active_tag_ids": [],
+            "active_tag_names": []
+          }
+        }
+      }
+    },
+    {
+      "on": "run_inputs_problem",
+      "reply": {
+        "ok": {
+          "problem": "Pick at least one player: CAPTURE › Player, search your name or Steam ID, then click the row."
+        }
+      }
+    },
+    {
+      "on": "save_config",
+      "reply": {
+        "ok": {}
+      }
+    }
+  ]
+}

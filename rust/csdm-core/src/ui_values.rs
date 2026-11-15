@@ -182,6 +182,59 @@ pub const KILL_RETRACT_PX: f32 = 160.0;
 pub const RECOIL_PX: f32 = 9.0;
 pub const PROGRESS_BAR: [f32; 2] = [120.0, 4.0];
 
+// ---- TAGS tab (tabs/tagCards/*, TagCards.css, TagsTab.css) ----
+/// `TAG_PRESET_COLORS` (`csdm/static_data.py`, `useTagGrid.ts::TAG_COLOR_PRESETS`): the new-tag swatches.
+pub const TAG_PRESET_COLORS: [&str; 20] = [
+    "#f97316", "#ef4444", "#eab308", "#22c55e", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6", "#f43f5e", "#6366f1",
+    "#0ea5e9", "#84cc16", "#d946ef", "#f59e0b", "#10b981", "#6b7280", "#a855f7", "#e11d48", "#0891b2", "#65a30d",
+];
+/// `useTagOps.ts`: the export file's suggested name.
+pub const TAG_EXPORT_FILE: &str = "tags-export.json";
+/// `.tg-tray`: min height, padding, corner; dash of its border.
+pub const TAG_TRAY_MIN_H: f32 = 44.0;
+pub const TAG_TRAY_PAD: [f32; 2] = [9.0, 7.0];
+pub const TAG_TRAY_RADIUS: f32 = 14.0;
+pub const TAG_TRAY_DASH: [f32; 2] = [4.0, 3.0];
+/// `.tg-pill`: height, padding left/right, dot, font.
+pub const TAG_PILL_H: f32 = 28.0;
+pub const TAG_PILL_PAD: [f32; 2] = [6.0, 8.0];
+pub const TAG_PILL_DOT: f32 = 14.0;
+pub const FONT_TAG_PILL: f32 = 12.5;
+/// `.tag-swatch`: diameter.
+pub const TAG_SWATCH: f32 = 22.0;
+/// `.chip .d`: the tag colour dot of a palette chip.
+pub const TAG_CHIP_DOT: f32 = 8.0;
+/// `.chip-pair > .close-btn` padding left/right.
+pub const TAG_CLOSE_PAD: [f32; 2] = [8.0, 10.0];
+/// Mixes of the tag colour / accent (`color-mix` percentages in TagCards.css).
+pub const TAG_TRAY_TINT_PCT: f32 = 5.0;
+pub const TAG_TRAY_EDGE_PCT: f32 = 35.0;
+pub const TAG_PILL_TINT_PCT: f32 = 16.0;
+pub const TAG_PILL_EDGE_PCT: f32 = 55.0;
+/// `.tgr-line`: column weights of the span and the tail, end marker size, bar height.
+pub const TAG_RANGE_SPAN_TAIL: [f32; 2] = [1.0, 0.55];
+pub const TAG_RANGE_MARK: [f32; 2] = [14.0, 22.0];
+pub const TAG_RANGE_BAR_H: f32 = 10.0;
+pub const TAG_RANGE_DASH: [f32; 2] = [6.0, 5.0];
+pub const FONT_TAG_RANGE: f32 = 10.5;
+pub const FONT_TAG_RANGE_SMALL: f32 = 10.0;
+/// `.tgo-steps`: column weights, gap, step padding and corner, number badge.
+pub const TAG_OPS_STEPS: [f32; 3] = [0.8, 1.5, 0.9];
+pub const TAG_OPS_GAP: f32 = 8.0;
+pub const TAG_OPS_PAD: f32 = 10.0;
+pub const TAG_OPS_RADIUS: f32 = 14.0;
+pub const TAG_OPS_BADGE: f32 = 20.0;
+/// `.cs-switch` (`ToggleSwitch`): track, knob, gap to the label, label size.
+pub const SWITCH_TRACK: [f32; 2] = [26.0, 15.0];
+pub const SWITCH_KNOB: f32 = 11.0;
+pub const SWITCH_GAP: f32 = 7.0;
+pub const FONT_SWITCH: f32 = 11.5;
+/// `.sx-kick`: the small upper-case kicker.
+pub const FONT_KICK: f32 = 9.5;
+pub const SPACING_KICK: f32 = 0.13;
+/// Space between the rows of a card body.
+pub const TAG_ROW_GAP: f32 = 10.0;
+pub const TAG_ITEM_GAP: f32 = 6.0;
 // ---- SETTINGS tab (T11: tabs/settingsCards/*, PresetSection.tsx) ----
 pub const SETTINGS_LABEL_WIDTH: f32 = 96.0;
 /// Path labels are longer ("Concatenated clips folder").

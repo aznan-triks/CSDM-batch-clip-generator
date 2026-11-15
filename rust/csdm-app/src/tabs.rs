@@ -2,6 +2,7 @@
 //! never removed; a sixth cannot appear without touching this table.
 
 pub mod capture;
+pub mod tags;
 pub mod settings;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

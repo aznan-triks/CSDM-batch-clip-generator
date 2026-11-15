@@ -186,11 +186,11 @@ impl SettingsTab {
                 self.folder_error = e;
                 self.switch = None;
             }
-            (Req::Connect, Ok(_)) => {
+            (Req::Connect, Ok(v)) => {
                 self.pg_status = "Connected".into();
                 self.pg_state = PgState::Ok;
-                // The window now uses what came back (3.5 `reload()`).
-                cx.link.db = crate::link::DbState::Ok;
+                // The window now uses what came back (3.5 `reload()`): pill and every card.
+                cx.link.connected(&v);
             }
             (Req::Connect, Err(e)) => {
                 self.pg_status = e.clone();

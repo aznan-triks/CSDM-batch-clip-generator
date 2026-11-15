@@ -207,8 +207,21 @@ impl Link {
         self.send_as(now, command, Pending::Kept)
     }
 
+    /// The answer to a `request`, once it has come (taken once).
     pub fn take_reply(&mut self, id: u64) -> Option<Result<Value, String>> {
         self.replies.remove(&id)
+    }
+
+    /// A `connect_db` that succeeded, whoever sent it (start-up, a card's reload, SETTINGS
+    /// Test & Reload): the pill and every card's view of the database follow.
+    pub fn connected(&mut self, reply: &Value) {
+        self.db = DbState::Ok;
+        self.database = Some(reply.get("data").cloned().unwrap_or(Value::Null));
+    }
+
+    /// Reads the database again (3.5 `useDatabase().reload()`): the shared state follows.
+    pub fn reconnect(&mut self, now: f64) {
+        self.send_as(now, Command::ConnectDb { pg: None }, Pending::ConnectDb);
     }
 
     /// Start-up, in 3.5's order: greeting, settings, the shared connection.
@@ -328,10 +341,7 @@ impl Link {
                 // The connection follows the settings it reads (3.5 DatabaseProvider).
                 self.send_as(now, Command::ConnectDb { pg: None }, Pending::ConnectDb);
             }
-            (Pending::ConnectDb, Ok(v)) => {
-                self.db = DbState::Ok;
-                self.database = Some(data(&v));
-            }
+            (Pending::ConnectDb, Ok(v)) => self.connected(&v),
             (Pending::ConnectDb, Err(e)) => {
                 self.db = DbState::Error(e.clone());
                 out.push(Notice::Failed(e));

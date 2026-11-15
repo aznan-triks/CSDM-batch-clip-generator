@@ -129,6 +129,6 @@ fn main() -> eframe::Result {
     eframe::run_native(
         APP_TITLE,
         options,
-        Box::new(move |cc| Ok(Box::new(App { shell: Shell::new(&cc.egui_ctx, Box::new(engine), ShellOptions::from_env()).with_tab(csdm_app::tabs::TabId::Settings, Box::new(csdm_app::tabs::settings::SettingsTab::new())).with_tab(csdm_app::tabs::TabId::Capture, Box::new(csdm_app::tabs::capture::CaptureTab::new())), frames: 0, ready, shot, shot_asked: false }))),
+        Box::new(move |cc| Ok(Box::new(App { shell: Shell::new(&cc.egui_ctx, Box::new(engine), ShellOptions::from_env()).with_tab(csdm_app::tabs::TabId::Settings, Box::new(csdm_app::tabs::settings::SettingsTab::new())).with_tab(csdm_app::tabs::TabId::Tags, Box::new(csdm_app::tabs::tags::TagsTab::new())).with_tab(csdm_app::tabs::TabId::Capture, Box::new(csdm_app::tabs::capture::CaptureTab::new())), frames: 0, ready, shot, shot_asked: false }))),
     )
 }
