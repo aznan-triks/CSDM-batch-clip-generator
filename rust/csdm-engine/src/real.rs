@@ -336,9 +336,9 @@ impl State {
         }
         let ports = SinkPorts { sink: &self.sink, journal: self.journal.as_ref(), cancel: &self.cancel };
         let (db, disc) = self.db.as_mut().expect("connected above");
-        // shortcut: the TAGS tab's selection (`_get_active_tag_names`) is not held here yet; T9 keeps
-        // it (`TagState.active`) and passes it at the merge. Until then `tag_on_export` alone is used.
-        let mut tags = PgParams::from_settings(&self.settings).ok().map(|p| DbRunTags::new(p, disc.tags.clone(), Vec::new()));
+        // The TAGS tab's selection replaces `tag_on_export` when it names any tag (3.5 `_get_active_tag_names`).
+        let active = crate::tag_commands::active_names(&self.tags.active, disc);
+        let mut tags = PgParams::from_settings(&self.settings).ok().map(|p| DbRunTags::new(p, disc.tags.clone(), active));
         let mut cx = Ctx::new(db, disc, &ports, &self.demos, &self.cancel);
         let mut exec = ProcessExec { ports: &ports, control: &self.control, machine: &machine };
         let sink = &self.sink;
