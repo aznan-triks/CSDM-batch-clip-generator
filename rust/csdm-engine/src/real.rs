@@ -13,6 +13,7 @@ use crate::preview::dp2::DemoStore;
 use crate::preview::{cfg::build_run_cfg, worker, Ctx, Ports};
 use crate::process::{Machine, ProcessExec};
 use crate::run::{ensure_csdm_dirs, kill_target, request_kill, request_stop, RunControl};
+use crate::settings_home::SettingsHome;
 use crate::{Engine, EngineError};
 use csdm_core::Settings;
 use csdm_db::{Db, Discovery, PgParams};
@@ -41,6 +42,11 @@ impl RealEngine {
     /// Starts the engine thread. `settings` gives the connection (`pg_*`) until `connect_db` brings
     /// other values; `journal` receives the detail of every failure.
     pub fn start(settings: Settings, secrets: Secrets, journal: Option<Journal>) -> Self {
+        Self::start_with_home(settings, secrets, journal, None)
+    }
+
+    /// `start`, with the settings folder the settings commands work on (T11 `settings_home`).
+    pub fn start_with_home(settings: Settings, secrets: Secrets, journal: Option<Journal>, home: Option<SettingsHome>) -> Self {
         let (tx, events) = channel();
         let sink = EventSink::new(tx, secrets.clone());
         let (commands, inbox) = channel::<(u64, Command)>();
@@ -59,6 +65,8 @@ impl RealEngine {
             cancel: cancel.clone(),
             previewing: previewing.clone(),
             control: control.clone(),
+            home,
+            tags: Default::default(),
         };
         std::thread::spawn(move || {
             for (id, command) in inbox {
@@ -149,6 +157,8 @@ struct State {
     cancel: Arc<AtomicBool>,
     previewing: Arc<AtomicBool>,
     control: Arc<RunControl>,
+    home: Option<SettingsHome>,
+    tags: crate::tag_commands::TagState,
 }
 
 impl State {
@@ -208,8 +218,28 @@ impl State {
                 let disc = self.db.as_ref().map_or(&no_db, |(_, d)| d);
                 json!({"data": clips::preview_export(self.last.as_ref(), disc, &format)?})
             }
+            c @ (Command::LoadConfig | Command::SaveConfig { .. } | Command::ProbeConfigDir { .. } | Command::ApplyConfigDir { .. } | Command::ListPresets | Command::SavePreset { .. } | Command::LoadPreset { .. } | Command::DeletePreset { .. }) => return self.settings_command(c),
+            c if crate::tag_commands::is_tag_command(&c) => self.tag_command(c)?,
             other => return Err(EngineError::User(format!("\"{}\" is not available in this build yet.", other.name()))),
         };
+        Ok(Some(reply))
+    }
+
+    /// T11: settings, presets and the settings folder. The settings the engine connects with follow
+    /// what is loaded and saved.
+    fn settings_command(&mut self, command: Command) -> Result<Option<Value>, EngineError> {
+        let refused = || EngineError::User(format!("\"{}\" is not available in this build yet.", command.name()));
+        let home = self.home.as_mut().ok_or_else(refused)?;
+        let reply = home.handle(&command, &self.sink).ok_or_else(refused)?.map_err(EngineError::User)?;
+        match &command {
+            Command::SaveConfig { cfg } => self.settings = cfg.clone(),
+            Command::LoadConfig => {
+                if let Some(cfg) = reply.get("data").and_then(Value::as_object) {
+                    self.settings = cfg.clone();
+                }
+            }
+            _ => {}
+        }
         Ok(Some(reply))
     }
 
@@ -224,7 +254,21 @@ impl State {
         let data = disc.to_json();
         self.settings = params;
         self.db = Some((db, disc));
+        self.tags.reset();
         Ok(json!({"data": data}))
+    }
+
+    /// The ten tag commands (T9, `tag_commands.rs`); only `tags_set_active` works unconnected.
+    fn tag_command(&mut self, command: Command) -> Result<Value, EngineError> {
+        if !crate::tag_commands::needs_database(&command) {
+            return self.tags.serve(command, None);
+        }
+        self.ensure_connected()?;
+        let params = PgParams::from_settings(&self.settings)?;
+        let ports = SinkPorts { sink: &self.sink, journal: self.journal.as_ref(), cancel: &self.cancel };
+        let (db, disc) = self.db.as_mut().expect("connected above");
+        let cx = crate::tag_commands::TagCx { db, disc, params: &params, ports: &ports, demos: &self.demos, cancel: &self.cancel };
+        self.tags.serve(command, Some(cx))
     }
 
     /// 3.5 `_pg`: connects on first use with the saved settings, and opens a new session when the
