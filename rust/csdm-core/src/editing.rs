@@ -7,6 +7,7 @@
 //! after the last one) and take events out (`excluded_events`, by `event_key`).
 
 use serde_json::{json, Map, Value};
+use std::collections::HashMap;
 
 /// The per-clip handle range, in whole seconds (3.5 `CLIP_EDIT_RANGE`): the widget's own range,
 /// wider than the global setting on purpose (one clip may need a long run-up).
@@ -27,12 +28,37 @@ pub struct ClipEntry {
 impl ClipEntry {
     /// Whether any edit field is present.
     pub fn edited(&self) -> bool {
-        todo!()
+        self.before_s.is_some() || self.after_s.is_some() || self.excluded_events.is_some()
+    }
+
+    /// 3.5 `savedClip`: an entry the engine already checked; `None` without its address.
+    pub fn from_json(v: &Value) -> Option<Self> {
+        let seconds = |k: &str| v.get(k).and_then(Value::as_i64);
+        let excluded: Vec<String> = v["excluded_events"].as_array().map(|a| a.iter().filter_map(text).collect()).unwrap_or_default();
+        Some(Self {
+            demo_path: v.get("demo_path")?.as_str()?.to_string(),
+            start_tick: v.get("start_tick")?.as_i64()?,
+            before_s: seconds("before_s"),
+            after_s: seconds("after_s"),
+            excluded_events: (!excluded.is_empty()).then_some(excluded),
+        })
     }
 
     /// The entry as 3.5 holds it: only the edit fields present.
     pub fn to_json(&self) -> Value {
-        todo!()
+        let mut m = Map::new();
+        m.insert("demo_path".into(), self.demo_path.clone().into());
+        m.insert("start_tick".into(), self.start_tick.into());
+        if let Some(s) = self.before_s {
+            m.insert("before_s".into(), s.into());
+        }
+        if let Some(s) = self.after_s {
+            m.insert("after_s".into(), s.into());
+        }
+        if let Some(k) = &self.excluded_events {
+            m.insert("excluded_events".into(), k.clone().into());
+        }
+        Value::Object(m)
     }
 }
 
@@ -49,9 +75,18 @@ pub struct Window {
 /// order, `kept[i]` whether event `i` stays. `None` when no event is left. An unedited clip
 /// (`edited == false`) keeps the preview's window. Unedited sides keep the lead / tail measured
 /// from the clip's first / last event; start ≥ 0; never an empty clip.
+#[allow(clippy::too_many_arguments)] // the engine and the window hold the clip in different shapes
 pub fn edited_window(start_tick: i64, end_tick: i64, ticks: &[i64], kept: &[bool], before_s: Option<i64>, after_s: Option<i64>, edited: bool, tickrate: i64) -> Option<Window> {
-    let _ = (start_tick, end_tick, ticks, kept, before_s, after_s, edited, tickrate);
-    todo!()
+    let first_kept = kept.iter().position(|&k| k)?;
+    let last_kept = kept.iter().rposition(|&k| k)?;
+    if !edited {
+        return Some(Window { start_tick, end_tick, first_kept, last_kept });
+    }
+    let lead = before_s.map_or(ticks[0] - start_tick, |s| s * tickrate);
+    let tail = after_s.map_or(end_tick - ticks[ticks.len() - 1], |s| s * tickrate);
+    let start = (ticks[first_kept] - lead).max(0);
+    let end = (ticks[last_kept] + tail).max(start + 1);
+    Some(Window { start_tick: start, end_tick: end, first_kept, last_kept })
 }
 
 /// One event of a preview clip.
@@ -74,9 +109,22 @@ pub struct CameraSpan {
 
 impl CameraSpan {
     pub fn from_json(v: &Value) -> Self {
-        let _ = v;
-        todo!()
+        Self { from_tick: tick(&v["from_tick"]).unwrap_or(0), to_tick: tick(&v["to_tick"]).unwrap_or(0), steam_id: text(&v["steam_id"]).unwrap_or_default(), name: text(&v["name"]).unwrap_or_default() }
     }
+}
+
+/// JS `String(x ?? …)`: `None` for null / absent.
+fn text(v: &Value) -> Option<String> {
+    match v {
+        Value::Null => None,
+        Value::String(s) => Some(s.clone()),
+        other => Some(other.to_string()),
+    }
+}
+
+/// A tick as JS `Number(x)` then `Math.trunc` would keep it; `None` for null / absent / not a number.
+fn tick(v: &Value) -> Option<i64> {
+    v.as_i64().or_else(|| v.as_f64().map(|f| f as i64))
 }
 
 /// One clip of the last preview, with the user's checking and edits.
@@ -110,23 +158,72 @@ pub struct EditedWindow {
 
 impl PreviewClip {
     pub fn edited(&self) -> bool {
-        todo!()
+        self.before_s.is_some() || self.after_s.is_some() || !self.excluded.is_empty()
     }
 
     pub fn is_excluded(&self, key: &str) -> bool {
-        let _ = key;
-        todo!()
+        self.excluded.iter().any(|k| k == key)
     }
 
     /// 3.5 `editedWindow`; `None` when every event was taken out.
     pub fn window(&self, tickrate: i64) -> Option<EditedWindow> {
-        let _ = tickrate;
-        todo!()
+        let rate = tickrate as f64;
+        let (start, end, kept) = if self.events.is_empty() || !self.edited() {
+            (self.start_tick, self.end_tick, (0..self.events.len()).collect::<Vec<_>>())
+        } else {
+            let ticks: Vec<i64> = self.events.iter().map(|e| e.tick).collect();
+            let mask: Vec<bool> = self.events.iter().map(|e| !self.is_excluded(&e.key)).collect();
+            let w = edited_window(self.start_tick, self.end_tick, &ticks, &mask, self.before_s, self.after_s, true, tickrate)?;
+            (w.start_tick, w.end_tick, (0..mask.len()).filter(|&i| mask[i]).collect())
+        };
+        let first = kept.first().map_or(start, |&i| self.events[i].tick);
+        let last = kept.last().map_or(end, |&i| self.events[i].tick);
+        Some(EditedWindow { start_tick: start, end_tick: end, duration_s: (end - start) as f64 / rate, kept, lead_s: (first - start) as f64 / rate, tail_s: (end - last) as f64 / rate })
     }
 
     /// 3.5 `clipPayload`.
     pub fn entry(&self) -> ClipEntry {
-        todo!()
+        ClipEntry {
+            demo_path: self.demo_path.clone(),
+            start_tick: self.start_tick,
+            before_s: self.before_s,
+            after_s: self.after_s,
+            excluded_events: (!self.excluded.is_empty()).then(|| self.excluded.clone()),
+        }
+    }
+
+    fn from_sequence(demo_path: &str, seq: &Value, fallback_player: &str) -> Self {
+        let empty = Map::new();
+        let events = seq["events"].as_array().map(Vec::as_slice).unwrap_or_default();
+        let first = events.first().and_then(Value::as_object).unwrap_or(&empty);
+        let start_tick = tick(&seq["start_tick"]).unwrap_or(0);
+        let event_type = text(&seq["event_type"]).or_else(|| first.get("type").and_then(text)).unwrap_or_else(|| "?".into());
+        // Non-kill events carry the tracked player on attacker_sid (damage, shot) or victim_sid
+        // (damage_target / death) instead of killer_sid.
+        let field = |k: &str| first.get(k).and_then(text);
+        let player = if event_type == "death" || event_type == "damage_target" { field("victim_sid") } else { field("attacker_sid").or_else(|| field("killer_sid")) };
+        let keys = seq["event_keys"].as_array();
+        Self {
+            demo_path: demo_path.to_string(),
+            start_tick,
+            end_tick: tick(&seq["end_tick"]).unwrap_or(start_tick),
+            player: player.unwrap_or_else(|| fallback_player.to_string()),
+            selected: true,
+            events: events
+                .iter()
+                .enumerate()
+                .map(|(i, e)| PreviewEvent {
+                    tick: tick(&e["tick"]).unwrap_or(start_tick),
+                    kind: text(&e["type"]).unwrap_or_else(|| event_type.clone()),
+                    key: keys.and_then(|k| k.get(i)).and_then(text).unwrap_or_else(|| i.to_string()),
+                })
+                .collect(),
+            cameras: seq["camera_segments"].as_array().map(|c| c.iter().map(CameraSpan::from_json).collect()).unwrap_or_default(),
+            event_type,
+            before_s: None,
+            after_s: None,
+            excluded: Vec::new(),
+        }
     }
 }
 
@@ -136,6 +233,15 @@ pub struct EmptyReason {
     pub headline: String,
     pub hint: String,
     pub stages: Vec<(String, f64)>,
+}
+
+impl EmptyReason {
+    /// 3.5 `readEmptyReason`: `None` when absent or without a headline.
+    fn from_json(v: &Value) -> Option<Self> {
+        let headline = v.get("headline")?.as_str()?.to_string();
+        let stages = v["stages"].as_array().map(|s| s.iter().map(|st| (text(&st["label"]).unwrap_or_default(), st["count"].as_f64().unwrap_or(0.0))).collect()).unwrap_or_default();
+        Some(Self { headline, hint: text(&v["hint"]).unwrap_or_default(), stages })
+    }
 }
 
 /// One demo's row on the timeline: its clips, by index.
@@ -166,94 +272,134 @@ impl Default for Preview {
 impl Preview {
     /// 3.5 `reduceEngineState("preview_ready")`: every clip checked, unedited.
     pub fn from_ready(payload: &Value) -> Self {
-        let _ = payload;
-        todo!()
+        let cfg = &payload["cfg"];
+        let tickrate = tick(&cfg["tickrate"]).filter(|&t| t > 0).unwrap_or(TICKRATE_FALLBACK);
+        let fallback_player = text(&cfg["player_name"]).unwrap_or_default();
+        let mut clips = Vec::new();
+        if let Some(sequences) = payload["sequences"].as_object() {
+            for (demo_path, seqs) in sequences {
+                clips.extend(seqs.as_array().into_iter().flatten().map(|s| PreviewClip::from_sequence(demo_path, s, &fallback_player)));
+            }
+        }
+        let empty_reason = if clips.is_empty() { EmptyReason::from_json(&payload["empty_reason"]) } else { None };
+        Self { clips, tickrate, empty_reason, generation: 0 }
     }
 
     pub fn selected_count(&self) -> usize {
-        todo!()
+        self.clips.iter().filter(|c| c.selected).count()
     }
 
-    /// Seconds the run records: edited windows, clips with no event left at 0 (3.5 `durations`).
+    /// Seconds the run records: the checked clips' edited windows, a clip with no event left at 0.
     pub fn total_s(&self) -> f64 {
-        todo!()
+        self.clips.iter().filter(|c| c.selected).filter_map(|c| c.window(self.tickrate)).map(|w| w.duration_s).sum()
+    }
+
+    fn change(&mut self, index: usize, f: impl FnOnce(&mut PreviewClip)) {
+        if let Some(clip) = self.clips.get_mut(index) {
+            f(clip);
+            self.generation += 1;
+        }
     }
 
     pub fn toggle(&mut self, index: usize) {
-        let _ = index;
-        todo!()
+        self.change(index, |c| c.selected = !c.selected);
     }
 
     /// `editClip(index, {beforeS})`, clamped to [`CLIP_EDIT_RANGE`].
     pub fn set_before(&mut self, index: usize, seconds: i64) {
-        let _ = (index, seconds);
-        todo!()
+        self.change(index, |c| c.before_s = Some(seconds.clamp(CLIP_EDIT_RANGE[0], CLIP_EDIT_RANGE[1])));
     }
 
     pub fn set_after(&mut self, index: usize, seconds: i64) {
-        let _ = (index, seconds);
-        todo!()
+        self.change(index, |c| c.after_s = Some(seconds.clamp(CLIP_EDIT_RANGE[0], CLIP_EDIT_RANGE[1])));
     }
 
     /// `editClip(index, null)`.
     pub fn reset(&mut self, index: usize) {
-        let _ = index;
-        todo!()
+        self.change(index, |c| {
+            c.before_s = None;
+            c.after_s = None;
+            c.excluded.clear();
+        });
     }
 
     /// `toggleClipEvent`.
     pub fn toggle_event(&mut self, index: usize, key: &str) {
-        let _ = (index, key);
-        todo!()
+        self.change(index, |c| match c.excluded.iter().position(|k| k == key) {
+            Some(at) => {
+                c.excluded.remove(at);
+            }
+            None => c.excluded.push(key.to_string()),
+        });
     }
 
     /// `restoreClipSelection`: exactly the saved clips checked, each with its saved edits; every
     /// other clip unchecked, unedited.
     pub fn restore(&mut self, saved: &[ClipEntry]) {
-        let _ = saved;
-        todo!()
+        let by_address: HashMap<(&str, i64), &ClipEntry> = saved.iter().map(|e| ((e.demo_path.as_str(), e.start_tick), e)).collect();
+        for clip in &mut self.clips {
+            let entry = by_address.get(&(clip.demo_path.as_str(), clip.start_tick));
+            clip.selected = entry.is_some();
+            clip.before_s = entry.and_then(|e| e.before_s);
+            clip.after_s = entry.and_then(|e| e.after_s);
+            clip.excluded = entry.and_then(|e| e.excluded_events.clone()).unwrap_or_default();
+        }
+        self.generation += 1;
     }
 
     /// The checked clips with their edits, as `start_run` / `save_preset` take them.
     pub fn selected_clips(&self) -> Value {
-        todo!()
+        json!(self.clips.iter().filter(|c| c.selected).map(|c| c.entry().to_json()).collect::<Vec<_>>())
     }
 
     /// `buildLanes`: clips grouped by demo, in the order the preview listed the demos.
     pub fn lanes(&self) -> Vec<Lane> {
-        todo!()
+        let mut lanes: Vec<Lane> = Vec::new();
+        let mut at: HashMap<&str, usize> = HashMap::new();
+        for (i, clip) in self.clips.iter().enumerate() {
+            let k = *at.entry(clip.demo_path.as_str()).or_insert_with(|| {
+                lanes.push(Lane { demo_path: clip.demo_path.clone(), name: demo_name(&clip.demo_path).to_string(), indices: Vec::new() });
+                lanes.len() - 1
+            });
+            lanes[k].indices.push(i);
+        }
+        lanes
     }
 
     /// `overlapsAnother`: this clip, as edited, overlaps another checked clip of its demo (the
     /// engine then records the two as one).
     pub fn overlaps_another(&self, lane: &Lane, index: usize) -> bool {
-        let _ = (lane, index);
-        todo!()
+        let Some(own) = self.clips.get(index).and_then(|c| c.window(self.tickrate)) else {
+            return false;
+        };
+        lane.indices.iter().any(|&j| {
+            j != index && self.clips[j].selected && self.clips[j].window(self.tickrate).is_some_and(|o| o.start_tick < own.end_tick && own.start_tick < o.end_tick)
+        })
     }
+
 }
 
 /// `demoName`: the file name of a demo path.
 pub fn demo_name(path: &str) -> &str {
-    let _ = path;
-    todo!()
+    path.rsplit(['\\', '/']).next().filter(|n| !n.is_empty()).unwrap_or(path)
 }
 
 /// `formatClock`: demo time as M:SS.
 pub fn format_clock(seconds: f64) -> String {
-    let _ = seconds;
-    todo!()
+    let s = seconds.max(0.0).floor() as i64;
+    format!("{}:{:02}", s / 60, s % 60)
 }
 
-/// `formatDuration`: M:SS.t.
+/// `formatDuration`: M:SS.t (rounded to the tenth first, so 59.96 s reads 1:00.0, not 3.5's 0:60.0).
 pub fn format_duration(seconds: f64) -> String {
-    let _ = seconds;
-    todo!()
+    let tenths = (seconds.max(0.0) * 10.0).round() as i64;
+    format!("{}:{:02}.{}", tenths / 600, tenths % 600 / 10, tenths % 10)
 }
 
 /// `formatTotal`: "2 min 34 s".
 pub fn format_total(seconds: f64) -> String {
-    let _ = seconds;
-    todo!()
+    let s = seconds.max(0.0).floor() as i64;
+    format!("{} min {} s", s / 60, s % 60)
 }
 
 /// Visual family of an event type (3.5 `EVENT_TYPE_META.kind`).
@@ -262,8 +408,16 @@ pub enum Kind { Kill, Damage, Shot, Other }
 
 /// `eventTypeMeta`: the badge words and family; an unknown type shows itself under `Other`.
 pub fn event_meta(kind: &str) -> (String, Kind) {
-    let _ = kind;
-    todo!()
+    let (label, family) = match kind {
+        "kill" => ("💀 Kill", Kind::Kill),
+        "death" => ("☠ Death", Kind::Kill),
+        "damage_actor" => ("🔫 Dmg", Kind::Damage),
+        "damage_target" => ("🩹 Hit", Kind::Damage),
+        "shot" => ("🎯 Shot", Kind::Shot),
+        "knife_swing" => ("🔪 Swing", Kind::Shot),
+        other => (other, Kind::Other),
+    };
+    (label.to_string(), family)
 }
 
 #[cfg(test)]
@@ -364,6 +518,8 @@ mod tests {
         assert!((p.total_s() - (620.0 + 320.0 + 320.0) / 64.0).abs() < 1e-9);
         p.toggle_event(1, "5192:damage_target:999");
         assert!((p.total_s() - (620.0 + 320.0) / 64.0).abs() < 1e-9, "a clip with no event left counts 0");
+        p.toggle(0);
+        assert!((p.total_s() - 320.0 / 64.0).abs() < 1e-9, "an unchecked clip is not recorded");
     }
 
     #[test]
@@ -394,6 +550,9 @@ mod tests {
         assert_eq!(e.to_json(), json!({"demo_path": "d", "start_tick": 7, "before_s": 2}));
         assert!(e.edited());
         assert!(!ClipEntry::default().edited());
+        assert_eq!(ClipEntry::from_json(&e.to_json()), Some(e));
+        assert_eq!(ClipEntry::from_json(&json!({"demo_path": "d", "start_tick": 1, "excluded_events": []})).unwrap().excluded_events, None);
+        assert_eq!(ClipEntry::from_json(&json!({"start_tick": 1})), None);
     }
 
     #[test]

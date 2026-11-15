@@ -5,6 +5,7 @@
 //! and flushed before closing) and `useRunInputsProblem.ts` (why RUN cannot start,
 //! asked again whenever the settings change, one question in flight at a time).
 
+use csdm_core::editing::Preview;
 use csdm_core::ui_values::SAVE_DEBOUNCE_S;
 use csdm_core::Settings;
 use csdm_engine::event::{Ask, Level, StateName};
@@ -36,8 +37,9 @@ pub struct EngineState {
     pub stop_enabled: bool,
     pub kill_enabled: bool,
     pub stop_label: String,
-    /// One flag per preview clip: is it checked (EDITING owns the checking, T8).
-    pub preview_selected: Vec<bool>,
+    /// The last preview's clips with the user's checking and edits (EDITING, T8). Local, as in
+    /// 3.5: the engine learns them once, as `selected_clips` on GENERATE / SAVE.
+    pub preview: Preview,
     pub preview_serial: u64,
     pub unchecked_paths: Vec<String>,
     pub demo_entries: u64,
@@ -53,7 +55,7 @@ impl Default for EngineState {
             stop_enabled: false,
             kill_enabled: false,
             stop_label: STOP_LABEL.into(),
-            preview_selected: Vec::new(),
+            preview: Preview::default(),
             preview_serial: 0,
             unchecked_paths: Vec::new(),
             demo_entries: 0,
@@ -69,7 +71,7 @@ impl EngineState {
         let n = |k: &str| p.get(k).and_then(Value::as_f64);
         match name {
             StateName::ButtonsIdle => {
-                *self = EngineState { preview_selected: std::mem::take(&mut self.preview_selected), preview_serial: self.preview_serial, summary: self.summary.take(), progress: self.progress.take(), unchecked_paths: std::mem::take(&mut self.unchecked_paths), demo_entries: self.demo_entries, ..Default::default() };
+                *self = EngineState { preview: std::mem::take(&mut self.preview), preview_serial: self.preview_serial, summary: self.summary.take(), progress: self.progress.take(), unchecked_paths: std::mem::take(&mut self.unchecked_paths), demo_entries: self.demo_entries, ..Default::default() };
             }
             StateName::ButtonsBusy => self.busy = true,
             StateName::Buttons => {
@@ -94,8 +96,7 @@ impl EngineState {
             }
             StateName::DemoEntry => self.demo_entries += 1,
             StateName::PreviewReady => {
-                let count = p.get("sequences").and_then(Value::as_object).map(|m| m.values().filter_map(Value::as_array).map(Vec::len).sum()).unwrap_or(0);
-                self.preview_selected = vec![true; count];
+                self.preview = Preview::from_ready(p);
                 self.preview_serial += 1;
             }
             StateName::RunStarted | StateName::PreviewStarted | StateName::StopRequested | StateName::KillRequested | StateName::ProcessExited => {}
@@ -373,11 +374,11 @@ impl Link {
     }
 
     pub fn preview_count(&self) -> usize {
-        self.state.preview_selected.len()
+        self.state.preview.clips.len()
     }
 
     pub fn selected_count(&self) -> usize {
-        self.state.preview_selected.iter().filter(|s| **s).count()
+        self.state.preview.selected_count()
     }
 }
 
@@ -432,9 +433,9 @@ mod tests {
         s.apply(StateName::Buttons, &json!({"run": false, "stop": true, "kill": true, "stop_label": "⏸ Stop preview"}));
         assert!(s.busy && !s.run_enabled && s.stop_enabled && s.kill_enabled);
         s.apply(StateName::PreviewReady, &json!({"sequences": {"a.dem": [{}, {}], "b.dem": [{}]}}));
-        assert_eq!((s.preview_selected.len(), s.preview_serial), (3, 1));
+        assert_eq!((s.preview.clips.len(), s.preview_serial), (3, 1));
         s.apply(StateName::ButtonsIdle, &Value::Null);
         assert!(!s.busy && s.run_enabled && !s.stop_enabled && s.stop_label == STOP_LABEL);
-        assert_eq!(s.preview_selected.len(), 3, "idle keeps the preview");
+        assert_eq!(s.preview.clips.len(), 3, "idle keeps the preview");
     }
 }

@@ -400,10 +400,9 @@ const PRIMARY_SHADOW_OFFSET: [i8; 2] = [0, 7];
 const PRIMARY_SHADOW_BLUR: u8 = 18;
 
 impl Link {
-    /// The checked preview clips, as `start_run` / `save_preset` take them.
-    /// shortcut: carries the raw preview sequences; EDITING (T8) adds the per-clip edits.
+    /// The checked preview clips with their edits, as `start_run` / `save_preset` take them.
     pub fn selected_clips(&self) -> Value {
-        json!(self.state.preview_selected.iter().enumerate().filter(|(_, s)| **s).map(|(k, _)| json!({"index": k})).collect::<Vec<_>>())
+        self.state.preview.selected_clips()
     }
 }
 
