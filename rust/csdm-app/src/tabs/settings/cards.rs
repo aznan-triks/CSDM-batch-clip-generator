@@ -3,6 +3,7 @@
 
 use super::controls::{action, bool_of, hint, kick, num_of, number_box, path_box, segmented, slider, switch, text_box, text_of, PickKind};
 use super::{PendingSwitch, PgState, Req, SettingsTab};
+use crate::controls::{link_arrow, node, NodeIcon, LINK_W};
 use crate::grid::CardCx;
 use crate::paint::{mono, regular, semibold};
 use crate::theme::{parse_hex, resolve_accent, Theme};
@@ -18,7 +19,16 @@ use serde_json::{json, Value};
 
 const PCT: f64 = 100.0;
 const LIGHT: f32 = 4.5;
-const PG_NODES: usize = 3;
+/// Paths rail (3.5.1 PathsCard): rail width, step tile, its corner and tint, glyph, line.
+const PATH_RAIL_W: f32 = 150.0;
+const PATH_TILE: f32 = 22.0;
+const PATH_TILE_RADIUS: f32 = 6.0;
+const PATH_TILE_TINT_PCT: f32 = 10.0;
+const PATH_GLYPH: f32 = 14.0;
+const PATH_RAIL_STROKE: f32 = 2.0;
+const PATH_RAIL_ALPHA: f32 = 0.35;
+/// `.st-chain` column shares: You, Server, Database (`1fr … 1fr … 0.8fr`).
+const PG_NODE_SHARES: [f32; 3] = [1.0, 1.0, 0.8];
 /// Header counts: UI Theme, UI Layout, Performance.
 pub const HEADER_COUNTS: usize = 3;
 /// Words shown in empty boxes and examples (3.5's), never used as addresses or paths.
@@ -57,20 +67,33 @@ fn light(ui: &mut egui::Ui, t: &Theme, state: PgState) {
 
 pub fn postgres(tab: &mut SettingsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
     let t = cx.theme;
-    // The chain of 3.5's timeline: you -> the server -> the database, its light at the end.
+    // 3.5.1 `.st-chain`: You -> Server -> Database as white sub-cards linked by dashed arrows,
+    // columns 1fr 28px 1fr 28px 0.8fr; the database's light in its header.
     let state = tab.pg_state;
-    ui.columns(PG_NODES, |cols| {
-        kick(&mut cols[0], t, "You →");
-        text_box(&mut cols[0], cx, "pg_user", "User", "postgres", "PostgreSQL user name", false);
-        text_box(&mut cols[0], cx, "pg_pass", "Pass", "no password", "PostgreSQL password", true);
-        kick(&mut cols[1], t, "Server →");
-        text_box(&mut cols[1], cx, "pg_host", "Host", HOST_HINT, "Machine running the PostgreSQL server of CS Demo Manager", false);
-        text_box(&mut cols[1], cx, "pg_port", "Port", "5432", "Port the PostgreSQL server listens on", false);
-        cols[2].horizontal(|ui| {
-            kick(ui, t, "Database");
-            light(ui, t, state);
+    let room = ui.available_width() - LINK_W * 2.0;
+    let w = PG_NODE_SHARES.map(|k| room * k / PG_NODE_SHARES.iter().sum::<f32>());
+    let link_h = ui.spacing().interact_size.y * 2.0;
+    ui.horizontal_top(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        ui.allocate_ui(Vec2::new(w[0], 0.0), |ui| {
+            node(ui, t, NodeIcon::Named("player"), "You", |_| {}, |ui| {
+                text_box(ui, cx, "pg_user", "User", "postgres", "PostgreSQL user name", false);
+                text_box(ui, cx, "pg_pass", "Pass", "no password", "PostgreSQL password", true);
+            })
         });
-        text_box(&mut cols[2], cx, "pg_db", "Base", "csdm", "PostgreSQL database name (the one created by CS Demo Manager)", false);
+        link_arrow(ui, t, LINK_W, link_h);
+        ui.allocate_ui(Vec2::new(w[1], 0.0), |ui| {
+            node(ui, t, NodeIcon::Named("postgresql"), "Server", |_| {}, |ui| {
+                text_box(ui, cx, "pg_host", "Host", HOST_HINT, "Machine running the PostgreSQL server of CS Demo Manager", false);
+                text_box(ui, cx, "pg_port", "Port", "5432", "Port the PostgreSQL server listens on", false);
+            })
+        });
+        link_arrow(ui, t, LINK_W, link_h);
+        ui.allocate_ui(Vec2::new(w[2], 0.0), |ui| {
+            node(ui, t, NodeIcon::Cylinder, "Database", |ui| light(ui, t, state), |ui| {
+                text_box(ui, cx, "pg_db", "Base", "csdm", "PostgreSQL database name (the one created by CS Demo Manager)", false);
+            })
+        });
     });
     gap(ui);
     let busy = tab.pg_state == PgState::Busy;
@@ -111,25 +134,39 @@ pub fn paths(tab: &mut SettingsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
         None => "A subfolder per demo is created here".into(),
     };
     let pick = &mut tab.pick;
-    kick(ui, t, "Records");
-    path_box(ui, cx, pick, "csdm_exe", "CSDM Executable", &exe_hint, "CS Demo Manager's csdm.CMD (or csdm.exe), which records the clips", PickKind::File);
-    gap(ui);
-    kick(ui, t, "Injects commands");
-    path_box(ui, cx, pick, "cs2_cfg_dir", "CS2 cfg folder", CS2_CFG_HINT, "Where CSDM writes injected CS2 console commands before recording. Leave empty to auto-detect", PickKind::Folder);
-    gap(ui);
-    kick(ui, t, "Writes raw clips");
-    path_box(ui, cx, pick, "output_dir_clips", "Raw clips folder", &clips_hint, "Where the recorded clips are written", PickKind::Folder);
-    ui.horizontal(|ui| {
-        switch(ui, cx, "subfolder_per_demo", "Subfolder per demo", "When on, each demo's clips go in their own subfolder instead of sharing the raw clips folder");
-        let eg = if bool_of(cx, "subfolder_per_demo") { SUBFOLDER_EXAMPLE[0] } else { SUBFOLDER_EXAMPLE[1] };
-        ui.label(egui::RichText::new(eg).font(mono(FONT_SMALL)).color(t.faint));
+    // 3.5.1 Paths: a rail of the five steps on the left (icon tile, words, a line between the
+    // tiles), each step's field on the right.
+    let mut tiles: Vec<egui::Pos2> = Vec::new();
+    let mut step = |ui: &mut egui::Ui, cx: &mut CardCx, icon: &'static str, words: &str, field: &mut dyn FnMut(&mut egui::Ui, &mut CardCx)| {
+        ui.horizontal_top(|ui| {
+            ui.allocate_ui_with_layout(Vec2::new(PATH_RAIL_W, 0.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                ui.set_width(PATH_RAIL_W);
+                let (r, _) = ui.allocate_exact_size(Vec2::splat(PATH_TILE), Sense::hover());
+                ui.painter().rect_filled(r, PATH_TILE_RADIUS, crate::controls::mix(t.accent, t.solid, PATH_TILE_TINT_PCT));
+                crate::icons::paint(ui.painter(), icon, Rect::from_center_size(r.center(), Vec2::splat(PATH_GLYPH)), t.accent);
+                tiles.push(r.center());
+                ui.add(egui::Label::new(egui::RichText::new(words).font(semibold(FONT_SMALL)).color(t.muted)).wrap());
+            });
+            ui.vertical(|ui| field(ui, cx));
+        });
+        gap(ui);
+    };
+    step(ui, cx, "capture", "Records", &mut |ui, cx| path_box(ui, cx, pick, "csdm_exe", "CSDM Executable", &exe_hint, "CS Demo Manager's csdm.CMD (or csdm.exe), which records the clips", PickKind::File));
+    step(ui, cx, "editing", "Injects commands", &mut |ui, cx| path_box(ui, cx, pick, "cs2_cfg_dir", "CS2 cfg folder", CS2_CFG_HINT, "Where CSDM writes injected CS2 console commands before recording. Leave empty to auto-detect", PickKind::Folder));
+    step(ui, cx, "video", "Writes raw clips", &mut |ui, cx| {
+        path_box(ui, cx, pick, "output_dir_clips", "Raw clips folder", &clips_hint, "Where the recorded clips are written", PickKind::Folder);
+        ui.horizontal(|ui| {
+            switch(ui, cx, "subfolder_per_demo", "Subfolder per demo", "When on, each demo's clips go in their own subfolder instead of sharing the raw clips folder");
+            let eg = if bool_of(cx, "subfolder_per_demo") { SUBFOLDER_EXAMPLE[0] } else { SUBFOLDER_EXAMPLE[1] };
+            ui.label(egui::RichText::new(eg).font(mono(FONT_SMALL)).color(t.faint));
+        });
     });
-    gap(ui);
-    kick(ui, t, "Joins them");
-    path_box(ui, cx, pick, "output_dir_concat", "Concatenated clips folder", "Empty = same folder as raw clips", "Where the clips joined per demo are written", PickKind::Folder);
-    gap(ui);
-    kick(ui, t, "Assembles the video");
-    path_box(ui, cx, pick, "output_dir_assembled", "Assembled file folder", "Empty = same folder as raw clips", "Where the final assembled video is written", PickKind::Folder);
+    step(ui, cx, "operations", "Joins them", &mut |ui, cx| path_box(ui, cx, pick, "output_dir_concat", "Concatenated clips folder", "Empty = same folder as raw clips", "Where the clips joined per demo are written", PickKind::Folder));
+    step(ui, cx, "encoding", "Assembles the video", &mut |ui, cx| path_box(ui, cx, pick, "output_dir_assembled", "Assembled file folder", "Empty = same folder as raw clips", "Where the final assembled video is written", PickKind::Folder));
+    // The rail's line, from each tile to the next.
+    for w in tiles.windows(2) {
+        ui.painter().line_segment([w[0] + Vec2::new(0.0, PATH_TILE / 2.0), w[1] - Vec2::new(0.0, PATH_TILE / 2.0)], Stroke::new(PATH_RAIL_STROKE, t.accent.gamma_multiply(PATH_RAIL_ALPHA)));
+    }
 }
 
 // ---------------------------------------------------------------- Configuration Folder

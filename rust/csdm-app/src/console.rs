@@ -173,7 +173,15 @@ impl Console {
         }
     }
 
-    fn push(&mut self, n: Narrated, flash_until: Option<f64>) {
+    fn push(&mut self, mut n: Narrated, flash_until: Option<f64>) {
+        // 3.5's engine spaces its tag log with "\n-> demo": one entry per message here, so a leading
+        // break drew an empty stamped row and the words under it unstamped (T6b). Ends trimmed.
+        if let Some((first, _)) = n.runs.first_mut() {
+            *first = first.trim_start_matches(['\r', '\n']).to_string();
+        }
+        if let Some((last, _)) = n.runs.last_mut() {
+            *last = last.trim_end_matches(['\r', '\n']).to_string();
+        }
         self.next_key += 1;
         let text = n.runs.iter().map(|(t, _)| t.as_str()).collect();
         self.lines.push(Line { key: self.next_key, runs: n.runs, text, level: n.level, ts: crate::sys::local_hms(), flash_until });
@@ -655,6 +663,13 @@ mod tests {
             at = r.end;
         }
         assert_eq!(at, text.len());
+    }
+
+    #[test]
+    fn a_message_spaced_by_line_breaks_keeps_one_stamped_row() {
+        let mut c = Console::new(std::path::PathBuf::new());
+        c.push(Narrated { runs: vec![("\n-> ace-ancient.dem\n".into(), Level::Dim)], level: Level::Dim }, None);
+        assert_eq!(c.texts(), vec!["-> ace-ancient.dem".to_string()]);
     }
 
     #[test]

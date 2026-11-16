@@ -420,14 +420,14 @@ pub fn retries(ui: &mut egui::Ui, cx: &mut CardCx) -> Option<String> {
     });
     ui.add_space(ROW_GAP);
     framed(ui, t, |ui| {
-        ui.horizontal(|ui| {
-            kick(ui, t, "Between demos");
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                mark(ui, "clip_order");
-                if let Some(o) = seg(ui, t, "Demo order", &ORDERS, order, false, TIPS_ORDER, None) {
-                    cx.link.set(cx.now, "clip_order", json!(o));
-                }
-            });
+        // 3.5.1 `.tr-lane-h` (space-between, no wrap): the choice keeps its room at the right and
+        // the kicker folds into what is left, instead of running under the choice.
+        ui.allocate_ui_with_layout(vec2(ui.available_width(), 0.0), egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            mark(ui, "clip_order");
+            if let Some(o) = seg(ui, t, "Demo order", &ORDERS, order, false, TIPS_ORDER, None) {
+                cx.link.set(cx.now, "clip_order", json!(o));
+            }
+            ui.allocate_ui_with_layout(vec2(ui.available_width(), 0.0), egui::Layout::top_down(egui::Align::Min), |ui| kick(ui, t, "Between demos"));
         });
         let seq = TIMING_DEMO_SEQUENCE[usize::from(order == ORDERS[1])];
         track(ui, t, |ui| {

@@ -10,7 +10,7 @@ use crate::Cx;
 use csdm_core::card_layout::{migrate, Decl, TabLayout};
 use csdm_core::grid::{self, Geom, Item};
 use csdm_core::ui_values::{
-    CARD_BODY_PAD, CARD_BRACKET, CARD_BRACKET_INSET, CARD_GLYPH, CARD_GLYPH_ICON, CARD_HANDLE, CARD_HEADER_PAD, CARD_RADIUS, CARD_SPOT_RADIUS, FONT_CARD_COUNT, FONT_CARD_TITLE, GRID_GAP, SHADOW_ALPHA, SHADOW_BLUR, SHADOW_OFFSET, SPACING_COUNT,
+    CARD_BODY_PAD, CARD_BRACKET, CARD_BRACKET_INSET, CARD_GLYPH, CARD_GLYPH_ICON, CARD_HANDLE, CARD_HEADER_PAD, CARD_RADIUS, CARD_SPOT_RADIUS, FONT_CARD_COUNT, FONT_CARD_TITLE, GRID_GAP, SHADOW_ALPHA, SHADOW_BLUR, SHADOW_OFFSET, SPACING_CARD_TITLE, SPACING_COUNT,
 };
 use eframe::egui::{self, epaint, Align2, Color32, Pos2, Rect, Sense, Stroke, StrokeKind, Vec2};
 use serde_json::{Map, Value};
@@ -118,7 +118,10 @@ pub fn geometry(link: &Link, width: f32) -> Geom {
     let block = setting_num(link, "ui_card_block_size", FALLBACK_BLOCK) as f32;
     let row = setting_num(link, "ui_card_row_height", FALLBACK_ROW) as f32;
     let cols = (((width + GRID_GAP) / (block + GRID_GAP)).floor() as i32).max(1);
-    Geom { cols, col: block, row, gap: GRID_GAP }
+    // react-grid-layout (`width={width}`) stretches the columns over the whole pane: the block only
+    // sets how many there are. Kept at the block size, the cards left a strip empty on the right.
+    let col = (width - GRID_GAP * (cols - 1) as f32) / cols as f32;
+    Geom { cols, col, row, gap: GRID_GAP }
 }
 
 pub fn collapsed_rows(link: &Link) -> i32 {
@@ -277,7 +280,7 @@ pub fn show(ui: &mut egui::Ui, cx: &Cx, link: &mut Link, view: &mut dyn TabView,
 fn paint_card(ui: &egui::Ui, t: &Theme, rect: Rect, decl: &CardDecl, folded: bool, pointer: Option<Pos2>) {
     let p = ui.painter();
     p.add(epaint::Shadow { offset: SHADOW_OFFSET, blur: SHADOW_BLUR, spread: 0, color: Color32::from_black_alpha(SHADOW_ALPHA) }.as_shape(rect, CARD_RADIUS));
-    p.rect(rect, CARD_RADIUS, t.surface, Stroke::new(1.0, t.border), StrokeKind::Inside);
+    p.rect(rect, CARD_RADIUS, t.card, Stroke::new(1.0, t.border), StrokeKind::Inside);
     // Corner brackets (`.cbr`).
     let bc = t.accent.gamma_multiply(BRACKET_ALPHA);
     let s = Stroke::new(2.0, bc);
@@ -302,7 +305,8 @@ fn paint_card(ui: &egui::Ui, t: &Theme, rect: Rect, decl: &CardDecl, folded: boo
         crate::icons::paint(p, icon, Rect::from_center_size(glyph.center(), Vec2::splat(CARD_GLYPH_ICON)), t.accent);
         x = glyph.right() + CARD_HEADER_PAD[1] - 2.0;
     }
-    p.text(Pos2::new(x, cy), Align2::LEFT_CENTER, &decl.title, semibold(FONT_CARD_TITLE), t.txt);
+    // 3.5.1 `.sh .t`: uppercase, `--tr-tight`, the loudest ink.
+    spaced(p, Pos2::new(x, cy), Align2::LEFT_CENTER, &decl.title.to_uppercase(), semibold(FONT_CARD_TITLE), t.txt_hi, SPACING_CARD_TITLE);
     let right = rect.right() - CARD_HEADER_PAD[0];
     caret(p, Pos2::new(right - CARET_SIZE / 2.0, cy), CARET_SIZE, t.faint, !folded);
     if let Some(c) = &decl.count {

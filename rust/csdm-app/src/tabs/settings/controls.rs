@@ -6,8 +6,8 @@ use crate::grid::CardCx;
 use crate::paint::{regular, semibold};
 use crate::theme::Theme;
 use crate::widgets::{chip, tip};
-use csdm_core::ui_values::{FONT_BODY, FONT_SMALL, SETTINGS_FIELD_WIDTH, SETTINGS_LABEL_WIDTH, SETTINGS_PATH_LABEL_WIDTH, SETTINGS_SWITCH};
-use eframe::egui::{self, Response, Sense, Stroke, StrokeKind, Vec2};
+use csdm_core::ui_values::{CHIP_PAD, FONT_BODY, FONT_CHIP, FONT_SMALL, SETTINGS_FIELD_WIDTH, SETTINGS_LABEL_WIDTH, SETTINGS_PATH_LABEL_WIDTH};
+use eframe::egui::{self, Response, Vec2};
 use serde_json::{json, Value};
 
 /// `.sx-kick`: tracked uppercase words over a group.
@@ -103,9 +103,11 @@ pub fn path_box(ui: &mut egui::Ui, cx: &mut CardCx, picker: &mut Picker, key: &s
     let mut value = text_of(cx, key);
     let mut browse = false;
     let mut changed = false;
+    // 3.5.1 Paths: the field's title above its box, Browse at the box's end.
+    let l = ui.label(egui::RichText::new(name).font(semibold(FONT_SMALL)).color(cx.theme.txt));
     ui.horizontal(|ui| {
-        let l = label_w(ui, cx.theme, name, SETTINGS_PATH_LABEL_WIDTH);
-        let width = (ui.available_width() - SETTINGS_LABEL_WIDTH).max(SETTINGS_LABEL_WIDTH);
+        let browse_w = ui.painter().layout_no_wrap("Browse…".into(), regular(FONT_CHIP), cx.theme.muted).size().x + CHIP_PAD[0] * 2.0 + ui.spacing().item_spacing.x;
+        let width = (ui.available_width() - browse_w).max(SETTINGS_PATH_LABEL_WIDTH);
         let r = ui.add(egui::TextEdit::singleline(&mut value).hint_text(hint_text).desired_width(width)).labelled_by(l.id);
         changed = r.changed();
         tip(ui, cx.theme, r, tip_text, false);
@@ -126,39 +128,28 @@ pub fn path_box(ui: &mut egui::Ui, cx: &mut CardCx, picker: &mut Picker, key: &s
     }
 }
 
-/// `ToggleSwitch`: a track and a knob, a checkbox for assistive tools.
+/// `ToggleSwitch` (`.cs-switch`, the shared one) bound to a boolean setting.
 pub fn switch(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, tip_text: &str) {
     let on = bool_of(cx, key);
     let t = cx.theme;
-    // One widget for the track and its words: one accessible checkbox, clickable on both.
-    let galley = ui.painter().layout_no_wrap(name.to_string(), regular(FONT_BODY), t.txt);
-    let track = Vec2::from(SETTINGS_SWITCH);
-    let gap = ui.spacing().item_spacing.x;
-    let size = Vec2::new(track.x + gap + galley.size().x, track.y.max(galley.size().y));
-    let (whole, r) = ui.allocate_exact_size(size, Sense::click());
-    r.widget_info(|| egui::WidgetInfo::selected(egui::Role::CheckBox, true, on, name));
-    let rect = egui::Rect::from_min_size(egui::pos2(whole.left(), whole.center().y - track.y / 2.0), track);
-    let radius = rect.height() / 2.0;
-    let (fill, edge) = if on { (t.accent, t.accent) } else { (t.surface2, if r.hovered() { t.accent } else { t.hair }) };
-    ui.painter().rect(rect, radius, fill, Stroke::new(1.0, edge), StrokeKind::Inside);
-    let x = if on { rect.right() - radius } else { rect.left() + radius };
-    ui.painter().circle_filled(egui::pos2(x, rect.center().y), radius - 2.0, if on { t.on_accent } else { t.muted });
-    ui.painter().galley(egui::pos2(rect.right() + gap, whole.center().y - galley.size().y / 2.0), galley, t.txt);
+    let r = crate::controls::switch(ui, t, name, on);
     let r = tip(ui, t, r, tip_text, cx.always_tips);
     if r.clicked() {
         cx.link.set(cx.now, key, json!(!on));
     }
 }
 
-/// `Segmented`: one chip per option, the current one lit. Returns the option clicked.
+/// `Segmented` (`.seg`, the shared tray): the current option lit. Returns the option clicked.
+/// Each option is named "`name`: `option`".
 pub fn segmented(ui: &mut egui::Ui, t: &Theme, name: &str, options: &[&str], current: &str, tip_text: &str, always: bool) -> Option<String> {
+    use crate::controls::{options_tray, Opt};
     let mut picked = None;
     ui.horizontal_wrapped(|ui| {
         label(ui, t, name);
-        for o in options {
-            let r = chip(ui, t, o, Some(*o == current), Some(&format!("{name}: {o}")), true);
-            if tip(ui, t, r, tip_text, false).clicked() && *o != current {
-                picked = Some(o.to_string());
+        let opts: Vec<Opt> = options.iter().map(|o| Opt { text: o, on: *o == current, disabled: false, name: format!("{name}: {o}"), dot: None, tip: tip_text }).collect();
+        if let Some(k) = options_tray(ui, t, &opts, true) {
+            if options[k] != current {
+                picked = Some(options[k].to_string());
             }
         }
     });

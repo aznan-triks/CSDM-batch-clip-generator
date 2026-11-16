@@ -7,6 +7,7 @@
 pub mod actionbar;
 pub mod backdrop;
 pub mod console;
+pub mod controls;
 pub mod cursor;
 pub mod grid;
 pub mod icons;

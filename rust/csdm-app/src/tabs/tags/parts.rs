@@ -4,11 +4,12 @@ use super::TagRow;
 use crate::paint::{regular, semibold, spaced_galley};
 use crate::theme::{parse_hex, Theme};
 use csdm_core::ui_values::{
-    CHIP_PAD, FONT_CHIP, FONT_KICK, FONT_SMALL, FONT_SWITCH, FONT_TAG_PILL, SPACING_KICK, SWITCH_GAP, SWITCH_KNOB, SWITCH_TRACK, TAG_CHIP_DOT, TAG_CLOSE_PAD, TAG_PILL_DOT, TAG_PILL_EDGE_PCT, TAG_PILL_H, TAG_PILL_PAD, TAG_PILL_TINT_PCT,
+    CHIP_PAD, FONT_CHIP, FONT_KICK, FONT_SMALL, FONT_TAG_PILL, SPACING_KICK, SWITCH_GAP, TAG_CHIP_DOT, TAG_CLOSE_PAD, TAG_PILL_DOT, TAG_PILL_EDGE_PCT, TAG_PILL_H, TAG_PILL_PAD, TAG_PILL_TINT_PCT,
 };
+pub use crate::controls::{fade, mix, switch};
+use crate::controls::{options_tray, Opt};
 use eframe::egui::{self, Color32, CornerRadius, Pos2, Rect, Response, Sense, Stroke, StrokeKind, Vec2};
 
-const PCT: f32 = 100.0;
 /// `.chip:hover` border: `color-mix(in srgb, var(--accent) 28%, transparent)`.
 const HOVER_EDGE_PCT: f32 = 28.0;
 /// The delete half (`.close-btn`); its hover ink is the theme rose (`--blood-t`).
@@ -17,36 +18,12 @@ const TICK_GLYPH: &str = "✓";
 /// `.tg-create-name`: corner and padding of a text field.
 const FIELD_RADIUS: u8 = 9;
 const FIELD_PAD: [i8; 2] = [10, 6];
-/// `.seg` (mock-v12.css + Segmented.css): tray padding, gap, corners, segment padding; the tray
-/// (`--recess`) in the day ground and in the night grounds (grounds.css).
-const SEG_PAD: f32 = 3.0;
-const SEG_GAP: f32 = 2.0;
-const SEG_RADIUS: f32 = 10.0;
-const SEG_ITEM_RADIUS: f32 = 8.0;
-const SEG_ITEM_PAD: [f32; 2] = [12.0, 6.0];
-const RECESS_DAY: Color32 = Color32::from_rgba_unmultiplied_const(226, 232, 240, 179);
-const RECESS_NIGHT: Color32 = Color32::from_rgba_unmultiplied_const(8, 13, 24, 179);
 /// The tick box: side, corner, stroke, and its check mark as fractions of the side.
 const TICK_BOX: f32 = 14.0;
 const TICK_RADIUS: f32 = 4.0;
 const TICK_STROKE: f32 = 2.0;
 const TICK_MARK: [Vec2; 3] = [Vec2::new(0.25, 0.52), Vec2::new(0.43, 0.70), Vec2::new(0.76, 0.32)];
-/// `.cs-switch i` (off): `color-mix(in srgb, var(--txt) 20%, transparent)`.
-const SWITCH_OFF_PCT: f32 = 20.0;
-/// `.cs-switch.on i`: `color-mix(in srgb, var(--lime-ink) 45%, var(--lime-glow))`.
-const SWITCH_ON_PCT: f32 = 45.0;
 
-/// `color-mix(in srgb, a pct%, b)`.
-pub fn mix(a: Color32, b: Color32, pct: f32) -> Color32 {
-    let k = pct / PCT;
-    let ch = |x: u8, y: u8| (f32::from(x) * k + f32::from(y) * (1.0 - k)).round() as u8;
-    Color32::from_rgba_unmultiplied(ch(a.r(), b.r()), ch(a.g(), b.g()), ch(a.b(), b.b()), ch(a.a(), b.a()))
-}
-
-/// `color-mix(in srgb, c pct%, transparent)`: the colour made translucent (premultiplied).
-pub fn fade(c: Color32, pct: f32) -> Color32 {
-    c.gamma_multiply(pct / PCT)
-}
 
 /// A text field drawn like the mock's inputs: solid fill, hairline, rounded; faint hint.
 /// egui paints the hint in the visuals' weak text colour whatever the hint's own colour, so the
@@ -149,26 +126,6 @@ pub fn tray_pill(ui: &mut egui::Ui, t: &Theme, tag: &TagRow) -> Response {
     resp
 }
 
-/// `ToggleSwitch` (`.cs-switch`): the lime track and its label.
-pub fn switch(ui: &mut egui::Ui, t: &Theme, label: &str, on: bool) -> Response {
-    let ink = if on { t.lime_ink } else { t.muted };
-    let g = spaced_galley(ui.painter(), label, semibold(FONT_SWITCH), ink, 0.0);
-    let size = Vec2::new(SWITCH_TRACK[0] + SWITCH_GAP + g.size().x, g.size().y.max(SWITCH_TRACK[1]));
-    let (rect, resp) = ui.allocate_exact_size(size, Sense::click());
-    named(&resp, egui::Role::CheckBox, true, label, Some(on));
-    let track = Rect::from_min_size(Pos2::new(rect.left(), rect.center().y - SWITCH_TRACK[1] / 2.0), SWITCH_TRACK.into());
-    let p = ui.painter();
-    let fill = if on { mix(t.lime_ink, t.lime_glow, SWITCH_ON_PCT) } else { fade(t.txt, SWITCH_OFF_PCT) };
-    p.rect_filled(track, SWITCH_TRACK[1] / 2.0, fill);
-    let inset = (SWITCH_TRACK[1] - SWITCH_KNOB) / 2.0;
-    let kx = if on { track.right() - inset - SWITCH_KNOB / 2.0 } else { track.left() + inset + SWITCH_KNOB / 2.0 };
-    p.circle_filled(Pos2::new(kx, track.center().y), SWITCH_KNOB / 2.0, Color32::WHITE);
-    p.galley(Pos2::new(track.right() + SWITCH_GAP, rect.center().y - g.size().y / 2.0), g, ink);
-    if resp.hovered() {
-        crate::cursor::snap_here(ui.ctx(), rect);
-    }
-    resp
-}
 
 /// A thin vertical separator (`.tg-foot-sep`).
 pub fn separator(ui: &mut egui::Ui, t: &Theme, height: f32) {
@@ -196,37 +153,9 @@ pub fn tick(ui: &mut egui::Ui, t: &Theme, label: &str, on: bool, ink: Color32) -
     resp
 }
 
-/// The segmented control (`Segmented`, the mock's `.seg`): one tray, the chosen segment white with
-/// accent ink. Returns the index clicked, if any. Each segment is named `<prefix>-<word>`.
+/// The segmented control (`Segmented`, the mock's `.seg`), drawn by the shared tray. Returns the
+/// index clicked, if any. Each segment is named `<prefix>-<word>`.
 pub fn segmented(ui: &mut egui::Ui, t: &Theme, words: &[&str], chosen: usize, prefix: &str, tip: &str) -> Option<usize> {
-    let font = semibold(FONT_SWITCH);
-    let galleys: Vec<_> = words.iter().map(|w| spaced_galley(ui.painter(), w, font.clone(), t.muted, 0.0)).collect();
-    let item_h = galleys.iter().map(|g| g.size().y).fold(0.0, f32::max) + SEG_ITEM_PAD[1] * 2.0;
-    let widths: Vec<f32> = galleys.iter().map(|g| g.size().x + SEG_ITEM_PAD[0] * 2.0).collect();
-    let total = widths.iter().sum::<f32>() + SEG_GAP * (words.len().saturating_sub(1)) as f32 + SEG_PAD * 2.0;
-    let (rect, _) = ui.allocate_exact_size(Vec2::new(total, item_h + SEG_PAD * 2.0), Sense::hover());
-    let tray = if t.dark { RECESS_NIGHT } else { RECESS_DAY };
-    ui.painter().rect(rect, SEG_RADIUS, tray, Stroke::new(1.0, t.hair), StrokeKind::Inside);
-    let mut x = rect.left() + SEG_PAD;
-    let mut out = None;
-    for (k, (g, w)) in galleys.into_iter().zip(widths).enumerate() {
-        let r = Rect::from_min_size(Pos2::new(x, rect.top() + SEG_PAD), Vec2::new(w, item_h));
-        x += w + SEG_GAP;
-        let resp = ui.interact(r, ui.scope_id().with((prefix, k)), Sense::click());
-        let on = k == chosen;
-        named(&resp, egui::Role::RadioButton, true, &format!("{prefix}-{}", words[k]), Some(on));
-        let p = ui.painter();
-        if on {
-            p.rect_filled(r, SEG_ITEM_RADIUS, t.solid);
-        }
-        let ink = if on { t.accent } else if resp.hovered() { t.txt } else { t.muted };
-        p.galley(Pos2::new(r.center().x - g.size().x / 2.0, r.center().y - g.size().y / 2.0), g, ink);
-        if resp.hovered() {
-            crate::cursor::snap_here(ui.ctx(), r);
-        }
-        if resp.on_hover_text(tip).clicked() {
-            out = Some(k);
-        }
-    }
-    out
+    let opts: Vec<Opt> = words.iter().enumerate().map(|(k, w)| Opt { text: w, on: k == chosen, disabled: false, name: format!("{prefix}-{w}"), dot: None, tip }).collect();
+    options_tray(ui, t, &opts, true)
 }

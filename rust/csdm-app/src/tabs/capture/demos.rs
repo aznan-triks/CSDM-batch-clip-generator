@@ -91,11 +91,12 @@ pub fn card(tab: &mut CaptureTab, ui: &mut egui::Ui, cx: &mut CardCx) -> Option<
         }
     });
     ui.horizontal_wrapped(|ui| {
-        if let Some(v) = date_field(ui, t, "From", &from, TIP_FROM, today) {
+        // Each label stays with its box (3.5.1 `DateField`): a narrow card wraps whole fields.
+        if let Some(v) = ui.horizontal(|ui| date_field(ui, t, "From", &from, TIP_FROM, today)).inner {
             changes = Some((v, changes.as_ref().map_or(to.clone(), |c| c.1.clone())));
         }
         ui.add_space(RADIUS);
-        if let Some(v) = date_field(ui, t, "To", &to, TIP_TO, today) {
+        if let Some(v) = ui.horizontal(|ui| date_field(ui, t, "To", &to, TIP_TO, today)).inner {
             changes = Some((changes.as_ref().map_or(from.clone(), |c| c.0.clone()), v));
         }
         if button(ui, t, "Today", "Today", TIP_TODAY, true) {

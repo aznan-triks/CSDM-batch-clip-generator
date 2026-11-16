@@ -28,8 +28,19 @@ pub fn tool_chip(ui: &mut egui::Ui, t: &Theme, text: &str, on: Option<bool>, lab
 fn draw_chip(ui: &mut egui::Ui, t: &Theme, text: &str, on: Option<bool>, label: Option<&str>, enabled: bool, font: egui::FontId, spacing_em: f32, pad: [f32; 2], dot: bool) -> Response {
     let lit = on == Some(true);
     let ink = if lit { t.lime_ink } else if enabled { t.muted } else { t.faint };
-    let galley = spaced_galley(ui.painter(), text, font, ink, spacing_em);
     let extra = if dot { DOT * 2.0 + DOT_GAP } else { 0.0 };
+    let mut galley = spaced_galley(ui.painter(), text, font.clone(), ink, spacing_em);
+    // A chip wider than a whole row (narrow card) is cut with an ellipsis, as 3.5.1's `.chip`:
+    // left whole it widened the card and pushed the text after it past the card's edge. The
+    // row's full width, not what is left of it: a chip that fits a fresh row wraps to it instead.
+    let room = ui.max_rect().width() - pad[0] * 2.0 - extra;
+    if galley.size().x > room && room > 0.0 {
+        let mut job = egui::text::LayoutJob::default();
+        let spacing = spacing_em * font.size;
+        job.append(text, 0.0, egui::TextFormat { font_id: font, color: ink, extra_letter_spacing: spacing, ..Default::default() });
+        job.wrap = egui::text::TextWrapping::truncate_at_width(room);
+        galley = ui.painter().layout_job(job);
+    }
     let size = Vec2::new(galley.size().x + pad[0] * 2.0 + extra, galley.size().y + pad[1] * 2.0);
     let sense = if enabled { Sense::click() } else { Sense::hover() };
     let (rect, resp) = ui.allocate_exact_size(size, sense);

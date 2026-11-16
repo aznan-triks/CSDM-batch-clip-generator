@@ -38,6 +38,10 @@ pub struct Theme {
     pub faint: Color32,
     pub solid: Color32,
     pub surface: Color32,
+    /// The card's glass as the eye sees it: `--surface` over the page, opaque. The browser's
+    /// `backdrop-filter: blur(14px)` smooths the ground under it, and its shadow is drawn only
+    /// outside; painted translucent here, the card showed its own shadow through (grey, T6b).
+    pub card: Color32,
     pub surface2: Color32,
     pub band: Color32,
     pub border: Color32,
@@ -108,6 +112,15 @@ fn tone(t: Tone, accent: [u8; RGB]) -> Color32 {
     }
 }
 
+/// `top` laid over `bottom`, the result opaque (source-over compositing).
+fn over(top: Color32, bottom: Color32) -> Color32 {
+    let [r, g, b, a] = top.to_srgba_unmultiplied();
+    let [br, bg, bb, _] = bottom.to_srgba_unmultiplied();
+    let k = f32::from(a) / f32::from(u8::MAX);
+    let ch = |t: u8, u: u8| (f32::from(t) * k + f32::from(u) * (1.0 - k)).round() as u8;
+    Color32::from_rgb(ch(r, br), ch(g, bg), ch(b, bb))
+}
+
 /// `scaleLightness` of accent.ts: same hue and saturation, lightness × factor.
 fn scale_lightness(c: [u8; RGB], factor: f32) -> Color32 {
     let rgb = egui::Rgba::from_srgba_unmultiplied(c[0], c[1], c[2], u8::MAX);
@@ -156,6 +169,7 @@ impl Theme {
             faint: t(p.faint),
             solid: t(p.solid),
             surface: t(p.surface),
+            card: over(t(p.surface), t(p.page_0)),
             surface2: t(p.surface_2),
             band: t(p.band),
             border: t(p.border),
@@ -231,6 +245,13 @@ mod tests {
     fn label_on_accent_is_the_readable_one() {
         assert_eq!(Theme::new("white", [0xC8, 0xA2, 0x4A]).on_accent, Color32::from_rgb(0x0B, 0x0E, 0x12), "dark ink on gold");
         assert_eq!(Theme::new("white", [0x10, 0x20, 0x60]).on_accent, Color32::from_rgb(0xF0, 0xF4, 0xF8), "light ink on navy");
+    }
+
+    #[test]
+    fn day_card_is_the_mock_white_not_grey() {
+        // rgba(255,255,255,.72) over #eaf0f6: what the V12 mock shows inside a card (#F9FBFD).
+        let c = Theme::new("white", default_accent()).card;
+        assert_eq!(c.to_srgba_unmultiplied(), [0xF9, 0xFB, 0xFD, 0xFF]);
     }
 
     #[test]

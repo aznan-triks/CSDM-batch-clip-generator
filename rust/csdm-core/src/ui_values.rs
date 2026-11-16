@@ -95,6 +95,8 @@ pub const SPACING_TAB: f32 = 0.16;
 pub const SPACING_BRAND: f32 = 0.12;
 pub const SPACING_BRAND_SUB: f32 = 0.18;
 pub const SPACING_COUNT: f32 = 0.07;
+/// `--tr-tight`: card titles, uppercased (3.5.1 `mock-bridge.css` `.sh .t`).
+pub const SPACING_CARD_TITLE: f32 = 0.08;
 pub const SPACING_BUTTON: f32 = 0.06;
 pub const SPACING_CONSOLE_TITLE: f32 = 0.16;
 /// `--tr-snug`.

@@ -186,6 +186,14 @@ impl State {
     fn handle(&mut self, command: Command) -> Result<Option<Value>, EngineError> {
         let no_db = Discovery::default();
         let reply = match command {
+            // 3.5 bridge `_cmd_hello`: the greeting that fills a fresh console, and the build's name.
+            Command::Hello => {
+                let version = env!("CARGO_PKG_VERSION");
+                let ports = self.ports();
+                ports.log(&format!("CSDM Batch Clips Generator {version} -- engine ready"), Level::Ok);
+                ports.log(&format!("{} settings loaded", self.settings.len()), Level::Dim);
+                json!({"data": {"app_version": version, "settings_count": self.settings.len()}})
+            }
             // 3.5 bridge `_cmd_describe_filters`: the tables under "data", as every reader expects.
             Command::DescribeFilters => json!({"data": clips::describe_filters()}),
             Command::ConnectDb { pg } => self.connect(pg)?,
@@ -397,8 +405,9 @@ mod tests {
         assert!(reply(&engine, id).unwrap_err().contains("PREVIEW"), "asks for a preview first");
         let id = engine.send(Command::ExportPreview { format: "html".into() });
         assert!(reply(&engine, id).unwrap_err().contains("PREVIEW"));
+        // T6b: hello is served as 3.5's bridge did (it used to be refused as "not available").
         let id = engine.send(Command::Hello);
-        assert!(reply(&engine, id).unwrap_err().contains("not available"));
+        assert_eq!(reply(&engine, id).unwrap()["data"]["app_version"], env!("CARGO_PKG_VERSION"));
     }
 
     #[test]
