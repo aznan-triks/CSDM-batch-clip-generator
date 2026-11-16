@@ -42,9 +42,9 @@ pub fn camera_players(cfg: &Settings) -> CameraPlayers {
 
 /// One camera point: from `tick`, follow `sid` (a raw event value or a SteamID text).
 #[derive(Debug, Clone, PartialEq)]
-struct Cam {
-    tick: i64,
-    sid: Value,
+pub(crate) struct Cam {
+    pub(crate) tick: i64,
+    pub(crate) sid: Value,
 }
 
 /// `str(v or "")`.
@@ -171,7 +171,7 @@ fn cams_both(arena: &Arena, seq: &Sequence, p: &CameraPlayers, cfg: &Settings, t
 }
 
 /// `_seq_cameras`: the cameras of one sequence for the settings' perspective.
-fn seq_cameras(arena: &Arena, seq: &Sequence, cfg: &Settings, p: &CameraPlayers) -> Result<Vec<Cam>, EngineError> {
+pub(crate) fn seq_cameras(arena: &Arena, seq: &Sequence, cfg: &Settings, p: &CameraPlayers) -> Result<Vec<Cam>, EngineError> {
     Ok(match cfg.get("perspective").and_then(Value::as_str) {
         Some("both") => {
             let tickrate = whole(cfg, "tickrate", None)?;

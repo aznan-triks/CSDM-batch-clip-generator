@@ -36,7 +36,7 @@ pub fn get<'a>(cfg: &'a Settings, key: &str, default: &'a Value) -> &'a Value {
 }
 
 /// `float(str(raw).strip())`; `None` where Python raises.
-fn py_float(raw: &Value) -> Option<f64> {
+pub(crate) fn py_float(raw: &Value) -> Option<f64> {
     let text = match raw {
         Value::Number(_) | Value::String(_) => py_str(raw),
         _ => return None,

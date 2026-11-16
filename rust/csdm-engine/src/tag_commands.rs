@@ -108,9 +108,14 @@ fn sorted_ids(values: &[Value]) -> Vec<Value> {
 
 /// `set_active_tags`: the new selection and the names of its tags, in tag-list order.
 pub fn active_reply(active: &[Value], disc: Option<&Discovery>) -> Value {
-    let wanted = ids(active);
-    let names: Vec<String> = disc.map(|d| d.tags.iter().filter(|t| wanted.contains(&t.id)).map(|t| t.name.py_str()).collect()).unwrap_or_default();
+    let names = disc.map(|d| active_names(active, d)).unwrap_or_default();
     json!({"data": {"active_tag_ids": sorted_ids(active), "active_tag_names": names}})
+}
+
+/// `_get_active_tag_names`: the selection's tag names, in tag-list order (the batch tags with them).
+pub fn active_names(active: &[Value], disc: &Discovery) -> Vec<String> {
+    let wanted = ids(active);
+    disc.tags.iter().filter(|t| wanted.contains(&t.id)).map(|t| t.name.py_str()).collect()
 }
 
 fn local_date(seconds: f64) -> Option<chrono::NaiveDate> {

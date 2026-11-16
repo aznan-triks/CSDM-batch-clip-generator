@@ -29,6 +29,8 @@ pub enum EngineError {
     Demo(DemoError),
     /// A refusal the user can act on, already worded for them (3.5 `UserError`).
     User(String),
+    /// A file or folder the batch run could not use (Windows' reason, without its number).
+    File { path: PathBuf, reason: String },
 }
 
 impl From<DbError> for EngineError {
@@ -69,6 +71,9 @@ impl EngineError {
             EngineError::Db(e) => e.to_string(),
             EngineError::Demo(e) => e.user_message(csdm_core::preview::RELEASES_URL),
             EngineError::User(text) => text.clone(),
+            EngineError::File { path, reason } => {
+                format!("Could not use {} ({reason}). Check that the folder exists and can be written to, then try again.", path.display())
+            }
         }
     }
 }

@@ -2,7 +2,7 @@
 //! `timingRetries/TimelineView.tsx`). Words, tips and rules are 3.5's.
 
 use super::kit::{as_text, flag, framed, kick, lab, list, mark, mseg, seg, set_list, text_field, Toggle};
-use super::model::{as_count, clip_summary, clip_window, gap_grow, move_handle, pacing_summary, ClipHandle, ClipInput, PERSPECTIVES};
+use super::model::{as_count, clip_summary, clip_window, move_handle, pacing_summary, ClipHandle, ClipInput, PERSPECTIVES};
 use super::timeline::{self, Handle, Marker, Span, Timeline, Tone};
 use crate::grid::CardCx;
 use crate::paint::{mono, regular, semibold};
@@ -294,7 +294,9 @@ fn count_word(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, label: &str, unit: 
                 ui.set_width(POP_W);
                 ui.label(egui::RichText::new(label).font(semibold(FONT_TOKEN[1])).color(t.txt));
                 let mut v = value;
-                let s = ui.add(egui::Slider::new(&mut v, 0..=max).suffix(unit.trim()));
+                // The exact box below shows the number; the slider carries the token's name.
+                let s = ui.add(egui::Slider::new(&mut v, 0..=max).show_value(false));
+                s.widget_info(|| egui::WidgetInfo::slider(true, v as f64, format!("{label} slider")));
                 if s.changed() {
                     next = Some(v);
                 }
@@ -380,11 +382,15 @@ pub fn retries(ui: &mut egui::Ui, cx: &mut CardCx) -> Option<String> {
         let shown = retries.min(TIMING_SHOWN_RETRIES);
         let folded = retries - shown;
         track(ui, t, |ui| {
+            let more = if folded > 0 { format!("+{folded}") } else { String::new() };
+            let more_w = ui.painter().layout_no_wrap(more.clone(), regular(super::kit::FONT_SEG), t.muted).size().x;
+            let steps = shown.max(1) as usize;
+            let w = gap_width(ui.available_width() - BLOCK * (steps + 1) as f32 - more_w, steps);
             let (r, _) = ui.allocate_exact_size(vec2(BLOCK, BLOCK), Sense::hover());
             block(ui.painter(), r, t.solid.lerp_to_gamma(t.amber, FAIL_TINT), None, false);
             glyph(ui.painter(), r, "fail", t.amber);
-            for k in 0..shown.max(1) {
-                gap(ui, t, t.accent, gap_grow(delay), |ui| {
+            for k in 0..steps {
+                gap(ui, t, t.accent, w, |ui| {
                     if k == 0 {
                         count_word(ui, cx, "retry_delay", "Wait between", "s", max_delay, TIPS_RETRY_DELAY, false, true);
                     } else {
@@ -401,7 +407,7 @@ pub fn retries(ui: &mut egui::Ui, cx: &mut CardCx) -> Option<String> {
                 }
             }
             if folded > 0 {
-                lab(ui, t, &format!("+{folded}"));
+                lab(ui, t, &more);
             }
         });
         ui.horizontal(|ui| {
@@ -425,9 +431,10 @@ pub fn retries(ui: &mut egui::Ui, cx: &mut CardCx) -> Option<String> {
         });
         let seq = TIMING_DEMO_SEQUENCE[usize::from(order == ORDERS[1])];
         track(ui, t, |ui| {
+            let w = gap_width(ui.available_width() - (BLOCK + PIN_ROOM) * seq.len() as f32, seq.len() - 1);
             for (i, n) in seq.iter().enumerate() {
                 if i > 0 {
-                    gap(ui, t, t.emerald, gap_grow(pause), |ui| {
+                    gap(ui, t, t.emerald, w, |ui| {
                         if i == 1 {
                             count_word(ui, cx, "delay_between_demos", "Pause", "s", max_pause, TIPS_PAUSE, true, true);
                         } else {
@@ -463,9 +470,14 @@ fn track(ui: &mut egui::Ui, t: &Theme, add: impl FnOnce(&mut egui::Ui)) {
     });
 }
 
-/// `.tr-gap`: a dashed wait whose width follows its seconds, the number on top.
-fn gap(ui: &mut egui::Ui, _t: &Theme, color: Color32, grow: f32, add: impl FnOnce(&mut egui::Ui)) {
-    let w = (MIN_GAP_W * grow).max(MIN_GAP_W);
+/// 3.5 `.tr-gap` is `flex: 1` (min 34 px) and every step of a track grows alike: the waits share
+/// the room the blocks leave, so the track never runs past its card.
+fn gap_width(room: f32, gaps: usize) -> f32 {
+    (room / gaps.max(1) as f32).max(MIN_GAP_W)
+}
+
+/// `.tr-gap`: a dashed wait, the number on top.
+fn gap(ui: &mut egui::Ui, _t: &Theme, color: Color32, w: f32, add: impl FnOnce(&mut egui::Ui)) {
     let (r, _) = ui.allocate_exact_size(vec2(w, BLOCK), Sense::hover());
     ui.painter().add(egui::Shape::dashed_line(&[pos2(r.left(), r.center().y), pos2(r.right(), r.center().y)], Stroke::new(2.0, color.gamma_multiply(GAP_EDGE_ALPHA)), DASH, DASH));
     let mut child = ui.new_child(egui::UiBuilder::new().max_rect(r).layout(egui::Layout::centered_and_justified(egui::Direction::LeftToRight)));

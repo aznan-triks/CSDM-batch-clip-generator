@@ -18,7 +18,7 @@ const MSEG_PAD: [f32; 2] = [8.0, 5.0];
 const OPT_RADIUS: f32 = 8.0;
 const MSEG_BOX: f32 = 6.0;
 const MSEG_BOX_GAP: f32 = 6.0;
-const FONT_SEG: f32 = 11.5;
+pub const FONT_SEG: f32 = 11.5;
 const DOT: f32 = 4.0;
 /// `.cs-mseg` tray: hair at 55 %; the disabled option at 45 %.
 const TRAY_HAIR_ALPHA: f32 = 0.55;

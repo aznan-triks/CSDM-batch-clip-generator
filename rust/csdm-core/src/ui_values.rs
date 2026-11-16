@@ -107,6 +107,10 @@ pub const FONT_SEMIBOLD: [&str; 2] = ["Inter-SemiBold.ttf", "seguisb.ttf"];
 pub const FONT_MONO: [&str; 2] = ["CascadiaMono.ttf", "consola.ttf"];
 /// Symbols the text fonts lack (arrows, geometric shapes), below every family.
 pub const FONT_SYMBOLS: [&str; 2] = ["seguisym.ttf", "seguiemj.ttf"];
+/// Other scripts of players' names (3.5 drew them through Chromium's system fallback): Arabic,
+/// Hebrew and Persian digits (Segoe UI), Chinese and kana (YaHei), Hangul, Thai, Indic. After the
+/// symbol fonts, so text they already drew keeps its look.
+pub const FONT_SCRIPTS: [&str; 5] = ["segoeui.ttf", "msyh.ttc", "malgun.ttf", "LeelawUI.ttf", "Nirmala.ttf"];
 
 // ---- console (shell/LogConsole.tsx, motion/tokens.ts consoleType) ----
 pub const CONSOLE_MAX_RENDERED: usize = 1500;
@@ -319,8 +323,6 @@ pub const TIMING_DRAG_MAX: [i64; 4] = [10, 120, 60, 60];
 /// `timingRetries/TimelineView.tsx`: retry blocks drawn before "+N", demo order drawn per order.
 pub const TIMING_SHOWN_RETRIES: i64 = 2;
 pub const TIMING_DEMO_SEQUENCE: [[u8; 3]; 2] = [[1, 2, 3], [3, 1, 2]];
-/// `gapGrow`: a wait's width grows with its seconds up to this many, by 1 per this many.
-pub const TIMING_GAP_GROW: [f64; 2] = [60.0, 15.0];
 /// `RangeStrip.tsx`: least span, span without a From date, label room (px), Monday ticks under N days, handle inset (px).
 pub const DEMO_STRIP_LEAST_SPAN_DAYS: i64 = 60;
 pub const DEMO_STRIP_OPEN_SPAN_DAYS: i64 = 365;

@@ -145,7 +145,11 @@ pub fn maps(ui: &mut egui::Ui, cx: &mut CardCx) -> Option<String> {
                 x += STRIPE_STEP;
             }
             p.text(mono.center(), egui::Align2::CENTER_CENTER, display.chars().next().map(|c| c.to_uppercase().to_string()).unwrap_or_default(), semibold(FONT_TILE + MONO_FONT_PLUS), base.gamma_multiply(alpha));
-            p.text(pos2(rect.center().x, mono.bottom() + FONT_TILE), egui::Align2::CENTER_CENTER, &name, semibold(FONT_TILE), t.txt.gamma_multiply(alpha));
+            // 3.5 `.mf-name`: one line, cut with an ellipsis at the tile's width.
+            let mut job = egui::text::LayoutJob::single_section(name.clone(), egui::TextFormat::simple(semibold(FONT_TILE), t.txt.gamma_multiply(alpha)));
+            job.wrap = egui::text::TextWrapping::truncate_at_width(rect.width() - GUN_PAD[0] * 2.0);
+            let g = p.layout_job(job);
+            p.galley(pos2(rect.center().x, mono.bottom() + FONT_TILE) - g.size() / 2.0, g, t.txt);
             p.text(pos2(rect.center().x, rect.bottom() - FONT_STATE), egui::Align2::CENTER_CENTER, if on { "PICK" } else { "pool" }, semibold(FONT_STATE), if on { t.accent } else { t.faint });
             if resp.clicked() && !locked {
                 let next: Vec<String> = if on { picked.iter().filter(|m| *m != display).cloned().collect() } else { picked.iter().cloned().chain([display.clone()]).collect() };
@@ -216,9 +220,11 @@ pub fn weapons(tab: &mut CaptureTab, ui: &mut egui::Ui, cx: &mut CardCx) -> Opti
                 for name in names {
                     let on = selected.contains(name);
                     let w = gun_width(super::art::ratio(name), GUN_RACK_HEIGHT);
-                    let (rect, resp) = tile(ui, t, [w + GUN_PAD[0] * 2.0, GUN_RACK_HEIGHT + GUN_PAD[1] * 2.0 + FONT_GUN], name, on, true, &format!("Filter clips with {name}"));
+                    // A tile is never narrower than its name (grenade art is narrower than "HE Grenade").
+                    let name_w = ui.painter().layout_no_wrap(name.clone(), regular(FONT_GUN), t.faint).size().x;
+                    let (rect, resp) = tile(ui, t, [w.max(name_w) + GUN_PAD[0] * 2.0,GUN_RACK_HEIGHT + GUN_PAD[1] * 2.0 + FONT_GUN], name, on, true, &format!("Filter clips with {name}"));
                     let ink = if on { t.accent } else { t.muted };
-                    let gun = Rect::from_min_size(rect.min + vec2(GUN_PAD[0], GUN_PAD[1]), vec2(w, GUN_RACK_HEIGHT));
+                    let gun = Rect::from_center_size(pos2(rect.center().x, rect.top() + GUN_PAD[1] + GUN_RACK_HEIGHT / 2.0), vec2(w, GUN_RACK_HEIGHT));
                     match tab.art.get(ui.ctx(), name, GUN_RACK_HEIGHT) {
                         Some((tex, ratio)) => {
                             // Fit the art in its slot at its own proportions.

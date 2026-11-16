@@ -1,13 +1,18 @@
 //! The real engine. One thread owns the database connection, its discovery, the demo store and the
 //! last preview; commands run in arrival order and their events leave through the sink. T3 gives the
-//! preview commands their behaviour; a command whose tranche has not landed is refused in words.
+//! preview commands their behaviour, T4 the batch run; a command whose tranche has not landed is
+//! refused in words. STOP and KILL act at once from the caller's side (the engine thread is busy
+//! with the very run they stop), through the run's shared [`RunControl`].
 
+use crate::batch::{self, tags::DbRunTags, RunIo};
 use crate::command::Command;
 use crate::event::{Ask, AskKind, EngineEvent, EventSink, Level, Secrets, StateName};
 use crate::journal::Journal;
 use crate::preview::clips::{self, LastPreview, Segment};
 use crate::preview::dp2::DemoStore;
 use crate::preview::{cfg::build_run_cfg, worker, Ctx, Ports};
+use crate::process::{Machine, ProcessExec};
+use crate::run::{ensure_csdm_dirs, kill_target, request_kill, request_stop, RunControl};
 use crate::settings_home::SettingsHome;
 use crate::{Engine, EngineError};
 use csdm_core::Settings;
@@ -25,6 +30,11 @@ pub struct RealEngine {
     events: Receiver<EngineEvent>,
     sink: EventSink,
     cancel: Arc<AtomicBool>,
+    /// A preview is computing (3.5 `_previewing`): STOP then cancels it.
+    previewing: Arc<AtomicBool>,
+    control: Arc<RunControl>,
+    /// CS2's process name and exit wait for a KILL outside a run (the run's own otherwise).
+    machine: Machine,
     next_id: u64,
 }
 
@@ -41,13 +51,29 @@ impl RealEngine {
         let sink = EventSink::new(tx, secrets.clone());
         let (commands, inbox) = channel::<(u64, Command)>();
         let cancel = Arc::new(AtomicBool::new(false));
-        let mut state = State { sink: sink.clone(), secrets, journal, settings, db: None, demos: DemoStore::default(), last: None, cancel: cancel.clone(), home, tags: Default::default() };
+        let previewing = Arc::new(AtomicBool::new(false));
+        let control = Arc::new(RunControl::default());
+        let machine = Machine::from_settings(&settings);
+        let mut state = State {
+            sink: sink.clone(),
+            secrets,
+            journal,
+            settings,
+            db: None,
+            demos: DemoStore::default(),
+            last: None,
+            cancel: cancel.clone(),
+            previewing: previewing.clone(),
+            control: control.clone(),
+            home,
+            tags: Default::default(),
+        };
         std::thread::spawn(move || {
             for (id, command) in inbox {
                 state.serve(id, command);
             }
         });
-        RealEngine { commands, events, sink, cancel, next_id: 0 }
+        RealEngine { commands, events, sink, cancel, previewing, control, machine, next_id: 0 }
     }
 }
 
@@ -55,10 +81,26 @@ impl Engine for RealEngine {
     fn send(&mut self, command: Command) -> u64 {
         self.next_id += 1;
         let id = self.next_id;
-        // The engine thread may be busy with the very preview to stop: the flag acts now, the queued
-        // command then says so and resets it.
-        if matches!(command, Command::CancelPreview) {
-            self.cancel.store(true, Ordering::Relaxed);
+        // The engine thread may be busy with the very preview or run to stop: the flag acts now, the
+        // queued command then says so and resets it. STOP and KILL of a run answer from here.
+        match command {
+            Command::CancelPreview => self.cancel.store(true, Ordering::Relaxed),
+            Command::RequestStop if self.control.running() => {
+                request_stop(&self.control, &self.sink);
+                let _ = self.sink.emit(EngineEvent::Reply { id, result: Ok(json!({})) });
+                return id;
+            }
+            Command::RequestStop if self.previewing.load(Ordering::Relaxed) => self.cancel.store(true, Ordering::Relaxed),
+            Command::RequestKill => {
+                // KILL waits for CS2 to be really gone (up to `process_exit_timeout`): never on the caller.
+                let (control, sink, machine) = (self.control.clone(), self.sink.clone(), kill_target(&self.control, &self.machine));
+                std::thread::spawn(move || {
+                    request_kill(&control, &sink, &machine);
+                    let _ = sink.emit(EngineEvent::Reply { id, result: Ok(json!({})) });
+                });
+                return id;
+            }
+            _ => {}
         }
         if self.commands.send((id, command)).is_err() {
             // The engine thread is gone; if the window is gone too there is nobody left to tell.
@@ -94,6 +136,9 @@ impl Ports for SinkPorts<'_> {
     fn state(&self, name: StateName, payload: Value) {
         self.emit(EngineEvent::State { name, payload });
     }
+    fn log_parts(&self, parts: &[(String, Level)]) {
+        self.emit(EngineEvent::LogParts(parts.to_vec()));
+    }
     fn trace(&self, detail: &str) {
         if let Some(Err(e)) = self.journal.map(|j| j.write(detail)) {
             self.log(&e.user_message(), Level::Warn);
@@ -110,6 +155,8 @@ struct State {
     demos: DemoStore,
     last: Option<LastPreview>,
     cancel: Arc<AtomicBool>,
+    previewing: Arc<AtomicBool>,
+    control: Arc<RunControl>,
     home: Option<SettingsHome>,
     tags: crate::tag_commands::TagState,
 }
@@ -123,6 +170,7 @@ impl State {
         let name = command.name();
         let result = match command {
             Command::StartPreview { cfg } => self.start_preview(id, &cfg),
+            Command::StartRun { cfg, selected_clips } => self.start_run(id, &cfg, selected_clips.as_ref()),
             other => self.handle(other),
         };
         if let Some(result) = result.transpose() {
@@ -138,7 +186,8 @@ impl State {
     fn handle(&mut self, command: Command) -> Result<Option<Value>, EngineError> {
         let no_db = Discovery::default();
         let reply = match command {
-            Command::DescribeFilters => clips::describe_filters(),
+            // 3.5 bridge `_cmd_describe_filters`: the tables under "data", as every reader expects.
+            Command::DescribeFilters => json!({"data": clips::describe_filters()}),
             Command::ConnectDb { pg } => self.connect(pg)?,
             Command::ListDemos => {
                 self.ensure_connected()?;
@@ -148,7 +197,9 @@ impl State {
                 json!({"data": {"demos": clips::list_all_demos(&mut cx)?}})
             }
             Command::RunInputsProblem { cfg } => json!({"problem": clips::run_inputs_problem(&build_run_cfg(&cfg))}),
-            Command::CancelPreview => {
+            // STOP of a run already acted (and answered) on the caller's side; here only a preview's.
+            Command::RequestStop if !self.cancel.load(Ordering::Relaxed) => json!({}),
+            Command::CancelPreview | Command::RequestStop => {
                 self.cancel.store(false, Ordering::Relaxed);
                 let ports = self.ports();
                 ports.log("\n⏸ Preview cancelled.", Level::Warn);
@@ -262,19 +313,72 @@ impl State {
         let ports = SinkPorts { sink: &self.sink, journal: self.journal.as_ref(), cancel: &self.cancel };
         let (db, disc) = self.db.as_mut().expect("connected above");
         let mut cx = Ctx::new(db, disc, &ports, &self.demos, &self.cancel);
-        if let Some(outcome) = worker::run_preview(&mut cx, &run) {
+        self.previewing.store(true, Ordering::Relaxed);
+        let outcome = worker::run_preview(&mut cx, &run);
+        self.previewing.store(false, Ordering::Relaxed);
+        if let Some(outcome) = outcome {
             self.last = Some(outcome.last);
+        }
+        Ok(None)
+    }
+
+    /// `start_run` + `_worker`. Replies `{"started": …}` before the run, as 3.5; the run then holds
+    /// the engine thread until it ends.
+    fn start_run(&mut self, id: u64, cfg: &Settings, selected: Option<&Value>) -> Result<Option<Value>, EngineError> {
+        let selected = clips::normalize_clip_selection(selected)?;
+        let run = build_run_cfg(cfg);
+        if let Some(problem) = clips::run_inputs_problem(&run) {
+            self.ask_error(&problem);
+            return Ok(Some(json!({"started": false})));
+        }
+        let home = clips::home();
+        ensure_csdm_dirs(&home).map_err(|e| batch::os_error(&home, &e))?;
+        let machine = Machine::from_settings(&run);
+        self.control.begin(machine.clone());
+        batch::launch_banner(&self.ports());
+        self.ports().emit(EngineEvent::Reply { id, result: Ok(json!({"started": true})) });
+        if let Err(e) = self.ensure_connected() {
+            batch::report_failure(&self.ports(), &e);
+            self.control.running.store(false, Ordering::SeqCst);
+            return Ok(None);
+        }
+        let ports = SinkPorts { sink: &self.sink, journal: self.journal.as_ref(), cancel: &self.cancel };
+        let (db, disc) = self.db.as_mut().expect("connected above");
+        // The TAGS tab's selection replaces `tag_on_export` when it names any tag (3.5 `_get_active_tag_names`).
+        let active = crate::tag_commands::active_names(&self.tags.active, disc);
+        let mut tags = PgParams::from_settings(&self.settings).ok().map(|p| DbRunTags::new(p, disc.tags.clone(), active));
+        let mut cx = Ctx::new(db, disc, &ports, &self.demos, &self.cancel);
+        let mut exec = ProcessExec { ports: &ports, control: &self.control, machine: &machine };
+        let sink = &self.sink;
+        let ask_user = |kind: AskKind, message: &str, options: &[String]| ask(sink, kind, message, options);
+        let mut io = RunIo {
+            control: &self.control,
+            exec: &mut exec,
+            tags: tags.as_mut().map(|t| t as &mut dyn batch::RunTags),
+            ask: &ask_user,
+            selected: selected.as_deref(),
+            home,
+        };
+        if let Some(last) = batch::worker(&mut cx, &mut io, &run) {
+            self.last = Some(last);
         }
         Ok(None)
     }
 
     /// `ask("error", …)`: waits for the window's "ok", as 3.5's bridge did.
     fn ask_error(&self, message: &str) {
-        let (reply, answer) = channel();
-        self.ports().emit(EngineEvent::Ask(Ask { kind: AskKind::Error, message: message.to_string(), options: vec![], reply }));
         // The answer to an error is always "ok"; a closed window answers nothing, which ends the wait too.
-        let _ = answer.recv();
+        let _ = ask(&self.sink, AskKind::Error, message, &[]);
     }
+}
+
+/// 3.5 `ask(kind, message, options)`: waits for the window's answer. `None` = Cancel, or no window.
+fn ask(sink: &EventSink, kind: AskKind, message: &str, options: &[String]) -> Option<String> {
+    let (reply, answer) = channel();
+    if sink.emit(EngineEvent::Ask(Ask { kind, message: message.to_string(), options: options.to_vec(), reply })).is_err() {
+        return None;
+    }
+    answer.recv().ok().flatten()
 }
 
 #[cfg(test)]
@@ -295,7 +399,7 @@ mod tests {
     fn preview_commands_answer_without_a_database() {
         let mut engine = RealEngine::start(Settings::new(), Secrets::default(), None);
         let id = engine.send(Command::DescribeFilters);
-        assert!(reply(&engine, id).unwrap().is_object());
+        assert!(reply(&engine, id).unwrap()["data"]["filters"].is_array(), "tables under \"data\", as the 3.5 bridge sent them");
         let id = engine.send(Command::ClipCameras { clip: json!({"demo_path": "a.dem", "start_tick": 1}) });
         assert!(reply(&engine, id).unwrap_err().contains("PREVIEW"), "asks for a preview first");
         let id = engine.send(Command::ExportPreview { format: "html".into() });

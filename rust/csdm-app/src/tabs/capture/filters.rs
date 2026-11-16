@@ -78,7 +78,11 @@ fn matrix(ui: &mut egui::Ui, cx: &mut CardCx, heading: &str, rows: &[FilterRow],
             } else if excluded {
                 p.rect_filled(r, CELL_RADIUS, t.rose.gamma_multiply(ROW_TINT));
             }
-            p.text(pos2(r.left() + GLYPH_W / 2.0, r.center().y), egui::Align2::CENTER_CENTER, &row.glyph, regular(FONT_NAME + 2.0), t.txt);
+            // Two-emoji glyphs (TROIS TAP) shrink to the glyph column instead of spilling left.
+            let size = FONT_NAME + 2.0;
+            let wide = p.layout_no_wrap(row.glyph.clone(), regular(size), t.txt).size().x;
+            let size = if wide > GLYPH_W { size * GLYPH_W / wide } else { size };
+            p.text(pos2(r.left() + GLYPH_W / 2.0, r.center().y), egui::Align2::CENTER_CENTER, &row.glyph, regular(size), t.txt);
             let name_g = p.layout_no_wrap(row.name.clone(), semibold(FONT_NAME), t.txt);
             let mut x = r.left() + GLYPH_W + CELL_GAP;
             let nw = name_g.size().x;

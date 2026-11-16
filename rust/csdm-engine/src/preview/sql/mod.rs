@@ -6,7 +6,7 @@
 //! what neither says lives in one table indexed by key ([`behaviour::BEHAVIOURS`]).
 
 mod behaviour;
-mod clauses;
+pub(crate) mod clauses;
 mod clutch;
 mod modifiers;
 mod nonkill;
