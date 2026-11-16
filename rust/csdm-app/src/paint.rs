@@ -1,7 +1,7 @@
 //! Drawing helpers egui lacks: fonts by weight, letter spacing, gradients, the mock's
 //! cut-corner plates, the conic ring of the primary button (from the ticket 06 prototype).
 
-use csdm_core::ui_values::{FONT_DIR, FONT_MONO, FONT_REGULAR, FONT_SEMIBOLD, FONT_SYMBOLS, PILL_SEGMENTS, RING_SEGMENTS, RING_STOPS, RING_WIDTH};
+use csdm_core::ui_values::{FONT_DIR, FONT_MONO, FONT_REGULAR, FONT_SCRIPTS, FONT_SEMIBOLD, FONT_SYMBOLS,PILL_SEGMENTS, RING_SEGMENTS, RING_STOPS, RING_WIDTH};
 use eframe::egui::{self, epaint, Align2, Color32, FontFamily, FontId, Painter, Pos2, Rect, Shape, Stroke, Vec2};
 use std::f32::consts::{FRAC_PI_2, PI, TAU};
 
@@ -24,7 +24,7 @@ pub fn install_fonts(ctx: &egui::Context) {
             ctx.add_font(FontInsert::new(&name, FontData::from_owned(bytes), vec![InsertFontFamily { family, priority: FontPriority::Highest }]));
         }
     }
-    for file in FONT_SYMBOLS {
+    for file in FONT_SYMBOLS.iter().chain(&FONT_SCRIPTS) {
         if let Some((name, bytes)) = read(&[file]) {
             let all = [FontFamily::Proportional, FontFamily::Name(SEMIBOLD.into()), FontFamily::Monospace];
             ctx.add_font(FontInsert::new(&name, FontData::from_owned(bytes), all.into_iter().map(|family| InsertFontFamily { family, priority: FontPriority::Lowest }).collect()));
@@ -269,5 +269,20 @@ mod tests {
         });
         assert!(missing.is_empty(), "no glyph for: {missing:?}");
         assert!(!ctx.fonts_mut(|f| f.has_glyph(&FontId::proportional(12.0), '\u{10FFFD}')), "the check can fail");
+    }
+
+    /// Players' names come in every script: the real database held a Persian digit (U+06F6)
+    /// that Inter lacks. One letter per script of `FONT_SCRIPTS`, in every family.
+    #[test]
+    fn players_names_in_other_scripts_have_glyphs() {
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+        let letters = ['۶', 'ب', 'ש', '中', 'の', '한', 'ก', 'क'];
+        let families = [FontFamily::Proportional, FontFamily::Name(SEMIBOLD.into()), FontFamily::Monospace];
+        let missing: Vec<String> = ctx.fonts_mut(|f| {
+            letters.iter().flat_map(|c| families.iter().filter(|fam| !f.has_glyph(&FontId::new(12.0, (*fam).clone()), *c)).map(move |fam| format!("{c} (U+{:04X}) in {fam:?}", *c as u32)).collect::<Vec<_>>()).collect()
+        });
+        assert!(missing.is_empty(), "no glyph for: {missing:?}");
     }
 }
