@@ -14,8 +14,10 @@ mod inputs;
 mod sequences;
 
 pub use cameras::{camera_players, camera_segments, CameraPlayers};
+pub(crate) use cameras::seq_cameras;
 pub use demos::list_all_demos;
 pub use describe::describe_filters;
+pub(crate) use describe::{detect_csdm_cli, home, which};
 pub use edits::{apply_clip_edits, edited_clip_cameras, event_key, normalize_clip_selection, preset_clip_selection, ClipEntry};
 pub use empty::explain_empty_result_with;
 pub use export::{clip_row, preview_clip_rows, preview_export, render_preview, ExportMeta};

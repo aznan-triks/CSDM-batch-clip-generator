@@ -156,7 +156,7 @@ pub fn required_sections(cfg: &Settings) -> Sections {
 }
 
 /// 3.5 `progress_bar`: "▰▰▰▱▱ 12/17".
-fn progress_bar(done: usize, total: usize) -> String {
+pub(crate) fn progress_bar(done: usize, total: usize) -> String {
     if total == 0 {
         return format!("{done}/{total}");
     }

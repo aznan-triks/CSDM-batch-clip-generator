@@ -12,20 +12,20 @@ use serde_json::{json, Map, Value};
 use std::path::PathBuf;
 
 /// Python `Path.home()` on Windows.
-fn home() -> PathBuf {
+pub(crate) fn home() -> PathBuf {
     std::env::var_os(HOME_ENV).map(PathBuf::from).unwrap_or_default()
 }
 
 /// `shutil.which(name)`: the first `PATH` folder holding `name` with a `PATHEXT` extension.
 /// shortcut: no current-folder search and no bare-name match; enough for an installed `csdm.CMD`.
-fn which(name: &str) -> Option<PathBuf> {
+pub(crate) fn which(name: &str) -> Option<PathBuf> {
     let exts = std::env::var(PATHEXT_ENV).unwrap_or_else(|_| PATHEXT_DEFAULT.into());
     let path = std::env::var_os(PATH_ENV)?;
     std::env::split_paths(&path).find_map(|dir| exts.split(';').filter(|e| !e.is_empty()).map(|e| dir.join(format!("{name}{e}"))).find(|p| p.is_file()))
 }
 
 /// `detect_csdm_cli`: the CS Demo Manager CLI found without any setting, or "".
-fn detect_csdm_cli() -> String {
+pub(crate) fn detect_csdm_cli() -> String {
     let base = std::env::var_os(LOCAL_APP_DATA_ENV).filter(|v| !v.is_empty()).map_or_else(|| LOCAL_APP_DATA_UNDER_HOME.iter().fold(home(), |p, s| p.join(s)), PathBuf::from);
     CSDM_CLI_INSTALL_PATHS
         .iter()
