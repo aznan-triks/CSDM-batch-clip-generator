@@ -107,6 +107,10 @@ pub const FONT_SEMIBOLD: [&str; 2] = ["Inter-SemiBold.ttf", "seguisb.ttf"];
 pub const FONT_MONO: [&str; 2] = ["CascadiaMono.ttf", "consola.ttf"];
 /// Symbols the text fonts lack (arrows, geometric shapes), below every family.
 pub const FONT_SYMBOLS: [&str; 2] = ["seguisym.ttf", "seguiemj.ttf"];
+/// Other scripts of players' names (3.5 drew them through Chromium's system fallback): Arabic,
+/// Hebrew and Persian digits (Segoe UI), Chinese and kana (YaHei), Hangul, Thai, Indic. After the
+/// symbol fonts, so text they already drew keeps its look.
+pub const FONT_SCRIPTS: [&str; 5] = ["segoeui.ttf", "msyh.ttc", "malgun.ttf", "LeelawUI.ttf", "Nirmala.ttf"];
 
 // ---- console (shell/LogConsole.tsx, motion/tokens.ts consoleType) ----
 pub const CONSOLE_MAX_RENDERED: usize = 1500;
