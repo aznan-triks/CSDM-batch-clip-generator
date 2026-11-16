@@ -315,7 +315,7 @@ fn date_field(ui: &mut egui::Ui, t: &Theme, label: &str, value: &str, tip: &str,
 
 /// Date, Map and Demo widths for a table `width` wide: Date and Map at their size, shrunk in
 /// proportion when the card is narrow, Demo takes what is left (at least its share).
-fn columns(width: f32) -> [f32; 3] {
+fn columns(width: f32) -> [f32; COL_W.len()] {
     let room = (width - COL_W[0]).max(0.0);
     let fixed = COL_W[1] + COL_W[2];
     let k = (room * DEMO_FIXED_SHARE / fixed).min(1.0);
