@@ -42,6 +42,8 @@ const COST_FRAMES: u32 = 120;
 /// The window and the zoom of 3.5's own proof (`electron/e2e/editing-timeline-proof.mjs`).
 const REFERENCE_SIZE: egui::Vec2 = egui::Vec2::new(1600.0, 900.0);
 const REFERENCE_ZOOMS: usize = 5;
+/// The clip of the second lane that proof opens (`ref-3.5.1/03-inspector.png`: "clip 6 of 9").
+const REFERENCE_CLIP: usize = 6;
 const TOTAL_CALLS: u32 = 100;
 
 fn fixture() -> Value {
@@ -609,14 +611,21 @@ fn editing_renders_the_3_5_proof_preview() {
             r.click("Zoom in");
         }
         save(&mut r, "02-zoomed");
-        // 3.5 opens the first clip it drew on the second lane: the first one in view (blocks in the
-        // overscan, left of the names' column, have a widget too).
+        // 3.5 opens the first clip it drew on the second lane (clip 6, in its overscan, off screen;
+        // Playwright scrolls it into view before the click). The tracks here are wider (T6), so
+        // the overscan covers fewer seconds: scroll left block by block until that clip is drawn.
         let lane = r.preview().lanes()[1].name.clone();
-        let names_right = r.h.get_by_label_contains(&format!("{lane}, ")).rect().right();
-        let width = REFERENCE_SIZE.x;
-        let on_lane = format!("{lane} clip ");
-        r.h.query_all_by_label_contains(&on_lane).find(|n| n.rect().left() >= names_right && n.rect().right() <= width).expect("a block of the second lane in view").click();
+        let target = format!("{lane} clip {REFERENCE_CLIP}");
+        for _ in 0..REFERENCE_CLIP {
+            if r.h.query_by_label(&target).is_some() {
+                break;
+            }
+            r.h.query_all_by_label_contains(&format!("{lane} clip ")).next().expect("a block on the second lane").scroll_to_me();
+            r.h.run();
+        }
+        r.h.get_by_label(&target).scroll_to_me();
         r.h.run();
+        r.click(&target);
         save(&mut r, "03-inspector");
         r.click("Editing view: List");
         save(&mut r, "06-list");
