@@ -12,6 +12,7 @@ use serde_json::{json, Value};
 
 /// `.sx-kick`: tracked uppercase words over a group.
 const KICK_SPACING: f32 = 0.14;
+const DECIMAL_BASE: f64 = 10.0;
 
 /// Which native picker a Browse opens.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -169,6 +170,11 @@ pub fn segmented(ui: &mut egui::Ui, t: &Theme, name: &str, options: &[&str], cur
 
 /// A whole-number setting typed in a box; a value that is not a number is not stored.
 pub fn number_box(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, fallback: f64, tip_text: &str) {
+    decimal_box(ui, cx, key, name, fallback, 0, tip_text);
+}
+
+/// `number_box` keeping `decimals` places (0 = stored as a whole number, as 3.5 `toStoredNumber`).
+pub fn decimal_box(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, fallback: f64, decimals: i32, tip_text: &str) {
     let shown = num_of(cx, key, fallback);
     let id = ui.scope_id().with(("num", key));
     let mut text: String = ui.data(|d| d.get_temp(id)).unwrap_or_else(|| format!("{shown}"));
@@ -190,8 +196,17 @@ pub fn number_box(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, fal
         hint(ui, cx.theme, tip_text);
     }
     if let Some(v) = commit {
-        cx.link.set(cx.now, key, json!(v.round() as i64));
+        cx.link.set(cx.now, key, stored_number(v, decimals));
     }
+}
+
+/// A number rounded to `decimals` places; whole numbers are stored without a fraction.
+pub fn stored_number(v: f64, decimals: i32) -> Value {
+    if decimals <= 0 {
+        return json!(v.round() as i64);
+    }
+    let p = DECIMAL_BASE.powi(decimals);
+    json!((v * p).round() / p)
 }
 
 /// `Slider` over whole numbers with its readout.

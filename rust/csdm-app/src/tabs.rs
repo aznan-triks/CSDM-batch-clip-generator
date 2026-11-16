@@ -4,6 +4,7 @@
 pub mod capture;
 pub mod tags;
 pub mod settings;
+pub mod video;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum TabId { Capture, Editing, Tags, Video, Settings }
