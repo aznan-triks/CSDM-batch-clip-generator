@@ -9,20 +9,24 @@ use csdm_engine::process::{win, Machine};
 use csdm_engine::run::ExitWait;
 use serde_json::{json, Value};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
 const IMAGE_CHARS: usize = 1024;
+static NEXT_KIT: AtomicUsize = AtomicUsize::new(0);
 
 pub struct Kit {
     pub dir: tempfile::TempDir,
-    /// The fake CS2's file name: unique, so no test can touch a real CS2.
+    /// The fake CS2's file name: unique, so no test can touch a real CS2 or another test's.
     pub cs2: String,
 }
 
 impl Kit {
     pub fn new(roles: Value) -> Kit {
         let dir = tempfile::Builder::new().prefix("csdm t4 % kit ").tempdir().expect("temp folder");
-        let cs2 = format!("fakecs2_{}.exe", std::process::id());
+        // Unique per kit, not per test binary: KILL and the recording timeout stop CS2 by name, and
+        // the tests of one binary run side by side.
+        let cs2 = format!("fakecs2_{}_{}.exe", std::process::id(), NEXT_KIT.fetch_add(1, Ordering::Relaxed));
         let tool = Path::new(env!("CARGO_BIN_EXE_csdm_fake_tool"));
         for name in ["fakecli.exe", cs2.as_str(), "ffmpeg.exe"] {
             std::fs::copy(tool, dir.path().join(name)).expect("copy the fake tool");
@@ -63,7 +67,7 @@ impl Kit {
     pub fn wait_started(&self, n: usize) {
         let end = Instant::now() + Duration::from_secs(20);
         while self.pids().len() < n {
-            assert!(Instant::now() < end, "the fake programs did not start");
+            assert!(Instant::now() < end, "the fake programs did not start: {} of {n} wrote their id", self.pids().len());
             std::thread::sleep(Duration::from_millis(20));
         }
     }

@@ -29,11 +29,15 @@ fn output_is_read_line_by_line_and_errors_are_kept() {
     let control = RunControl::default();
     control.begin(kit.machine());
     let machine = kit.machine();
-    let out = ProcessExec { ports: &ports, control: &control, machine: &machine }.exec(&cmd(&kit, "job file.json"), &quiet(), 0);
+    // The game kept open: the run reads to the end of the pipe, so CS2's line always arrives (closing
+    // it after would end the tree as soon as the CLI exits, maybe before CS2 speaks).
+    let keep_game = cfg(json!({"cs2_send_to_back": false, "close_game_after": false}));
+    let out = ProcessExec { ports: &ports, control: &control, machine: &machine }.exec(&cmd(&kit, "job file.json"), &keep_game, 0);
     assert!(!out.success, "an error line fails the demo");
-    assert_eq!(out.rc, 0);
-    assert_eq!(out.errs, vec!["Error: something broke".to_string()]);
     let logs: Vec<String> = ports.logs.lock().unwrap().iter().map(|(m, _)| m.clone()).collect();
+    // A fake program that panics says why on the pipe: show it.
+    assert_eq!(out.rc, 0, "{logs:?}");
+    assert_eq!(out.errs, vec!["Error: something broke".to_string()]);
     assert!(logs.contains(&"  > Starting".to_string()) && logs.contains(&"  > cs2 says hi".to_string()), "{logs:?}");
     kit.assert_none_alive();
 }

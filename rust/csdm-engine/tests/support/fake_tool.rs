@@ -35,7 +35,11 @@ fn main() {
         // Inherits this program's output: the CLI's pipe, as CS2 inherits it from CS Demo Manager.
         // Never waited for: CS2 outlives the CLI that started it.
         #[allow(clippy::zombie_processes)]
-        let _child = std::process::Command::new(dir.join(name)).spawn().expect("spawn");
+        let _child = std::process::Command::new(dir.join(name)).spawn().unwrap_or_else(|e| {
+            // On stdout: the tests read it, a panic message on stderr never reaches them.
+            println!("fake tool: could not start {name}: {e}");
+            std::process::exit(101)
+        });
     }
     let mut out = std::io::stdout();
     for line in &role.lines {
