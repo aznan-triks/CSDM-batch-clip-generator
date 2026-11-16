@@ -7,7 +7,6 @@ use chrono::{Datelike, Duration, NaiveDate};
 use csdm_core::ui_values::{
     AVATAR_HUES, CLIP_RANGE_AFTER, CLIP_RANGE_BEFORE, CLIP_RANGE_SWITCH, DATE_FORMAT, DATE_SHORTCUTS, DEMO_STRIP_LEAST_SPAN_DAYS, DEMO_STRIP_MIN_LEAD_DAYS,
     DEMO_STRIP_MONTHLY_OVER_DAYS, DEMO_STRIP_OPEN_SPAN_DAYS, GUN_HEIGHT, GUN_WIDTH_RANGE, LIST_WORDS_MAX, MAP_SHADES, NO_EXCLUDE_BOX, SHORT_ID_DIGITS,
-    TIMING_GAP_GROW,
 };
 use serde_json::Value;
 
@@ -169,11 +168,6 @@ pub fn pacing_summary(retries: i64, retry_delay: i64, demo_pause: i64, timeout_m
     let order = if random { "in random order" } else { "in match-date order" };
     let pause = if demo_pause > 0 { format!("a {demo_pause}s pause") } else { "no pause".into() };
     format!("{retry}; {timeout}. Demos are recorded {order}, with {pause} between two.")
-}
-
-/// `gapGrow`: a wait's width weight.
-pub fn gap_grow(seconds: i64) -> f32 {
-    (1.0 + (seconds as f64).min(TIMING_GAP_GROW[0]) / TIMING_GAP_GROW[1]) as f32
 }
 
 // ------------------------------------------------------------------ Demo Selection
