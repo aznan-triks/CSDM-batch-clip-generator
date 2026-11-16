@@ -85,14 +85,18 @@ fn capture_tab_on_the_real_engine() {
     h.get_by_label("CAPTURE").click();
     h.run();
 
-    // Player: the database's players are listed; a click puts the first in the clips.
+    // Player: the database's players are listed; a click toggles the first by name in the clips
+    // (the imported profile may already hold a selection).
     let players = h.state().link.database.as_ref().and_then(|d| d["players"].as_array().cloned()).unwrap_or_default();
     assert!(!players.is_empty(), "the database lists players");
-    let first = players.iter().filter_map(|p| p[2].as_str()).min_by_key(|n| n.to_lowercase()).unwrap().to_string();
-    h.query_all_by_role_and_label(Role::CheckBox, &first).next().expect("the first player by name is drawn").click();
+    let first = players.iter().min_by_key(|p| p[2].as_str().unwrap_or_default().to_lowercase()).unwrap().clone();
+    let (first_id, first_name) = (first[1].clone(), first[2].as_str().unwrap().to_string());
+    let held = |s: &Shell| s.link.get("steam_ids").and_then(Value::as_array).is_some_and(|a| a.contains(&first_id));
+    let before_click = held(h.state());
+    h.query_all_by_role_and_label(Role::CheckBox, &first_name).next().expect("the first player by name is drawn").click();
     h.run();
+    assert_ne!(held(h.state()), before_click, "the click toggled that player in the clips");
     let ids = h.state().link.get("steam_ids").cloned().unwrap_or(Value::Null);
-    assert_eq!(ids.as_array().map(Vec::len), Some(1), "one player in the clips");
 
     // Weapon Filter: Select all writes every weapon the database recorded that the engine classes.
     h.get_by_label("Select all").click();
@@ -118,5 +122,5 @@ fn capture_tab_on_the_real_engine() {
 
     assert!(originals(src) == before, "the real 3.5 folder was not written");
     assert!(originals(&old) == copies, "the 3.5 copy was not written");
-    println!("e2e ok: db connected, {} players, 1 picked, {weapons} weapons, {rows} filter rows, {demos} demos listed, settings saved, 3.5 files unchanged", players.len());
+    println!("e2e ok: db connected, {} players, 1 toggled, {weapons} weapons, {rows} filter rows, {demos} demos listed, settings saved, 3.5 files unchanged", players.len());
 }
