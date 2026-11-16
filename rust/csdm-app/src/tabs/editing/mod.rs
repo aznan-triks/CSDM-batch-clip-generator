@@ -37,7 +37,7 @@ const SHOT: Color32 = Color32::from_rgb(0x14, 0xB8, 0xA6);
 const BADGE_FILL_PCT: f32 = 16.0;
 const PCT: f32 = 100.0;
 /// `--sp-1` … `--sp-4`.
-pub(super) const SP: [f32; 4] = [4.0, 8.0, 12.0, 16.0];
+pub(crate) const SP: [f32; 4] = [4.0, 8.0, 12.0, 16.0];
 /// `.editing-clip`: row and its parts.
 const ROW_GAP: f32 = 2.0;
 const CHECK: f32 = 16.0;
@@ -48,6 +48,8 @@ const BADGE_PAD: [f32; 2] = [8.0, 2.0];
 const BADGE_RADIUS: f32 = 6.0;
 const BADGE_WIDTH: f32 = 78.0;
 const EMPTY_WIDTH: f32 = 520.0;
+/// `.editing-empty`: `--sp-4` across, `--sp-3` down.
+const EMPTY_PAD: [i8; 2] = [16, 12];
 const COUNT_WIDTH: f32 = 64.0;
 const GROUP: usize = 3;
 
@@ -316,7 +318,7 @@ fn grouped(n: f64) -> String {
 /// No clip: why, in the engine's words (`explain_empty_result`), or that no preview ran yet.
 fn empty(ui: &mut egui::Ui, t: &Theme, reason: Option<&EmptyReason>) -> Response {
     ui.centered_and_justified(|ui| {
-        egui::Frame::new().fill(t.surface).stroke(Stroke::new(1.0, t.hair)).corner_radius(egui::CornerRadius::same(crate::CORNER_MID)).inner_margin(egui::Margin::symmetric(SP[3] as i8, SP[2] as i8)).show(ui, |ui| {
+        egui::Frame::new().fill(t.surface).stroke(Stroke::new(1.0, t.hair)).corner_radius(egui::CornerRadius::same(crate::CORNER_MID)).inner_margin(egui::Margin::symmetric(EMPTY_PAD[0], EMPTY_PAD[1])).show(ui, |ui| {
             ui.set_max_width(EMPTY_WIDTH);
             let Some(reason) = reason else {
                 ui.label(egui::RichText::new(NO_PREVIEW).font(regular(FONT_BODY)).italics().color(t.muted));

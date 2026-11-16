@@ -39,6 +39,9 @@ const TICK: std::time::Duration = std::time::Duration::from_millis(5);
 /// The largest preview measured in 3.5 (AUDIT_perf_ressources.md).
 const LARGE_PREVIEW: usize = 8465;
 const COST_FRAMES: u32 = 120;
+/// The window and the zoom of 3.5's own proof (`electron/e2e/editing-timeline-proof.mjs`).
+const REFERENCE_SIZE: egui::Vec2 = egui::Vec2::new(1600.0, 900.0);
+const REFERENCE_ZOOMS: usize = 5;
 const TOTAL_CALLS: u32 = 100;
 
 fn fixture() -> Value {
@@ -114,6 +117,8 @@ struct Plan {
     /// Grow the recorded preview to this many clips by repeating it: as more demos, or (`dense`)
     /// as later clips of the same demos.
     grow: Option<(usize, bool)>,
+    /// Show this preview (`{"sequences": …, "cfg": …}`) in place of the recorded one, in 3.5's proof window.
+    reference: Option<Value>,
 }
 
 /// The recorded preview repeated until it holds `target` clips.
@@ -165,7 +170,15 @@ fn grown(step: &Value, target: usize, dense: bool) -> Value {
 fn rig(plan: Plan) -> Rig {
     let fx = fixture();
     let mut recorded: HashMap<&'static str, VecDeque<Value>> = HashMap::new();
-    recorded.insert("start_preview", plan.previews.iter().map(|k| plan.grow.map_or_else(|| fx[*k].clone(), |(target, dense)| grown(&fx[*k], target, dense))).collect());
+    let preview_step = |k: &str| {
+        let mut step = plan.grow.map_or_else(|| fx[k].clone(), |(target, dense)| grown(&fx[k], target, dense));
+        if let Some(shown) = &plan.reference {
+            let ready = step["events"].as_array_mut().unwrap().iter_mut().find(|e| e["state"]["name"] == "preview_ready").unwrap();
+            ready["state"]["payload"] = json!({"sequences": shown["sequences"], "cfg": shown["cfg"], "events": {}});
+        }
+        step
+    };
+    recorded.insert("start_preview", plan.previews.iter().map(|k| preview_step(k)).collect());
     recorded.insert("clip_cameras", fx["cameras"].as_array().unwrap().iter().take(plan.cameras).cloned().collect());
     if plan.load_preset {
         recorded.insert("load_preset", VecDeque::from([json!({"reply": fx["preset"]["load_reply"]})]));
@@ -189,7 +202,7 @@ fn rig(plan: Plan) -> Rig {
     });
     let engine = Replay { recorded, steady, asked, settings, sent: sent.clone(), tx, rx, next: 0 };
     let export = dirs[2].path().to_path_buf();
-    let mut b = Harness::builder().with_size(if plan.with_settings { TALL } else { SIZE }).with_step_dt(STEP_DT).with_max_steps(400);
+    let mut b = Harness::builder().with_size(if plan.with_settings { TALL } else if plan.reference.is_some() { REFERENCE_SIZE } else { SIZE }).with_step_dt(STEP_DT).with_max_steps(400);
     if plan.wgpu {
         // DX12 crashes headless on the dev machine (rust/PIEGES.md); GL is what the window uses.
         if std::env::var_os("WGPU_BACKEND").is_none() {
@@ -246,6 +259,11 @@ impl Rig {
 
     fn click_containing(&mut self, part: &str) {
         self.h.get_by_label_contains(part).click();
+        self.h.run();
+    }
+
+    fn click_containing_first(&mut self, part: &str) {
+        self.h.query_all_by_label_contains(part).next().expect("a widget with that label").click();
         self.h.run();
     }
 
@@ -559,6 +577,40 @@ fn editing_renders_headless() {
         r.click("PREVIEW");
         r.click("EDITING");
         save(&mut r, "empty");
+    }
+}
+
+/// By hand: the tab on the invented preview 3.5's own proof shows, at that proof's window size and
+/// steps (fitted, five zoom steps, a clip open, the list), for a side-by-side on the same data.
+/// The status line keeps the recorded preview's counts; no clip is edited (no engine answer is invented).
+///
+///   CSDM_REFERENCE_PREVIEW=<{"sequences": …, "cfg": …} as JSON>  CSDM_RENDER_OUT=<folder>
+///   cargo test -p csdm-app --test editing -- --ignored editing_renders_the_3_5_proof_preview
+#[test]
+#[ignore = "needs the 3.5 proof's preview; run by hand"]
+fn editing_renders_the_3_5_proof_preview() {
+    let shown: Value = serde_json::from_slice(&std::fs::read(std::env::var_os("CSDM_REFERENCE_PREVIEW").expect("CSDM_REFERENCE_PREVIEW")).expect("the preview file")).expect("a JSON preview");
+    let out = std::path::PathBuf::from(std::env::var_os("CSDM_RENDER_OUT").expect("CSDM_RENDER_OUT"));
+    for ground in ["white", "dark"] {
+        let mut r = rig(Plan { previews: vec!["preview"], wgpu: true, reference: Some(shown.clone()), ..Default::default() });
+        if r.h.state().link.get("theme_bg").cloned() != Some(json!(ground)) {
+            let t = 0.0;
+            r.h.state_mut().link.set(t, "theme_bg", json!(ground));
+            r.h.run();
+        }
+        r.click("PREVIEW");
+        let save = |r: &mut Rig, name: &str| r.h.render().expect("headless render").save(out.join(format!("t8-ref-{name}-{ground}.png"))).expect("save png");
+        save(&mut r, "01-fit");
+        for _ in 0..REFERENCE_ZOOMS {
+            r.click("Zoom in");
+        }
+        save(&mut r, "02-zoomed");
+        // 3.5 opens the first clip it drew on the second lane.
+        let on_lane = format!("{} clip ", r.preview().lanes()[1].name);
+        r.click_containing_first(&on_lane);
+        save(&mut r, "03-inspector");
+        r.click("Editing view: List");
+        save(&mut r, "06-list");
     }
 }
 

@@ -16,7 +16,7 @@ use csdm_core::editing::{clamp_pps, event_meta, format_clock, ruler_ticks, zoom_
 use csdm_core::ui_values::{
     EDITING_BLOCK, EDITING_BLOCK_MIN, EDITING_LABEL_WIDTH, EDITING_LANE_HEIGHT, EDITING_MARKS_MIN, EDITING_OVERSCAN, EDITING_RULER_HEIGHT, EDITING_ZOOM_STEP, FONT_SMALL,
 };
-use eframe::egui::{self, pos2, vec2, Align, Align2, Color32, Layout, Painter, Pos2, Rect, Sense, Stroke, StrokeKind};
+use eframe::egui::{self, pos2, vec2, Align, Align2, Color32, Layout, Painter, Rect, Sense, Stroke, StrokeKind};
 
 /// `.edtl { min-height: 120px }`.
 pub const MIN_HEIGHT: f32 = 120.0;
@@ -299,7 +299,7 @@ impl Block<'_> {
 fn rounded_vgradient(p: &Painter, r: Rect, top: Color32, bottom: Color32) {
     let radius = BLOCK_RADIUS.min(r.width() / 2.0).min(r.height() / 2.0);
     let color = |y: f32| top.lerp_to_gamma(bottom, ((y - r.top()) / r.height()).clamp(0.0, 1.0));
-    let centers: [Pos2; 4] = [pos2(r.right() - radius, r.top() + radius), pos2(r.right() - radius, r.bottom() - radius), pos2(r.left() + radius, r.bottom() - radius), pos2(r.left() + radius, r.top() + radius)];
+    let centers = [pos2(r.right() - radius, r.top() + radius), pos2(r.right() - radius, r.bottom() - radius), pos2(r.left() + radius, r.bottom() - radius), pos2(r.left() + radius, r.top() + radius)];
     let mut m = egui::epaint::Mesh::default();
     m.colored_vertex(r.center(), color(r.center().y));
     for (c, start) in centers.iter().zip(CORNER_STARTS) {
