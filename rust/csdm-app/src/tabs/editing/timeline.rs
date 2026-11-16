@@ -120,6 +120,9 @@ pub fn show(ui: &mut egui::Ui, t: &Theme, preview: &Preview, lanes: &[Lane], act
     }
     let mut clicked = None;
     let mut tracks_ui = ui.new_child(egui::UiBuilder::new().max_rect(tracks).id_salt("editing-tracks-pane"));
+    // A zoom step's offset is checked against last frame's (narrower) content: with the rubber
+    // band on, egui springs it back and coasts ~65 px off the anchored second. 3.5 has none either.
+    tracks_ui.spacing_mut().scroll.kinetic.rubber_band = false;
     let out = area.show_viewport(&mut tracks_ui, |ui, view| {
         let (content, _) = ui.allocate_exact_size(vec2(track_width.max(view.width()), lanes_height.max(view.height())), Sense::hover());
         let origin = content.min;

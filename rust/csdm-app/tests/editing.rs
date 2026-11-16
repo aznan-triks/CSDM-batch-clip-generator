@@ -262,11 +262,6 @@ impl Rig {
         self.h.run();
     }
 
-    fn click_containing_first(&mut self, part: &str) {
-        self.h.query_all_by_label_contains(part).next().expect("a widget with that label").click();
-        self.h.run();
-    }
-
     fn preview(&self) -> &Preview {
         &self.h.state().link.state.preview
     }
@@ -373,7 +368,6 @@ fn editing_01_timeline_lanes_blocks_pages_and_anchored_zoom() {
     for _ in 0..REFERENCE_ZOOMS {
         r.click("Zoom in");
         let (now, scale) = (middle(&r.tab().zoom), r.tab().zoom.scale);
-        eprintln!("zoom: {:?} middle {now}", r.tab().zoom);
         assert!((now - before).abs() * scale <= 1.0, "the middle second moved: {now} vs {before}");
     }
 }
@@ -615,9 +609,14 @@ fn editing_renders_the_3_5_proof_preview() {
             r.click("Zoom in");
         }
         save(&mut r, "02-zoomed");
-        // 3.5 opens the first clip it drew on the second lane.
-        let on_lane = format!("{} clip ", r.preview().lanes()[1].name);
-        r.click_containing_first(&on_lane);
+        // 3.5 opens the first clip it drew on the second lane: the first one in view (blocks in the
+        // overscan, left of the names' column, have a widget too).
+        let lane = r.preview().lanes()[1].name.clone();
+        let names_right = r.h.get_by_label_contains(&format!("{lane}, ")).rect().right();
+        let width = REFERENCE_SIZE.x;
+        let on_lane = format!("{lane} clip ");
+        r.h.query_all_by_label_contains(&on_lane).find(|n| n.rect().left() >= names_right && n.rect().right() <= width).expect("a block of the second lane in view").click();
+        r.h.run();
         save(&mut r, "03-inspector");
         r.click("Editing view: List");
         save(&mut r, "06-list");
