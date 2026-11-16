@@ -16,7 +16,7 @@ use csdm_core::ui_values::{
 use csdm_engine::event::StateName;
 use csdm_engine::Command;
 use eframe::egui::{self, Align2, Color32, Pos2, Rect, Sense, Stroke, Vec2};
-use serde_json::{json, Value};
+use serde_json::Value;
 
 const AK47_SVG: &[u8] = include_bytes!("../assets/ak47.svg");
 /// `weapons.ts::WEAPONS.ak47.muzzle`: 4.1 % from the left, 52 % down.
