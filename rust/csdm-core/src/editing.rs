@@ -6,6 +6,7 @@
 //! edit. An edit may set `before_s` / `after_s` (whole seconds before the first kept event /
 //! after the last one) and take events out (`excluded_events`, by `event_key`).
 
+use crate::ui_values::{EDITING_PPS, EDITING_RULER_MIN_GAP, EDITING_RULER_STEPS_S, EDITING_TAIL_S};
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
 
@@ -192,10 +193,22 @@ impl PreviewClip {
         }
     }
 
-    fn from_sequence(demo_path: &str, seq: &Value, fallback_player: &str) -> Self {
+    /// `pool`: the demo's events (`payload.events[demo]`). The engine names a sequence's event by
+    /// its position there, or carries it as `{"copy": event}` when the list does not hold it; an
+    /// event written in place (the 3.5 shape) is read as it is.
+    fn from_sequence(demo_path: &str, seq: &Value, pool: Option<&Vec<Value>>, fallback_player: &str) -> Self {
         let empty = Map::new();
-        let events = seq["events"].as_array().map(Vec::as_slice).unwrap_or_default();
-        let first = events.first().and_then(Value::as_object).unwrap_or(&empty);
+        let events: Vec<&Value> = seq["events"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|e| match e {
+                Value::Number(at) => at.as_u64().and_then(|i| pool?.get(i as usize)).unwrap_or(&Value::Null),
+                Value::Object(m) if m.len() == 1 && m.contains_key("copy") => &m["copy"],
+                other => other,
+            })
+            .collect();
+        let first = events.first().and_then(|e| e.as_object()).unwrap_or(&empty);
         let start_tick = tick(&seq["start_tick"]).unwrap_or(0);
         let event_type = text(&seq["event_type"]).or_else(|| first.get("type").and_then(text)).unwrap_or_else(|| "?".into());
         // Non-kill events carry the tracked player on attacker_sid (damage, shot) or victim_sid
@@ -278,7 +291,8 @@ impl Preview {
         let mut clips = Vec::new();
         if let Some(sequences) = payload["sequences"].as_object() {
             for (demo_path, seqs) in sequences {
-                clips.extend(seqs.as_array().into_iter().flatten().map(|s| PreviewClip::from_sequence(demo_path, s, &fallback_player)));
+                let pool = payload["events"].get(demo_path).and_then(Value::as_array);
+                clips.extend(seqs.as_array().into_iter().flatten().map(|s| PreviewClip::from_sequence(demo_path, s, pool, &fallback_player)));
             }
         }
         let empty_reason = if clips.is_empty() { EmptyReason::from_json(&payload["empty_reason"]) } else { None };
@@ -366,6 +380,12 @@ impl Preview {
         lanes
     }
 
+    /// Seconds of axis a page of lanes needs: its latest edited end, plus the tail (3.5 `spanS`).
+    pub fn span_s(&self, lanes: &[Lane]) -> f64 {
+        let end = lanes.iter().flat_map(|l| &l.indices).filter_map(|&i| self.clips[i].window(self.tickrate)).map(|w| w.end_tick).max().unwrap_or(0);
+        end as f64 / self.tickrate as f64 + EDITING_TAIL_S
+    }
+
     /// `overlapsAnother`: this clip, as edited, overlaps another checked clip of its demo (the
     /// engine then records the two as one).
     pub fn overlaps_another(&self, lane: &Lane, index: usize) -> bool {
@@ -377,6 +397,32 @@ impl Preview {
         })
     }
 
+}
+
+/// `clampPps`: a zoom inside its bounds.
+pub fn clamp_pps(pps: f64) -> f64 {
+    pps.clamp(EDITING_PPS[0], EDITING_PPS[1])
+}
+
+/// `rulerTicks`: the smallest labelled step that leaves room for its label, and the labelled
+/// seconds between two track positions (px), never past `span_s`.
+pub fn ruler_ticks(pps: f64, x0: f64, x1: f64, span_s: f64) -> Vec<f64> {
+    let step = EDITING_RULER_STEPS_S.iter().copied().find(|s| s * pps >= EDITING_RULER_MIN_GAP).unwrap_or(EDITING_RULER_STEPS_S[EDITING_RULER_STEPS_S.len() - 1]);
+    let first = ((x0 / pps / step).ceil() * step).max(0.0);
+    let last = span_s.min(x1 / pps);
+    let mut out = Vec::new();
+    let mut t = first;
+    while t <= last {
+        out.push(t);
+        t += step;
+    }
+    out
+}
+
+/// Where the track must scroll to keep the second under `anchor_px` in place when the zoom goes
+/// from `from_pps` to `to_pps` (3.5 `zoom`).
+pub fn zoom_scroll(left_px: f64, anchor_px: f64, from_pps: f64, to_pps: f64) -> f64 {
+    ((left_px + anchor_px) / from_pps * to_pps - anchor_px).max(0.0)
 }
 
 /// `demoName`: the file name of a demo path.
@@ -483,6 +529,21 @@ mod tests {
     }
 
     #[test]
+    fn preview_ready_reads_the_engine_payload_events_by_position() {
+        // The Rust engine: `events` lists each demo's events once; a sequence names them by position,
+        // or carries `{"copy": event}` for one the list does not hold.
+        let p = Preview::from_ready(&json!({
+            "cfg": {"tickrate": 128},
+            "events": {"a.dem": [{"tick": 10, "type": "kill", "killer_sid": "1"}, {"tick": 900, "type": "death", "victim_sid": "7"}, {"tick": 950, "type": "kill", "killer_sid": "7"}]},
+            "sequences": {"a.dem": [{"start_tick": 700, "end_tick": 1200, "event_type": "death", "events": [1, {"copy": {"tick": 940, "type": "shot", "attacker_sid": "7"}}, 2], "event_keys": ["900:death:7", "940:shot:", "950:kill:x"]}]}
+        }));
+        let c = &p.clips[0];
+        assert_eq!(p.tickrate, 128);
+        assert_eq!(c.events.iter().map(|e| (e.tick, e.kind.as_str(), e.key.as_str())).collect::<Vec<_>>(), vec![(900, "death", "900:death:7"), (940, "shot", "940:shot:"), (950, "kill", "950:kill:x")]);
+        assert_eq!(c.player, "7", "the first event's victim, read through its position");
+    }
+
+    #[test]
     fn edits_checking_and_payload() {
         let mut p = Preview::from_ready(&ready());
         let g = p.generation;
@@ -553,6 +614,24 @@ mod tests {
         assert_eq!(ClipEntry::from_json(&e.to_json()), Some(e));
         assert_eq!(ClipEntry::from_json(&json!({"demo_path": "d", "start_tick": 1, "excluded_events": []})).unwrap().excluded_events, None);
         assert_eq!(ClipEntry::from_json(&json!({"start_tick": 1})), None);
+    }
+
+    #[test]
+    fn timeline_scale_like_3_5() {
+        assert_eq!((clamp_pps(0.001), clamp_pps(3.0), clamp_pps(900.0)), (0.05, 3.0, 40.0));
+        // 1 px/s: the first step with 72 px of room is 120 s.
+        assert_eq!(ruler_ticks(1.0, -400.0, 500.0, 400.0), vec![0.0, 120.0, 240.0, 360.0]);
+        assert_eq!(ruler_ticks(40.0, 4000.0, 4100.0, 1000.0), vec![100.0, 102.0], "2 s steps at 40 px/s, only the window");
+        assert_eq!(ruler_ticks(0.05, 0.0, 100.0, 5000.0), vec![0.0, 900.0, 1800.0], "the largest step when none fits");
+        // The second under the pointer (300 px into a view scrolled by 100 px, at 2 px/s = 200 s) stays under it.
+        let left = zoom_scroll(100.0, 300.0, 2.0, 3.0);
+        assert_eq!(left, 300.0);
+        assert_eq!((left + 300.0) / 3.0, 200.0);
+        assert_eq!(zoom_scroll(0.0, 300.0, 2.0, 1.0), 0.0, "never before the start");
+        let p = Preview::from_ready(&ready());
+        let lanes = p.lanes();
+        assert_eq!(p.span_s(&lanes), 5320.0 / 64.0 + 10.0);
+        assert_eq!(p.span_s(&lanes[1..]), 420.0 / 64.0 + 10.0, "the page's own lanes");
     }
 
     #[test]
