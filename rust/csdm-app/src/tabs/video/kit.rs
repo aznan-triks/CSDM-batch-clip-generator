@@ -4,9 +4,9 @@
 
 use crate::grid::CardCx;
 use crate::paint::{mono, regular};
-use crate::tabs::settings::controls::{num_of, stored_number, text_of};
+use crate::tabs::settings::controls::{num_of, text_of};
 use crate::theme::Theme;
-use crate::widgets::{chip, tip};
+use crate::widgets::tip;
 use csdm_core::ui_values::{FONT_BODY, FONT_SMALL, SETTINGS_FIELD_WIDTH, SETTINGS_LABEL_WIDTH};
 use eframe::egui;
 use serde_json::json;
@@ -41,25 +41,6 @@ pub fn shown(v: f64) -> String {
     format!("{v}")
 }
 
-/// The shortcut values beside a number (3.5 `QuickChips`, the CS2 Effects ruler): one chip each,
-/// the current value lit.
-pub fn quick(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, values: &[f64], decimals: i32) {
-    let current = num(cx, key);
-    let mut picked = None;
-    ui.horizontal_wrapped(|ui| {
-        ui.add_space(SETTINGS_LABEL_WIDTH + ui.spacing().item_spacing.x);
-        for &q in values {
-            let r = chip(ui, cx.theme, &shown(q), Some(q == current), Some(&format!("{name} {}", shown(q))), true);
-            if r.on_hover_text(format!("Set {name} to {}", shown(q))).clicked() {
-                picked = Some(q);
-            }
-        }
-    });
-    if let Some(q) = picked {
-        cx.link.set(cx.now, key, stored_number(q, decimals));
-    }
-}
-
 /// A codec list (3.5 `CodecSelect`): the table's codecs, and the stored one first when the table
 /// does not hold it, so the box never shows another codec than the one the run will use.
 pub fn codec(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, table: &[String], tip_text: &str) {
@@ -92,17 +73,7 @@ pub fn codec(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, table: &
     }
 }
 
-/// A short readout beside a value: the words a number means ("visually lossless").
-pub fn note(ui: &mut egui::Ui, t: &Theme, text: &str) {
-    ui.label(egui::RichText::new(text).font(regular(FONT_SMALL)).color(t.faint));
-}
-
 /// `.vk-warn`: a setting that does nothing as things stand.
 pub fn warn(ui: &mut egui::Ui, t: &Theme, text: &str) {
     ui.label(egui::RichText::new(text).font(regular(FONT_SMALL)).color(t.amber));
-}
-
-/// Monospace words (a console command, the FFmpeg line).
-pub fn code(ui: &mut egui::Ui, t: &Theme, text: &str) {
-    ui.add(egui::Label::new(egui::RichText::new(text).font(mono(FONT_SMALL)).color(t.muted)).wrap());
 }

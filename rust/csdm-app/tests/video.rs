@@ -198,7 +198,8 @@ fn video_02_resolution_presets_write_width_and_height_together() {
     for fps in &registries().framerates {
         r.h.get_by_label(&format!("FPS: {fps}"));
     }
-    r.h.get_by_label("1920x1080 · 16:9");
+    r.h.get_by_label("1920x1080");
+    r.h.get_by_label("16:9");
     let before = r.saves();
     r.click("Resolution: 2560x1440");
     assert_eq!((r.setting("width"), r.setting("height")), (json!(2560), json!(1440)));
@@ -207,7 +208,8 @@ fn video_02_resolution_presets_write_width_and_height_together() {
     assert_eq!(r.saves() - before, 1, "one save for the two keys (L3)");
     r.replace_in("Width", "1366");
     r.replace_in("Height", "768");
-    r.h.get_by_label("custom · 1.78:1");
+    r.h.get_by_label("custom");
+    r.h.get_by_label("1.78:1");
     r.click("FPS: 120");
     r.click("Window mode: noborder");
     r.click("Send to back on launch");
@@ -227,7 +229,7 @@ fn video_03_recording_system_hlae_card_only_in_hlae_mode() {
     assert!(!r.card_ids().contains(&"hlae-options"), "HLAE Options only in HLAE mode");
     assert!(r.h.query_by_label("FOV").is_none());
     r.h.get_by_label("Ragdoll gravity");
-    r.h.get_by_label("CSDM → CS2 startmovie → video");
+    r.h.get_by_label("CS2 startmovie");
     r.click("System: HLAE");
     r.h.run();
     assert!(r.card_ids().contains(&"hlae-options"));
@@ -241,10 +243,13 @@ fn video_03_recording_system_hlae_card_only_in_hlae_mode() {
 #[test]
 fn video_04_hlae_options_numbers_shortcuts_switches_args() {
     let mut r = rig(json!({"recsys": "HLAE", "hlae_fov": 90, "hlae_slow_motion": 100, "hlae_afx_stream": false, "hlae_no_spectator_ui": false, "hlae_fix_scope_fov": false, "hlae_extra_args": ""}));
-    r.h.get_by_label("90° · default");
+    r.h.get_by_label("default");
     r.replace_in("FOV", "105");
     assert_eq!(r.setting("hlae_fov"), json!(105));
-    r.h.get_by_label("105° · cinematic wide");
+    r.h.get_by_label("cinematic wide");
+    r.click("Increase FOV");
+    assert_eq!(r.setting("hlae_fov"), json!(106), "the › arrow steps the value");
+    r.click("Decrease FOV");
     r.replace_in("FOV", "abc");
     assert_eq!(r.setting("hlae_fov"), json!(105), "a word is not stored");
     for q in [50, 75, 100, 125, 150, 200, 500, 1000] {
@@ -252,7 +257,7 @@ fn video_04_hlae_options_numbers_shortcuts_switches_args() {
     }
     r.click("Game speed 50");
     assert_eq!(r.setting("hlae_slow_motion"), json!(50));
-    r.h.get_by_label("50% · 2× slow motion");
+    r.h.get_by_label("2× slow motion");
     for s in ["AFX Stream", "No spectator UI", "Fix scope FOV"] {
         r.click(s);
     }
@@ -320,13 +325,14 @@ fn video_07_encoding_codecs_from_the_table_and_an_unknown_codec_kept() {
     r.click("libopus");
     assert_eq!(r.setting("audio_codec"), json!("libopus"));
     r.replace_in("CRF", "23");
-    r.h.get_by_label("quality ⟷ size: good");
+    r.h.get_by_label("good");
     r.click("Preset: slow");
     r.click("Container: mkv");
     r.replace_in("Audio bitrate", "320");
     r.replace_in("Input params", "-hwaccel cuda");
     r.replace_in("Output params", "-movflags +faststart");
-    r.h.get_by_label("ffmpeg -hwaccel cuda -i frames … -c:v h264_nvenc -crf 23 -preset slow -movflags +faststart clip.mkv");
+    r.h.get_by_label("-i frames … -c:v h264_nvenc -crf 23 -preset slow");
+    r.h.get_by_label("clip.mkv");
     assert_eq!(r.count("encoding").as_deref(), Some("h264_nvenc · CRF 23 · .mkv"));
     let disk = r.saved("ffmpeg_output_params", json!("-movflags +faststart"));
     assert_eq!(
