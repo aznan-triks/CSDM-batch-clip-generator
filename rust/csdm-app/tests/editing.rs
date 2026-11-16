@@ -366,6 +366,16 @@ fn editing_01_timeline_lanes_blocks_pages_and_anchored_zoom() {
     r.click("Fit");
     assert!(r.tab().zoom.pps.is_none());
     assert!((r.tab().zoom.scale - fitted).abs() < 1e-9);
+
+    // The buttons keep the view's middle second in the middle, step after step.
+    let middle = |z: &csdm_app::tabs::editing::timeline::Zoom| (f64::from(z.left) + f64::from(z.viewport) / 2.0) / z.scale;
+    let before = middle(&r.tab().zoom);
+    for _ in 0..REFERENCE_ZOOMS {
+        r.click("Zoom in");
+        let (now, scale) = (middle(&r.tab().zoom), r.tab().zoom.scale);
+        eprintln!("zoom: {:?} middle {now}", r.tab().zoom);
+        assert!((now - before).abs() * scale <= 1.0, "the middle second moved: {now} vs {before}");
+    }
 }
 
 #[test]
