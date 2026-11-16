@@ -293,7 +293,7 @@ pub fn hlae_options(ui: &mut egui::Ui, cx: &mut CardCx) {
     sw(ui, cx, "hlae_afx_stream", "AFX Stream", "Records separate color/depth/stencil passes for compositing (HLAE AFX)");
     sw(ui, cx, "hlae_no_spectator_ui", "No spectator UI", "Hides the spectator HUD — injects +cl_draw_only_deathnotices 1");
     sw(ui, cx, "hlae_fix_scope_fov", "Fix scope FOV", "Stops scoped weapons overriding your FOV setting. Recommended: ON");
-    text(ui, cx, "hlae_extra_args", "Additional HLAE args", "", "Extra command-line arguments passed directly to the HLAE launcher (advanced)");
+    text(ui, cx, "hlae_extra_args", "Extra HLAE args", "", "Extra command-line arguments passed directly to the HLAE launcher (advanced)");
     hint(ui, cx.theme, HLAE_HINT);
 }
 
@@ -303,7 +303,7 @@ pub fn in_game_options(ui: &mut egui::Ui, cx: &mut CardCx) {
     sw(ui, cx, "true_view", "TrueView", "Enables CS2's TrueView free spectator camera (clean, HUD-free footage) for recording");
     sw(ui, cx, "show_only_death_notices", "Death notices only", "Hides all HUD elements except the kill-feed (death notices) during recording");
     sw(ui, cx, "show_xray", "X-Ray", "Highlights enemy players through walls/smoke with colored outlines (spectator X-ray)");
-    number(ui, cx, "death_notices_duration", "Death notices (s)", DURATION_DECIMALS, "How long each kill-feed entry stays visible on screen, in seconds");
+    number(ui, cx, "death_notices_duration", "Death notices", DURATION_DECIMALS, "How long each kill-feed entry stays visible on screen, in seconds");
     kick(ui, cx.theme, "After each demo");
     sw(ui, cx, "close_game_after", "Close CS2", "Automatically exits CS2 after each demo completes to free system resources");
 }
@@ -364,10 +364,10 @@ pub fn encoding(tab: &VideoTab, ui: &mut egui::Ui, cx: &mut CardCx) {
     choose(ui, cx, "video_container", "Container", &VIDEO_CONTAINERS, "Output video container format (MP4 recommended for broad compatibility)");
     kick(ui, cx.theme, "Audio");
     kit::codec(ui, cx, "audio_codec", "Audio codec", &tables.audio_codecs, "FFmpeg audio encoder used for the output track (e.g. aac, mp3, copy)");
-    number(ui, cx, "audio_bitrate", "Audio bitrate (kbps)", 0, "Audio bitrate in kilobits per second (e.g. 192, 256, 320)");
+    number(ui, cx, "audio_bitrate", "Audio bitrate", 0, "Audio bitrate in kilobits per second (e.g. 192, 256, 320)");
     kick(ui, cx.theme, "FFmpeg command");
-    text(ui, cx, "ffmpeg_input_params", "FFmpeg input params", "input params", "Raw FFmpeg flags inserted before the input (-i) file. Advanced/optional");
-    text(ui, cx, "ffmpeg_output_params", "FFmpeg output params", "output params", "Raw FFmpeg flags inserted before the output file. Advanced/optional");
+    text(ui, cx, "ffmpeg_input_params", "Input params", "input params", "Raw FFmpeg flags inserted before the input (-i) file. Advanced/optional");
+    text(ui, cx, "ffmpeg_output_params", "Output params", "output params", "Raw FFmpeg flags inserted before the output file. Advanced/optional");
     let codec = text_of(cx, "video_codec");
     let line = format!(
         "ffmpeg {} -i frames … -c:v {} -crf {} -preset {} {} clip.{}",

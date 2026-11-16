@@ -74,6 +74,8 @@ pub fn codec(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, table: &
         let r = egui::ComboBox::from_id_salt(("video-codec", key))
             .selected_text(egui::RichText::new(&value).font(mono(FONT_BODY)))
             .width(SETTINGS_FIELD_WIDTH.min(ui.available_width()))
+            // Every codec in view, as 3.5's native `<select>` showed them (no scrolled-away entry).
+            .height(ui.ctx().content_rect().height())
             .show_ui(ui, |ui| {
                 for o in &options {
                     if ui.selectable_label(*o == value, egui::RichText::new(o).font(mono(FONT_BODY))).clicked() && *o != value {

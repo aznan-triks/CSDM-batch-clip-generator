@@ -256,7 +256,7 @@ fn video_04_hlae_options_numbers_shortcuts_switches_args() {
     for s in ["AFX Stream", "No spectator UI", "Fix scope FOV"] {
         r.click(s);
     }
-    r.replace_in("Additional HLAE args", "-afxDisableSteamStorage");
+    r.replace_in("Extra HLAE args", "-afxDisableSteamStorage");
     assert_eq!(r.count("hlae-options").as_deref(), Some("105° · 50%"));
     let disk = r.saved("hlae_extra_args", json!("-afxDisableSteamStorage"));
     assert_eq!([&disk["hlae_afx_stream"], &disk["hlae_no_spectator_ui"], &disk["hlae_fix_scope_fov"]], [&json!(true); 3]);
@@ -269,7 +269,7 @@ fn video_05_in_game_options_switches_and_feed_duration() {
     for s in ["TrueView", "Death notices only", "X-Ray", "Close CS2"] {
         r.click(s);
     }
-    r.replace_in("Death notices (s)", "2.5");
+    r.replace_in("Death notices", "2.5");
     assert_eq!(r.setting("death_notices_duration"), json!(2.5), "one decimal kept, as 3.5");
     let disk = r.saved("death_notices_duration", json!(2.5));
     for k in ["true_view", "show_only_death_notices", "show_xray", "close_game_after"] {
@@ -323,9 +323,9 @@ fn video_07_encoding_codecs_from_the_table_and_an_unknown_codec_kept() {
     r.h.get_by_label("quality ⟷ size: good");
     r.click("Preset: slow");
     r.click("Container: mkv");
-    r.replace_in("Audio bitrate (kbps)", "320");
-    r.replace_in("FFmpeg input params", "-hwaccel cuda");
-    r.replace_in("FFmpeg output params", "-movflags +faststart");
+    r.replace_in("Audio bitrate", "320");
+    r.replace_in("Input params", "-hwaccel cuda");
+    r.replace_in("Output params", "-movflags +faststart");
     r.h.get_by_label("ffmpeg -hwaccel cuda -i frames … -c:v h264_nvenc -crf 23 -preset slow -movflags +faststart clip.mkv");
     assert_eq!(r.count("encoding").as_deref(), Some("h264_nvenc · CRF 23 · .mkv"));
     let disk = r.saved("ffmpeg_output_params", json!("-movflags +faststart"));
@@ -374,7 +374,7 @@ fn renders_the_tab_for_the_author() {
     let Some(out) = std::env::var_os("CSDM_RENDER_OUT").map(PathBuf::from) else { return };
     for ground in ["white", "dark"] {
         for (name, size) in [("window", egui::Vec2::new(1600.0, 900.0)), ("all", egui::Vec2::new(1600.0, 2600.0))] {
-            let mut r = rig_sized(json!({"theme_bg": ground, "assemble_after": true, "recsys": "HLAE"}), size, true);
+            let mut r = rig_sized(json!({"theme_bg": ground, "theme_accent": "blue", "assemble_after": true, "recsys": "HLAE"}), size, true);
             r.h.run();
             let img = r.h.render().expect("headless render");
             img.save(out.join(format!("t10-video-{ground}-{name}.png"))).expect("save png");

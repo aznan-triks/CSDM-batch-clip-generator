@@ -105,7 +105,8 @@ fn video_tab_on_the_real_engine() {
         if d["video_codec"] == json!(codec) && d["width"] == json!(w) {
             break d;
         }
-        assert!(start.elapsed() < WAIT, "the settings were never saved");
+        let shown = |k: &str| h.state().link.get(k).cloned().unwrap_or(Value::Null);
+        assert!(start.elapsed() < WAIT, "never saved: on disk codec {} width {}; in the window codec {} width {}; wanted {codec} {w}", d["video_codec"], d["width"], shown("video_codec"), shown("width"));
         std::thread::sleep(TICK);
     };
     assert_eq!((disk["height"].clone(), disk["recsys"].clone()), (json!(hgt), json!("CS")));
