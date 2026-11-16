@@ -231,8 +231,15 @@ impl State {
     fn settings_command(&mut self, command: Command) -> Result<Option<Value>, EngineError> {
         let refused = || EngineError::User(format!("\"{}\" is not available in this build yet.", command.name()));
         let home = self.home.as_mut().ok_or_else(refused)?;
-        let reply = home.handle(&command, &self.sink).ok_or_else(refused)?.map_err(EngineError::User)?;
+        let mut reply = home.handle(&command, &self.sink).ok_or_else(refused)?.map_err(EngineError::User)?;
         match &command {
+            // 3.5 `_cmd_load_preset`: the stored EDITING selection, matched to the last preview.
+            Command::LoadPreset { preset } => {
+                let stored = reply.as_object_mut().and_then(|m| m.remove("stored_clips"));
+                if let Some(restored) = clips::preset_clip_selection(&self.ports(), self.last.as_ref(), preset, stored.as_ref()) {
+                    reply["selected_clips"] = Value::Array(restored.iter().map(clips::ClipEntry::to_json).collect());
+                }
+            }
             Command::SaveConfig { cfg } => self.settings = cfg.clone(),
             Command::LoadConfig => {
                 if let Some(cfg) = reply.get("data").and_then(Value::as_object) {

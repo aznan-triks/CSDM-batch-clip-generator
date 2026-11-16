@@ -364,3 +364,28 @@ pub const MAP_SHADES: u32 = 4;
 /// `player/parts.tsx::AVATAR_HUES`, and the Steam ID digits shown after "…".
 pub const AVATAR_HUES: u32 = 5;
 pub const SHORT_ID_DIGITS: usize = 6;
+
+// ---- EDITING tab (tabs/EditingTab.tsx, tabs/editing/EditingTimeline.tsx, ClipInspector.tsx) ----
+/// `EDITING_LIST.pageSize`: clips drawn per page of the list.
+pub const EDITING_LIST_PAGE_SIZE: usize = 100;
+/// `EDITING_TIMELINE.lanesPerPage`: demo lanes drawn per page of the timeline.
+pub const EDITING_LANES_PER_PAGE: usize = 10;
+/// `minPps` / `maxPps`: zoom bounds, pixels per second of demo; `zoomStep`: one step multiplies by this.
+pub const EDITING_PPS: [f64; 2] = [0.05, 40.0];
+pub const EDITING_ZOOM_STEP: f64 = 1.5;
+/// `labelWidth`, `overscanPx`, `marksMinPx`, `blockMinPx`, `rulerMinGapPx` (px).
+pub const EDITING_LABEL_WIDTH: f32 = 188.0;
+pub const EDITING_OVERSCAN: f32 = 400.0;
+pub const EDITING_MARKS_MIN: f32 = 18.0;
+pub const EDITING_BLOCK_MIN: f32 = 4.0;
+pub const EDITING_RULER_MIN_GAP: f64 = 72.0;
+/// `tailS`: seconds of empty axis after the latest clip of the page.
+pub const EDITING_TAIL_S: f64 = 10.0;
+/// `RULER_STEPS_S`: the labelled ruler steps, smallest readable one wins.
+pub const EDITING_RULER_STEPS_S: [f64; 11] = [1.0, 2.0, 5.0, 10.0, 15.0, 30.0, 60.0, 120.0, 300.0, 600.0, 900.0];
+/// `ClipInspector.tsx::AXIS_MARGIN_S`: seconds of axis past each end of the clip.
+pub const EDITING_AXIS_MARGIN_S: f64 = 2.0;
+/// `.edtl-ruler` / `.edtl-lane` heights, `.edtl-clip` top and height (px).
+pub const EDITING_RULER_HEIGHT: f32 = 24.0;
+pub const EDITING_LANE_HEIGHT: f32 = 44.0;
+pub const EDITING_BLOCK: [f32; 2] = [9.0, 26.0];

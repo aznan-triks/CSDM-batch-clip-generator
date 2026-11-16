@@ -240,8 +240,8 @@ impl SettingsHome {
     }
 
     /// 3.5 `_cmd_load_preset`: the values, and the keys it may overwrite (`null` = every key).
-    /// shortcut: the stored EDITING selection is returned as stored (`stored_clips`); matching it to
-    /// the current preview (3.5 `preset_clip_selection`) belongs to the preview's owner (T8).
+    /// The stored EDITING selection comes back as stored (`stored_clips`): the real engine matches it
+    /// to its last preview (3.5 `preset_clip_selection`) and replies `selected_clips` instead.
     pub fn load_preset(&self, name: &str) -> Result<Value, String> {
         let presets = self.presets()?;
         let preset = presets.get(name).and_then(Value::as_object).ok_or_else(|| format!("There is no preset named '{name}' any more. Reload the preset list."))?;

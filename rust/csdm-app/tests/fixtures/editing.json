@@ -1,0 +1,3927 @@
+{
+  "about": "Recorded from the real engine by csdm-engine/examples/record_editing.rs, anonymised and reduced to the fields the EDITING tab reads. Do not edit by hand: record again.",
+  "connect_db": {
+    "ok": {
+      "data": {
+        "players": [
+          [
+            "Player 2",
+            "76561197000000095",
+            "Player 2",
+            ""
+          ],
+          [
+            "Player 3",
+            "76561197000000084",
+            "Player 3",
+            ""
+          ],
+          [
+            "Player 4",
+            "76561197000000025",
+            "Player 4",
+            ""
+          ],
+          [
+            "Player 5",
+            "76561197000000024",
+            "Player 5",
+            ""
+          ],
+          [
+            "Player 6",
+            "76561197000000049",
+            "Player 6",
+            ""
+          ],
+          [
+            "Player 7",
+            "76561197000000052",
+            "Player 7",
+            ""
+          ],
+          [
+            "Player 8",
+            "76561197000000089",
+            "Player 8",
+            ""
+          ],
+          [
+            "Player 9",
+            "76561197000000038",
+            "Player 9",
+            ""
+          ],
+          [
+            "Player 10",
+            "76561197000000059",
+            "Player 10",
+            ""
+          ],
+          [
+            "Player 11",
+            "76561197000000080",
+            "Player 11",
+            ""
+          ],
+          [
+            "Player 12",
+            "76561197000000096",
+            "Player 12",
+            ""
+          ],
+          [
+            "Player 13",
+            "76561197000000074",
+            "Player 13",
+            ""
+          ],
+          [
+            "Player 14",
+            "76561197000000037",
+            "Player 14",
+            ""
+          ],
+          [
+            "Player 15",
+            "76561197000000005",
+            "Player 15",
+            ""
+          ],
+          [
+            "Player 16",
+            "76561197000000018",
+            "Player 16",
+            ""
+          ],
+          [
+            "Player 17",
+            "76561197000000086",
+            "Player 17",
+            ""
+          ],
+          [
+            "Player 18",
+            "76561197000000046",
+            "Player 18",
+            ""
+          ],
+          [
+            "Player 19",
+            "76561197000000004",
+            "Player 19",
+            ""
+          ],
+          [
+            "Player 20",
+            "76561197000000022",
+            "Player 20",
+            ""
+          ],
+          [
+            "Player 21",
+            "76561197000000023",
+            "Player 21",
+            ""
+          ],
+          [
+            "Player 22",
+            "76561197000000006",
+            "Player 22",
+            ""
+          ],
+          [
+            "Player 23",
+            "76561197000000007",
+            "Player 23",
+            ""
+          ],
+          [
+            "Player 24",
+            "76561197000000058",
+            "Player 24",
+            ""
+          ],
+          [
+            "Player 25",
+            "76561197000000093",
+            "Player 25",
+            ""
+          ],
+          [
+            "Player 26",
+            "76561197000000069",
+            "Player 26",
+            ""
+          ],
+          [
+            "Player 27",
+            "76561197000000085",
+            "Player 27",
+            ""
+          ],
+          [
+            "Player 28",
+            "76561197000000043",
+            "Player 28",
+            ""
+          ],
+          [
+            "Player 29",
+            "76561197000000017",
+            "Player 29",
+            ""
+          ],
+          [
+            "Player 30",
+            "76561197000000078",
+            "Player 30",
+            ""
+          ],
+          [
+            "Player 31",
+            "76561197000000021",
+            "Player 31",
+            ""
+          ],
+          [
+            "Player 32",
+            "76561197000000026",
+            "Player 32",
+            ""
+          ],
+          [
+            "Player 33",
+            "76561197000000033",
+            "Player 33",
+            ""
+          ],
+          [
+            "Player 34",
+            "76561197000000009",
+            "Player 34",
+            ""
+          ],
+          [
+            "Player 35",
+            "76561197000000035",
+            "Player 35",
+            ""
+          ],
+          [
+            "Player 36",
+            "76561197000000039",
+            "Player 36",
+            ""
+          ],
+          [
+            "Player 37",
+            "76561197000000034",
+            "Player 37",
+            ""
+          ],
+          [
+            "Player 38",
+            "76561197000000003",
+            "Player 38",
+            ""
+          ],
+          [
+            "Player 39",
+            "76561197000000011",
+            "Player 39",
+            ""
+          ],
+          [
+            "Player 40",
+            "76561197000000045",
+            "Player 40",
+            ""
+          ],
+          [
+            "Player 41",
+            "76561197000000041",
+            "Player 41",
+            ""
+          ],
+          [
+            "Player 42",
+            "76561197000000081",
+            "Player 42",
+            ""
+          ],
+          [
+            "Player 43",
+            "76561197000000088",
+            "Player 43",
+            ""
+          ],
+          [
+            "Player 44",
+            "76561197000000077",
+            "Player 44",
+            ""
+          ],
+          [
+            "Player 45",
+            "76561197000000008",
+            "Player 45",
+            ""
+          ],
+          [
+            "Player 46",
+            "76561197000000065",
+            "Player 46",
+            ""
+          ],
+          [
+            "Player 47",
+            "76561197000000013",
+            "Player 47",
+            ""
+          ],
+          [
+            "Player 48",
+            "76561197000000029",
+            "Player 48",
+            ""
+          ],
+          [
+            "Player 49",
+            "76561197000000094",
+            "Player 49",
+            ""
+          ],
+          [
+            "Player 50",
+            "76561197000000010",
+            "Player 50",
+            ""
+          ],
+          [
+            "Player 1",
+            "76561197000000001",
+            "Player 1",
+            ""
+          ],
+          [
+            "Player 51",
+            "76561197000000057",
+            "Player 51",
+            ""
+          ],
+          [
+            "Player 52",
+            "76561197000000062",
+            "Player 52",
+            ""
+          ],
+          [
+            "Player 53",
+            "76561197000000079",
+            "Player 53",
+            ""
+          ],
+          [
+            "Player 54",
+            "76561197000000060",
+            "Player 54",
+            ""
+          ],
+          [
+            "Player 55",
+            "76561197000000061",
+            "Player 55",
+            ""
+          ],
+          [
+            "Player 56",
+            "76561197000000067",
+            "Player 56",
+            ""
+          ],
+          [
+            "Player 57",
+            "76561197000000020",
+            "Player 57",
+            ""
+          ],
+          [
+            "Player 58",
+            "76561197000000056",
+            "Player 58",
+            ""
+          ],
+          [
+            "Player 59",
+            "76561197000000082",
+            "Player 59",
+            ""
+          ],
+          [
+            "Player 60",
+            "76561197000000036",
+            "Player 60",
+            ""
+          ],
+          [
+            "Player 61",
+            "76561197000000055",
+            "Player 61",
+            ""
+          ],
+          [
+            "Player 62",
+            "76561197000000072",
+            "Player 62",
+            ""
+          ],
+          [
+            "Player 63",
+            "76561197000000070",
+            "Player 63",
+            ""
+          ],
+          [
+            "Player 64",
+            "76561197000000042",
+            "Player 64",
+            ""
+          ],
+          [
+            "Player 65",
+            "76561197000000047",
+            "Player 65",
+            ""
+          ],
+          [
+            "Player 66",
+            "76561197000000071",
+            "Player 66",
+            ""
+          ],
+          [
+            "Player 67",
+            "76561197000000087",
+            "Player 67",
+            ""
+          ],
+          [
+            "Player 68",
+            "76561197000000091",
+            "Player 68",
+            ""
+          ],
+          [
+            "Player 69",
+            "76561197000000031",
+            "Player 69",
+            ""
+          ],
+          [
+            "Player 70",
+            "76561197000000012",
+            "Player 70",
+            ""
+          ],
+          [
+            "Player 71",
+            "76561197000000076",
+            "Player 71",
+            ""
+          ],
+          [
+            "Player 72",
+            "76561197000000032",
+            "Player 72",
+            ""
+          ],
+          [
+            "Player 73",
+            "76561197000000016",
+            "Player 73",
+            ""
+          ],
+          [
+            "Player 74",
+            "76561197000000040",
+            "Player 74",
+            ""
+          ],
+          [
+            "Player 75",
+            "76561197000000002",
+            "Player 75",
+            ""
+          ],
+          [
+            "Player 76",
+            "76561197000000073",
+            "Player 76",
+            ""
+          ],
+          [
+            "Player 77",
+            "76561197000000092",
+            "Player 77",
+            ""
+          ],
+          [
+            "Player 78",
+            "76561197000000066",
+            "Player 78",
+            ""
+          ],
+          [
+            "Player 79",
+            "76561197000000028",
+            "Player 79",
+            ""
+          ],
+          [
+            "Player 80",
+            "76561197000000054",
+            "Player 80",
+            ""
+          ],
+          [
+            "Player 81",
+            "76561197000000014",
+            "Player 81",
+            ""
+          ],
+          [
+            "Player 82",
+            "76561197000000090",
+            "Player 82",
+            ""
+          ],
+          [
+            "Player 83",
+            "76561197000000075",
+            "Player 83",
+            ""
+          ],
+          [
+            "Player 84",
+            "76561197000000083",
+            "Player 84",
+            ""
+          ],
+          [
+            "Player 85",
+            "76561197000000068",
+            "Player 85",
+            ""
+          ],
+          [
+            "Player 86",
+            "76561197000000053",
+            "Player 86",
+            ""
+          ],
+          [
+            "Player 87",
+            "76561197000000050",
+            "Player 87",
+            ""
+          ],
+          [
+            "Player 88",
+            "76561197000000015",
+            "Player 88",
+            ""
+          ],
+          [
+            "Player 89",
+            "76561197000000051",
+            "Player 89",
+            ""
+          ],
+          [
+            "Player 90",
+            "76561197000000030",
+            "Player 90",
+            ""
+          ],
+          [
+            "Player 91",
+            "76561197000000044",
+            "Player 91",
+            ""
+          ],
+          [
+            "Player 92",
+            "76561197000000063",
+            "Player 92",
+            ""
+          ],
+          [
+            "Player 93",
+            "76561197000000048",
+            "Player 93",
+            ""
+          ],
+          [
+            "Player 94",
+            "76561197000000027",
+            "Player 94",
+            ""
+          ],
+          [
+            "Player 95",
+            "76561197000000064",
+            "Player 95",
+            ""
+          ],
+          [
+            "Player 96",
+            "76561197000000019",
+            "Player 96",
+            ""
+          ]
+        ]
+      }
+    }
+  },
+  "run_inputs_problem": {
+    "ok": {
+      "problem": null
+    }
+  },
+  "preview": {
+    "events": [
+      {
+        "state": {
+          "name": "summary",
+          "payload": {
+            "text": "  Computing…",
+            "level": "running"
+          }
+        }
+      },
+      {
+        "state": {
+          "name": "buttons",
+          "payload": {
+            "stop": true,
+            "stop_label": "⏸ Stop Preview"
+          }
+        }
+      },
+      {
+        "state": {
+          "name": "preview_started",
+          "payload": null
+        }
+      },
+      {
+        "state": {
+          "name": "buttons_busy",
+          "payload": null
+        }
+      },
+      {
+        "state": {
+          "name": "summary",
+          "payload": {
+            "text": "  815 clips  •  total duration 1h29m43s  •  avg. 6s/clip  •  458 demos",
+            "level": "ok",
+            "demos": 458,
+            "clips": 815,
+            "total_s": 5383.4375,
+            "avg_s": 6.605444785276074
+          }
+        }
+      },
+      {
+        "state": {
+          "name": "preview_ready",
+          "payload": {
+            "cfg": {
+              "tickrate": 64
+            },
+            "events": {
+              "C:/demos/match-02.dem": [
+                {
+                  "tick": 89011,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000003"
+                }
+              ],
+              "C:/demos/match-01.dem": [
+                {
+                  "tick": 89871,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000002"
+                },
+                {
+                  "tick": 90029,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000004"
+                },
+                {
+                  "tick": 90089,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000005"
+                },
+                {
+                  "tick": 90152,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000006"
+                },
+                {
+                  "tick": 90499,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000007"
+                }
+              ],
+              "C:/demos/match-03.dem": [
+                {
+                  "tick": 5493,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000008"
+                }
+              ],
+              "C:/demos/match-04.dem": [
+                {
+                  "tick": 24996,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000009"
+                },
+                {
+                  "tick": 25090,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000010"
+                }
+              ],
+              "C:/demos/match-05.dem": [
+                {
+                  "tick": 31543,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000011"
+                }
+              ],
+              "C:/demos/match-06.dem": [
+                {
+                  "tick": 5824,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000012"
+                }
+              ],
+              "C:/demos/match-07.dem": [
+                {
+                  "tick": 51888,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000013"
+                }
+              ],
+              "C:/demos/match-08.dem": [
+                {
+                  "tick": 24649,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000014"
+                },
+                {
+                  "tick": 29271,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000015"
+                },
+                {
+                  "tick": 31774,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000014"
+                },
+                {
+                  "tick": 34308,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000014"
+                }
+              ],
+              "C:/demos/match-09.dem": [
+                {
+                  "tick": 76046,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000016"
+                }
+              ],
+              "C:/demos/match-10.dem": [
+                {
+                  "tick": 35762,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000017"
+                },
+                {
+                  "tick": 38139,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000017"
+                },
+                {
+                  "tick": 47043,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000018"
+                }
+              ],
+              "C:/demos/match-11.dem": [
+                {
+                  "tick": 8889,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000019"
+                },
+                {
+                  "tick": 19096,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000019"
+                },
+                {
+                  "tick": 21215,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000020"
+                }
+              ],
+              "C:/demos/match-12.dem": [
+                {
+                  "tick": 6158,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000021"
+                },
+                {
+                  "tick": 19776,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000022"
+                }
+              ],
+              "C:/demos/match-13.dem": [
+                {
+                  "tick": 18628,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000023"
+                }
+              ],
+              "C:/demos/match-14.dem": [
+                {
+                  "tick": 8173,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000024"
+                },
+                {
+                  "tick": 9545,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000025"
+                }
+              ],
+              "C:/demos/match-15.dem": [
+                {
+                  "tick": 27315,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000026"
+                },
+                {
+                  "tick": 41521,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000026"
+                }
+              ],
+              "C:/demos/match-16.dem": [
+                {
+                  "tick": 10218,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000027"
+                },
+                {
+                  "tick": 10991,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000028"
+                },
+                {
+                  "tick": 32342,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000028"
+                }
+              ],
+              "C:/demos/match-17.dem": [
+                {
+                  "tick": 9595,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000029"
+                },
+                {
+                  "tick": 9849,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000030"
+                }
+              ],
+              "C:/demos/match-18.dem": [
+                {
+                  "tick": 6818,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000031"
+                },
+                {
+                  "tick": 17981,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000032"
+                }
+              ],
+              "C:/demos/match-19.dem": [
+                {
+                  "tick": 23739,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000033"
+                },
+                {
+                  "tick": 30818,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000010"
+                }
+              ],
+              "C:/demos/match-20.dem": [
+                {
+                  "tick": 104964,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000034"
+                }
+              ],
+              "C:/demos/match-21.dem": [
+                {
+                  "tick": 70657,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000035"
+                }
+              ],
+              "C:/demos/match-22.dem": [
+                {
+                  "tick": 9474,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000036"
+                },
+                {
+                  "tick": 47475,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000037"
+                }
+              ],
+              "C:/demos/match-23.dem": [
+                {
+                  "tick": 80326,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000038"
+                },
+                {
+                  "tick": 89882,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000039"
+                }
+              ],
+              "C:/demos/match-24.dem": [
+                {
+                  "tick": 110275,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000040"
+                }
+              ],
+              "C:/demos/match-25.dem": [
+                {
+                  "tick": 93570,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000041"
+                }
+              ],
+              "C:/demos/match-26.dem": [
+                {
+                  "tick": 5924,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000010"
+                },
+                {
+                  "tick": 7829,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000042"
+                },
+                {
+                  "tick": 16725,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000042"
+                },
+                {
+                  "tick": 18693,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000043"
+                }
+              ],
+              "C:/demos/match-27.dem": [
+                {
+                  "tick": 29216,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000044"
+                }
+              ],
+              "C:/demos/match-28.dem": [
+                {
+                  "tick": 32491,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000045"
+                },
+                {
+                  "tick": 34840,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000046"
+                },
+                {
+                  "tick": 37384,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000046"
+                },
+                {
+                  "tick": 39515,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000045"
+                },
+                {
+                  "tick": 41346,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000045"
+                }
+              ],
+              "C:/demos/match-29.dem": [
+                {
+                  "tick": 29251,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000047"
+                },
+                {
+                  "tick": 29508,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000048"
+                },
+                {
+                  "tick": 31297,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000048"
+                },
+                {
+                  "tick": 42634,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000048"
+                },
+                {
+                  "tick": 44549,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000048"
+                },
+                {
+                  "tick": 44747,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000047"
+                }
+              ],
+              "C:/demos/match-30.dem": [
+                {
+                  "tick": 76071,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000049"
+                },
+                {
+                  "tick": 76195,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000050"
+                },
+                {
+                  "tick": 103244,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000050"
+                }
+              ],
+              "C:/demos/match-31.dem": [
+                {
+                  "tick": 39753,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000051"
+                },
+                {
+                  "tick": 46585,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000051"
+                },
+                {
+                  "tick": 46724,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000052"
+                },
+                {
+                  "tick": 47317,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000053"
+                }
+              ],
+              "C:/demos/match-32.dem": [
+                {
+                  "tick": 101277,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000054"
+                },
+                {
+                  "tick": 104182,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000054"
+                },
+                {
+                  "tick": 104884,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000055"
+                }
+              ],
+              "C:/demos/match-33.dem": [
+                {
+                  "tick": 6001,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000056"
+                },
+                {
+                  "tick": 13622,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000057"
+                }
+              ],
+              "C:/demos/match-34.dem": [
+                {
+                  "tick": 40638,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000058"
+                },
+                {
+                  "tick": 49923,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000058"
+                },
+                {
+                  "tick": 55387,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000059"
+                }
+              ],
+              "C:/demos/match-35.dem": [
+                {
+                  "tick": 18833,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000060"
+                },
+                {
+                  "tick": 31779,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000061"
+                }
+              ],
+              "C:/demos/match-36.dem": [
+                {
+                  "tick": 23347,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000062"
+                },
+                {
+                  "tick": 41700,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000062"
+                }
+              ],
+              "C:/demos/match-37.dem": [
+                {
+                  "tick": 3846,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000063"
+                },
+                {
+                  "tick": 3900,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000064"
+                },
+                {
+                  "tick": 8034,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000064"
+                }
+              ],
+              "C:/demos/match-38.dem": [
+                {
+                  "tick": 7624,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000065"
+                },
+                {
+                  "tick": 60575,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000066"
+                }
+              ],
+              "C:/demos/match-39.dem": [
+                {
+                  "tick": 36712,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000067"
+                }
+              ],
+              "C:/demos/match-40.dem": [
+                {
+                  "tick": 5262,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000068"
+                },
+                {
+                  "tick": 12994,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000068"
+                }
+              ],
+              "C:/demos/match-41.dem": [
+                {
+                  "tick": 17710,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000069"
+                }
+              ],
+              "C:/demos/match-42.dem": [
+                {
+                  "tick": 32890,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000070"
+                },
+                {
+                  "tick": 34978,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000070"
+                },
+                {
+                  "tick": 35049,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000010"
+                },
+                {
+                  "tick": 37682,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000070"
+                },
+                {
+                  "tick": 38633,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000071"
+                }
+              ],
+              "C:/demos/match-43.dem": [
+                {
+                  "tick": 156803,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000072"
+                }
+              ],
+              "C:/demos/match-44.dem": [
+                {
+                  "tick": 127837,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000073"
+                }
+              ],
+              "C:/demos/match-45.dem": [
+                {
+                  "tick": 122645,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000074"
+                }
+              ],
+              "C:/demos/match-46.dem": [
+                {
+                  "tick": 66804,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000075"
+                },
+                {
+                  "tick": 68180,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000076"
+                }
+              ],
+              "C:/demos/match-47.dem": [
+                {
+                  "tick": 93797,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000077"
+                }
+              ],
+              "C:/demos/match-48.dem": [
+                {
+                  "tick": 29498,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000078"
+                }
+              ],
+              "C:/demos/match-49.dem": [
+                {
+                  "tick": 64408,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000079"
+                },
+                {
+                  "tick": 90150,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000080"
+                }
+              ],
+              "C:/demos/match-50.dem": [
+                {
+                  "tick": 92269,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000081"
+                }
+              ],
+              "C:/demos/match-51.dem": [
+                {
+                  "tick": 30791,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000082"
+                }
+              ],
+              "C:/demos/match-52.dem": [
+                {
+                  "tick": 74237,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000083"
+                },
+                {
+                  "tick": 74293,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000084"
+                }
+              ],
+              "C:/demos/match-53.dem": [
+                {
+                  "tick": 113688,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000085"
+                },
+                {
+                  "tick": 135113,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000086"
+                }
+              ],
+              "C:/demos/match-54.dem": [
+                {
+                  "tick": 158418,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000087"
+                }
+              ],
+              "C:/demos/match-55.dem": [
+                {
+                  "tick": 56963,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000088"
+                }
+              ],
+              "C:/demos/match-56.dem": [
+                {
+                  "tick": 28512,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000089"
+                }
+              ],
+              "C:/demos/match-57.dem": [
+                {
+                  "tick": 118299,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000090"
+                }
+              ],
+              "C:/demos/match-58.dem": [
+                {
+                  "tick": 147257,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000091"
+                },
+                {
+                  "tick": 147729,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000092"
+                }
+              ],
+              "C:/demos/match-59.dem": [
+                {
+                  "tick": 24212,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000093"
+                }
+              ],
+              "C:/demos/match-60.dem": [
+                {
+                  "tick": 41437,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000094"
+                },
+                {
+                  "tick": 41727,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000095"
+                },
+                {
+                  "tick": 44461,
+                  "type": "kill",
+                  "killer_sid": "76561197000000001",
+                  "victim_sid": "76561197000000096"
+                }
+              ]
+            },
+            "sequences": {
+              "C:/demos/match-02.dem": [
+                {
+                  "start_tick": 88819,
+                  "end_tick": 89203,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "89011:kill:76561197000000003"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 88819,
+                      "to_tick": 89203,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-01.dem": [
+                {
+                  "start_tick": 89679,
+                  "end_tick": 90691,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "89871:kill:76561197000000002",
+                    "90029:kill:76561197000000004",
+                    "90089:kill:76561197000000005",
+                    "90152:kill:76561197000000006",
+                    "90499:kill:76561197000000007"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 89679,
+                      "to_tick": 90691,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4
+                  ],
+                  "event_types": [
+                    "kill"
+                  ]
+                }
+              ],
+              "C:/demos/match-03.dem": [
+                {
+                  "start_tick": 5301,
+                  "end_tick": 5685,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "5493:kill:76561197000000008"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 5301,
+                      "to_tick": 5685,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-04.dem": [
+                {
+                  "start_tick": 24804,
+                  "end_tick": 25282,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "24996:kill:76561197000000009",
+                    "25090:kill:76561197000000010"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 24804,
+                      "to_tick": 25282,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0,
+                    1
+                  ],
+                  "event_types": [
+                    "kill"
+                  ]
+                }
+              ],
+              "C:/demos/match-05.dem": [
+                {
+                  "start_tick": 31351,
+                  "end_tick": 31735,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "31543:kill:76561197000000011"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 31351,
+                      "to_tick": 31735,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-06.dem": [
+                {
+                  "start_tick": 5632,
+                  "end_tick": 6016,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "5824:kill:76561197000000012"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 5632,
+                      "to_tick": 6016,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-07.dem": [
+                {
+                  "start_tick": 51696,
+                  "end_tick": 52080,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "51888:kill:76561197000000013"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 51696,
+                      "to_tick": 52080,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-08.dem": [
+                {
+                  "start_tick": 24457,
+                  "end_tick": 24841,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "24649:kill:76561197000000014"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 24457,
+                      "to_tick": 24841,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 29079,
+                  "end_tick": 29463,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "29271:kill:76561197000000015"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 29079,
+                      "to_tick": 29463,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                },
+                {
+                  "start_tick": 31582,
+                  "end_tick": 31966,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "31774:kill:76561197000000014"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 31582,
+                      "to_tick": 31966,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    2
+                  ]
+                },
+                {
+                  "start_tick": 34116,
+                  "end_tick": 34500,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "34308:kill:76561197000000014"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 34116,
+                      "to_tick": 34500,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    3
+                  ]
+                }
+              ],
+              "C:/demos/match-09.dem": [
+                {
+                  "start_tick": 75854,
+                  "end_tick": 76238,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "76046:kill:76561197000000016"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 75854,
+                      "to_tick": 76238,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-10.dem": [
+                {
+                  "start_tick": 35570,
+                  "end_tick": 35954,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "35762:kill:76561197000000017"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 35570,
+                      "to_tick": 35954,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 37947,
+                  "end_tick": 38331,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "38139:kill:76561197000000017"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 37947,
+                      "to_tick": 38331,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                },
+                {
+                  "start_tick": 46851,
+                  "end_tick": 47235,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "47043:kill:76561197000000018"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 46851,
+                      "to_tick": 47235,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    2
+                  ]
+                }
+              ],
+              "C:/demos/match-11.dem": [
+                {
+                  "start_tick": 8697,
+                  "end_tick": 9081,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "8889:kill:76561197000000019"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 8697,
+                      "to_tick": 9081,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 18904,
+                  "end_tick": 19288,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "19096:kill:76561197000000019"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 18904,
+                      "to_tick": 19288,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                },
+                {
+                  "start_tick": 21023,
+                  "end_tick": 21407,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "21215:kill:76561197000000020"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 21023,
+                      "to_tick": 21407,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    2
+                  ]
+                }
+              ],
+              "C:/demos/match-12.dem": [
+                {
+                  "start_tick": 5966,
+                  "end_tick": 6350,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "6158:kill:76561197000000021"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 5966,
+                      "to_tick": 6350,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 19584,
+                  "end_tick": 19968,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "19776:kill:76561197000000022"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 19584,
+                      "to_tick": 19968,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-13.dem": [
+                {
+                  "start_tick": 18436,
+                  "end_tick": 18820,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "18628:kill:76561197000000023"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 18436,
+                      "to_tick": 18820,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-14.dem": [
+                {
+                  "start_tick": 7981,
+                  "end_tick": 8365,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "8173:kill:76561197000000024"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 7981,
+                      "to_tick": 8365,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 9353,
+                  "end_tick": 9737,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "9545:kill:76561197000000025"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 9353,
+                      "to_tick": 9737,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-15.dem": [
+                {
+                  "start_tick": 27123,
+                  "end_tick": 27507,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "27315:kill:76561197000000026"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 27123,
+                      "to_tick": 27507,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 41329,
+                  "end_tick": 41713,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "41521:kill:76561197000000026"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 41329,
+                      "to_tick": 41713,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-16.dem": [
+                {
+                  "start_tick": 10026,
+                  "end_tick": 10410,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "10218:kill:76561197000000027"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 10026,
+                      "to_tick": 10410,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 10799,
+                  "end_tick": 11183,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "10991:kill:76561197000000028"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 10799,
+                      "to_tick": 11183,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                },
+                {
+                  "start_tick": 32150,
+                  "end_tick": 32534,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "32342:kill:76561197000000028"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 32150,
+                      "to_tick": 32534,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    2
+                  ]
+                }
+              ],
+              "C:/demos/match-17.dem": [
+                {
+                  "start_tick": 9403,
+                  "end_tick": 10041,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "9595:kill:76561197000000029",
+                    "9849:kill:76561197000000030"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 9403,
+                      "to_tick": 10041,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0,
+                    1
+                  ],
+                  "event_types": [
+                    "kill"
+                  ]
+                }
+              ],
+              "C:/demos/match-18.dem": [
+                {
+                  "start_tick": 6626,
+                  "end_tick": 7010,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "6818:kill:76561197000000031"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 6626,
+                      "to_tick": 7010,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 17789,
+                  "end_tick": 18173,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "17981:kill:76561197000000032"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 17789,
+                      "to_tick": 18173,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-19.dem": [
+                {
+                  "start_tick": 23547,
+                  "end_tick": 23931,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "23739:kill:76561197000000033"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 23547,
+                      "to_tick": 23931,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 30626,
+                  "end_tick": 31010,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "30818:kill:76561197000000010"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 30626,
+                      "to_tick": 31010,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-20.dem": [
+                {
+                  "start_tick": 104772,
+                  "end_tick": 105156,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "104964:kill:76561197000000034"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 104772,
+                      "to_tick": 105156,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-21.dem": [
+                {
+                  "start_tick": 70465,
+                  "end_tick": 70849,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "70657:kill:76561197000000035"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 70465,
+                      "to_tick": 70849,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-22.dem": [
+                {
+                  "start_tick": 9282,
+                  "end_tick": 9666,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "9474:kill:76561197000000036"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 9282,
+                      "to_tick": 9666,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 47283,
+                  "end_tick": 47667,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "47475:kill:76561197000000037"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 47283,
+                      "to_tick": 47667,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-23.dem": [
+                {
+                  "start_tick": 80134,
+                  "end_tick": 80518,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "80326:kill:76561197000000038"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 80134,
+                      "to_tick": 80518,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 89690,
+                  "end_tick": 90074,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "89882:kill:76561197000000039"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 89690,
+                      "to_tick": 90074,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-24.dem": [
+                {
+                  "start_tick": 110083,
+                  "end_tick": 110467,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "110275:kill:76561197000000040"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 110083,
+                      "to_tick": 110467,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-25.dem": [
+                {
+                  "start_tick": 93378,
+                  "end_tick": 93762,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "93570:kill:76561197000000041"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 93378,
+                      "to_tick": 93762,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-26.dem": [
+                {
+                  "start_tick": 5732,
+                  "end_tick": 6116,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "5924:kill:76561197000000010"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 5732,
+                      "to_tick": 6116,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 7637,
+                  "end_tick": 8021,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "7829:kill:76561197000000042"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 7637,
+                      "to_tick": 8021,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                },
+                {
+                  "start_tick": 16533,
+                  "end_tick": 16917,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "16725:kill:76561197000000042"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 16533,
+                      "to_tick": 16917,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    2
+                  ]
+                },
+                {
+                  "start_tick": 18501,
+                  "end_tick": 18885,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "18693:kill:76561197000000043"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 18501,
+                      "to_tick": 18885,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    3
+                  ]
+                }
+              ],
+              "C:/demos/match-27.dem": [
+                {
+                  "start_tick": 29024,
+                  "end_tick": 29408,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "29216:kill:76561197000000044"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 29024,
+                      "to_tick": 29408,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-28.dem": [
+                {
+                  "start_tick": 32299,
+                  "end_tick": 32683,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "32491:kill:76561197000000045"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 32299,
+                      "to_tick": 32683,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 34648,
+                  "end_tick": 35032,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "34840:kill:76561197000000046"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 34648,
+                      "to_tick": 35032,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                },
+                {
+                  "start_tick": 37192,
+                  "end_tick": 37576,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "37384:kill:76561197000000046"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 37192,
+                      "to_tick": 37576,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    2
+                  ]
+                },
+                {
+                  "start_tick": 39323,
+                  "end_tick": 39707,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "39515:kill:76561197000000045"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 39323,
+                      "to_tick": 39707,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    3
+                  ]
+                },
+                {
+                  "start_tick": 41154,
+                  "end_tick": 41538,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "41346:kill:76561197000000045"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 41154,
+                      "to_tick": 41538,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    4
+                  ]
+                }
+              ],
+              "C:/demos/match-29.dem": [
+                {
+                  "start_tick": 29059,
+                  "end_tick": 29700,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "29251:kill:76561197000000047",
+                    "29508:kill:76561197000000048"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 29059,
+                      "to_tick": 29700,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0,
+                    1
+                  ],
+                  "event_types": [
+                    "kill"
+                  ]
+                },
+                {
+                  "start_tick": 31105,
+                  "end_tick": 31489,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "31297:kill:76561197000000048"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 31105,
+                      "to_tick": 31489,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    2
+                  ]
+                },
+                {
+                  "start_tick": 42442,
+                  "end_tick": 42826,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "42634:kill:76561197000000048"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 42442,
+                      "to_tick": 42826,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    3
+                  ]
+                },
+                {
+                  "start_tick": 44357,
+                  "end_tick": 44939,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "44549:kill:76561197000000048",
+                    "44747:kill:76561197000000047"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 44357,
+                      "to_tick": 44939,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    4,
+                    5
+                  ],
+                  "event_types": [
+                    "kill"
+                  ]
+                }
+              ],
+              "C:/demos/match-30.dem": [
+                {
+                  "start_tick": 75879,
+                  "end_tick": 76387,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "76071:kill:76561197000000049",
+                    "76195:kill:76561197000000050"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 75879,
+                      "to_tick": 76387,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0,
+                    1
+                  ],
+                  "event_types": [
+                    "kill"
+                  ]
+                },
+                {
+                  "start_tick": 103052,
+                  "end_tick": 103436,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "103244:kill:76561197000000050"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 103052,
+                      "to_tick": 103436,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    2
+                  ]
+                }
+              ],
+              "C:/demos/match-31.dem": [
+                {
+                  "start_tick": 39561,
+                  "end_tick": 39945,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "39753:kill:76561197000000051"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 39561,
+                      "to_tick": 39945,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 46393,
+                  "end_tick": 46916,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "46585:kill:76561197000000051",
+                    "46724:kill:76561197000000052"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 46393,
+                      "to_tick": 46916,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1,
+                    2
+                  ],
+                  "event_types": [
+                    "kill"
+                  ]
+                },
+                {
+                  "start_tick": 47125,
+                  "end_tick": 47509,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "47317:kill:76561197000000053"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 47125,
+                      "to_tick": 47509,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    3
+                  ]
+                }
+              ],
+              "C:/demos/match-32.dem": [
+                {
+                  "start_tick": 101085,
+                  "end_tick": 101469,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "101277:kill:76561197000000054"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 101085,
+                      "to_tick": 101469,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 103990,
+                  "end_tick": 104374,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "104182:kill:76561197000000054"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 103990,
+                      "to_tick": 104374,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                },
+                {
+                  "start_tick": 104692,
+                  "end_tick": 105076,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "104884:kill:76561197000000055"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 104692,
+                      "to_tick": 105076,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    2
+                  ]
+                }
+              ],
+              "C:/demos/match-33.dem": [
+                {
+                  "start_tick": 5809,
+                  "end_tick": 6193,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "6001:kill:76561197000000056"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 5809,
+                      "to_tick": 6193,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 13430,
+                  "end_tick": 13814,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "13622:kill:76561197000000057"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 13430,
+                      "to_tick": 13814,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-34.dem": [
+                {
+                  "start_tick": 40446,
+                  "end_tick": 40830,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "40638:kill:76561197000000058"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 40446,
+                      "to_tick": 40830,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 49731,
+                  "end_tick": 50115,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "49923:kill:76561197000000058"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 49731,
+                      "to_tick": 50115,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                },
+                {
+                  "start_tick": 55195,
+                  "end_tick": 55579,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "55387:kill:76561197000000059"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 55195,
+                      "to_tick": 55579,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    2
+                  ]
+                }
+              ],
+              "C:/demos/match-35.dem": [
+                {
+                  "start_tick": 18641,
+                  "end_tick": 19025,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "18833:kill:76561197000000060"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 18641,
+                      "to_tick": 19025,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 31587,
+                  "end_tick": 31971,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "31779:kill:76561197000000061"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 31587,
+                      "to_tick": 31971,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-36.dem": [
+                {
+                  "start_tick": 23155,
+                  "end_tick": 23539,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "23347:kill:76561197000000062"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 23155,
+                      "to_tick": 23539,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 41508,
+                  "end_tick": 41892,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "41700:kill:76561197000000062"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 41508,
+                      "to_tick": 41892,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-37.dem": [
+                {
+                  "start_tick": 3654,
+                  "end_tick": 4092,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "3846:kill:76561197000000063",
+                    "3900:kill:76561197000000064"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 3654,
+                      "to_tick": 4092,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0,
+                    1
+                  ],
+                  "event_types": [
+                    "kill"
+                  ]
+                },
+                {
+                  "start_tick": 7842,
+                  "end_tick": 8226,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "8034:kill:76561197000000064"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 7842,
+                      "to_tick": 8226,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    2
+                  ]
+                }
+              ],
+              "C:/demos/match-38.dem": [
+                {
+                  "start_tick": 7432,
+                  "end_tick": 7816,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "7624:kill:76561197000000065"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 7432,
+                      "to_tick": 7816,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 60383,
+                  "end_tick": 60767,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "60575:kill:76561197000000066"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 60383,
+                      "to_tick": 60767,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-39.dem": [
+                {
+                  "start_tick": 36520,
+                  "end_tick": 36904,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "36712:kill:76561197000000067"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 36520,
+                      "to_tick": 36904,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-40.dem": [
+                {
+                  "start_tick": 5070,
+                  "end_tick": 5454,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "5262:kill:76561197000000068"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 5070,
+                      "to_tick": 5454,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 12802,
+                  "end_tick": 13186,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "12994:kill:76561197000000068"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 12802,
+                      "to_tick": 13186,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-41.dem": [
+                {
+                  "start_tick": 17518,
+                  "end_tick": 17902,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "17710:kill:76561197000000069"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 17518,
+                      "to_tick": 17902,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-42.dem": [
+                {
+                  "start_tick": 32698,
+                  "end_tick": 33082,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "32890:kill:76561197000000070"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 32698,
+                      "to_tick": 33082,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 34786,
+                  "end_tick": 35241,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "34978:kill:76561197000000070",
+                    "35049:kill:76561197000000010"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 34786,
+                      "to_tick": 35241,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1,
+                    2
+                  ],
+                  "event_types": [
+                    "kill"
+                  ]
+                },
+                {
+                  "start_tick": 37490,
+                  "end_tick": 37874,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "37682:kill:76561197000000070"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 37490,
+                      "to_tick": 37874,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    3
+                  ]
+                },
+                {
+                  "start_tick": 38441,
+                  "end_tick": 38825,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "38633:kill:76561197000000071"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 38441,
+                      "to_tick": 38825,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    4
+                  ]
+                }
+              ],
+              "C:/demos/match-43.dem": [
+                {
+                  "start_tick": 156611,
+                  "end_tick": 156995,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "156803:kill:76561197000000072"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 156611,
+                      "to_tick": 156995,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-44.dem": [
+                {
+                  "start_tick": 127645,
+                  "end_tick": 128029,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "127837:kill:76561197000000073"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 127645,
+                      "to_tick": 128029,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-45.dem": [
+                {
+                  "start_tick": 122453,
+                  "end_tick": 122837,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "122645:kill:76561197000000074"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 122453,
+                      "to_tick": 122837,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-46.dem": [
+                {
+                  "start_tick": 66612,
+                  "end_tick": 66996,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "66804:kill:76561197000000075"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 66612,
+                      "to_tick": 66996,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 67988,
+                  "end_tick": 68372,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "68180:kill:76561197000000076"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 67988,
+                      "to_tick": 68372,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-47.dem": [
+                {
+                  "start_tick": 93605,
+                  "end_tick": 93989,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "93797:kill:76561197000000077"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 93605,
+                      "to_tick": 93989,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-48.dem": [
+                {
+                  "start_tick": 29306,
+                  "end_tick": 29690,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "29498:kill:76561197000000078"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 29306,
+                      "to_tick": 29690,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-49.dem": [
+                {
+                  "start_tick": 64216,
+                  "end_tick": 64600,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "64408:kill:76561197000000079"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 64216,
+                      "to_tick": 64600,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 89958,
+                  "end_tick": 90342,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "90150:kill:76561197000000080"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 89958,
+                      "to_tick": 90342,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-50.dem": [
+                {
+                  "start_tick": 92077,
+                  "end_tick": 92461,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "92269:kill:76561197000000081"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 92077,
+                      "to_tick": 92461,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-51.dem": [
+                {
+                  "start_tick": 30599,
+                  "end_tick": 30983,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "30791:kill:76561197000000082"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 30599,
+                      "to_tick": 30983,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-52.dem": [
+                {
+                  "start_tick": 74045,
+                  "end_tick": 74485,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "74237:kill:76561197000000083",
+                    "74293:kill:76561197000000084"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 74045,
+                      "to_tick": 74485,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0,
+                    1
+                  ],
+                  "event_types": [
+                    "kill"
+                  ]
+                }
+              ],
+              "C:/demos/match-53.dem": [
+                {
+                  "start_tick": 113496,
+                  "end_tick": 113880,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "113688:kill:76561197000000085"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 113496,
+                      "to_tick": 113880,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                },
+                {
+                  "start_tick": 134921,
+                  "end_tick": 135305,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "135113:kill:76561197000000086"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 134921,
+                      "to_tick": 135305,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    1
+                  ]
+                }
+              ],
+              "C:/demos/match-54.dem": [
+                {
+                  "start_tick": 158226,
+                  "end_tick": 158610,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "158418:kill:76561197000000087"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 158226,
+                      "to_tick": 158610,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-55.dem": [
+                {
+                  "start_tick": 56771,
+                  "end_tick": 57155,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "56963:kill:76561197000000088"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 56771,
+                      "to_tick": 57155,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-56.dem": [
+                {
+                  "start_tick": 28320,
+                  "end_tick": 28704,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "28512:kill:76561197000000089"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 28320,
+                      "to_tick": 28704,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-57.dem": [
+                {
+                  "start_tick": 118107,
+                  "end_tick": 118491,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "118299:kill:76561197000000090"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 118107,
+                      "to_tick": 118491,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-58.dem": [
+                {
+                  "start_tick": 147065,
+                  "end_tick": 147921,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "147257:kill:76561197000000091",
+                    "147729:kill:76561197000000092"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 147065,
+                      "to_tick": 147921,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0,
+                    1
+                  ],
+                  "event_types": [
+                    "kill"
+                  ]
+                }
+              ],
+              "C:/demos/match-59.dem": [
+                {
+                  "start_tick": 24020,
+                  "end_tick": 24404,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "24212:kill:76561197000000093"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 24020,
+                      "to_tick": 24404,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0
+                  ]
+                }
+              ],
+              "C:/demos/match-60.dem": [
+                {
+                  "start_tick": 41245,
+                  "end_tick": 41919,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "41437:kill:76561197000000094",
+                    "41727:kill:76561197000000095"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 41245,
+                      "to_tick": 41919,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    0,
+                    1
+                  ],
+                  "event_types": [
+                    "kill"
+                  ]
+                },
+                {
+                  "start_tick": 44269,
+                  "end_tick": 44653,
+                  "event_type": "kill",
+                  "event_keys": [
+                    "44461:kill:76561197000000096"
+                  ],
+                  "camera_segments": [
+                    {
+                      "from_tick": 44269,
+                      "to_tick": 44653,
+                      "steam_id": "76561197000000001",
+                      "name": "Player 1"
+                    }
+                  ],
+                  "events": [
+                    2
+                  ]
+                }
+              ]
+            },
+            "empty_reason": null
+          }
+        }
+      },
+      {
+        "state": {
+          "name": "buttons",
+          "payload": {
+            "stop": false,
+            "stop_label": "⏸ Stop"
+          }
+        }
+      },
+      {
+        "state": {
+          "name": "buttons_idle",
+          "payload": null
+        }
+      }
+    ],
+    "reply": {
+      "ok": {
+        "started": true
+      }
+    }
+  },
+  "clip": {
+    "address": {
+      "demo_path": "C:/demos/match-01.dem",
+      "start_tick": 89679
+    },
+    "lead_s": 3,
+    "tail_s": 3,
+    "events": 5
+  },
+  "cameras": [
+    {
+      "clip": {
+        "demo_path": "C:/demos/match-01.dem",
+        "start_tick": 89679,
+        "after_s": 4
+      },
+      "reply": {
+        "ok": {
+          "cameras": [
+            {
+              "from_tick": 89679,
+              "to_tick": 90755,
+              "steam_id": "76561197000000001",
+              "name": "Player 1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "clip": {
+        "demo_path": "C:/demos/match-01.dem",
+        "start_tick": 89679,
+        "after_s": 4,
+        "before_s": 4
+      },
+      "reply": {
+        "ok": {
+          "cameras": [
+            {
+              "from_tick": 89615,
+              "to_tick": 90755,
+              "steam_id": "76561197000000001",
+              "name": "Player 1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "clip": {
+        "demo_path": "C:/demos/match-01.dem",
+        "start_tick": 89679,
+        "after_s": 4,
+        "before_s": 4,
+        "excluded_events": [
+          "89871:kill:76561197000000002"
+        ]
+      },
+      "reply": {
+        "ok": {
+          "cameras": [
+            {
+              "from_tick": 89773,
+              "to_tick": 90755,
+              "steam_id": "76561197000000001",
+              "name": "Player 1"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "preset": {
+    "name": "t8-editing",
+    "saved": [
+      {
+        "demo_path": "C:/demos/match-01.dem",
+        "start_tick": 89679,
+        "after_s": 4,
+        "before_s": 4,
+        "excluded_events": [
+          "89871:kill:76561197000000002"
+        ]
+      },
+      {
+        "demo_path": "C:/demos/match-02.dem",
+        "start_tick": 88819
+      }
+    ],
+    "load_reply": {
+      "ok": {
+        "data": {
+          "before": 3,
+          "after": 3
+        },
+        "keys": [
+          "before",
+          "after"
+        ],
+        "selected_clips": [
+          {
+            "demo_path": "C:/demos/match-01.dem",
+            "start_tick": 89679,
+            "before_s": 4,
+            "after_s": 4,
+            "excluded_events": [
+              "89871:kill:76561197000000002"
+            ]
+          },
+          {
+            "demo_path": "C:/demos/match-02.dem",
+            "start_tick": 88819
+          }
+        ]
+      }
+    }
+  },
+  "empty": {
+    "events": [
+      {
+        "state": {
+          "name": "summary",
+          "payload": {
+            "text": "  Computing…",
+            "level": "running"
+          }
+        }
+      },
+      {
+        "state": {
+          "name": "buttons",
+          "payload": {
+            "stop": true,
+            "stop_label": "⏸ Stop Preview"
+          }
+        }
+      },
+      {
+        "state": {
+          "name": "preview_started",
+          "payload": null
+        }
+      },
+      {
+        "state": {
+          "name": "buttons_busy",
+          "payload": null
+        }
+      },
+      {
+        "state": {
+          "name": "summary",
+          "payload": {
+            "text": "No clips: date range 01-01-1990 → 01-01-1990 (Demo Selection) removed the last 11025 events.",
+            "level": "muted"
+          }
+        }
+      },
+      {
+        "state": {
+          "name": "preview_ready",
+          "payload": {
+            "cfg": {
+              "tickrate": 64
+            },
+            "events": {},
+            "sequences": {},
+            "empty_reason": {
+              "headline": "No clips: date range 01-01-1990 → 01-01-1990 (Demo Selection) removed the last 11025 events.",
+              "hint": "Loosen date range 01-01-1990 → 01-01-1990 (Demo Selection) to get clips.",
+              "stages": [
+                {
+                  "label": "events for this player and event types (any date, no filter)",
+                  "count": 11025
+                },
+                {
+                  "label": "date range 01-01-1990 → 01-01-1990 (Demo Selection)",
+                  "count": 0
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "state": {
+          "name": "buttons",
+          "payload": {
+            "stop": false,
+            "stop_label": "⏸ Stop"
+          }
+        }
+      },
+      {
+        "state": {
+          "name": "buttons_idle",
+          "payload": null
+        }
+      }
+    ],
+    "reply": {
+      "ok": {
+        "started": true
+      }
+    }
+  }
+}

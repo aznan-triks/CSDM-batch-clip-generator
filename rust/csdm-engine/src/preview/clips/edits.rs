@@ -3,8 +3,8 @@
 //!
 //! A clip is addressed by `(demo_path, start_tick)`, the start `build_sequences` computed before any
 //! edit. An entry may carry `before_s` / `after_s` (whole seconds around the first / last kept
-//! event) and `excluded_events` (`event_key`s taken out). The renderer mirrors this arithmetic
-//! (`electron/renderer/src/tabs/editing/clipEdits.ts` in 3.5).
+//! event) and `excluded_events` (`event_key`s taken out). The window arithmetic is
+//! `csdm_core::editing::edited_window`, shared with the EDITING tab (3.5 kept a renderer mirror).
 
 use super::cameras::{camera_players, camera_segments};
 use super::sequences::whole;
@@ -14,6 +14,8 @@ use crate::preview::cfg::py_str;
 use crate::preview::event::{Arena, Event};
 use crate::preview::Ports;
 use crate::EngineError;
+use csdm_core::editing::edited_window;
+pub use csdm_core::editing::ClipEntry;
 use csdm_core::migrate::truthy;
 use csdm_db::Discovery;
 use serde_json::{Map, Value};
@@ -25,39 +27,6 @@ pub fn event_key(e: &Event) -> String {
     let kind = e.get("type").map_or_else(|| "kill".to_string(), py_str);
     let victim = e.get("victim_sid").filter(|v| truthy(v)).map(py_str).unwrap_or_default();
     format!("{tick}:{kind}:{victim}")
-}
-
-/// One checked `selected_clips` entry (`normalize_clip_selection` output).
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct ClipEntry {
-    pub demo_path: String,
-    pub start_tick: i64,
-    pub before_s: Option<i64>,
-    pub after_s: Option<i64>,
-    pub excluded_events: Option<Vec<String>>,
-}
-
-impl ClipEntry {
-    fn edited(&self) -> bool {
-        self.before_s.is_some() || self.after_s.is_some() || self.excluded_events.is_some()
-    }
-
-    /// The entry as 3.5 holds it: only the edit fields present.
-    pub fn to_json(&self) -> Value {
-        let mut m = Map::new();
-        m.insert("demo_path".into(), self.demo_path.clone().into());
-        m.insert("start_tick".into(), self.start_tick.into());
-        if let Some(s) = self.before_s {
-            m.insert("before_s".into(), s.into());
-        }
-        if let Some(s) = self.after_s {
-            m.insert("after_s".into(), s.into());
-        }
-        if let Some(k) = &self.excluded_events {
-            m.insert("excluded_events".into(), k.clone().into());
-        }
-        Value::Object(m)
-    }
 }
 
 fn bad(message: String) -> EngineError {
@@ -108,20 +77,17 @@ fn kinds<'a>(arena: &'a Arena, events: &[usize]) -> BTreeSet<&'a str> {
 /// `_edited`: one sequence with its entry's edits; `None` when every event was taken out.
 fn edited(arena: &Arena, seq: &Sequence, entry: &ClipEntry, tickrate: i64) -> Option<Sequence> {
     let excluded: HashSet<&str> = entry.excluded_events.iter().flatten().map(String::as_str).collect();
-    let kept: Vec<usize> = seq.events.iter().copied().filter(|&id| !excluded.contains(event_key(arena.get(id)).as_str())).collect();
-    let (&first_kept, &last_kept) = (kept.first()?, kept.last()?);
+    let ticks: Vec<i64> = seq.events.iter().map(|&id| arena.get(id).tick()).collect();
+    let mask: Vec<bool> = seq.events.iter().map(|&id| !excluded.contains(event_key(arena.get(id)).as_str())).collect();
+    let w = edited_window(seq.start_tick, seq.end_tick, &ticks, &mask, entry.before_s, entry.after_s, entry.edited(), tickrate)?;
     if !entry.edited() {
         return Some(seq.clone());
     }
-    // Unedited sides keep the lead / tail measured from the first / last event of the clip.
-    let (first, last) = (arena.get(seq.events[0]).tick(), arena.get(seq.events[seq.events.len() - 1]).tick());
-    let lead = entry.before_s.map_or(first - seq.start_tick, |s| s * tickrate);
-    let tail = entry.after_s.map_or(seq.end_tick - last, |s| s * tickrate);
-    let start = (arena.get(first_kept).tick() - lead).max(0);
-    let end = (arena.get(last_kept).tick() + tail).max(start + 1);
+    let kept: Vec<usize> = seq.events.iter().zip(&mask).filter(|(_, &k)| k).map(|(&id, _)| id).collect();
+    let first_kept = seq.events[w.first_kept];
     let types = kinds(arena, &kept);
     let event_type = arena.get(first_kept).get("type").map_or_else(|| seq.event_type.clone(), py_str);
-    let mut out = Sequence { start_tick: start, end_tick: end, event_type, ..seq.clone() };
+    let mut out = Sequence { start_tick: w.start_tick, end_tick: w.end_tick, event_type, ..seq.clone() };
     out.event_types = (types.len() > 1).then(|| types.into_iter().map(String::from).collect());
     out.events = kept;
     Some(out)

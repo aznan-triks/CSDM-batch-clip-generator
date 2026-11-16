@@ -160,6 +160,11 @@ impl SettingsTab {
                         cx.link.set(cx.now, &k, val.clone());
                     }
                 }
+                // The engine matched the preset's EDITING selection to the last preview (3.5 `restoreClipSelection`).
+                if let Some(saved) = v.get("selected_clips").and_then(Value::as_array) {
+                    let saved: Vec<_> = saved.iter().filter_map(csdm_core::editing::ClipEntry::from_json).collect();
+                    cx.link.state.preview.restore(&saved);
+                }
                 self.preset_status = format!("Loaded \"{name}\".");
             }
             (Req::Presets | Req::PresetDone(_) | Req::LoadPreset(_), Err(e)) => {
