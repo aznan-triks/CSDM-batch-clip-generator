@@ -310,6 +310,7 @@ pub fn in_game_options(ui: &mut egui::Ui, cx: &mut CardCx) {
 
 // ---- CS2 Effects --------------------------------------------------------------------------------
 
+#[allow(clippy::too_many_arguments)]
 fn lane(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, command: &str, quicks: &[f64], decimals: i32, tip_text: &str) {
     ui.horizontal(|ui| {
         kick(ui, cx.theme, name);
