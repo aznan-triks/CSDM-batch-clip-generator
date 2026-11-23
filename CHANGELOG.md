@@ -20,14 +20,6 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## Unreleased
-
-### Fixed
-
-**Plain words:** with "Delete sources" ticked under Final Assembly, the app could delete clips it never assembled: other recordings of the same demo, clips from earlier runs and any other file in the clip folders. It now deletes only the clips it has just put into the assembled video, and removes a folder only once it is empty.
-
-**Technical:** `_assemble_clips` takes the batch start time and keeps only clips written since then (clip folders are per demo or the bare root, so earlier runs' clips sat beside this run's and were assembled and deleted too). Folder cleanup uses `rmdir` instead of `shutil.rmtree` and stops at the first non-empty folder; clips that cannot be deleted are reported instead of silently skipped. Covered by `tests/test_assemble_delete.py`.
-
 ## 3.5.1 — 2026-09-26
 
 ### Fixed

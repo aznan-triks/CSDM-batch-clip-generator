@@ -3411,12 +3411,7 @@ class EngineMixin:
             sections.add("names")
         return sections
 
-    def _assemble_clips(self, cfg, produced_dirs, since):
-        """Assemble the clips written since `since` (the batch start time) in `produced_dirs`.
-
-        Clip folders are per demo (or the bare clips root), so earlier runs'
-        clips sit beside this run's: they are neither assembled nor deleted.
-        """
+    def _assemble_clips(self, cfg, produced_dirs):
         container = cfg.get("video_container", "mp4")
 
         # Container -> FFmpeg format name (-f). FFmpeg calls mkv "matroska".
@@ -3450,8 +3445,7 @@ class EngineMixin:
                     clips.extend(sorted(Path(d).glob(f"*{ext}")))
         # Deduplicate preserving order
         seen = set()
-        clips = [c for c in clips if not (str(c) in seen or seen.add(str(c)))
-                 and c.stat().st_mtime >= since]
+        clips = [c for c in clips if not (str(c) in seen or seen.add(str(c)))]
 
         if not clips:
             self.log("  Assembly: no clip found.", "warn")
@@ -3526,15 +3520,14 @@ class EngineMixin:
             self.log(f"  ✓ Assembled: {out_name}", "ok")
             if cfg.get("delete_after_assemble"):
                 deleted = 0
-                kept = []
                 dirs_to_check: set = set()
                 for c in clips:
-                    dirs_to_check.add(c.parent)
                     try:
+                        dirs_to_check.add(c.parent)
                         c.unlink()
                         deleted += 1
-                    except OSError as e:
-                        kept.append(f"{c.name} ({e.strerror or e})")
+                    except Exception:
+                        pass
 
                 # Determine the true root output folder — never delete at or above it.
                 # output_dir_clips is the authoritative raw-clips root; fall back to
@@ -3543,8 +3536,7 @@ class EngineMixin:
 
                 # Walk upward from each affected dir, removing empty dirs until we
                 # hit the root or a non-empty dir. This handles nested subfolder layouts
-                # like <root>/<demo_name>/<session_id>/ cleanly. Only empty dirs go:
-                # a recursive delete here once wiped other sessions of the same demo.
+                # like <root>/<demo_name>/<session_id>/ cleanly.
                 removed_dirs = 0
                 visited: set = set()
 
@@ -3564,12 +3556,14 @@ class EngineMixin:
                         except ValueError:
                             return  # outside the output tree — bail
                     try:
-                        d.rmdir()  # fails on a non-empty dir, which must stay
-                    except OSError:
-                        return
-                    removed_dirs += 1
-                    # Recurse upward: parent may now also be empty
-                    _try_remove_dir(d.parent)
+                        # rmtree even if dir has residual temp/JSON files from CSDM
+                        shutil.rmtree(d, ignore_errors=True)
+                        if not d.exists():
+                            removed_dirs += 1
+                            # Recurse upward: parent may now also be empty
+                            _try_remove_dir(d.parent)
+                    except Exception:
+                        pass
 
                 for d in dirs_to_check:
                     _try_remove_dir(d)
@@ -3578,9 +3572,6 @@ class EngineMixin:
                 if removed_dirs:
                     msg += f", {removed_dirs} folder(s) removed"
                 self.log(msg + ".", "dim")
-                if kept:
-                    self.log(f"  ⚠ {len(kept)} clip(s) could not be deleted: "
-                             + ", ".join(kept), "warn")
         else:
             if needs_rename and os.path.exists(tmp_out):
                 try:
@@ -4972,7 +4963,7 @@ class EngineMixin:
         if ok > 0 and cfg.get("assemble_after") and not self._kill_triggered:
             self.log("\n⚙  Final assembly in progress...", "info")
             try:
-                self._assemble_clips(cfg, produced_dirs, batch_start)
+                self._assemble_clips(cfg, produced_dirs)
             except Exception as e:
                 self.log(f"  Assembly: {report(e, 'assembling the clips')}", "err")
         elif self._kill_triggered and cfg.get("assemble_after"):
