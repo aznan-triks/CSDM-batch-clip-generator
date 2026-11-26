@@ -6,7 +6,7 @@
 //! reaches a server.
 
 use csdm_app::link::DbState;
-use csdm_app::tabs::video::kit::{drawn_id, Drawn};
+use csdm_app::tabs::video::kit::{seen_id, Seen};
 use csdm_app::tabs::video::VideoTab;
 use csdm_app::tabs::TabId;
 use csdm_app::{Motion, Shell, ShellOptions};
@@ -362,7 +362,7 @@ fn every_video_key_has_a_control_on_screen() {
     assert!(wanted.len() >= VIDEO_CAPABILITIES.len());
     let mut r = rig(json!({"recsys": "HLAE"}));
     r.h.run();
-    let seen = r.h.ctx.data(|d| d.get_temp::<Drawn>(drawn_id())).unwrap_or_default().0;
+    let seen = r.h.ctx.data(|d| d.get_temp::<Seen>(seen_id())).unwrap_or_default().0;
     let missing: Vec<&&str> = wanted.iter().filter(|k| !seen.contains(**k)).collect();
     assert!(missing.is_empty(), "keys without a control on the VIDEO tab: {missing:?}");
 }

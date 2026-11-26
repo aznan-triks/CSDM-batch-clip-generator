@@ -90,18 +90,38 @@ pub fn card(tab: &mut CaptureTab, ui: &mut egui::Ui, cx: &mut CardCx) -> Option<
             }
         }
     });
-    ui.horizontal_wrapped(|ui| {
-        if let Some(v) = date_field(ui, t, "From", &from, TIP_FROM, today) {
-            changes = Some((v, changes.as_ref().map_or(to.clone(), |c| c.1.clone())));
-        }
-        ui.add_space(RADIUS);
-        if let Some(v) = date_field(ui, t, "To", &to, TIP_TO, today) {
-            changes = Some((changes.as_ref().map_or(from.clone(), |c| c.0.clone()), v));
-        }
-        if button(ui, t, "Today", "Today", TIP_TODAY, true) {
-            changes = Some((from.clone(), fmt_day(today)));
-        }
-    });
+    // Each label stays with its box (3.5.1 `DateField`): if From + To + Today exceed the row,
+    // put From on its own row so "To" never breaks away from its input.
+    let single_field_w = DATE_W + ROW_H * 2.0;
+    let fits_one_row = ui.available_width() >= single_field_w * 2.0 + DATE_W;
+    if fits_one_row {
+        ui.horizontal(|ui| {
+            if let Some(v) = date_field(ui, t, "From", &from, TIP_FROM, today) {
+                changes = Some((v, changes.as_ref().map_or(to.clone(), |c| c.1.clone())));
+            }
+            ui.add_space(RADIUS);
+            if let Some(v) = date_field(ui, t, "To", &to, TIP_TO, today) {
+                changes = Some((changes.as_ref().map_or(from.clone(), |c| c.0.clone()), v));
+            }
+            if button(ui, t, "Today", "Today", TIP_TODAY, true) {
+                changes = Some((from.clone(), fmt_day(today)));
+            }
+        });
+    } else {
+        ui.horizontal(|ui| {
+            if let Some(v) = date_field(ui, t, "From", &from, TIP_FROM, today) {
+                changes = Some((v, changes.as_ref().map_or(to.clone(), |c| c.1.clone())));
+            }
+        });
+        ui.horizontal(|ui| {
+            if let Some(v) = date_field(ui, t, "To", &to, TIP_TO, today) {
+                changes = Some((changes.as_ref().map_or(from.clone(), |c| c.0.clone()), v));
+            }
+            if button(ui, t, "Today", "Today", TIP_TODAY, true) {
+                changes = Some((from.clone(), fmt_day(today)));
+            }
+        });
+    }
     if let Some((f, tt)) = changes {
         if f != from {
             cx.link.set(cx.now, "date_from", json!(f));

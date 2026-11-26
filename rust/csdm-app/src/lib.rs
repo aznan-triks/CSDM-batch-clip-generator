@@ -7,6 +7,7 @@
 pub mod actionbar;
 pub mod backdrop;
 pub mod console;
+pub mod controls;
 pub mod cursor;
 pub mod grid;
 pub mod icons;
@@ -189,6 +190,7 @@ impl Shell {
         };
         self.theme = Theme::new(&key.0, accent);
         ctx.set_visuals(self.theme.visuals());
+        ctx.request_repaint();
         self.theme_key = key;
     }
 

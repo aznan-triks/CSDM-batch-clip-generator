@@ -5,25 +5,11 @@
 use crate::grid::CardCx;
 use crate::paint::{regular, semibold};
 use crate::theme::Theme;
-use eframe::egui::{self, pos2, vec2, Color32, Rect, Response, Sense, Stroke, StrokeKind};
+pub use crate::controls::{mark, seen_id, Seen, FONT_SEG};
+use crate::controls::{options_tray, Opt, TRAY_HAIR_ALPHA};
+use eframe::egui::{self, Color32, Response, Stroke};
 use serde_json::{json, Value};
-use std::collections::BTreeSet;
 
-/// `.seg` / `.cs-mseg` trays and their options.
-const TRAY_PAD: f32 = 3.0;
-const TRAY_GAP: f32 = 2.0;
-const TRAY_RADIUS: f32 = 10.0;
-const SEG_PAD: [f32; 2] = [12.0, 6.0];
-const MSEG_PAD: [f32; 2] = [8.0, 5.0];
-const OPT_RADIUS: f32 = 8.0;
-const MSEG_BOX: f32 = 6.0;
-const MSEG_BOX_GAP: f32 = 6.0;
-pub const FONT_SEG: f32 = 11.5;
-const DOT: f32 = 4.0;
-/// `.cs-mseg` tray: hair at 55 %; the disabled option at 45 %.
-const TRAY_HAIR_ALPHA: f32 = 0.55;
-const DISABLED_ALPHA: f32 = 0.45;
-const SHADOW_ALPHA: f32 = 0.16;
 /// `.pc-kick`-like kicker: small upper-case, tracked.
 const FONT_KICK: f32 = 10.0;
 const KICK_SPACING: f32 = 0.12;
@@ -32,21 +18,6 @@ const FRAME_RADIUS: f32 = 14.0;
 const FRAME_PAD: f32 = 10.0;
 /// `.fld` height.
 pub const FIELD_W: f32 = 64.0;
-
-/// Keys written by a control drawn this frame (the coverage guard reads them back).
-#[derive(Clone, Default)]
-pub struct Seen(pub BTreeSet<String>);
-
-pub fn seen_id() -> egui::Id {
-    egui::Id::unique("capture-seen-keys")
-}
-
-/// Records that a control for `key` is on screen.
-pub fn mark(ui: &egui::Ui, key: &str) {
-    ui.ctx().data_mut(|d| {
-        d.get_temp_mut_or_default::<Seen>(seen_id()).0.insert(key.to_string());
-    });
-}
 
 pub fn kick(ui: &mut egui::Ui, t: &Theme, text: &str) -> Response {
     ui.label(egui::RichText::new(text.to_uppercase()).font(semibold(FONT_KICK)).color(t.accent).extra_letter_spacing(KICK_SPACING * FONT_KICK))
@@ -73,84 +44,6 @@ pub fn framed<R>(ui: &mut egui::Ui, t: &Theme, add: impl FnOnce(&mut egui::Ui) -
             add(ui)
         })
         .inner
-}
-
-fn tray(ui: &egui::Ui, t: &Theme, r: Rect, hair_alpha: f32) {
-    ui.painter().rect(r, TRAY_RADIUS, t.hair.gamma_multiply(hair_alpha).blend(t.surface2.gamma_multiply(hair_alpha)), Stroke::new(1.0, t.hair), StrokeKind::Inside);
-}
-
-/// One option of a tray: (visible words, lit, disabled, accessible name, dot colour).
-struct Opt<'a> {
-    text: &'a str,
-    on: bool,
-    disabled: bool,
-    name: String,
-    dot: Option<Color32>,
-    tip: &'a str,
-}
-
-/// Lays out a tray of options; returns the index clicked. `radio`: one-of-N (`.seg`), else
-/// independent checks (`.cs-mseg`).
-fn options_tray(ui: &mut egui::Ui, t: &Theme, opts: &[Opt], radio: bool) -> Option<usize> {
-    let pad = if radio { SEG_PAD } else { MSEG_PAD };
-    let font = semibold(FONT_SEG);
-    let galleys: Vec<_> = opts.iter().map(|o| ui.painter().layout_no_wrap(o.text.to_string(), font.clone(), t.muted)).collect();
-    let lead = |o: &Opt| if !radio { MSEG_BOX + MSEG_BOX_GAP } else if o.dot.is_some() { DOT * 2.0 + MSEG_BOX_GAP } else { 0.0 };
-    let widths: Vec<f32> = opts.iter().zip(&galleys).map(|(o, g)| g.size().x + pad[0] * 2.0 + lead(o)).collect();
-    let h = galleys.first().map_or(0.0, |g| g.size().y) + pad[1] * 2.0;
-    let total = widths.iter().sum::<f32>() + TRAY_GAP * (opts.len().saturating_sub(1)) as f32 + TRAY_PAD * 2.0;
-    let (rect, _) = ui.allocate_exact_size(vec2(total, h + TRAY_PAD * 2.0), Sense::hover());
-    tray(ui, t, rect, if radio { 1.0 } else { TRAY_HAIR_ALPHA });
-    let mut x = rect.left() + TRAY_PAD;
-    let mut clicked = None;
-    for (i, (o, g)) in opts.iter().zip(galleys).enumerate() {
-        let r = Rect::from_min_size(pos2(x, rect.top() + TRAY_PAD), vec2(widths[i], h));
-        x += widths[i] + TRAY_GAP;
-        let id = ui.scope_id().with(("opt", &o.name));
-        let resp = ui.interact(r, id, if o.disabled { Sense::hover() } else { Sense::click() });
-        let name = o.name.clone();
-        let (on, enabled) = (o.on, !o.disabled);
-        resp.widget_info(|| egui::WidgetInfo::selected(if radio { egui::Role::RadioButton } else { egui::Role::CheckBox }, enabled, on, &name));
-        let resp = if o.tip.is_empty() { resp } else { resp.on_hover_text(o.tip) };
-        if resp.clicked() && !o.disabled {
-            clicked = Some(i);
-        }
-        if resp.hovered() && !o.disabled {
-            crate::cursor::snap_here(ui.ctx(), r);
-        }
-        let p = ui.painter();
-        let ink = match (radio, o.on) {
-            (true, true) => t.accent,
-            (false, true) => t.lime_ink,
-            _ => t.muted,
-        };
-        let ink = if o.disabled { ink.gamma_multiply(DISABLED_ALPHA) } else { ink };
-        if o.on {
-            if radio {
-                p.rect_filled(r.translate(vec2(0.0, 2.0)), OPT_RADIUS, Color32::BLACK.gamma_multiply(SHADOW_ALPHA / 2.0));
-                p.rect_filled(r, OPT_RADIUS, t.solid);
-            } else {
-                p.rect(r, OPT_RADIUS, t.lime, Stroke::new(1.0, t.lime_glow), StrokeKind::Inside);
-            }
-        } else if resp.hovered() && !o.disabled {
-            p.rect_filled(r, OPT_RADIUS, t.solid.gamma_multiply(TRAY_HAIR_ALPHA));
-        }
-        let mut tx = r.left() + pad[0];
-        if !radio {
-            let b = Rect::from_center_size(pos2(tx + MSEG_BOX / 2.0, r.center().y), vec2(MSEG_BOX, MSEG_BOX));
-            if o.on {
-                p.rect_filled(b, 2.0, t.lime_ink);
-            } else {
-                p.rect_stroke(b, 2.0, Stroke::new(1.0, ink.gamma_multiply(TRAY_HAIR_ALPHA)), StrokeKind::Middle);
-            }
-            tx += MSEG_BOX + MSEG_BOX_GAP;
-        } else if let Some(c) = o.dot {
-            p.circle_filled(pos2(tx + DOT, r.center().y), DOT, c);
-            tx += DOT * 2.0 + MSEG_BOX_GAP;
-        }
-        p.galley(pos2(tx, r.center().y - g.size().y / 2.0), g, ink);
-    }
-    clicked
 }
 
 /// `Segmented`: one value out of N. Accessible names are "`name`: `option`".

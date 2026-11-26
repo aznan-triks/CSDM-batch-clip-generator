@@ -10,22 +10,8 @@ use crate::widgets::{chip, tip};
 use csdm_core::ui_values::{FONT_BODY, FONT_SMALL, SETTINGS_FIELD_WIDTH, SETTINGS_LABEL_WIDTH};
 use eframe::egui;
 use serde_json::json;
-use std::collections::BTreeSet;
 
-/// Keys written by a control drawn this frame (the coverage guard reads them back).
-#[derive(Clone, Default)]
-pub struct Drawn(pub BTreeSet<String>);
-
-pub fn drawn_id() -> egui::Id {
-    egui::Id::unique("video-drawn-keys")
-}
-
-/// Records that a control for `key` is on screen.
-pub fn mark(ui: &egui::Ui, key: &str) {
-    ui.ctx().data_mut(|d| {
-        d.get_temp_mut_or_default::<Drawn>(drawn_id()).0.insert(key.to_string());
-    });
-}
+pub use crate::controls::{mark, seen_id, Seen};
 
 /// The key's default from the settings table: the value shown while it is unset or not a number.
 pub fn fallback(key: &str) -> f64 {

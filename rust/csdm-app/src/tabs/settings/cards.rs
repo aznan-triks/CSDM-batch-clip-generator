@@ -1,8 +1,9 @@
 //! The eight SETTINGS cards, `timeline` style (3.5 `settingsCards/*.tsx` `TimelineView`,
 //! `PresetSection.tsx` `TimelineView`). Words and tips are 3.5's.
 
-use super::controls::{action, bool_of, hint, kick, num_of, number_box, path_box, segmented, slider, switch, text_box, text_of, PickKind};
+use super::controls::{action, bool_of, hint, kick, num_of, number_box, path_box, segmented, slider, switch, text_box, text_box_w, text_of, PickKind};
 use super::{PendingSwitch, PgState, Req, SettingsTab};
+use crate::controls::{link_arrow, mix, node, NodeIcon, LINK_W};
 use crate::grid::CardCx;
 use crate::paint::{mono, regular, semibold};
 use crate::theme::{parse_hex, resolve_accent, Theme};
@@ -10,15 +11,36 @@ use crate::widgets::{chip, confirm_dialog, tip, Confirm};
 use csdm_core::theme_v12::{ACCENT_PRESETS, GROUNDS};
 use csdm_core::ui_values::{
     ACCENT_SWATCH, BLOCK_SLIDER, CARD_STYLES, DP2_THREADS_CHOICES, FONT_BODY, FONT_SMALL, FONT_SWATCH, GROUND_LOOK, LAYOUT_AUTO_FALLBACK_SCREEN, LAYOUT_AUTO_SCREEN, LAYOUT_DRAWING_HEIGHT, LAYOUT_HEIGHT_RANGE,
-    LAYOUT_WIDTH_RANGE, PERF_CORE_TILE, SETTINGS_ROW_GAP, SPLIT_PCT_DEFAULT, SPLIT_PCT_MAX, SPLIT_PCT_MIN, STYLED_CARDS, THEME_PREVIEW,
+    LAYOUT_WIDTH_RANGE, SETTINGS_ROW_GAP, SPLIT_PCT_DEFAULT, SPLIT_PCT_MAX, SPLIT_PCT_MIN, STYLED_CARDS, THEME_PREVIEW,
 };
 use csdm_engine::Command;
-use eframe::egui::{self, Color32, Rect, Sense, Stroke, StrokeKind, Vec2};
+use eframe::egui::{self, pos2, vec2, Color32, Rect, Sense, Stroke, StrokeKind, Vec2};
 use serde_json::{json, Value};
 
 const PCT: f64 = 100.0;
-const LIGHT: f32 = 4.5;
-const PG_NODES: usize = 3;
+const LIGHT: f32 = 5.0;
+/// Paths rail (3.5.1 PathsCard `.st-ic`): rail width, step tile (26 px), corner (8 px), tint, glyph (16 px), line.
+const PATH_RAIL_W: f32 = 150.0;
+const PATH_TILE: f32 = 26.0;
+const PATH_TILE_RADIUS: f32 = 8.0;
+const PATH_TILE_TINT_PCT: f32 = 10.0;
+const PATH_GLYPH: f32 = 16.0;
+const PATH_RAIL_STROKE: f32 = 2.0;
+const PATH_RAIL_ALPHA: f32 = 0.35;
+/// `.st-chain` column shares and compact `.st-form` label width.
+const PG_NODE_SHARES: [f32; 3] = [1.0, 1.0, 0.8];
+const PG_LABEL_WIDTH: f32 = 34.0;
+/// `.pf-cores`: 8 equal tiles, 5 px gap, 9 px radius, 46 px tall, CPU glyph 18 px, tint 12 %, edge 45 %.
+const PERF_TILE_GAP: f32 = 5.0;
+const PERF_TILE_H: f32 = 46.0;
+const PERF_TILE_RADIUS: f32 = 9.0;
+const PERF_TILE_TINT_PCT: f32 = 12.0;
+const PERF_TILE_EDGE_ALPHA: f32 = 0.45;
+const PERF_CPU_SIZE: f32 = 18.0;
+const PERF_CPU_STROKE: f32 = 1.7;
+const PERF_CPU_INSET: f32 = 0.3;
+const PERF_CPU_PIN: f32 = 0.14;
+const PERF_CPU_PINS: [f32; 2] = [0.4, 0.6];
 /// Header counts: UI Theme, UI Layout, Performance.
 pub const HEADER_COUNTS: usize = 3;
 /// Words shown in empty boxes and examples (3.5's), never used as addresses or paths.
@@ -57,44 +79,62 @@ fn light(ui: &mut egui::Ui, t: &Theme, state: PgState) {
 
 pub fn postgres(tab: &mut SettingsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
     let t = cx.theme;
-    // The chain of 3.5's timeline: you -> the server -> the database, its light at the end.
+    // 3.5.1 `.st-chain`: You -> Server -> Database as white sub-cards linked by dashed arrows,
+    // columns 1fr 28px 1fr 28px 0.8fr; Database stretches to You/Server's natural height.
     let state = tab.pg_state;
-    ui.columns(PG_NODES, |cols| {
-        kick(&mut cols[0], t, "You →");
-        text_box(&mut cols[0], cx, "pg_user", "User", "postgres", "PostgreSQL user name", false);
-        text_box(&mut cols[0], cx, "pg_pass", "Pass", "no password", "PostgreSQL password", true);
-        kick(&mut cols[1], t, "Server →");
-        text_box(&mut cols[1], cx, "pg_host", "Host", HOST_HINT, "Machine running the PostgreSQL server of CS Demo Manager", false);
-        text_box(&mut cols[1], cx, "pg_port", "Port", "5432", "Port the PostgreSQL server listens on", false);
-        cols[2].horizontal(|ui| {
-            kick(ui, t, "Database");
-            light(ui, t, state);
+    let room = ui.available_width() - LINK_W * 2.0;
+    let w = PG_NODE_SHARES.map(|k| room * k / PG_NODE_SHARES.iter().sum::<f32>());
+    ui.horizontal_top(|ui| {
+        ui.spacing_mut().item_spacing.x = 0.0;
+        let r0 = ui.allocate_ui(Vec2::new(w[0], 0.0), |ui| {
+            node(ui, t, NodeIcon::Named("player"), "You", 0.0, |_| {}, |ui| {
+                text_box_w(ui, cx, "pg_user", "User", PG_LABEL_WIDTH, "postgres", "PostgreSQL user name", false);
+                text_box_w(ui, cx, "pg_pass", "Pass", PG_LABEL_WIDTH, "no password", "PostgreSQL password", true);
+            })
         });
-        text_box(&mut cols[2], cx, "pg_db", "Base", "csdm", "PostgreSQL database name (the one created by CS Demo Manager)", false);
+        let h0 = r0.response.rect.height();
+        link_arrow(ui, t, LINK_W, h0);
+        let r1 = ui.allocate_ui(Vec2::new(w[1], 0.0), |ui| {
+            node(ui, t, NodeIcon::Named("postgresql"), "Server", 0.0, |_| {}, |ui| {
+                text_box_w(ui, cx, "pg_host", "Host", PG_LABEL_WIDTH, HOST_HINT, "Machine running the PostgreSQL server of CS Demo Manager", false);
+                text_box_w(ui, cx, "pg_port", "Port", PG_LABEL_WIDTH, "5432", "Port the PostgreSQL server listens on", false);
+            })
+        });
+        let h = h0.max(r1.response.rect.height());
+        link_arrow(ui, t, LINK_W, h);
+        ui.allocate_ui(Vec2::new(w[2], 0.0), |ui| {
+            node(ui, t, NodeIcon::Cylinder, "Database", h, |ui| light(ui, t, state), |ui| {
+                text_box_w(ui, cx, "pg_db", "Base", PG_LABEL_WIDTH, "csdm", "PostgreSQL database name (the one created by CS Demo Manager)", false);
+            })
+        });
     });
     gap(ui);
     let busy = tab.pg_state == PgState::Busy;
-    if action(ui, t, "Test & Reload", "Tests the PostgreSQL connection and reloads players/tables from the database", !busy) {
-        // The values being typed, before they are saved (3.5 B1).
-        let pg: csdm_core::Settings = ["pg_host", "pg_port", "pg_user", "pg_pass", "pg_db"].iter().map(|k| (k.to_string(), json!(text_of(cx, k)))).collect();
-        tab.pg_status = "Connecting…".into();
-        tab.pg_state = PgState::Busy;
-        tab.ask(cx, Command::ConnectDb { pg: Some(pg) }, Req::Connect);
-    }
-    let color = match tab.pg_state {
-        PgState::Ok => t.emerald,
-        PgState::Bad => t.rose,
-        _ => t.muted,
-    };
-    status_line(ui, &tab.pg_status, color);
-    // Before any test, a start-up connection that failed is said here, where it is fixed (first run).
-    if tab.pg_state == PgState::Idle {
-        if let crate::link::DbState::Error(e) = &cx.link.db {
-            status_line(ui, &format!("Not connected: {e}"), t.rose);
+    ui.horizontal(|ui| {
+        if action(ui, t, "Test & Reload", "Tests the PostgreSQL connection and reloads players/tables from the database", !busy) {
+            // The values being typed, before they are saved (3.5 B1).
+            let pg: csdm_core::Settings = ["pg_host", "pg_port", "pg_user", "pg_pass", "pg_db"].iter().map(|k| (k.to_string(), json!(text_of(cx, k)))).collect();
+            tab.pg_status = "Connecting…".into();
+            tab.pg_state = PgState::Busy;
+            tab.ask(cx, Command::ConnectDb { pg: Some(pg) }, Req::Connect);
         }
-    }
-    // The guidance stays after a test: a failed test is when it is needed most.
-    hint(ui, t, PG_HINT);
+        ui.vertical(|ui| {
+            let color = match tab.pg_state {
+                PgState::Ok => t.emerald,
+                PgState::Bad => t.rose,
+                _ => t.muted,
+            };
+            status_line(ui, &tab.pg_status, color);
+            // Before any test, a start-up connection that failed is said here, where it is fixed (first run).
+            if tab.pg_state == PgState::Idle {
+                if let crate::link::DbState::Error(e) = &cx.link.db {
+                    status_line(ui, &format!("Not connected: {e}"), t.rose);
+                }
+            }
+            // The guidance stays after a test: a failed test is when it is needed most.
+            hint(ui, t, PG_HINT);
+        });
+    });
 }
 
 // ---------------------------------------------------------------- Paths
@@ -111,25 +151,39 @@ pub fn paths(tab: &mut SettingsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
         None => "A subfolder per demo is created here".into(),
     };
     let pick = &mut tab.pick;
-    kick(ui, t, "Records");
-    path_box(ui, cx, pick, "csdm_exe", "CSDM Executable", &exe_hint, "CS Demo Manager's csdm.CMD (or csdm.exe), which records the clips", PickKind::File);
-    gap(ui);
-    kick(ui, t, "Injects commands");
-    path_box(ui, cx, pick, "cs2_cfg_dir", "CS2 cfg folder", CS2_CFG_HINT, "Where CSDM writes injected CS2 console commands before recording. Leave empty to auto-detect", PickKind::Folder);
-    gap(ui);
-    kick(ui, t, "Writes raw clips");
-    path_box(ui, cx, pick, "output_dir_clips", "Raw clips folder", &clips_hint, "Where the recorded clips are written", PickKind::Folder);
-    ui.horizontal(|ui| {
-        switch(ui, cx, "subfolder_per_demo", "Subfolder per demo", "When on, each demo's clips go in their own subfolder instead of sharing the raw clips folder");
-        let eg = if bool_of(cx, "subfolder_per_demo") { SUBFOLDER_EXAMPLE[0] } else { SUBFOLDER_EXAMPLE[1] };
-        ui.label(egui::RichText::new(eg).font(mono(FONT_SMALL)).color(t.faint));
+    // 3.5.1 Paths: a rail of the five steps on the left (icon tile, words, a line between the
+    // tiles), each step's field on the right.
+    let mut tiles: Vec<egui::Pos2> = Vec::new();
+    let mut step = |ui: &mut egui::Ui, cx: &mut CardCx, icon: &'static str, words: &str, field: &mut dyn FnMut(&mut egui::Ui, &mut CardCx)| {
+        ui.horizontal_top(|ui| {
+            ui.allocate_ui_with_layout(Vec2::new(PATH_RAIL_W, 0.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
+                ui.set_width(PATH_RAIL_W);
+                let (r, _) = ui.allocate_exact_size(Vec2::splat(PATH_TILE), Sense::hover());
+                ui.painter().rect_filled(r, PATH_TILE_RADIUS, crate::controls::mix(t.accent, t.solid, PATH_TILE_TINT_PCT));
+                crate::icons::paint(ui.painter(), icon, Rect::from_center_size(r.center(), Vec2::splat(PATH_GLYPH)), t.accent);
+                tiles.push(r.center());
+                ui.add(egui::Label::new(egui::RichText::new(words).font(semibold(FONT_SMALL)).color(t.muted)).wrap());
+            });
+            ui.vertical(|ui| field(ui, cx));
+        });
+        gap(ui);
+    };
+    step(ui, cx, "capture", "Records", &mut |ui, cx| path_box(ui, cx, pick, "csdm_exe", "CSDM Executable", &exe_hint, "CS Demo Manager's csdm.CMD (or csdm.exe), which records the clips", PickKind::File));
+    step(ui, cx, "editing", "Injects commands", &mut |ui, cx| path_box(ui, cx, pick, "cs2_cfg_dir", "CS2 cfg folder", CS2_CFG_HINT, "Where CSDM writes injected CS2 console commands before recording. Leave empty to auto-detect", PickKind::Folder));
+    step(ui, cx, "video", "Writes raw clips", &mut |ui, cx| {
+        path_box(ui, cx, pick, "output_dir_clips", "Raw clips folder", &clips_hint, "Where the recorded clips are written", PickKind::Folder);
+        ui.horizontal(|ui| {
+            switch(ui, cx, "subfolder_per_demo", "Subfolder per demo", "When on, each demo's clips go in their own subfolder instead of sharing the raw clips folder");
+            let eg = if bool_of(cx, "subfolder_per_demo") { SUBFOLDER_EXAMPLE[0] } else { SUBFOLDER_EXAMPLE[1] };
+            ui.label(egui::RichText::new(eg).font(mono(FONT_SMALL)).color(t.faint));
+        });
     });
-    gap(ui);
-    kick(ui, t, "Joins them");
-    path_box(ui, cx, pick, "output_dir_concat", "Concatenated clips folder", "Empty = same folder as raw clips", "Where the clips joined per demo are written", PickKind::Folder);
-    gap(ui);
-    kick(ui, t, "Assembles the video");
-    path_box(ui, cx, pick, "output_dir_assembled", "Assembled file folder", "Empty = same folder as raw clips", "Where the final assembled video is written", PickKind::Folder);
+    step(ui, cx, "operations", "Joins them", &mut |ui, cx| path_box(ui, cx, pick, "output_dir_concat", "Concatenated clips folder", "Empty = same folder as raw clips", "Where the clips joined per demo are written", PickKind::Folder));
+    step(ui, cx, "encoding", "Assembles the video", &mut |ui, cx| path_box(ui, cx, pick, "output_dir_assembled", "Assembled file folder", "Empty = same folder as raw clips", "Where the final assembled video is written", PickKind::Folder));
+    // The rail's line, from each tile to the next.
+    for w in tiles.windows(2) {
+        ui.painter().line_segment([w[0] + Vec2::new(0.0, PATH_TILE / 2.0), w[1] - Vec2::new(0.0, PATH_TILE / 2.0)], Stroke::new(PATH_RAIL_STROKE, t.accent.gamma_multiply(PATH_RAIL_ALPHA)));
+    }
 }
 
 // ---------------------------------------------------------------- Configuration Folder
@@ -537,20 +591,41 @@ pub fn ui_layout(ui: &mut egui::Ui, cx: &mut CardCx) {
 
 const PERF_TIP: &str = "Number of parallel threads used to pre-parse demo files with demoparser2 (TROIS SHOT / ONE TAP / TROIS TAP filters). Higher = faster pre-parse on multi-core CPUs. Set to 1 to disable.";
 
+fn paint_cpu(p: &egui::Painter, rect: Rect, color: Color32) {
+    let s = Stroke::new(PERF_CPU_STROKE, color);
+    let inner = rect.shrink(rect.width() * PERF_CPU_INSET);
+    p.rect_stroke(inner, 2.0, s, StrokeKind::Middle);
+    for k in PERF_CPU_PINS {
+        let x = rect.left() + rect.width() * k;
+        let y = rect.top() + rect.height() * k;
+        let pin = rect.width() * PERF_CPU_PIN;
+        p.line_segment([pos2(x, inner.top() - pin), pos2(x, inner.top())], s);
+        p.line_segment([pos2(x, inner.bottom()), pos2(x, inner.bottom() + pin)], s);
+        p.line_segment([pos2(inner.left() - pin, y), pos2(inner.left(), y)], s);
+        p.line_segment([pos2(inner.right(), y), pos2(inner.right() + pin, y)], s);
+    }
+}
+
 pub fn performance(ui: &mut egui::Ui, cx: &mut CardCx) {
     let t = cx.theme;
     let [lo, hi, fallback] = DP2_THREADS_CHOICES;
+    let count = (hi - lo + 1) as usize;
     let value = (num_of(cx, "dp2_threads", fallback as f64).round() as i64).clamp(lo, hi);
-    ui.horizontal_wrapped(|ui| {
+    let tile_w = ((ui.available_width() - PERF_TILE_GAP * (count - 1) as f32) / count as f32).max(PERF_CPU_SIZE);
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = PERF_TILE_GAP;
         for n in lo..=hi {
-            let (rect, r) = ui.allocate_exact_size(Vec2::from(PERF_CORE_TILE), Sense::click());
+            let (rect, r) = ui.allocate_exact_size(vec2(tile_w, PERF_TILE_H), Sense::click());
             let name = if n == 1 { "1 thread".to_string() } else { format!("{n} threads") };
             r.widget_info(|| egui::WidgetInfo::selected(egui::Role::RadioButton, true, n == value, &name));
             let lit = n <= value;
-            let (fill, ink) = if lit { (t.accent, t.on_accent) } else { (t.surface2, t.muted) };
-            let edge = if r.hovered() { t.accent } else { t.hair };
-            ui.painter().rect(rect, crate::CORNER_SMALL as f32, fill, Stroke::new(1.0, edge), StrokeKind::Inside);
-            ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, n.to_string(), semibold(FONT_BODY), ink);
+            let (fill, ink) = if lit { (mix(t.accent, t.solid, PERF_TILE_TINT_PCT), t.accent) } else { (t.solid, t.faint) };
+            let edge = if r.hovered() { t.accent } else if lit { t.accent.gamma_multiply(PERF_TILE_EDGE_ALPHA) } else { t.hair };
+            let p = ui.painter();
+            p.rect(rect, PERF_TILE_RADIUS, fill, Stroke::new(1.0, edge), StrokeKind::Inside);
+            let cpu = Rect::from_center_size(pos2(rect.center().x, rect.top() + PERF_TILE_H * PERF_CPU_INSET + 2.0), Vec2::splat(PERF_CPU_SIZE));
+            paint_cpu(p, cpu, ink);
+            p.text(pos2(rect.center().x, rect.bottom() - FONT_SMALL / 2.0 - PERF_TILE_GAP), egui::Align2::CENTER_CENTER, n.to_string(), semibold(FONT_SMALL), ink);
             if r.on_hover_text(PERF_TIP).clicked() {
                 cx.link.set(cx.now, "dp2_threads", json!(n));
             }
