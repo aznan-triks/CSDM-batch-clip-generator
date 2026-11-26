@@ -276,6 +276,38 @@ pub const GROUND_LOOK: [(&str, [&str; 3]); 5] = [
 ];
 /// The three card styles (`components/cardstyle/cardStyle.ts::CARD_STYLES`), the first is the default.
 pub const CARD_STYLES: [&str; 3] = ["timeline", "sentence", "tiles"];
+
+/// How a card with variants draws its settings (3.5 `components/cardstyle/cardStyle.ts`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum CardStyle {
+    #[default]
+    Timeline,
+    Sentence,
+    Tiles,
+}
+
+impl CardStyle {
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "timeline" => Some(Self::Timeline),
+            "sentence" => Some(Self::Sentence),
+            "tiles" => Some(Self::Tiles),
+            _ => None,
+        }
+    }
+
+    pub fn resolve(global: Option<&str>, own: Option<&str>) -> Self {
+        own.and_then(Self::parse).or_else(|| global.and_then(Self::parse)).unwrap_or(Self::Timeline)
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Timeline => "timeline",
+            Self::Sentence => "sentence",
+            Self::Tiles => "tiles",
+        }
+    }
+}
 /// Cards drawn in a card style, (id, title), in tab order (`components/cardstyle/styledCards.ts`).
 pub const STYLED_CARDS: [(&str, &str); 28] = [
     ("player", "Player"),
@@ -391,3 +423,26 @@ pub const EDITING_AXIS_MARGIN_S: f64 = 2.0;
 pub const EDITING_RULER_HEIGHT: f32 = 24.0;
 pub const EDITING_LANE_HEIGHT: f32 = 44.0;
 pub const EDITING_BLOCK: [f32; 2] = [9.0, 26.0];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::BTreeSet;
+
+    #[test]
+    fn card_style_resolves_override_then_global_then_timeline() {
+        assert_eq!(CardStyle::resolve(None, None), CardStyle::Timeline);
+        assert_eq!(CardStyle::resolve(Some("sentence"), None), CardStyle::Sentence);
+        assert_eq!(CardStyle::resolve(Some("tiles"), None), CardStyle::Tiles);
+        assert_eq!(CardStyle::resolve(Some("sentence"), Some("tiles")), CardStyle::Tiles);
+        assert_eq!(CardStyle::resolve(Some("tiles"), Some("bogus")), CardStyle::Tiles);
+        assert_eq!(CardStyle::resolve(Some("bogus"), Some("bogus")), CardStyle::Timeline);
+        assert_eq!(CardStyle::parse("sentence").unwrap().as_str(), "sentence");
+        assert_eq!(CardStyle::parse("tiles").unwrap().as_str(), "tiles");
+        assert_eq!(CardStyle::parse("timeline").unwrap().as_str(), "timeline");
+
+        let ids: BTreeSet<&str> = STYLED_CARDS.iter().map(|(id, _)| *id).collect();
+        assert_eq!(ids.len(), STYLED_CARDS.len(), "every styled card id must be unique");
+        assert_eq!(STYLED_CARDS.len(), 28);
+    }
+}

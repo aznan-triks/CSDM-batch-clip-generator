@@ -1,16 +1,23 @@
-//! The Tags card, timeline style (3.5 `TagGridCard.tsx` `TimelineView`): the selection as a tray
-//! above the palette of every tag; click a tag to move it in or out.
+//! The Tags card, in all three styles (`timeline`, `sentence`, `tiles`) after
+//! 3.5 `TagGridCard.tsx`.
 
-use super::parts::{fade, kicker, mix, note, separator, switch, tag_chip, tray_pill};
-use super::{active_ids, tags, visible, TagsTab, SORTS};
+use super::parts::{fade, kicker, mix, note, separator, switch, tag_chip, tag_color, tray_pill};
+use super::{active_ids, tags, visible, TagRow, TagsTab, SORTS};
+use crate::cardstyle::{action_word, choice_token, paint_glyph, prose_line, prose_word, style_of, tile_grid, word_options, TileGlyph};
 use crate::grid::CardCx;
+use crate::paint::semibold;
+use crate::theme::Theme;
 use crate::widgets::{chip, confirm_dialog, tip, Confirm};
-use csdm_core::ui_values::{TAG_ITEM_GAP, TAG_PRESET_COLORS, TAG_ROW_GAP, TAG_SWATCH, TAG_TRAY_DASH, TAG_TRAY_EDGE_PCT, TAG_TRAY_MIN_H, TAG_TRAY_PAD, TAG_TRAY_RADIUS, TAG_TRAY_TINT_PCT};
-use eframe::egui::{self, Align, Color32, Layout, Margin, Sense, Shape, Stroke, Vec2};
+use csdm_core::ui_values::{
+    CardStyle, FONT_BODY, FONT_SMALL, TAG_ITEM_GAP, TAG_PRESET_COLORS, TAG_ROW_GAP, TAG_SWATCH, TAG_TRAY_DASH, TAG_TRAY_EDGE_PCT, TAG_TRAY_MIN_H, TAG_TRAY_PAD, TAG_TRAY_RADIUS,
+    TAG_TRAY_TINT_PCT,
+};
+use eframe::egui::{self, pos2, vec2, Align, Align2, Color32, Layout, Margin, Sense, Shape, Stroke, StrokeKind, Vec2};
 use serde_json::{json, Value};
 
 /// `useTagGrid.ts::TIPS`.
 const TIP_TAG: &str = "Toggle this tag as an active filter for search and tagging below";
+const NEW_TAG_PAD_MUL: f32 = 3.0;
 const TIP_DELETE: &str = "Permanently delete this tag from the database";
 const TIP_SEARCH: &str = "Filter displayed tags by name";
 const TIP_SORT: &str = "Sort tags by name, color, or show active tags first";
@@ -30,6 +37,14 @@ const SWATCH_RING: f32 = 2.0;
 /// `.tg-foot-sep` height.
 const SEP_H: f32 = 18.0;
 const DASH_CORNER_STEPS: usize = 6;
+const TAG_TILE_MIN_W: f32 = 132.0;
+const TAG_TILE_H: f32 = 54.0;
+const TAG_TILE_RADIUS: f32 = 12.0;
+const TAG_TILE_PAD: f32 = 10.0;
+const TAG_TILE_TINT_PCT: f32 = 14.0;
+const TAG_TILE_EDGE_PCT: f32 = 45.0;
+const TAG_DOT_SIZE: f32 = 12.0;
+const NAMES_SHOWN: usize = 2;
 
 enum Act {
     Toggle(Value),
@@ -41,48 +56,15 @@ enum Act {
     AutoTag(bool),
 }
 
-pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
-    let t = cx.theme;
-    let all = tags(cx);
-    let active = active_ids(cx);
-    let always = cx.always_tips;
-    let mut acts = Vec::new();
-    ui.spacing_mut().item_spacing = Vec2::splat(TAG_ITEM_GAP);
-
-    // The tray: what is in use.
-    let tray = egui::Frame::new()
-        .fill(mix(t.accent, t.solid, TAG_TRAY_TINT_PCT))
-        .corner_radius(TAG_TRAY_RADIUS)
-        .inner_margin(Margin::symmetric(TAG_TRAY_PAD[0] as i8, TAG_TRAY_PAD[1] as i8))
-        .show(ui, |ui| {
-            ui.set_min_height(TAG_TRAY_MIN_H - TAG_TRAY_PAD[1] * 2.0);
-            ui.set_width(ui.available_width());
-            ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), 0.0), Layout::right_to_left(Align::Center), |ui| {
-                let r = chip(ui, t, "Deselect all", None, None, true);
-                if tip(ui, t, r, TIP_DESELECT, false).clicked() {
-                    acts.push(Act::Deselect);
-                }
-                ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), 0.0), Layout::left_to_right(Align::Center).with_main_wrap(true), |ui| {
-                    kicker(ui, t, "In use");
-                    let in_use: Vec<_> = all.iter().filter(|x| active.contains(&x.id)).collect();
-                    if in_use.is_empty() {
-                        note(ui, t, "No tag selected -- click a tag below to use it", t.faint);
-                    }
-                    for tag in in_use {
-                        if tray_pill(ui, t, tag).on_hover_text(TIP_PILL).clicked() {
-                            acts.push(Act::Toggle(tag.id.clone()));
-                        }
-                    }
-                });
-            });
-        });
-    dashed_border(ui, tray.response.rect, fade(t.accent, TAG_TRAY_EDGE_PCT));
-    if always {
-        note(ui, t, TIP_DESELECT, t.faint);
+fn selection_words(names: &[String]) -> String {
+    match names.len() {
+        0 => "no tag yet".into(),
+        n if n <= NAMES_SHOWN => names.join(" and "),
+        n => format!("{}, {} and {} more", names[0], names[1], n - NAMES_SHOWN),
     }
-    ui.add_space(TAG_ROW_GAP - TAG_ITEM_GAP);
+}
 
-    // Toolbar: search and sort.
+fn toolbar(tab: &mut TagsTab, ui: &mut egui::Ui, t: &Theme, always: bool) {
     ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), 0.0), Layout::right_to_left(Align::Center), |ui| {
         let words: Vec<&str> = SORTS.iter().map(|(_, w)| *w).collect();
         let chosen = SORTS.iter().position(|(s, _)| *s == tab.grid.sort).unwrap_or(0);
@@ -96,11 +78,11 @@ pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
     if always {
         note(ui, t, &format!("{TIP_SEARCH}. {TIP_SORT}."), t.faint);
     }
+}
 
-    // The palette.
-    let shown = visible(&all, &tab.grid.search, tab.grid.sort, &active);
+fn palette(shown: &[TagRow], active: &[Value], ui: &mut egui::Ui, t: &Theme, always: bool, acts: &mut Vec<Act>) {
     ui.horizontal_wrapped(|ui| {
-        for tag in &shown {
+        for tag in shown {
             let (toggle, delete) = tag_chip(ui, t, tag, active.contains(&tag.id));
             if toggle.on_hover_text(TIP_TAG).clicked() {
                 acts.push(Act::Toggle(tag.id.clone()));
@@ -113,32 +95,182 @@ pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
     if always && !shown.is_empty() {
         note(ui, t, &format!("{TIP_TAG}. × {TIP_DELETE}."), t.faint);
     }
+}
+
+fn empty_note(all: &[TagRow], shown: &[TagRow], search: &str, ui: &mut egui::Ui, t: &Theme) {
     if all.is_empty() {
         note(ui, t, "No tag in the database yet. Create one with “+ New tag”.", t.faint);
     } else if shown.is_empty() {
-        note(ui, t, &format!("No tag matches “{}”.", tab.grid.search), t.faint);
+        note(ui, t, &format!("No tag matches “{search}”."), t.faint);
     }
-    ui.add_space(TAG_ROW_GAP - TAG_ITEM_GAP);
+}
 
-    // Foot: create, reload, auto-tag on export.
+fn tag_tile(ui: &mut egui::Ui, t: &Theme, width: f32, tag: &TagRow, on: bool, acts: &mut Vec<Act>) {
+    let c = tag_color(t, &tag.color);
+    let (rect, _) = ui.allocate_exact_size(vec2(width, TAG_TILE_H), Sense::hover());
+    let del_w = TAG_TILE_PAD * 2.0 + FONT_SMALL;
+    let face = egui::Rect::from_min_max(rect.min, pos2(rect.right() - del_w, rect.bottom()));
+    let del_r = egui::Rect::from_min_max(pos2(face.right(), rect.top()), rect.max);
+    let toggle = ui.interact(face, ui.scope_id().with(("ttile", &tag.name)), Sense::click());
+    let delete = ui.interact(del_r, ui.scope_id().with(("ttile-del", &tag.name)), Sense::click());
+    toggle.widget_info(|| egui::WidgetInfo::selected(egui::Role::CheckBox, true, on, format!("tag-{}", tag.name)));
+    delete.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, format!("delete-tag-{}", tag.name)));
+    let p = ui.painter();
+    let fill = if on { mix(c, t.solid, TAG_TILE_TINT_PCT) } else { t.solid };
+    let edge = if on { fade(c, TAG_TILE_EDGE_PCT) } else if toggle.hovered() { t.accent } else { t.hair };
+    p.rect(rect, TAG_TILE_RADIUS, fill, Stroke::new(if on { 2.0 } else { 1.0 }, edge), StrokeKind::Inside);
+    p.circle_filled(pos2(rect.left() + TAG_TILE_PAD + TAG_DOT_SIZE / 2.0, rect.center().y), TAG_DOT_SIZE / 2.0, c);
+    p.text(pos2(rect.left() + TAG_TILE_PAD * 2.0 + TAG_DOT_SIZE, rect.center().y), Align2::LEFT_CENTER, &tag.name, semibold(FONT_BODY), t.txt);
+    if on {
+        p.text(pos2(del_r.left() - 2.0, rect.center().y), Align2::RIGHT_CENTER, "✓", semibold(FONT_SMALL), c);
+    }
+    p.text(del_r.center(), Align2::CENTER_CENTER, "×", semibold(FONT_BODY), if delete.hovered() { t.rose } else { t.muted });
+    if toggle.on_hover_text(TIP_TAG).clicked() {
+        acts.push(Act::Toggle(tag.id.clone()));
+    }
+    if delete.on_hover_text(TIP_DELETE).clicked() {
+        acts.push(Act::AskDelete(tag.id.clone(), tag.name.clone()));
+    }
+}
+
+pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
+    let t = cx.theme;
+    let all = tags(cx);
+    let active = active_ids(cx);
+    let always = cx.always_tips;
     let auto = cx.link.get("tag_enabled") == Some(&Value::Bool(true));
-    ui.horizontal_wrapped(|ui| {
-        let r = chip(ui, t, "+ New tag", tab.grid.form_open.then_some(true), Some("New tag"), true);
-        if tip(ui, t, r, TIP_CREATE, false).clicked() {
-            acts.push(Act::Form);
+    let mut acts = Vec::new();
+    ui.spacing_mut().item_spacing = Vec2::splat(TAG_ITEM_GAP);
+
+    match style_of(cx, "tag-grid") {
+        CardStyle::Timeline => {
+            let tray = egui::Frame::new()
+                .fill(mix(t.accent, t.solid, TAG_TRAY_TINT_PCT))
+                .corner_radius(TAG_TRAY_RADIUS)
+                .inner_margin(Margin::symmetric(TAG_TRAY_PAD[0] as i8, TAG_TRAY_PAD[1] as i8))
+                .show(ui, |ui| {
+                    ui.set_min_height(TAG_TRAY_MIN_H - TAG_TRAY_PAD[1] * 2.0);
+                    ui.set_width(ui.available_width());
+                    ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), 0.0), Layout::right_to_left(Align::Center), |ui| {
+                        let r = chip(ui, t, "Deselect all", None, None, true);
+                        if tip(ui, t, r, TIP_DESELECT, false).clicked() {
+                            acts.push(Act::Deselect);
+                        }
+                        ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), 0.0), Layout::left_to_right(Align::Center).with_main_wrap(true), |ui| {
+                            kicker(ui, t, "In use");
+                            let in_use: Vec<_> = all.iter().filter(|x| active.contains(&x.id)).collect();
+                            if in_use.is_empty() {
+                                note(ui, t, "No tag selected -- click a tag below to use it", t.faint);
+                            }
+                            for tag in in_use {
+                                if tray_pill(ui, t, tag).on_hover_text(TIP_PILL).clicked() {
+                                    acts.push(Act::Toggle(tag.id.clone()));
+                                }
+                            }
+                        });
+                    });
+                });
+            dashed_border(ui, tray.response.rect, fade(t.accent, TAG_TRAY_EDGE_PCT));
+            if always {
+                note(ui, t, TIP_DESELECT, t.faint);
+            }
+            ui.add_space(TAG_ROW_GAP - TAG_ITEM_GAP);
+            toolbar(tab, ui, t, always);
+            let shown = visible(&all, &tab.grid.search, tab.grid.sort, &active);
+            palette(&shown, &active, ui, t, always, &mut acts);
+            empty_note(&all, &shown, &tab.grid.search, ui, t);
+            ui.add_space(TAG_ROW_GAP - TAG_ITEM_GAP);
+            ui.horizontal_wrapped(|ui| {
+                let r = chip(ui, t, "+ New tag", tab.grid.form_open.then_some(true), Some("New tag"), true);
+                if tip(ui, t, r, TIP_CREATE, false).clicked() {
+                    acts.push(Act::Form);
+                }
+                let r = chip(ui, t, "Reload", None, None, true);
+                if tip(ui, t, r, TIP_RELOAD, false).clicked() {
+                    acts.push(Act::Reload);
+                }
+                separator(ui, t, SEP_H);
+                let r = switch(ui, t, "Auto-tag on export", auto);
+                if tip(ui, t, r, TIP_AUTO_TAG, false).clicked() {
+                    acts.push(Act::AutoTag(!auto));
+                }
+            });
+            if always {
+                note(ui, t, &format!("{TIP_CREATE}. {TIP_RELOAD}. {TIP_AUTO_TAG}."), t.faint);
+            }
         }
-        let r = chip(ui, t, "Reload", None, None, true);
-        if tip(ui, t, r, TIP_RELOAD, false).clicked() {
-            acts.push(Act::Reload);
+        CardStyle::Sentence => {
+            let active_names = super::names_of(&all, &active);
+            prose_line(ui, |ui| {
+                prose_word(ui, t, "Work with");
+                choice_token(ui, t, "active-tags", &selection_words(&active_names), "Active tags", false, TIP_TAG, true, |ui, _| {
+                    ui.label(egui::RichText::new("Tags in use").font(semibold(FONT_SMALL)).color(t.muted));
+                    toolbar(tab, ui, t, false);
+                    let shown = visible(&all, &tab.grid.search, tab.grid.sort, &active);
+                    palette(&shown, &active, ui, t, false, &mut acts);
+                    empty_note(&all, &shown, &tab.grid.search, ui, t);
+                    if chip(ui, t, "Deselect all", None, None, true).on_hover_text(TIP_DESELECT).clicked() {
+                        acts.push(Act::Deselect);
+                    }
+                });
+                prose_word(ui, t, &format!("({} of {} tags).", active_names.len(), all.len()));
+            });
+            prose_line(ui, |ui| {
+                prose_word(ui, t, "When clips are exported,");
+                choice_token(ui, t, "tag_enabled", if auto { "tag their demos" } else { "leave demos as they are" }, "Auto-tag on export", true, TIP_AUTO_TAG, false, |ui, close| {
+                    ui.label(egui::RichText::new("Auto-tag on export").font(semibold(FONT_SMALL)).color(t.muted));
+                    if let Some(v) = word_options(ui, t, &[("on", "tag their demos", "the tags in use are added to each exported demo"), ("off", "leave demos as they are", "exporting never changes a demo's tags")], if auto { "on" } else { "off" }) {
+                        acts.push(Act::AutoTag(v == "on"));
+                        *close = true;
+                    }
+                });
+                prose_word(ui, t, ".");
+            });
+            ui.horizontal_wrapped(|ui| {
+                if action_word(ui, t, "+ New tag", "New tag", false, false, TIP_CREATE, true) {
+                    acts.push(Act::Form);
+                }
+                if action_word(ui, t, "Reload from the database", "Reload", false, false, TIP_RELOAD, true) {
+                    acts.push(Act::Reload);
+                }
+            });
         }
-        separator(ui, t, SEP_H);
-        let r = switch(ui, t, "Auto-tag on export", auto);
-        if tip(ui, t, r, TIP_AUTO_TAG, false).clicked() {
-            acts.push(Act::AutoTag(!auto));
+        CardStyle::Tiles => {
+            toolbar(tab, ui, t, always);
+            let shown = visible(&all, &tab.grid.search, tab.grid.sort, &active);
+            tile_grid(ui, TAG_TILE_MIN_W, shown.len() + 1, |ui, idx, w| {
+                if idx < shown.len() {
+                    let tag = &shown[idx];
+                    tag_tile(ui, t, w, tag, active.contains(&tag.id), &mut acts);
+                } else {
+                    let (rect, resp) = ui.allocate_exact_size(vec2(w, TAG_TILE_H), Sense::click());
+                    resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, true, tab.grid.form_open, "New tag"));
+                    let p = ui.painter();
+                    let edge = if tab.grid.form_open || resp.hovered() { t.accent } else { t.hair };
+                    p.rect(rect, TAG_TILE_RADIUS, t.surface2, Stroke::new(1.0, edge), StrokeKind::Inside);
+                    paint_glyph(p, egui::Rect::from_center_size(pos2(rect.left() + TAG_TILE_PAD * 2.0, rect.center().y), Vec2::splat(FONT_BODY)), TileGlyph::Plus, t.accent);
+                    p.text(pos2(rect.left() + TAG_TILE_PAD * NEW_TAG_PAD_MUL + FONT_BODY, rect.center().y), Align2::LEFT_CENTER, "New tag", semibold(FONT_BODY), t.txt);
+                    if resp.on_hover_text(TIP_CREATE).clicked() {
+                        acts.push(Act::Form);
+                    }
+                }
+            });
+            empty_note(&all, &shown, &tab.grid.search, ui, t);
+            ui.add_space(TAG_ROW_GAP - TAG_ITEM_GAP);
+            ui.horizontal_wrapped(|ui| {
+                let r = switch(ui, t, "Auto-tag on export", auto);
+                if tip(ui, t, r, TIP_AUTO_TAG, false).clicked() {
+                    acts.push(Act::AutoTag(!auto));
+                }
+                separator(ui, t, SEP_H);
+                if chip(ui, t, "Deselect all", None, None, true).on_hover_text(TIP_DESELECT).clicked() {
+                    acts.push(Act::Deselect);
+                }
+                if chip(ui, t, "Reload", None, None, true).on_hover_text(TIP_RELOAD).clicked() {
+                    acts.push(Act::Reload);
+                }
+            });
         }
-    });
-    if always {
-        note(ui, t, &format!("{TIP_CREATE}. {TIP_RELOAD}. {TIP_AUTO_TAG}."), t.faint);
     }
 
     if tab.grid.form_open {

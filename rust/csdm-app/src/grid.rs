@@ -104,7 +104,8 @@ struct Drag {
 #[derive(Default)]
 pub struct GridState {
     drag: Option<Drag>,
-    measured: HashMap<String, i32>,
+    /// Measured row heights from the last frame (tests verify no card is truncated).
+    pub measured: HashMap<String, i32>,
     /// Items as drawn last frame (tests read them).
     pub drawn: Vec<(String, Item)>,
 }
