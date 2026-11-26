@@ -5,6 +5,7 @@
 //! Every control writes one setting through `Link`; the only engine question is `describe_filters`,
 //! for the tables the cards offer (resolutions, frame rates, codecs: never copied here).
 
+mod art;
 mod cards;
 pub mod kit;
 

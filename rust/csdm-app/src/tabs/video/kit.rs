@@ -4,14 +4,17 @@
 
 use crate::grid::CardCx;
 use crate::paint::{mono, regular};
-use crate::tabs::settings::controls::{num_of, stored_number, text_of};
+use crate::tabs::settings::controls::{num_of, text_of};
 use crate::theme::Theme;
-use crate::widgets::{chip, tip};
+use crate::widgets::tip;
 use csdm_core::ui_values::{FONT_BODY, FONT_SMALL, SETTINGS_FIELD_WIDTH, SETTINGS_LABEL_WIDTH};
 use eframe::egui;
 use serde_json::json;
 
 pub use crate::controls::{mark, seen_id, Seen};
+
+const TEXT_MIN_W: f32 = 80.0;
+const TEXT_FRAME_ALLOWANCE: f32 = 14.0;
 
 /// The key's default from the settings table: the value shown while it is unset or not a number.
 pub fn fallback(key: &str) -> f64 {
@@ -25,25 +28,6 @@ pub fn num(cx: &CardCx, key: &str) -> f64 {
 /// A number as 3.5 wrote it: `1920`, `0.5`.
 pub fn shown(v: f64) -> String {
     format!("{v}")
-}
-
-/// The shortcut values beside a number (3.5 `QuickChips`, the CS2 Effects ruler): one chip each,
-/// the current value lit.
-pub fn quick(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, values: &[f64], decimals: i32) {
-    let current = num(cx, key);
-    let mut picked = None;
-    ui.horizontal_wrapped(|ui| {
-        ui.add_space(SETTINGS_LABEL_WIDTH + ui.spacing().item_spacing.x);
-        for &q in values {
-            let r = chip(ui, cx.theme, &shown(q), Some(q == current), Some(&format!("{name} {}", shown(q))), true);
-            if r.on_hover_text(format!("Set {name} to {}", shown(q))).clicked() {
-                picked = Some(q);
-            }
-        }
-    });
-    if let Some(q) = picked {
-        cx.link.set(cx.now, key, stored_number(q, decimals));
-    }
 }
 
 /// A codec list (3.5 `CodecSelect`): the table's codecs, and the stored one first when the table
@@ -78,17 +62,27 @@ pub fn codec(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, table: &
     }
 }
 
-/// A short readout beside a value: the words a number means ("visually lossless").
-pub fn note(ui: &mut egui::Ui, t: &Theme, text: &str) {
-    ui.label(egui::RichText::new(text).font(regular(FONT_SMALL)).color(t.faint));
+/// Single-line text setting bounded to the card's remaining width so it never stretches a narrow card.
+pub fn text_row(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, hint_text: &str, tip_text: &str) {
+    let mut value = text_of(cx, key);
+    let mut changed = false;
+    ui.horizontal(|ui| {
+        let l = ui.add_sized(
+            [SETTINGS_LABEL_WIDTH, ui.spacing().interact_size.y],
+            egui::Label::new(egui::RichText::new(name).font(regular(FONT_BODY)).color(cx.theme.muted)).truncate(),
+        );
+        let w = SETTINGS_FIELD_WIDTH.min((ui.available_width() - TEXT_FRAME_ALLOWANCE).max(TEXT_MIN_W));
+        let r = ui.add(egui::TextEdit::singleline(&mut value).font(mono(FONT_SMALL)).hint_text(hint_text).desired_width(w)).labelled_by(l.id);
+        changed = r.changed();
+        tip(ui, cx.theme, r, tip_text, false);
+    });
+    mark(ui, key);
+    if changed {
+        cx.link.set(cx.now, key, json!(value));
+    }
 }
 
 /// `.vk-warn`: a setting that does nothing as things stand.
 pub fn warn(ui: &mut egui::Ui, t: &Theme, text: &str) {
     ui.label(egui::RichText::new(text).font(regular(FONT_SMALL)).color(t.amber));
-}
-
-/// Monospace words (a console command, the FFmpeg line).
-pub fn code(ui: &mut egui::Ui, t: &Theme, text: &str) {
-    ui.add(egui::Label::new(egui::RichText::new(text).font(mono(FONT_SMALL)).color(t.muted)).wrap());
 }
