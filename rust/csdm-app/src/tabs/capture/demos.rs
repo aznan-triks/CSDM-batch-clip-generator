@@ -4,13 +4,17 @@
 use super::kit::{button, hint, kick, lab, mark, text};
 use super::model::{active_shortcut, fmt_day, parse_day, shortcut_range, shortcuts, strip_start, strip_ticks};
 use super::{CaptureTab, DemoRow};
+use crate::cardstyle::{action_word, choice_token, icon_tile, paint_glyph, prose_line, prose_word, style_of, text_word, tile_grid, TileGlyph};
 use crate::grid::CardCx;
 use crate::paint::{mono, regular, semibold};
 use crate::theme::Theme;
+use crate::widgets::chip;
 use chrono::{Datelike, Duration, NaiveDate};
-use csdm_core::ui_values::{DEMO_STRIP_INSET, DEMO_STRIP_LABEL_GAP, DEMO_STRIP_PAGE_DAYS};
+use csdm_core::ui_values::{CardStyle, DEMO_STRIP_INSET, DEMO_STRIP_LABEL_GAP, DEMO_STRIP_PAGE_DAYS};
 use eframe::egui::{self, pos2, vec2, Rect, Sense, Stroke, StrokeKind};
 use serde_json::json;
+
+const SHORTCUT_TILE_MIN_W: f32 = 120.0;
 
 const TIP_FROM: &str = "Filter demos played on or after this date (dd-mm-yyyy)";
 const TIP_TO: &str = "Filter demos played on or before this date (dd-mm-yyyy)";
@@ -64,63 +68,178 @@ pub fn card(tab: &mut CaptureTab, ui: &mut egui::Ui, cx: &mut CardCx) -> Option<
     let mut changes: Option<(String, String)> = None;
     mark(ui, "date_from");
     mark(ui, "date_to");
-
-    ui.horizontal(|ui| {
-        kick(ui, t, "Played between");
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if button(ui, t, "Clear all", "Clear all", TIP_CLEAR, true) {
-                changes = Some((String::new(), String::new()));
-                reset_picker(tab);
-            }
-        });
-    });
-    if let Some(r) = strip(tab, ui, t, &from, &to, today) {
-        changes = Some(r);
-    }
+    let list_shortcuts: Vec<_> = shortcuts().collect();
     let active = active_shortcut(&from, &to, today);
-    ui.horizontal_wrapped(|ui| {
-        for s in shortcuts() {
-            let on = active == Some(s.label);
-            let r = crate::widgets::chip(ui, t, s.label, Some(on), Some(s.label), true).on_hover_text(s.title);
-            if r.clicked() {
-                changes = Some(shortcut_range(&s, today));
-                if s.kind == "all" {
+
+    let date_row = |ui: &mut egui::Ui, changes: &mut Option<(String, String)>| {
+        let single_field_w = DATE_W + ROW_H * 2.0;
+        let fits_one_row = ui.available_width() >= single_field_w * 2.0 + DATE_W;
+        if fits_one_row {
+            ui.horizontal(|ui| {
+                if let Some(v) = date_field(ui, t, "From", &from, TIP_FROM, today) {
+                    *changes = Some((v, changes.as_ref().map_or(to.clone(), |c| c.1.clone())));
+                }
+                ui.add_space(RADIUS);
+                if let Some(v) = date_field(ui, t, "To", &to, TIP_TO, today) {
+                    *changes = Some((changes.as_ref().map_or(from.clone(), |c| c.0.clone()), v));
+                }
+                if button(ui, t, "Today", "Today", TIP_TODAY, true) {
+                    *changes = Some((from.clone(), fmt_day(today)));
+                }
+            });
+        } else {
+            ui.horizontal(|ui| {
+                if let Some(v) = date_field(ui, t, "From", &from, TIP_FROM, today) {
+                    *changes = Some((v, changes.as_ref().map_or(to.clone(), |c| c.1.clone())));
+                }
+            });
+            ui.horizontal(|ui| {
+                if let Some(v) = date_field(ui, t, "To", &to, TIP_TO, today) {
+                    *changes = Some((changes.as_ref().map_or(from.clone(), |c| c.0.clone()), v));
+                }
+                if button(ui, t, "Today", "Today", TIP_TODAY, true) {
+                    *changes = Some((from.clone(), fmt_day(today)));
+                }
+            });
+        }
+    };
+
+    match style_of(cx, "demo-selection") {
+        CardStyle::Timeline => {
+            ui.horizontal(|ui| {
+                kick(ui, t, "Played between");
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if button(ui, t, "Clear all", "Clear all", TIP_CLEAR, true) {
+                        changes = Some((String::new(), String::new()));
+                        reset_picker(tab);
+                    }
+                });
+            });
+            if let Some(r) = strip(tab, ui, t, &from, &to, today) {
+                changes = Some(r);
+            }
+            ui.horizontal_wrapped(|ui| {
+                for s in &list_shortcuts {
+                    let on = active == Some(s.label);
+                    let r = chip(ui, t, s.label, Some(on), Some(s.label), true).on_hover_text(s.title);
+                    if r.clicked() {
+                        changes = Some(shortcut_range(s, today));
+                        if s.kind == "all" {
+                            reset_picker(tab);
+                        }
+                    }
+                }
+            });
+            date_row(ui, &mut changes);
+            ui.horizontal_wrapped(|ui| {
+                lab(ui, t, "Demo selection:");
+                let label = "Manual mode (load ALL demos from DB)";
+                if chip(ui, t, label, Some(tab.demos.manual), Some(label), true).on_hover_text(TIP_MANUAL).clicked() {
+                    tab.demos.manual = !tab.demos.manual;
+                    if tab.demos.manual {
+                        tab.load_demos(cx);
+                    }
+                }
+                if let Some(e) = &tab.demos.error {
+                    ui.label(egui::RichText::new(e).font(regular(FONT_ROW)).color(t.rose));
+                }
+            });
+            picker(tab, ui, t);
+        }
+        CardStyle::Sentence => {
+            let range_words = active
+                .and_then(|lbl| list_shortcuts.iter().find(|s| s.label == lbl))
+                .map(|s| s.words.to_string())
+                .unwrap_or_else(|| if from.is_empty() && to.is_empty() { "at any time".to_string() } else { format!("between {} and {}", if from.is_empty() { "any" } else { &from }, if to.is_empty() { "today" } else { &to }) });
+            prose_line(ui, |ui| {
+                prose_word(ui, t, "Use the demos played");
+                choice_token(ui, t, "ds-range", &range_words, "Date range", false, TIP_FROM, true, |ui, close| {
+                    ui.horizontal_wrapped(|ui| {
+                        for s in &list_shortcuts {
+                            let on = active == Some(s.label);
+                            if chip(ui, t, s.label, Some(on), Some(s.label), true).on_hover_text(s.title).clicked() {
+                                changes = Some(shortcut_range(s, today));
+                                if s.kind == "all" {
+                                    reset_picker(tab);
+                                }
+                                *close = true;
+                            }
+                        }
+                    });
+                });
+                prose_word(ui, t, "— from");
+                text_word(ui, cx, "date_from", "From date", "any date", false, false, false, TIP_FROM);
+                prose_word(ui, t, "to");
+                text_word(ui, cx, "date_to", "To date", "today", false, false, false, TIP_TO);
+                if action_word(ui, t, "Today", "Today", false, false, TIP_TODAY, true) {
+                    changes = Some((from.clone(), fmt_day(today)));
+                }
+                prose_word(ui, t, "· picked");
+                if action_word(
+                    ui,
+                    t,
+                    "Manual mode (load ALL demos from DB)",
+                    if tab.demos.manual { "by hand (manual mode)" } else { "from that date range" },
+                    false,
+                    tab.demos.manual,
+                    TIP_MANUAL,
+                    true,
+                ) {
+                    tab.demos.manual = !tab.demos.manual;
+                    if tab.demos.manual {
+                        tab.load_demos(cx);
+                    }
+                }
+                prose_word(ui, t, "·");
+                if action_word(ui, t, "Clear all", "Clear all", false, false, TIP_CLEAR, true) {
+                    changes = Some((String::new(), String::new()));
                     reset_picker(tab);
                 }
+                prose_word(ui, t, ".");
+            });
+            if let Some(e) = &tab.demos.error {
+                ui.label(egui::RichText::new(e).font(regular(FONT_ROW)).color(t.rose));
+            }
+            if tab.demos.manual || tab.demos.rows.is_some() {
+                picker(tab, ui, t);
             }
         }
-    });
-    // Each label stays with its box (3.5.1 `DateField`): if From + To + Today exceed the row,
-    // put From on its own row so "To" never breaks away from its input.
-    let single_field_w = DATE_W + ROW_H * 2.0;
-    let fits_one_row = ui.available_width() >= single_field_w * 2.0 + DATE_W;
-    if fits_one_row {
-        ui.horizontal(|ui| {
-            if let Some(v) = date_field(ui, t, "From", &from, TIP_FROM, today) {
-                changes = Some((v, changes.as_ref().map_or(to.clone(), |c| c.1.clone())));
+        CardStyle::Tiles => {
+            ui.horizontal(|ui| {
+                kick(ui, t, "Quick ranges");
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if button(ui, t, "Clear all", "Clear all", TIP_CLEAR, true) {
+                        changes = Some((String::new(), String::new()));
+                        reset_picker(tab);
+                    }
+                });
+            });
+            tile_grid(ui, SHORTCUT_TILE_MIN_W, list_shortcuts.len(), |ui, idx, w| {
+                let s = &list_shortcuts[idx];
+                let on = active == Some(s.label);
+                if icon_tile(ui, t, w, crate::cardstyle::ICON_TILE_H, s.label, s.words, None, on, false, false, s.title, |p, r, c| paint_glyph(p, r, TileGlyph::Icon("demoSelection"), c)).clicked() {
+                    changes = Some(shortcut_range(s, today));
+                    if s.kind == "all" {
+                        reset_picker(tab);
+                    }
+                }
+            });
+            ui.add_space(POP_GAP);
+            date_row(ui, &mut changes);
+            ui.add_space(POP_GAP);
+            let manual_cap = if tab.demos.manual { "Loaded all demos from database" } else { "Click to load ALL demos and pick rows manually" };
+            let label = "Manual mode (load ALL demos from DB)";
+            if icon_tile(ui, t, ui.available_width(), crate::cardstyle::ICON_TILE_H, label, manual_cap, None, tab.demos.manual, false, false, TIP_MANUAL, |p, r, c| paint_glyph(p, r, TileGlyph::CheckList, c)).clicked() {
+                tab.demos.manual = !tab.demos.manual;
+                if tab.demos.manual {
+                    tab.load_demos(cx);
+                }
             }
-            ui.add_space(RADIUS);
-            if let Some(v) = date_field(ui, t, "To", &to, TIP_TO, today) {
-                changes = Some((changes.as_ref().map_or(from.clone(), |c| c.0.clone()), v));
+            if let Some(e) = &tab.demos.error {
+                ui.label(egui::RichText::new(e).font(regular(FONT_ROW)).color(t.rose));
             }
-            if button(ui, t, "Today", "Today", TIP_TODAY, true) {
-                changes = Some((from.clone(), fmt_day(today)));
-            }
-        });
-    } else {
-        ui.horizontal(|ui| {
-            if let Some(v) = date_field(ui, t, "From", &from, TIP_FROM, today) {
-                changes = Some((v, changes.as_ref().map_or(to.clone(), |c| c.1.clone())));
-            }
-        });
-        ui.horizontal(|ui| {
-            if let Some(v) = date_field(ui, t, "To", &to, TIP_TO, today) {
-                changes = Some((changes.as_ref().map_or(from.clone(), |c| c.0.clone()), v));
-            }
-            if button(ui, t, "Today", "Today", TIP_TODAY, true) {
-                changes = Some((from.clone(), fmt_day(today)));
-            }
-        });
+            picker(tab, ui, t);
+        }
     }
     if let Some((f, tt)) = changes {
         if f != from {
@@ -130,20 +249,6 @@ pub fn card(tab: &mut CaptureTab, ui: &mut egui::Ui, cx: &mut CardCx) -> Option<
             cx.link.set(cx.now, "date_to", json!(tt));
         }
     }
-    ui.horizontal_wrapped(|ui| {
-        lab(ui, t, "Demo selection:");
-        let label = "Manual mode (load ALL demos from DB)";
-        if crate::widgets::chip(ui, t, label, Some(tab.demos.manual), Some(label), true).on_hover_text(TIP_MANUAL).clicked() {
-            tab.demos.manual = !tab.demos.manual;
-            if tab.demos.manual {
-                tab.load_demos(cx);
-            }
-        }
-        if let Some(e) = &tab.demos.error {
-            ui.label(egui::RichText::new(e).font(regular(FONT_ROW)).color(t.rose));
-        }
-    });
-    picker(tab, ui, t);
     None
 }
 

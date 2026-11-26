@@ -6,10 +6,12 @@
 use super::kit::{as_text, button, default_of, flag, framed, hint, lab, mark, number_field, seg, text};
 use super::model::{filter_rows, toggle_changes, Cell, FilterRow};
 use super::CaptureTab;
+use crate::cardstyle::{action_word, bool_word, choice_token, choice_word, prose_line, prose_muted, prose_word, style_of, tile_grid};
 use crate::grid::CardCx;
 use crate::paint::{regular, semibold};
 use crate::theme::Theme;
-use csdm_core::ui_values::{CLUTCH_RUNG_HEIGHT, CLUTCH_SIZES, KILL_COUNT_OPTIONS};
+use crate::widgets::chip;
+use csdm_core::ui_values::{CardStyle, CLUTCH_RUNG_HEIGHT, CLUTCH_SIZES, KILL_COUNT_OPTIONS};
 use eframe::egui::{self, pos2, vec2, Rect, Sense, Stroke, StrokeKind};
 use serde_json::{json, Value};
 
@@ -45,6 +47,11 @@ const ROW_TINT: f32 = 0.08;
 const HEAD_SPACING: f32 = 0.12;
 const CELLS: f32 = 3.0;
 const TAG_PAD: [f32; 2] = [4.0, 2.0];
+const FILTER_TILE_MIN_W: f32 = 220.0;
+const FILTER_TILE_H: f32 = 66.0;
+const TILE_RADIUS: f32 = 12.0;
+const TILE_PAD: f32 = 10.0;
+const MINI_BTN: [f32; 2] = [26.0, 22.0];
 
 /// One row's three cells, keyed by the row; returns the changes a click asked for.
 fn matrix(ui: &mut egui::Ui, cx: &mut CardCx, heading: &str, rows: &[FilterRow], extras: &dyn Fn(&FilterRow, &CardCx) -> Vec<Extra>) {
@@ -237,6 +244,146 @@ fn choice(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, label: &str, options: &
     }
 }
 
+fn mark_rows(ui: &mut egui::Ui, cx: &CardCx, rows: &[FilterRow], extras: &dyn Fn(&FilterRow, &CardCx) -> Vec<Extra>) {
+    for row in rows {
+        mark(ui, &row.key);
+        mark(ui, &row.must_key());
+        if row.exclude {
+            mark(ui, &row.exclude_key());
+        }
+        for e in extras(row, cx) {
+            match e {
+                Extra::Number { key, .. } | Extra::Choice { key, .. } | Extra::Toggle { key, .. } => mark(ui, &key),
+            }
+        }
+    }
+}
+
+fn draw_row_cells_and_extras(ui: &mut egui::Ui, cx: &mut CardCx, row: &FilterRow, extras: &dyn Fn(&FilterRow, &CardCx) -> Vec<Extra>) {
+    let t = cx.theme;
+    let enabled = flag(cx, &row.key, false);
+    let required = flag(cx, &row.must_key(), false);
+    let excluded = row.exclude && flag(cx, &row.exclude_key(), false);
+    ui.horizontal_wrapped(|ui| {
+        for (cell, on, word, key) in [
+            (Cell::Keep, enabled, "✓ Keep", row.key.clone()),
+            (Cell::Must, required, "★ Must", row.must_key()),
+            (Cell::Drop, excluded, "✕ Exclude", row.exclude_key()),
+        ] {
+            if cell == Cell::Drop && !row.exclude {
+                continue;
+            }
+            mark(ui, &key);
+            let label = match cell {
+                Cell::Keep => format!("Enable {}", row.name),
+                Cell::Must => format!("Must {}", row.name),
+                Cell::Drop => format!("Exclude {}", row.name),
+            };
+            let tip = match cell {
+                Cell::Keep => if row.tip.is_empty() { format!("Enable {} filter", row.name) } else { row.tip.clone() },
+                Cell::Must => format!("Require {}: every captured clip must match this filter", row.name),
+                Cell::Drop => format!("Exclude {}: remove clips matching this filter from results", row.name),
+            };
+            if chip(ui, t, word, Some(on), Some(&label), true).on_hover_text(tip).clicked() {
+                for (k, v) in toggle_changes(row, cell, enabled, required, excluded) {
+                    cx.link.set(cx.now, &k, json!(v));
+                }
+            }
+        }
+    });
+    for e in extras(row, cx) {
+        ui.horizontal_wrapped(|ui| e.draw(ui, cx));
+    }
+}
+
+fn filter_clause(ui: &mut egui::Ui, cx: &mut CardCx, id_prefix: &str, empty_words: &str, add_label: &str, rows: &[FilterRow], extras: &dyn Fn(&FilterRow, &CardCx) -> Vec<Extra>) {
+    let t = cx.theme;
+    mark_rows(ui, cx, rows, extras);
+    let active: Vec<&FilterRow> = rows.iter().filter(|r| flag(cx, &r.key, false) || (r.exclude && flag(cx, &r.exclude_key(), false))).collect();
+    if active.is_empty() {
+        prose_muted(ui, t, empty_words);
+    } else {
+        for (idx, row) in active.iter().enumerate() {
+            if idx > 0 {
+                prose_word(ui, t, ",");
+            }
+            let excluded = row.exclude && flag(cx, &row.exclude_key(), false);
+            let required = flag(cx, &row.must_key(), false);
+            let shown = if excluded {
+                format!("not {} {}", row.glyph, row.name)
+            } else if required {
+                format!("★ {} {}", row.glyph, row.name)
+            } else {
+                format!("{} {}", row.glyph, row.name)
+            };
+            choice_token(ui, t, &row.key, &shown, &row.name, excluded, &row.full_tip(), true, |ui, _| {
+                draw_row_cells_and_extras(ui, cx, row, extras);
+            });
+        }
+    }
+    choice_token(ui, t, id_prefix, add_label, add_label, false, "Pick filters to enable, require, or exclude", true, |ui, _| {
+        egui::ScrollArea::vertical().max_height(FILTER_TILE_H * CELLS).show(ui, |ui| {
+            for row in rows {
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new(format!("{} {}", row.glyph, row.name)).font(semibold(FONT_NAME)).color(t.txt));
+                });
+                draw_row_cells_and_extras(ui, cx, row, extras);
+                ui.add_space(CELL_GAP);
+            }
+        });
+    });
+}
+
+fn filter_tiles(ui: &mut egui::Ui, cx: &mut CardCx, heading: &str, rows: &[FilterRow], extras: &dyn Fn(&FilterRow, &CardCx) -> Vec<Extra>) {
+    let t = cx.theme;
+    if rows.is_empty() {
+        return;
+    }
+    if !heading.is_empty() {
+        ui.add_space(CELL_GAP);
+        ui.label(egui::RichText::new(heading.to_uppercase()).font(semibold(FONT_HEAD)).color(t.accent));
+    }
+    tile_grid(ui, FILTER_TILE_MIN_W, rows.len(), |ui, idx, w| {
+        let row = &rows[idx];
+        let enabled = flag(cx, &row.key, false);
+        let required = flag(cx, &row.must_key(), false);
+        let excluded = row.exclude && flag(cx, &row.exclude_key(), false);
+        let fill = if enabled { t.lime.gamma_multiply(ROW_TINT * 2.0) } else if excluded { t.rose.gamma_multiply(ROW_TINT) } else { t.solid };
+        let edge = if required { t.amber } else if enabled { t.lime_glow } else if excluded { t.rose } else { t.hair };
+        egui::Frame::new().fill(fill).stroke(Stroke::new(1.0, edge)).corner_radius(egui::CornerRadius::same(TILE_RADIUS as u8)).inner_margin(egui::Margin::same(TILE_PAD as i8)).show(ui, |ui| {
+            ui.set_width((w - TILE_PAD * 2.0).max(MINI_BTN[0]));
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(format!("{} {}", row.glyph, row.name)).font(semibold(FONT_NAME)).color(t.txt)).on_hover_text(row.full_tip());
+                if !row.untested.is_empty() {
+                    ui.label(egui::RichText::new("UNTESTED").font(semibold(FONT_TAG)).color(t.amber)).on_hover_text(&row.untested);
+                }
+            });
+            ui.horizontal_wrapped(|ui| {
+                for (cell, on, glyph, word, key) in [
+                    (Cell::Keep, enabled, "✓", "Enable", row.key.clone()),
+                    (Cell::Must, required, "★", "Must", row.must_key()),
+                    (Cell::Drop, excluded, "✕", "Exclude", row.exclude_key()),
+                ] {
+                    if cell == Cell::Drop && !row.exclude {
+                        continue;
+                    }
+                    mark(ui, &key);
+                    let name = format!("{word} {}", row.name);
+                    let r = chip(ui, t, glyph, Some(on), Some(&name), true).on_hover_text(&name);
+                    if r.clicked() {
+                        for (k, v) in toggle_changes(row, cell, enabled, required, excluded) {
+                            cx.link.set(cx.now, &k, json!(v));
+                        }
+                    }
+                }
+            });
+            for e in extras(row, cx) {
+                ui.horizontal_wrapped(|ui| e.draw(ui, cx));
+            }
+        });
+    });
+}
+
 /// Kill Filters: suicides, headshots, the three registry groups, Clear, the clutch ladder.
 pub fn kill(tab: &mut CaptureTab, ui: &mut egui::Ui, cx: &mut CardCx) -> Option<String> {
     let t = cx.theme;
@@ -245,28 +392,85 @@ pub fn kill(tab: &mut CaptureTab, ui: &mut egui::Ui, cx: &mut CardCx) -> Option<
         return None;
     };
     let rows: Vec<FilterRow> = filter_rows(tables).into_iter().filter(|r| r.judges("kill")).collect();
-    ui.horizontal_wrapped(|ui| {
-        choice(ui, cx, "suicides_mode", "Suicides", &SUICIDE_MODES, false, TIP_SUICIDES);
-        // A one-tap kill is already a headshot constraint: the choice is greyed, not hidden.
-        let hs_off = flag(cx, "kill_mod_one_tap", false) || flag(cx, "kill_mod_trois_tap", false);
-        choice(ui, cx, "headshots_mode", "Headshots", &HEADSHOT_MODES, hs_off, TIP_HEADSHOTS);
-        if button(ui, t, "Clear", "Clear", TIP_CLEAR, true) {
-            // Only this card's rows: Clear must not reach the Damage / Shot cards.
-            for r in &rows {
-                cx.link.set(cx.now, &r.key, json!(false));
-                cx.link.set(cx.now, &r.must_key(), json!(false));
+    let hs_off = flag(cx, "kill_mod_one_tap", false) || flag(cx, "kill_mod_trois_tap", false);
+    match style_of(cx, "kill-filters") {
+        CardStyle::Timeline | CardStyle::Tiles => {
+            ui.horizontal_wrapped(|ui| {
+                choice(ui, cx, "suicides_mode", "Suicides", &SUICIDE_MODES, false, TIP_SUICIDES);
+                // A one-tap kill is already a headshot constraint: the choice is greyed, not hidden.
+                choice(ui, cx, "headshots_mode", "Headshots", &HEADSHOT_MODES, hs_off, TIP_HEADSHOTS);
+                if button(ui, t, "Clear", "Clear", TIP_CLEAR, true) {
+                    // Only this card's rows: Clear must not reach the Damage / Shot cards.
+                    for r in &rows {
+                        cx.link.set(cx.now, &r.key, json!(false));
+                        cx.link.set(cx.now, &r.must_key(), json!(false));
+                    }
+                }
+            });
+            let is_tiles = style_of(cx, "kill-filters") == CardStyle::Tiles;
+            for (cat, heading) in GROUPS {
+                let group: Vec<FilterRow> = rows.iter().filter(|r| r.category == cat).cloned().collect();
+                if !group.is_empty() {
+                    ui.add_space(CELL_GAP * 2.0);
+                    if is_tiles {
+                        filter_tiles(ui, cx, heading, &group, &kill_extras);
+                    } else {
+                        matrix(ui, cx, heading, &group, &kill_extras);
+                    }
+                }
             }
-        }
-    });
-    for (cat, heading) in GROUPS {
-        let group: Vec<FilterRow> = rows.iter().filter(|r| r.category == cat).cloned().collect();
-        if !group.is_empty() {
             ui.add_space(CELL_GAP * 2.0);
-            matrix(ui, cx, heading, &group, &kill_extras);
+            clutch(ui, cx);
+        }
+        CardStyle::Sentence => {
+            let suicide_opts = [("include", "include suicides", ""), ("exclude", "exclude suicides", ""), ("only", "suicides only", "")];
+            let hs_opts = [("all", "all headshots", ""), ("only", "headshots only", ""), ("exclude", "exclude headshots", "")];
+            prose_line(ui, |ui| {
+                prose_word(ui, t, "Capture");
+                choice_word(ui, cx, "headshots_mode", "Headshots", &hs_opts, HEADSHOT_MODES[0], false, TIP_HEADSHOTS);
+                if hs_off {
+                    prose_muted(ui, t, "(locked by tap filter)");
+                }
+                prose_word(ui, t, ",");
+                choice_word(ui, cx, "suicides_mode", "Suicides", &suicide_opts, SUICIDE_MODES[0], false, TIP_SUICIDES);
+                prose_word(ui, t, "· filters:");
+                filter_clause(ui, cx, "kill-filters-add", "all kills (none active)", "+ filter", &rows, &kill_extras);
+                if action_word(ui, t, "Clear", "Clear", false, false, TIP_CLEAR, true) {
+                    for r in &rows {
+                        cx.link.set(cx.now, &r.key, json!(false));
+                        cx.link.set(cx.now, &r.must_key(), json!(false));
+                    }
+                }
+                prose_word(ui, t, ".");
+            });
+            prose_line(ui, |ui| {
+                bool_word(ui, cx, "clutch_enabled", "Clutch", "🎯 Clutch rounds on", "Clutch rounds off", false, TIP_CLUTCH);
+                if flag(cx, "clutch_enabled", false) {
+                    let cm_opts = [("kills_only", "kills only", ""), ("full_clutch", "full clutch round", "")];
+                    prose_word(ui, t, "(");
+                    choice_word(ui, cx, "clutch_mode", "Clutch mode", &cm_opts, CLUTCH_MODES[0], false, TIP_CLUTCH_MODE);
+                    prose_word(ui, t, ",");
+                    bool_word(ui, cx, "clutch_wins_only", "Wins only", "wins only", "any outcome", false, TIP_WINS);
+                    prose_word(ui, t, ",");
+                    for n in CLUTCH_SIZES {
+                        let key = format!("clutch_1v{n}");
+                        mark(ui, &key);
+                        let lit = flag(cx, &key, false);
+                        if chip(ui, t, &format!("1v{n}"), Some(lit), Some(&format!("1v{n}")), true).on_hover_text(TIP_CLUTCH_SIZE).clicked() {
+                            cx.link.set(cx.now, &key, json!(!lit));
+                        }
+                    }
+                    prose_word(ui, t, ")");
+                } else {
+                    mark(ui, "clutch_wins_only");
+                    mark(ui, "clutch_mode");
+                    for n in CLUTCH_SIZES {
+                        mark(ui, &format!("clutch_1v{n}"));
+                    }
+                }
+            });
         }
     }
-    ui.add_space(CELL_GAP * 2.0);
-    clutch(ui, cx);
     let on = active_count(cx, &rows) + usize::from(flag(cx, "clutch_enabled", false));
     Some(if on > 0 { format!("{on} active") } else { "all kills".into() })
 }
@@ -328,9 +532,27 @@ pub fn events(tab: &mut CaptureTab, ui: &mut egui::Ui, cx: &mut CardCx, category
         return None;
     };
     let rows: Vec<FilterRow> = filter_rows(tables).into_iter().filter(|r| r.category == "event" && r.judges(category)).collect();
-    hint(ui, t, event_hint(category).0);
-    ui.add_space(CELL_GAP);
-    matrix(ui, cx, "", &rows, &registry_extras);
+    let card_id = if category == "damage" { "damage-filters" } else { "shot-filters" };
+    match style_of(cx, card_id) {
+        CardStyle::Timeline => {
+            hint(ui, t, event_hint(category).0);
+            ui.add_space(CELL_GAP);
+            matrix(ui, cx, "", &rows, &registry_extras);
+        }
+        CardStyle::Sentence => {
+            prose_line(ui, |ui| {
+                prose_word(ui, t, if category == "damage" { "Filter non-lethal damage by:" } else { "Filter shots & swings by:" });
+                filter_clause(ui, cx, card_id, "none active (no extra filter)", "+ filter", &rows, &registry_extras);
+                prose_word(ui, t, ".");
+            });
+            hint(ui, t, event_hint(category).0);
+        }
+        CardStyle::Tiles => {
+            hint(ui, t, event_hint(category).0);
+            ui.add_space(CELL_GAP);
+            filter_tiles(ui, cx, "", &rows, &registry_extras);
+        }
+    }
     let on = active_count(cx, &rows);
     Some(if on > 0 { format!("{on} active") } else { "none".into() })
 }

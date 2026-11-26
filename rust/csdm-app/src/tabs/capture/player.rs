@@ -8,12 +8,15 @@
 use super::kit::{framed, hint, kick, lab, list, mark, seg};
 use super::model::{avatar_hue, find_players, player_rows, reorder, short_id, Order, PlayerRow};
 use super::{pending, CaptureTab};
+use crate::cardstyle::{big_tile, choice_token, prose_line, prose_muted, prose_word, style_of, tile_grid, TileGlyph};
 use crate::grid::CardCx;
 use crate::paint::{regular, semibold};
 use crate::theme::Theme;
-use csdm_core::ui_values::PLAYER_PAGE_SIZE;
+use csdm_core::ui_values::{CardStyle, PLAYER_PAGE_SIZE};
 use eframe::egui::{self, pos2, vec2, Color32, Rect, Response, Sense, Stroke, StrokeKind};
 use serde_json::{json, Value};
+
+const TILE_MIN_W: f32 = 195.0;
 
 pub const FIND_STEAM_ID_HINT: &str = "Your Steam ID (17 digits, 7656119…) is on your player page in CS Demo Manager, or at the end of your Steam profile URL (steamcommunity.com/profiles/…).";
 const TIP_SORT: &str = "Sort players alphabetically or by most recently seen";
@@ -116,138 +119,297 @@ pub fn card(tab: &mut CaptureTab, ui: &mut egui::Ui, cx: &mut CardCx) -> Option<
     let mut roster = saved(cx);
     let mut next_active: Option<Vec<String>> = None;
     let mut next_saved: Option<Vec<Saved>> = None;
-    let width = ui.available_width();
-    ui.horizontal_top(|ui| {
-        // Left: lineup and roster.
-        ui.allocate_ui(vec2(width * SIDE_SHARE, 0.0), |ui| {
-            ui.vertical(|ui| {
-                framed(ui, t, |ui| {
-                    kick(ui, t, &format!("In the clips · {}", active.len()));
-                    ui.horizontal_wrapped(|ui| {
-                        if active.is_empty() {
-                            hint(ui, t, "No active player -- pick one below");
-                        }
-                        for id in &active {
-                            let name = rows.iter().find(|r| &r.steam_id == id).map_or(id.clone(), |r| r.name.clone());
-                            let r = pill(ui, t, &format!("{name}  ×"), "", true, &format!("Active {name}"), &format!("Click to remove {name} from active filter"), false, Sense::click());
-                            if r.clicked() {
-                                next_active = Some(active.iter().filter(|s| *s != id).cloned().collect());
-                            }
-                        }
-                    });
-                });
-                ui.add_space(GAP);
-                ui.horizontal(|ui| {
-                    kick(ui, t, "★ Roster · drag to reorder");
-                    lab(ui, t, &format!("{} registered", roster.len()));
-                });
-                let shown = match tab.player.drag {
-                    Some((from, over)) if from != over => reorder(&roster, from, over),
-                    _ => roster.clone(),
-                };
-                ui.horizontal_wrapped(|ui| {
-                    if roster.is_empty() {
-                        hint(ui, t, "None. Select a player below and click ★ to register.");
-                    }
-                    for (i, p) in shown.iter().enumerate() {
-                        let on = active.contains(&p.steam_id);
-                        let r = pill(ui, t, &p.name, "", on, &format!("Registered {}", p.name), TIP_REGISTERED, true, Sense::click_and_drag());
-                        if r.drag_started() {
-                            tab.player.drag = Some((i, i));
-                        }
-                        if let Some((from, _)) = tab.player.drag {
-                            if ui.ctx().pointer_hover_pos().is_some_and(|pos| r.rect.contains(pos)) {
-                                tab.player.drag = Some((from, i));
-                            }
-                        }
-                        if r.drag_stopped() {
-                            if let Some((from, over)) = tab.player.drag.take() {
-                                if from != over {
-                                    roster = reorder(&roster, from, over);
-                                    next_saved = Some(roster.clone());
-                                }
-                            }
-                        } else if r.clicked() {
-                            next_active = Some(if on { active.iter().filter(|s| **s != p.steam_id).cloned().collect() } else { active.iter().cloned().chain([p.steam_id.clone()]).collect() });
-                        }
-                        let close = crate::widgets::chip(ui, t, "×", None, Some(&format!("Unregister {}", p.name)), true).on_hover_text(TIP_UNREGISTER);
-                        if close.clicked() {
-                            next_saved = Some(roster.iter().filter(|s| s.steam_id != p.steam_id).cloned().collect());
-                        }
-                        let _ = CLOSE_W;
-                    }
-                });
-            });
-        });
-        ui.add_space(GAP * 2.0);
-        // Right: the searchable database.
-        ui.vertical(|ui| {
-            ui.horizontal_wrapped(|ui| {
-                let mut s = tab.player.search.clone();
-                let r = ui.add(egui::TextEdit::singleline(&mut s).hint_text("Search by name or Steam ID…").desired_width(SEARCH_W));
-                r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::SearchInput, true, "Search players"));
-                let r = r.on_hover_text(format!("Search players by name or Steam ID. {FIND_STEAM_ID_HINT}"));
-                if r.changed() {
-                    tab.player.search = s;
+    let search_bar = |tab: &mut CaptureTab, ui: &mut egui::Ui, t: &Theme, db_ready: bool| {
+        ui.horizontal_wrapped(|ui| {
+            let mut s = tab.player.search.clone();
+            let r = ui.add(egui::TextEdit::singleline(&mut s).hint_text("Search by name or Steam ID…").desired_width(SEARCH_W));
+            r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::SearchInput, true, "Search players"));
+            let r = r.on_hover_text(format!("Search players by name or Steam ID. {FIND_STEAM_ID_HINT}"));
+            if r.changed() {
+                tab.player.search = s;
+                tab.player.page = 0;
+            }
+            if db_ready {
+                let cur = if tab.player.order == Order::Recent { ORDERS[1] } else { ORDERS[0] };
+                if let Some(o) = seg(ui, t, "Sort", &ORDERS, cur, false, TIP_SORT, None) {
+                    tab.player.order = if o == ORDERS[1] { Order::Recent } else { Order::Name };
                     tab.player.page = 0;
                 }
-                if db.is_some() {
-                    let cur = if tab.player.order == Order::Recent { ORDERS[1] } else { ORDERS[0] };
-                    if let Some(o) = seg(ui, t, "Sort", &ORDERS, cur, false, TIP_SORT, None) {
-                        tab.player.order = if o == ORDERS[1] { Order::Recent } else { Order::Name };
-                        tab.player.page = 0;
-                    }
-                }
-            });
-            if db.is_none() {
-                pending(ui, cx);
-                return;
             }
-            let matching = find_players(&rows, &tab.player.search, tab.player.order);
-            let pages = matching.len().div_ceil(PLAYER_PAGE_SIZE).max(1);
-            let page = tab.player.page.min(pages - 1);
-            ui.horizontal(|ui| {
-                lab(ui, t, &format!("{} player{}", matching.len(), if matching.len() == 1 { "" } else { "s" }));
-                if crate::widgets::chip(ui, t, "‹", None, Some("Previous page"), page > 0).clicked() {
-                    tab.player.page = page - 1;
-                }
-                lab(ui, t, &format!("{} / {pages}", page + 1));
-                if crate::widgets::chip(ui, t, "›", None, Some("Next page"), page + 1 < pages).clicked() {
-                    tab.player.page = page + 1;
-                }
-            });
-            if matching.is_empty() {
-                let words = if rows.is_empty() {
-                    "No player in this database yet: analyze your demos in CS Demo Manager first, then press Test & Reload in SETTINGS.".to_string()
-                } else {
-                    format!("No player matches. {FIND_STEAM_ID_HINT}")
-                };
-                hint(ui, t, &words);
-            }
-            egui::ScrollArea::vertical().max_height(LIST_H).auto_shrink([false, true]).show(ui, |ui| {
-                ui.horizontal_wrapped(|ui| {
-                    for p in matching.iter().skip(page * PLAYER_PAGE_SIZE).take(PLAYER_PAGE_SIZE) {
-                        let on = active.contains(&p.steam_id);
-                        let registered = roster.iter().any(|s| s.steam_id == p.steam_id);
-                        ui.allocate_ui(vec2(ROW_W, PILL_H), |ui| {
-                            ui.horizontal(|ui| {
-                                ui.spacing_mut().item_spacing.x = GAP / 2.0;
-                                let r = pill(ui, t, &p.name, &short_id(&p.steam_id), on, &p.name, &p.label, false, Sense::click());
-                                if r.clicked() {
-                                    next_active = Some(if on { active.iter().filter(|s| **s != p.steam_id).cloned().collect() } else { active.iter().cloned().chain([p.steam_id.clone()]).collect() });
+        });
+    };
+
+    match style_of(cx, "player") {
+        CardStyle::Timeline => {
+            let width = ui.available_width();
+            ui.horizontal_top(|ui| {
+                ui.allocate_ui(vec2(width * SIDE_SHARE, 0.0), |ui| {
+                    ui.vertical(|ui| {
+                        framed(ui, t, |ui| {
+                            kick(ui, t, &format!("In the clips · {}", active.len()));
+                            ui.horizontal_wrapped(|ui| {
+                                if active.is_empty() {
+                                    hint(ui, t, "No active player -- pick one below");
                                 }
-                                let star = crate::widgets::chip(ui, t, if registered { "★" } else { "☆" }, Some(registered), Some(&format!("Register {}", p.name)), true).on_hover_text(TIP_STAR);
-                                if star.clicked() {
-                                    let base = next_saved.clone().unwrap_or_else(|| roster.clone());
-                                    next_saved = Some(if base.iter().any(|s| s.steam_id == p.steam_id) { base.into_iter().filter(|s| s.steam_id != p.steam_id).collect() } else { base.into_iter().chain([Saved { steam_id: p.steam_id.clone(), name: p.name.clone() }]).collect() });
+                                for id in &active {
+                                    let name = rows.iter().find(|r| &r.steam_id == id).map_or(id.clone(), |r| r.name.clone());
+                                    let r = pill(ui, t, &format!("{name}  ×"), "", true, &format!("Active {name}"), &format!("Click to remove {name} from active filter"), false, Sense::click());
+                                    if r.clicked() {
+                                        next_active = Some(active.iter().filter(|s| *s != id).cloned().collect());
+                                    }
                                 }
                             });
                         });
+                        ui.add_space(GAP);
+                        ui.horizontal(|ui| {
+                            kick(ui, t, "★ Roster · drag to reorder");
+                            lab(ui, t, &format!("{} registered", roster.len()));
+                        });
+                        let shown = match tab.player.drag {
+                            Some((from, over)) if from != over => reorder(&roster, from, over),
+                            _ => roster.clone(),
+                        };
+                        ui.horizontal_wrapped(|ui| {
+                            if roster.is_empty() {
+                                hint(ui, t, "None. Select a player below and click ★ to register.");
+                            }
+                            for (i, p) in shown.iter().enumerate() {
+                                let on = active.contains(&p.steam_id);
+                                let r = pill(ui, t, &p.name, "", on, &format!("Registered {}", p.name), TIP_REGISTERED, true, Sense::click_and_drag());
+                                if r.drag_started() {
+                                    tab.player.drag = Some((i, i));
+                                }
+                                if let Some((from, _)) = tab.player.drag {
+                                    if ui.ctx().pointer_hover_pos().is_some_and(|pos| r.rect.contains(pos)) {
+                                        tab.player.drag = Some((from, i));
+                                    }
+                                }
+                                if r.drag_stopped() {
+                                    if let Some((from, over)) = tab.player.drag.take() {
+                                        if from != over {
+                                            roster = reorder(&roster, from, over);
+                                            next_saved = Some(roster.clone());
+                                        }
+                                    }
+                                } else if r.clicked() {
+                                    next_active = Some(if on { active.iter().filter(|s| **s != p.steam_id).cloned().collect() } else { active.iter().cloned().chain([p.steam_id.clone()]).collect() });
+                                }
+                                let close = crate::widgets::chip(ui, t, "×", None, Some(&format!("Unregister {}", p.name)), true).on_hover_text(TIP_UNREGISTER);
+                                if close.clicked() {
+                                    next_saved = Some(roster.iter().filter(|s| s.steam_id != p.steam_id).cloned().collect());
+                                }
+                                let _ = CLOSE_W;
+                            }
+                        });
+                    });
+                });
+                ui.add_space(GAP * 2.0);
+                ui.vertical(|ui| {
+                    search_bar(tab, ui, t, db.is_some());
+                    if db.is_none() {
+                        pending(ui, cx);
+                        return;
                     }
+                    let matching = find_players(&rows, &tab.player.search, tab.player.order);
+                    let pages = matching.len().div_ceil(PLAYER_PAGE_SIZE).max(1);
+                    let page = tab.player.page.min(pages - 1);
+                    ui.horizontal(|ui| {
+                        lab(ui, t, &format!("{} player{}", matching.len(), if matching.len() == 1 { "" } else { "s" }));
+                        if crate::widgets::chip(ui, t, "‹", None, Some("Previous page"), page > 0).clicked() {
+                            tab.player.page = page - 1;
+                        }
+                        lab(ui, t, &format!("{} / {pages}", page + 1));
+                        if crate::widgets::chip(ui, t, "›", None, Some("Next page"), page + 1 < pages).clicked() {
+                            tab.player.page = page + 1;
+                        }
+                    });
+                    if matching.is_empty() {
+                        let words = if rows.is_empty() {
+                            "No player in this database yet: analyze your demos in CS Demo Manager first, then press Test & Reload in SETTINGS.".to_string()
+                        } else {
+                            format!("No player matches. {FIND_STEAM_ID_HINT}")
+                        };
+                        hint(ui, t, &words);
+                    }
+                    egui::ScrollArea::vertical().max_height(LIST_H).auto_shrink([false, true]).show(ui, |ui| {
+                        ui.horizontal_wrapped(|ui| {
+                            for p in matching.iter().skip(page * PLAYER_PAGE_SIZE).take(PLAYER_PAGE_SIZE) {
+                                let on = active.contains(&p.steam_id);
+                                let registered = roster.iter().any(|s| s.steam_id == p.steam_id);
+                                ui.allocate_ui(vec2(ROW_W, PILL_H), |ui| {
+                                    ui.horizontal(|ui| {
+                                        ui.spacing_mut().item_spacing.x = GAP / 2.0;
+                                        let r = pill(ui, t, &p.name, &short_id(&p.steam_id), on, &p.name, &p.label, false, Sense::click());
+                                        if r.clicked() {
+                                            next_active = Some(if on { active.iter().filter(|s| **s != p.steam_id).cloned().collect() } else { active.iter().cloned().chain([p.steam_id.clone()]).collect() });
+                                        }
+                                        let star = crate::widgets::chip(ui, t, if registered { "★" } else { "☆" }, Some(registered), Some(&format!("Register {}", p.name)), true).on_hover_text(TIP_STAR);
+                                        if star.clicked() {
+                                            let base = next_saved.clone().unwrap_or_else(|| roster.clone());
+                                            next_saved = Some(if base.iter().any(|s| s.steam_id == p.steam_id) { base.into_iter().filter(|s| s.steam_id != p.steam_id).collect() } else { base.into_iter().chain([Saved { steam_id: p.steam_id.clone(), name: p.name.clone() }]).collect() });
+                                        }
+                                    });
+                                });
+                            }
+                        });
+                    });
                 });
             });
-        });
-    });
+        }
+        CardStyle::Sentence => {
+            prose_line(ui, |ui| {
+                prose_word(ui, t, "Capture clips of");
+                if active.is_empty() {
+                    prose_muted(ui, t, "no active player yet");
+                } else {
+                    for id in &active {
+                        let name = rows.iter().find(|r| &r.steam_id == id).map_or(id.clone(), |r| r.name.clone());
+                        if pill(ui, t, &format!("{name}  ×"), "", true, &format!("Active {name}"), &format!("Click to remove {name} from active filter"), false, Sense::click()).clicked() {
+                            next_active = Some(active.iter().filter(|s| *s != id).cloned().collect());
+                        }
+                    }
+                }
+                let r_label = format!("★ roster ({})", roster.len());
+                choice_token(ui, t, "player-roster", &r_label, "Registered accounts", false, TIP_REGISTERED, true, |ui, _| {
+                    if roster.is_empty() {
+                        hint(ui, t, "None registered yet. Click ☆ beside a player below.");
+                    } else {
+                        ui.horizontal_wrapped(|ui| {
+                            for p in &roster {
+                                let on = active.contains(&p.steam_id);
+                                if crate::widgets::chip(ui, t, &p.name, Some(on), Some(&format!("Registered {}", p.name)), true).clicked() {
+                                    next_active = Some(if on { active.iter().filter(|s| **s != p.steam_id).cloned().collect() } else { active.iter().cloned().chain([p.steam_id.clone()]).collect() });
+                                }
+                                if crate::widgets::chip(ui, t, "×", None, Some(&format!("Unregister {}", p.name)), true).on_hover_text(TIP_UNREGISTER).clicked() {
+                                    next_saved = Some(roster.iter().filter(|s| s.steam_id != p.steam_id).cloned().collect());
+                                }
+                            }
+                        });
+                    }
+                });
+                prose_word(ui, t, ".");
+            });
+            search_bar(tab, ui, t, db.is_some());
+            if db.is_none() {
+                pending(ui, cx);
+            } else {
+                let matching = find_players(&rows, &tab.player.search, tab.player.order);
+                let pages = matching.len().div_ceil(PLAYER_PAGE_SIZE).max(1);
+                let page = tab.player.page.min(pages - 1);
+                ui.horizontal(|ui| {
+                    lab(ui, t, &format!("{} player{}", matching.len(), if matching.len() == 1 { "" } else { "s" }));
+                    if crate::widgets::chip(ui, t, "‹", None, Some("Previous page"), page > 0).clicked() {
+                        tab.player.page = page - 1;
+                    }
+                    lab(ui, t, &format!("{} / {pages}", page + 1));
+                    if crate::widgets::chip(ui, t, "›", None, Some("Next page"), page + 1 < pages).clicked() {
+                        tab.player.page = page + 1;
+                    }
+                });
+                if matching.is_empty() {
+                    hint(ui, t, if rows.is_empty() { "No player in this database yet." } else { FIND_STEAM_ID_HINT });
+                } else {
+                    ui.horizontal_wrapped(|ui| {
+                        for p in matching.iter().skip(page * PLAYER_PAGE_SIZE).take(PLAYER_PAGE_SIZE) {
+                            let on = active.contains(&p.steam_id);
+                            let registered = roster.iter().any(|s| s.steam_id == p.steam_id);
+                            if crate::widgets::chip(ui, t, &p.name, Some(on), Some(&p.name), true).on_hover_text(&p.label).clicked() {
+                                next_active = Some(if on { active.iter().filter(|s| **s != p.steam_id).cloned().collect() } else { active.iter().cloned().chain([p.steam_id.clone()]).collect() });
+                            }
+                            if crate::widgets::chip(ui, t, if registered { "★" } else { "☆" }, Some(registered), Some(&format!("Register {}", p.name)), true).on_hover_text(TIP_STAR).clicked() {
+                                let base = next_saved.clone().unwrap_or_else(|| roster.clone());
+                                next_saved = Some(if base.iter().any(|s| s.steam_id == p.steam_id) { base.into_iter().filter(|s| s.steam_id != p.steam_id).collect() } else { base.into_iter().chain([Saved { steam_id: p.steam_id.clone(), name: p.name.clone() }]).collect() });
+                            }
+                        }
+                    });
+                }
+            }
+        }
+        CardStyle::Tiles => {
+            kick(ui, t, &format!("★ Registered ({})", roster.len()));
+            if roster.is_empty() {
+                hint(ui, t, "None registered yet. Click ☆ on any player tile below.");
+            } else {
+                tile_grid(ui, TILE_MIN_W, roster.len(), |ui, idx, tw| {
+                    let p = &roster[idx];
+                    let on = active.contains(&p.steam_id);
+                    let cap = short_id(&p.steam_id);
+                    big_tile(ui, t, tw, &p.name, Some(&cap), on, false, false, |painter, r, _| avatar(painter, t, r.center(), &p.name, &p.steam_id), |ui| {
+                        ui.horizontal(|ui| {
+                            if crate::widgets::chip(ui, t, if on { "Active" } else { "Select" }, Some(on), Some(&format!("Registered {}", p.name)), true).clicked() {
+                                next_active = Some(if on { active.iter().filter(|s| **s != p.steam_id).cloned().collect() } else { active.iter().cloned().chain([p.steam_id.clone()]).collect() });
+                            }
+                            if crate::widgets::chip(ui, t, "×", None, Some(&format!("Unregister {}", p.name)), true).on_hover_text(TIP_UNREGISTER).clicked() {
+                                next_saved = Some(roster.iter().filter(|s| s.steam_id != p.steam_id).cloned().collect());
+                            }
+                        });
+                    });
+                });
+            }
+            ui.add_space(GAP);
+            kick(ui, t, &format!("In the clips · {}", active.len()));
+            ui.horizontal_wrapped(|ui| {
+                if active.is_empty() {
+                    hint(ui, t, "No active player -- pick one below");
+                }
+                for id in &active {
+                    let name = rows.iter().find(|r| &r.steam_id == id).map_or(id.clone(), |r| r.name.clone());
+                    if pill(ui, t, &format!("{name}  ×"), "", true, &format!("Active {name}"), &format!("Click to remove {name}"), false, Sense::click()).clicked() {
+                        next_active = Some(active.iter().filter(|s| *s != id).cloned().collect());
+                    }
+                }
+            });
+            ui.add_space(GAP);
+            search_bar(tab, ui, t, db.is_some());
+            if db.is_none() {
+                pending(ui, cx);
+            } else {
+                let matching = find_players(&rows, &tab.player.search, tab.player.order);
+                let pages = matching.len().div_ceil(PLAYER_PAGE_SIZE).max(1);
+                let page = tab.player.page.min(pages - 1);
+                ui.horizontal(|ui| {
+                    lab(ui, t, &format!("{} player{}", matching.len(), if matching.len() == 1 { "" } else { "s" }));
+                    if crate::widgets::chip(ui, t, "‹", None, Some("Previous page"), page > 0).clicked() {
+                        tab.player.page = page - 1;
+                    }
+                    lab(ui, t, &format!("{} / {pages}", page + 1));
+                    if crate::widgets::chip(ui, t, "›", None, Some("Next page"), page + 1 < pages).clicked() {
+                        tab.player.page = page + 1;
+                    }
+                });
+                let slice: Vec<&PlayerRow> = matching.iter().copied().skip(page * PLAYER_PAGE_SIZE).take(PLAYER_PAGE_SIZE).collect();
+                if slice.is_empty() {
+                    hint(ui, t, if rows.is_empty() { "No player in this database yet." } else { FIND_STEAM_ID_HINT });
+                } else {
+                    egui::ScrollArea::vertical().max_height(LIST_H).auto_shrink([false, true]).show(ui, |ui| {
+                        tile_grid(ui, TILE_MIN_W, slice.len(), |ui, idx, tw| {
+                            let p = slice[idx];
+                            let on = active.contains(&p.steam_id);
+                            let registered = roster.iter().any(|s| s.steam_id == p.steam_id);
+                            let cap = short_id(&p.steam_id);
+                            big_tile(ui, t, tw, &p.name, Some(&cap), on, false, false, |painter, r, c| {
+                                if p.name.is_empty() {
+                                    crate::cardstyle::paint_glyph(painter, r, TileGlyph::Icon("player"), c);
+                                } else {
+                                    avatar(painter, t, r.center(), &p.name, &p.steam_id);
+                                }
+                            }, |ui| {
+                                ui.horizontal(|ui| {
+                                    if crate::widgets::chip(ui, t, if on { "Active" } else { "Pick" }, Some(on), Some(&p.name), true).on_hover_text(&p.label).clicked() {
+                                        next_active = Some(if on { active.iter().filter(|s| **s != p.steam_id).cloned().collect() } else { active.iter().cloned().chain([p.steam_id.clone()]).collect() });
+                                    }
+                                    if crate::widgets::chip(ui, t, if registered { "★" } else { "☆" }, Some(registered), Some(&format!("Register {}", p.name)), true).on_hover_text(TIP_STAR).clicked() {
+                                        let base = next_saved.clone().unwrap_or_else(|| roster.clone());
+                                        next_saved = Some(if base.iter().any(|s| s.steam_id == p.steam_id) { base.into_iter().filter(|s| s.steam_id != p.steam_id).collect() } else { base.into_iter().chain([Saved { steam_id: p.steam_id.clone(), name: p.name.clone() }]).collect() });
+                                    }
+                                });
+                            });
+                        });
+                    });
+                }
+            }
+        }
+    }
     if let Some(ids) = next_active {
         activate(cx, &rows, &ids);
     }

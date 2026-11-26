@@ -1,14 +1,15 @@
-//! The Operations card, timeline style (3.5 `TagOpsCard.tsx` `TimelineView`): the job as three
-//! steps left to right (find, pick, apply), the tags file below.
+//! The Operations card, in all three styles (`timeline`, `sentence`, `tiles`) after
+//! 3.5 `TagOpsCard.tsx`.
 
 use super::parts::{kicker, note};
 use super::{active_ids, names_of, tags, By, TagsTab};
+use crate::cardstyle::{action_word, prose_line, prose_word, style_of, tile_grid};
 use crate::grid::CardCx;
-use crate::paint::semibold;
+use crate::paint::{regular, semibold};
 use crate::theme::Theme;
 use crate::widgets::{chip, confirm_dialog, tip, Confirm};
-use csdm_core::ui_values::{FONT_BODY, FONT_SMALL, TAG_ITEM_GAP, TAG_OPS_BADGE, TAG_OPS_GAP, TAG_OPS_PAD, TAG_OPS_RADIUS, TAG_OPS_STEPS, TAG_ROW_GAP};
-use eframe::egui::{self, Align2, Color32, Margin, Pos2, Rect, Stroke, Vec2};
+use csdm_core::ui_values::{CardStyle, FONT_BODY, FONT_SMALL, TAG_ITEM_GAP, TAG_OPS_BADGE, TAG_OPS_GAP, TAG_OPS_PAD, TAG_OPS_RADIUS, TAG_OPS_STEPS, TAG_ROW_GAP};
+use eframe::egui::{self, vec2, Align2, Color32, Margin, Pos2, Rect, Sense, Stroke, StrokeKind, Vec2};
 
 /// `useTagOps.ts::TIPS`.
 const TIP_BY_TAG: &str = "Find demos that have all the selected tags applied";
@@ -22,6 +23,11 @@ const TIP_IMPORT: &str = "Import tags from a file; missing tags are created auto
 const NAMES_SHOWN: usize = 2;
 /// The found list's height before it scrolls.
 const LIST_MAX_H: f32 = 180.0;
+const OP_TILE_MIN_W: f32 = 118.0;
+const OP_TILE_H: f32 = 66.0;
+const OP_TILE_RADIUS: f32 = 12.0;
+const OP_TILE_PAD: f32 = 8.0;
+const OP_ICON: f32 = 18.0;
 
 /// "Aces and Clutch", "Aces, Clutch +3" (`tagWords`).
 fn tag_words(names: &[String]) -> String {
@@ -47,59 +53,137 @@ pub fn show(tab: &mut TagsTab, ui: &mut egui::Ui, cx: &mut CardCx) {
     let always = cx.always_tips;
     ui.spacing_mut().item_spacing = Vec2::splat(TAG_ITEM_GAP);
     let mut acts = Vec::new();
+    let tw = tag_words(&names);
+    let picked_n = tab.ops.picked.len();
+    let found_n = tab.ops.found.len();
 
-    // Three steps, columns weighted like `.tgo-steps`.
-    let total = ui.available_width() - TAG_OPS_GAP * 2.0;
-    let sum: f32 = TAG_OPS_STEPS.iter().sum();
-    let widths = TAG_OPS_STEPS.map(|w| (total * w / sum).max(0.0));
-    ui.horizontal_top(|ui| {
-        ui.spacing_mut().item_spacing.x = TAG_OPS_GAP;
-        step(ui, t, widths[0], 1, "Find demos", |ui| {
+    match style_of(cx, "operations") {
+        CardStyle::Timeline => {
+            let total = ui.available_width() - TAG_OPS_GAP * 2.0;
+            let sum: f32 = TAG_OPS_STEPS.iter().sum();
+            let widths = TAG_OPS_STEPS.map(|w| (total * w / sum).max(0.0));
+            ui.horizontal_top(|ui| {
+                ui.spacing_mut().item_spacing.x = TAG_OPS_GAP;
+                step(ui, t, widths[0], 1, "Find demos", |ui| {
+                    ui.horizontal_wrapped(|ui| {
+                        let r = chip(ui, t, "By tag", None, None, true);
+                        if tip(ui, t, r, TIP_BY_TAG, always).clicked() {
+                            acts.push(Act::Search(By::Tag));
+                        }
+                        let r = chip(ui, t, "By config", None, None, true);
+                        if tip(ui, t, r, TIP_BY_CONFIG, always).clicked() {
+                            acts.push(Act::Search(By::Config));
+                        }
+                    });
+                });
+                step(ui, t, widths[1], 2, "Pick", |ui| found_list(tab, ui, t));
+                step(ui, t, widths[2], 3, &format!("Apply {tw}"), |ui| { // allow-hardcode: the third of the card's three numbered steps
+                    ui.horizontal_wrapped(|ui| {
+                        let r = chip(ui, t, "Tag sel.", None, None, true);
+                        if tip(ui, t, r, TIP_TAG_SEL, always).clicked() {
+                            acts.push(Act::TagPicked);
+                        }
+                        let r = chip(ui, t, "Tag ALL", None, None, true);
+                        if tip(ui, t, r, TIP_TAG_ALL, always).clicked() {
+                            acts.push(Act::TagAll);
+                        }
+                        let r = danger_chip(ui, t, "Remove sel.");
+                        if tip(ui, t, r, TIP_REMOVE, always).clicked() {
+                            acts.push(Act::AskRemove);
+                        }
+                    });
+                });
+            });
+            ui.add_space(TAG_ROW_GAP - TAG_ITEM_GAP);
             ui.horizontal_wrapped(|ui| {
-                let r = chip(ui, t, "By tag", None, None, true);
-                if tip(ui, t, r, TIP_BY_TAG, always).clicked() {
+                kicker(ui, t, "Tags file");
+                let r = chip(ui, t, "Export", None, Some("Export tags"), true);
+                if tip(ui, t, r, TIP_EXPORT, false).clicked() {
+                    acts.push(Act::Export);
+                }
+                let r = chip(ui, t, "Import", None, Some("Import tags"), true);
+                if tip(ui, t, r, TIP_IMPORT, false).clicked() {
+                    acts.push(Act::Import);
+                }
+            });
+            if always {
+                note(ui, t, &format!("{TIP_EXPORT}. {TIP_IMPORT}."), t.faint);
+            }
+        }
+        CardStyle::Sentence => {
+            prose_line(ui, |ui| {
+                prose_word(ui, t, "Find demos");
+                if action_word(ui, t, &format!("tagged {tw}"), "By tag", false, false, TIP_BY_TAG, true) {
                     acts.push(Act::Search(By::Tag));
                 }
-                let r = chip(ui, t, "By config", None, None, true);
-                if tip(ui, t, r, TIP_BY_CONFIG, always).clicked() {
+                prose_word(ui, t, "or");
+                if action_word(ui, t, "that also match my Capture filters", "By config", true, false, TIP_BY_CONFIG, true) {
                     acts.push(Act::Search(By::Config));
                 }
+                prose_word(ui, t, ".");
             });
-        });
-        step(ui, t, widths[1], 2, "Pick", |ui| found_list(tab, ui, t));
-        step(ui, t, widths[2], 3, &format!("Apply {}", tag_words(&names)), |ui| { // allow-hardcode: the third of the card's three numbered steps
-            ui.horizontal_wrapped(|ui| {
-                let r = chip(ui, t, "Tag sel.", None, None, true);
-                if tip(ui, t, r, TIP_TAG_SEL, always).clicked() {
+            prose_line(ui, |ui| {
+                prose_word(ui, t, "Tag");
+                if action_word(ui, t, &format!("the {picked_n} picked"), "Tag sel.", false, false, TIP_TAG_SEL, true) {
                     acts.push(Act::TagPicked);
                 }
-                let r = chip(ui, t, "Tag ALL", None, None, true);
-                if tip(ui, t, r, TIP_TAG_ALL, always).clicked() {
+                prose_word(ui, t, "or");
+                if action_word(ui, t, &format!("all {found_n} found"), "Tag ALL", false, false, TIP_TAG_ALL, true) {
                     acts.push(Act::TagAll);
                 }
-                let r = danger_chip(ui, t, "Remove sel.");
-                if tip(ui, t, r, TIP_REMOVE, always).clicked() {
+                prose_word(ui, t, &format!("with {tw}, or"));
+                if action_word(ui, t, "untag the picked ones", "Remove sel.", false, true, TIP_REMOVE, true) {
                     acts.push(Act::AskRemove);
                 }
+                prose_word(ui, t, ".");
             });
-        });
-    });
-    ui.add_space(TAG_ROW_GAP - TAG_ITEM_GAP);
-
-    ui.horizontal_wrapped(|ui| {
-        kicker(ui, t, "Tags file");
-        let r = chip(ui, t, "Export", None, Some("Export tags"), true);
-        if tip(ui, t, r, TIP_EXPORT, false).clicked() {
-            acts.push(Act::Export);
+            prose_line(ui, |ui| {
+                prose_word(ui, t, "Tags file:");
+                if action_word(ui, t, "save to a file", "Export tags", false, false, TIP_EXPORT, true) {
+                    acts.push(Act::Export);
+                }
+                prose_word(ui, t, "or");
+                if action_word(ui, t, "load from a file", "Import tags", false, false, TIP_IMPORT, true) {
+                    acts.push(Act::Import);
+                }
+                prose_word(ui, t, ".");
+            });
+            found_list(tab, ui, t);
         }
-        let r = chip(ui, t, "Import", None, Some("Import tags"), true);
-        if tip(ui, t, r, TIP_IMPORT, false).clicked() {
-            acts.push(Act::Import);
+        CardStyle::Tiles => {
+            let specs = [
+                ("Find by tag", "demos with every tag in use", "By tag", TIP_BY_TAG, Act::Search(By::Tag), false, false, "tags"),
+                ("Find by config", "tags + Capture's filters", "By config", TIP_BY_CONFIG, Act::Search(By::Config), false, false, "capture"),
+                ("Tag picked", &format!("{picked_n} demo(s)"), "Tag sel.", TIP_TAG_SEL, Act::TagPicked, false, false, "operations"),
+                ("Tag all", &format!("{found_n} found"), "Tag ALL", TIP_TAG_ALL, Act::TagAll, false, false, "operations"),
+                ("Untag picked", "asks first", "Remove sel.", TIP_REMOVE, Act::AskRemove, true, false, "operations"),
+                ("Export", "tags to a file", "Export tags", TIP_EXPORT, Act::Export, false, true, "tagRange"),
+                ("Import", "creates missing tags", "Import tags", TIP_IMPORT, Act::Import, false, true, "tagRange"),
+            ];
+            let mut chosen_idx = None;
+            tile_grid(ui, OP_TILE_MIN_W, specs.len(), |ui, idx, w| {
+                let (title, sub, acc, tip_text, _, danger, alt, icon) = &specs[idx];
+                let (rect, resp) = ui.allocate_exact_size(vec2(w, OP_TILE_H), Sense::click());
+                resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, *acc));
+                let p = ui.painter();
+                let edge = if resp.hovered() { if *danger { t.rose } else { t.accent } } else if *danger { t.rose.gamma_multiply(0.4) } else { t.hair }; // allow-hardcode: danger edge alpha
+                p.rect(rect, OP_TILE_RADIUS, t.solid, Stroke::new(1.0, edge), StrokeKind::Inside);
+                let ink = if *danger { t.rose } else if *alt { t.emerald } else { t.accent };
+                crate::icons::paint(p, icon, Rect::from_center_size(Pos2::new(rect.center().x, rect.top() + OP_TILE_PAD + OP_ICON / 2.0), Vec2::splat(OP_ICON)), ink);
+                p.text(Pos2::new(rect.center().x, rect.top() + OP_TILE_PAD * 2.0 + OP_ICON), Align2::CENTER_TOP, *title, semibold(FONT_SMALL), t.txt);
+                p.text(Pos2::new(rect.center().x, rect.bottom() - OP_TILE_PAD), Align2::CENTER_BOTTOM, *sub, regular(FONT_SMALL - 1.0), t.muted);
+                if resp.on_hover_text(*tip_text).clicked() {
+                    chosen_idx = Some(idx);
+                }
+            });
+            if let Some(act) = chosen_idx.and_then(|i| [Act::Search(By::Tag), Act::Search(By::Config), Act::TagPicked, Act::TagAll, Act::AskRemove, Act::Export, Act::Import].into_iter().nth(i)) {
+                acts.push(act);
+            }
+            ui.add_space(TAG_ROW_GAP - TAG_ITEM_GAP);
+            found_list(tab, ui, t);
         }
-    });
-    if always {
-        note(ui, t, &format!("{TIP_EXPORT}. {TIP_IMPORT}."), t.faint);
     }
+
     if !tab.ops.status.is_empty() {
         note(ui, t, &tab.ops.status, t.muted);
     }
