@@ -250,10 +250,61 @@ html[data-motion="none"] .gun2.in {
    button, dropping its shadow or shrinking its blur radius changes nothing
    measurable; only removing blurs does. Layer hints on the ring are no help
    either (docs/audits/AUDIT_finalisation_idle-ring-cost.md). */
+/* Primary button ring (.sb) + action bar backdrop isolation (D-0004):
+   1. Rotating ::before replaces the @property --ang animation (compositor-only,
+      no style recalc).
+   2. Replacing -webkit-mask / mask-composite: exclude with an opaque inner pill
+      cover (.sb::after over ::before, under .btn-face) eliminates the
+      per-frame mask render pass. `.sb` gets `z-index: 0` (mock-v12.css sets
+      `z-index: 4` on Card's `.sb`).
+   3. `.actbar-frost` is an empty `z-index: -1` leaf layer behind the bar's
+      buttons, anchored from the right edge (`--frost-lead-right`) and resuming
+      after `--frost-tail-left` on EDITING, keeping the frosted glass visible
+      while isolating `.btn.primary`'s damage rect from `backdrop-filter`. */
+.actbar {
+  overflow-x: clip;
+  overflow-y: visible;
+  background: linear-gradient(
+    to right,
+    transparent calc(100% - var(--frost-lead-right, 0px)),
+    var(--band) calc(100% - var(--frost-lead-right, 0px)) var(--frost-tail-left, 100%),
+    transparent var(--frost-tail-left, 100%)
+  );
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.actbar-frost {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: var(--frost-lead-right, 0px);
+  z-index: -1;
+  pointer-events: none;
+  background: var(--band);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+}
+.actbar-frost-tail {
+  left: var(--frost-tail-left, 100%);
+  right: 0;
+}
+.btn-face {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+  font-weight: inherit;
+}
 .btn.primary .sb {
+  z-index: 0;
   background: none;
   animation: none;
   overflow: hidden;
+  -webkit-mask: none;
+  mask: none;
+  padding: 0;
 }
 .btn.primary .sb::before {
   content: "";
@@ -272,6 +323,13 @@ html[data-motion="none"] .gun2.in {
     transparent 100%
   );
   animation: starspin-rotate 2.6s linear infinite;
+}
+.btn.primary .sb::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  background: linear-gradient(180deg, var(--blue-2), var(--accent));
 }
 @keyframes starspin-rotate {
   to {

@@ -26,11 +26,42 @@ export interface GridSlot {
    */
   hPrev?: number;
   /**
-   * The user set this card's height by hand (a resize that changed `h`).
-   * Absent means the card fits its content: SectionList measures it and the
-   * stored `h` is only its first-paint height (fix/cards-fit-style).
+   * Legacy v4 -> v5 inferred flag (`h !== default.h`). Kept for backward
+   * compatibility with saved configs; only `userResized` proves a real drag.
    */
   manual?: boolean;
+  /**
+   * The user explicitly resized this card vertically (`onResizeStop` with
+   * `newItem.h !== oldItem.h`). Absent means a legacy `manual: true` may be
+   * re-fitted unless its stored height clearly exceeds content.
+   */
+  userResized?: boolean;
+}
+
+/**
+ * Margin in fine rows above `naturalRows` beyond which a legacy `manual: true`
+ * card (without `userResized`) is assumed to have been stretched on purpose
+ * rather than drifted from an old default height (4 rows = ~136px).
+ */
+export const LEGACY_MANUAL_MARGIN_ROWS = 4;
+
+/**
+ * Effective row height for a card: collapsed and explicitly `userResized`
+ * cards keep their stored height; unresized cards follow `fittedRows`; legacy
+ * `manual: true` cards without `userResized` re-fit unless they clearly exceed
+ * content (`fittedRows + LEGACY_MANUAL_MARGIN_ROWS`).
+ */
+export function resolveCardHeight(
+  slot: Pick<GridSlot, "h" | "manual" | "userResized">,
+  fittedRows: number | undefined,
+  collapsed: boolean,
+): number {
+  if (collapsed || slot.userResized === true) return slot.h;
+  if (fittedRows === undefined) return slot.h;
+  if (slot.manual === true && slot.h > fittedRows + LEGACY_MANUAL_MARGIN_ROWS) {
+    return slot.h;
+  }
+  return fittedRows;
 }
 
 /** Rows a collapsed card occupies when the config key is unreadable. */
@@ -189,6 +220,11 @@ export function migrateLayout(
     } else {
       delete slot.manual;
     }
+    if ((stored as { userResized?: unknown } | undefined)?.userResized === true) {
+      slot.userResized = true;
+    } else {
+      delete slot.userResized;
+    }
     cards[id] = slot;
   }
   return { cards, collapsed: collapsed.filter((id) => declaredIds.includes(id)) };
@@ -248,7 +284,13 @@ export function useSectionLayout(
       for (const [id, slot] of Object.entries(next)) {
         const prev = cards[id]?.hPrev;
         const manual = slot.manual === true || cards[id]?.manual === true;
-        merged[id] = { ...slot, ...(prev === undefined ? {} : { hPrev: prev }), ...(manual ? { manual: true } : {}) };
+        const userResized = slot.userResized === true || cards[id]?.userResized === true;
+        merged[id] = {
+          ...slot,
+          ...(prev === undefined ? {} : { hPrev: prev }),
+          ...(manual ? { manual: true } : {}),
+          ...(userResized ? { userResized: true } : {}),
+        };
       }
       persist(merged, collapsed);
     },

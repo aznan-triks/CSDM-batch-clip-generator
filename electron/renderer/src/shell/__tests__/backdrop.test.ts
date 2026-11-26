@@ -69,6 +69,16 @@ describe("the plate border reacts to the mode-dependent glow tokens", () => {
     expect(parseAlpha("rgba(34,211,238,0.46)")).toBeCloseTo(0.46);
   });
 
+  it("parseAlpha reads color-mix(..., transparent) and CSS Color 4 slash alphas", () => {
+    expect(parseAlpha("color-mix(in srgb, var(--holo) 16%, transparent)")).toBeCloseTo(0.16);
+    expect(parseAlpha("color-mix(in srgb, #22d3ee 46%, transparent)")).toBeCloseTo(0.46);
+    expect(parseAlpha("color-mix(in srgb, rgb(34, 211, 238) 22%, transparent)")).toBeCloseTo(0.22);
+    expect(parseAlpha("color-mix(in srgb, transparent 70%, var(--holo))")).toBeCloseTo(0.3);
+    expect(parseAlpha("color-mix(in srgb, transparent, var(--holo) 30%)")).toBeCloseTo(0.3);
+    expect(parseAlpha("rgb(34 211 238 / 0.25)")).toBeCloseTo(0.25);
+    expect(parseAlpha("rgb(34 211 238 / 40%)")).toBeCloseTo(0.4);
+  });
+
   it("borderAlpha is the resting glow at zero intensity", () => {
     expect(borderAlpha(0.16, 0.22, 0)).toBeCloseTo(0.16);
   });

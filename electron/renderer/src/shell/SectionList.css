@@ -3,6 +3,9 @@
    let the scrollwrap above handle vertical overflow. */
 .grid-pane {
   width: 100%;
+  /* Prevent transient scrollbar-appearance or subpixel width from spawning a
+     horizontal scrollbar in `.scrollwrap`. */
+  overflow-x: clip;
   /* Graph-paper backdrop at the real cell pitch, so the user sees where a
      card will land while dragging. One column = --block, one gap = --block-gap. */
   background-image:

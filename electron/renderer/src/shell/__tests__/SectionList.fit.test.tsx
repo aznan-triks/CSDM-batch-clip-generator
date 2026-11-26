@@ -5,17 +5,20 @@
  * layout, so the measurement itself (`naturalRows`) is stubbed -- it is
  * proven against real layout by e2e/card-fit-proof.mjs.
  */
-import { act, render } from "@testing-library/react";
+import { act, fireEvent, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Card from "../../components/Card";
 import { SettingsProvider } from "../../settings/store";
+import { LEGACY_MANUAL_MARGIN_ROWS } from "../sectionLayout";
 import SectionList, { type SectionSpec } from "../SectionList";
 
 vi.mock("../cardFit", () => ({
   layoutChildren: () => [],
   naturalRows: () => 20,
 }));
+
+const saved = vi.fn();
 
 vi.mock("../sectionLayout", async () => {
   const actual = await vi.importActual<typeof import("../sectionLayout")>("../sectionLayout");
@@ -24,12 +27,14 @@ vi.mock("../sectionLayout", async () => {
     useSectionLayout: () => ({
       slots: () => ({
         auto: { x: 0, y: 0, w: 4, h: 8 },
-        hand: { x: 4, y: 0, w: 4, h: 8, manual: true },
+        hand: { x: 4, y: 0, w: 4, h: 8, userResized: true },
+        legacyClose: { x: 0, y: 8, w: 4, h: 20 + actual.LEGACY_MANUAL_MARGIN_ROWS, manual: true },
+        legacyTall: { x: 4, y: 8, w: 4, h: 20 + actual.LEGACY_MANUAL_MARGIN_ROWS + 4, manual: true },
         folded: { x: 8, y: 0, w: 4, h: 2, hPrev: 8 },
       }),
       isCollapsed: (id: string) => id === "folded",
       toggleCollapsed: vi.fn(),
-      save: vi.fn(),
+      save: saved,
     }),
   };
 });
@@ -54,6 +59,8 @@ afterEach(() => {
 const SECTIONS: SectionSpec[] = [
   { id: "auto", element: <Card title="Auto">a</Card> },
   { id: "hand", element: <Card title="Hand">b</Card> },
+  { id: "legacyClose", element: <Card title="LegacyClose">d</Card> },
+  { id: "legacyTall", element: <Card title="LegacyTall">e</Card> },
   { id: "folded", element: <Card title="Folded">c</Card> },
 ];
 
@@ -61,7 +68,7 @@ const SECTIONS: SectionSpec[] = [
 const px = (rows: number) => `${rows * 24 + (rows - 1) * 10}px`;
 
 describe("content-fitted card heights", () => {
-  it("fits a card nobody resized, and leaves hand-set and folded cards alone", async () => {
+  it("fits unresized and near-content legacy cards, keeps userResized, tall legacy, and folded cards", async () => {
     const { container } = render(
       <SettingsProvider>
         <SectionList tabId="t" sections={SECTIONS} />
@@ -71,6 +78,30 @@ describe("content-fitted card heights", () => {
     const height = (id: string) => (container.querySelector(`[data-card-id="${id}"]`) as HTMLElement).style.height;
     expect(height("auto")).toBe(px(20));
     expect(height("hand")).toBe(px(8));
+    expect(height("legacyClose")).toBe(px(20));
+    expect(height("legacyTall")).toBe(px(20 + LEGACY_MANUAL_MARGIN_ROWS + 4));
     expect(height("folded")).toBe(px(2));
+  });
+
+  it("marks userResized: true only when a manual resize changes card height", async () => {
+    saved.mockClear();
+    const { container } = render(
+      <SettingsProvider>
+        <SectionList tabId="t" sections={SECTIONS} />
+      </SettingsProvider>,
+    );
+    await act(async () => {});
+
+    const handle = container.querySelector('[data-card-id="auto"] .react-resizable-handle') as HTMLElement;
+    expect(handle).not.toBeNull();
+    fireEvent.mouseDown(handle, { clientX: 100, clientY: 100, button: 0 });
+    fireEvent.mouseMove(document, { clientX: 100, clientY: 240 });
+    fireEvent.mouseUp(document, { clientX: 100, clientY: 240 });
+    await act(async () => {});
+
+    expect(saved).toHaveBeenCalled();
+    const lastCall = saved.mock.calls.at(-1)?.[0] as Record<string, { userResized?: boolean }>;
+    expect(lastCall.auto.userResized).toBe(true);
+    expect(lastCall.legacyClose.userResized).toBeUndefined();
   });
 });

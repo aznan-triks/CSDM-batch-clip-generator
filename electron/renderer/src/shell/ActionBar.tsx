@@ -10,7 +10,7 @@
  * reacts to the engine's own events, never to a click. Enabled/disabled state
  * is read straight from the engine store, never guessed from the click.
  */
-import { type ReactNode, useCallback } from "react";
+import { type ReactNode, useCallback, useLayoutEffect, useRef, useState } from "react";
 
 import { runCommand } from "../bridge";
 import ActionButton from "../components/ActionButton";
@@ -136,6 +136,56 @@ export default function ActionBar({
     onSetTab("capture");
   }, [onSetTab]);
 
+  // Measure the primary button's horizontal span inside `.actbar` so the
+  // frosted backdrop layer (`.actbar-frost`) stops right before it instead of
+  // overlapping its 60fps ring damage rect (D-0004). Anchored from the right
+  // (`leadRight = bar.right - slot.left`) so shrinking the viewport never
+  // leaves a stale left offset wider than the bar.
+  const barRef = useRef<HTMLDivElement | null>(null);
+  const primarySlotRef = useRef<HTMLSpanElement | null>(null);
+  const [primarySpan, setPrimarySpan] = useState<{ leadRight: number; tailLeft: number } | null>(null);
+
+  const measurePrimary = useCallback(() => {
+    const bar = barRef.current;
+    const slot = primarySlotRef.current;
+    if (!bar || !slot) {
+      setPrimarySpan(null);
+      return;
+    }
+    const barRect = bar.getBoundingClientRect();
+    const slotRect = slot.getBoundingClientRect();
+    if (barRect.width === 0 || slotRect.width === 0) return;
+    const leadRight = Math.max(0, Math.ceil(barRect.right - slotRect.left));
+    const tailLeft = Math.max(0, Math.ceil(slotRect.right - barRect.left));
+    setPrimarySpan((prev) =>
+      prev && prev.leadRight === leadRight && prev.tailLeft === tailLeft ? prev : { leadRight, tailLeft },
+    );
+  }, []);
+
+  useLayoutEffect(() => {
+    measurePrimary();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measurePrimary);
+    if (barRef.current) observer.observe(barRef.current);
+    if (primarySlotRef.current) observer.observe(primarySlotRef.current);
+    return () => observer.disconnect();
+  }, [active, stopLabel, measurePrimary]);
+
+  const setPrimarySlot = useCallback(
+    (action: string) => (el: HTMLSpanElement | null) => {
+      primarySlotRef.current = el;
+      registerButton(action)(el);
+    },
+    [registerButton],
+  );
+
+  const frostVars = primarySpan
+    ? ({
+        "--frost-lead-right": `${primarySpan.leadRight}px`,
+        "--frost-tail-left": active === "editing" ? `${primarySpan.tailLeft}px` : "100%",
+      } as React.CSSProperties)
+    : undefined;
+
   // The editing tab swaps the whole capture action set: GENERATE / SAVE /
   // CANCEL replace RUN / PREVIEW / STOP / KILL. These are not registered with
   // the weapon controller (it only aims at run/preview/stop/kill), and none of
@@ -143,9 +193,11 @@ export default function ActionBar({
   // registration refs simply stay null while editing is open.
   if (active === "editing") {
     return (
-      <div className="actbar">
+      <div className="actbar" ref={barRef} style={frostVars}>
+        <span className="actbar-frost" aria-hidden="true" />
+        <span className="actbar-frost actbar-frost-tail" aria-hidden="true" />
         {weapon}
-        <span className="action-bar-btn">
+        <span className="action-bar-btn" ref={primarySlotRef}>
           <ActionButton
             label="GENERATE"
             icon={<ICONS.run />}
@@ -182,7 +234,8 @@ export default function ActionBar({
   }
 
   return (
-    <div className="actbar" data-action="P1">
+    <div className="actbar" data-action="P1" ref={barRef} style={frostVars}>
+      <span className="actbar-frost" aria-hidden="true" />
       {weapon}
       <span className="action-bar-btn" ref={registerButton("preview")}>
         <ActionButton
@@ -217,7 +270,7 @@ export default function ActionBar({
           onClick={onKill}
         />
       </span>
-      <span className="action-bar-btn" ref={registerButton("run")}>
+      <span className="action-bar-btn" ref={setPrimarySlot("run")}>
         <ActionButton
           label="RUN"
           icon={<ICONS.run />}

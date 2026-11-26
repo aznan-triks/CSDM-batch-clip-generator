@@ -20,6 +20,14 @@ Format inspired by [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## 3.5.3 — 2026-11-26
+
+### Fixed
+
+**Plain words:** The background tile grid no longer draws opaque blue borders around every tile, and the Capture tab no longer shows a stray horizontal scrollbar under the Player card. Cards from older saved layouts now resize cleanly to fit their content unless you had stretched them noticeably taller, while cards you resize yourself keep your exact height. The glowing ring on the primary action button keeps spinning over the frosted bar with less GPU work at idle.
+
+**Technical:** `parseAlpha` (`shell/backdropField.ts`) now parses CSS `color-mix(..., <N>%, transparent)` and slash alpha syntax used by `--glow-in`/`--glow-out` instead of falling back to `1`; `.grid-pane` uses `overflow-x: clip` with integer-floored `ResizeObserver` widths in `SectionList`. Card slots add `userResized?: boolean` set only on vertical resize in `onResizeStop`, while legacy `manual: true` slots without `userResized` re-fit unless their height exceeds `naturalRows + LEGACY_MANUAL_MARGIN_ROWS` (`resolveCardHeight` in `shell/sectionLayout.ts`). `ActionBar` isolates `.btn.primary` outside `.actbar-frost`'s `backdrop-filter` bounds (`--primary-left`/`--primary-right`) and `mock-bridge.css` replaces `.btn.primary .sb`'s `mask-composite` pass with an opaque inner pill cover (`.sb::after` under `.btn-face`).
+
 ## 3.5.2 — 2026-11-26
 
 ### Fixed

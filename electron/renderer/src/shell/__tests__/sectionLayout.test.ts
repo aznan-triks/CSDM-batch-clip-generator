@@ -6,7 +6,14 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { COLS_SCALE_V3_TO_V4, LAYOUT_VERSION, ROWS_PER_BLOCK, migrateLayout } from "../sectionLayout";
+import {
+  COLS_SCALE_V3_TO_V4,
+  LAYOUT_VERSION,
+  LEGACY_MANUAL_MARGIN_ROWS,
+  ROWS_PER_BLOCK,
+  migrateLayout,
+  resolveCardHeight,
+} from "../sectionLayout";
 
 const IDS = ["player", "demo", "timing"] as const;
 
@@ -86,6 +93,41 @@ describe("migrateLayout", () => {
   it("does not rescale a v4 layout's columns (v4 -> v5 only added `manual`)", () => {
     const v4 = { v: 4, cards: { player: { x: 2, y: 0, w: 6, h: 12 } } };
     expect(migrateLayout(v4, IDS, 20).cards.player).toEqual({ x: 2, y: 0, w: 6, h: 12 });
+  });
+
+  it("keeps userResized: true and drops non-boolean userResized", () => {
+    const stored = {
+      v: LAYOUT_VERSION,
+      cards: {
+        player: { x: 0, y: 0, w: 6, h: 12, userResized: true },
+        demo: { x: 6, y: 0, w: 4, h: 9, userResized: "yes" },
+      },
+    };
+    const { cards } = migrateLayout(stored, IDS, 10);
+    expect(cards.player.userResized).toBe(true);
+    expect(cards.demo.userResized).toBeUndefined();
+  });
+});
+
+describe("resolveCardHeight distinguishes explicit user resize from legacy manual saves", () => {
+  it("always keeps an explicitly userResized card height", () => {
+    expect(resolveCardHeight({ h: 8, userResized: true }, 20, false)).toBe(8);
+    expect(resolveCardHeight({ h: 21, userResized: true }, 20, false)).toBe(21);
+  });
+
+  it("re-adjusts a legacy manual save that is close to or smaller than content", () => {
+    expect(resolveCardHeight({ h: 20 + LEGACY_MANUAL_MARGIN_ROWS, manual: true }, 20, false)).toBe(20);
+    expect(resolveCardHeight({ h: 12, manual: true }, 20, false)).toBe(20);
+  });
+
+  it("keeps a legacy manual save that clearly exceeds content", () => {
+    const tall = 20 + LEGACY_MANUAL_MARGIN_ROWS + 1;
+    expect(resolveCardHeight({ h: tall, manual: true }, 20, false)).toBe(tall);
+  });
+
+  it("fits an unresized card and preserves collapsed height", () => {
+    expect(resolveCardHeight({ h: 24 }, 14, false)).toBe(14);
+    expect(resolveCardHeight({ h: 2, userResized: true }, 20, true)).toBe(2);
   });
 });
 

@@ -188,15 +188,63 @@ export function cellIntensity(
   return Math.min(1, (field - field_.threshold) / field_.rampWidth);
 }
 
+function splitTopLevelComma(text: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === "(") depth += 1;
+    else if (ch === ")") depth = Math.max(0, depth - 1);
+    else if (ch === "," && depth === 0) {
+      parts.push(text.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(text.slice(start));
+  return parts;
+}
+
+const clampUnit = (n: number): number => (Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 1);
+
 /**
- * Pull the alpha channel out of an `rgba(r, g, b, a)` string, e.g. one read
- * straight from `--glow-in` / `--glow-out` via `getComputedStyle`. Those
- * tokens are already valid CSS colours; this is the one bit of them the
- * canvas needs as a plain number.
+ * Pull the alpha channel out of a CSS colour string read from `--glow-in` /
+ * `--glow-out` via `getComputedStyle`. Supports `rgba(r, g, b, a)`, CSS Color 4
+ * `rgb(r g b / a)` (decimal or `%`), and `color-mix(..., <N>%, transparent)`
+ * which `tokens.css` uses to derive glow tokens from `--holo`.
  */
-export function parseAlpha(rgba: string): number {
-  const match = rgba.match(/rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\)/);
-  return match ? Number(match[1]) : 1;
+export function parseAlpha(color: string): number {
+  const trimmed = color.trim();
+  const rgbaMatch = trimmed.match(/rgba\([^,]+,[^,]+,[^,]+,\s*([\d.]+)\)/i);
+  if (rgbaMatch) return clampUnit(Number(rgbaMatch[1]));
+
+  const slashMatch = trimmed.match(/\/\s*([\d.]+)(%?)\s*\)$/);
+  if (slashMatch) {
+    const value = Number(slashMatch[1]);
+    return clampUnit(slashMatch[2] ? value / 100 : value);
+  }
+
+  if (/^color-mix\(/i.test(trimmed)) {
+    const open = trimmed.indexOf("(");
+    const close = trimmed.lastIndexOf(")");
+    if (close > open) {
+      const parts = splitTopLevelComma(trimmed.slice(open + 1, close));
+      if (parts.length >= 3) {
+        const stops = parts.slice(1, 3).map((s) => s.trim());
+        const transparentStop = stops.find((s) => /^transparent\b/i.test(s));
+        const colorStop = stops.find((s) => !/^transparent\b/i.test(s));
+        if (transparentStop && colorStop) {
+          const pct = colorStop.match(/([\d.]+)%\s*$/);
+          if (pct) return clampUnit(Number(pct[1]) / 100);
+          const transPct = transparentStop.match(/([\d.]+)%\s*$/);
+          if (transPct) return clampUnit((100 - Number(transPct[1])) / 100);
+          return 0.5;
+        }
+      }
+    }
+  }
+
+  return 1;
 }
 
 /**

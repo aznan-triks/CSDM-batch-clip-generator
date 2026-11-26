@@ -84,8 +84,10 @@ export default function ActionButton({
       <span className="bx" aria-hidden="true" />
       <span className="fl" aria-hidden="true" />
       <span className="brs" aria-hidden="true" />
-      {icon}
-      {label}
+      <strong className="btn-face">
+        {icon}
+        {label}
+      </strong>
     </button>
   );
 }

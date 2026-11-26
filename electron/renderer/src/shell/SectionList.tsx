@@ -20,7 +20,7 @@ import { cloneElement, useEffect, useRef, useState, type CSSProperties, type Mou
 import GridLayout, { type Layout } from "react-grid-layout/legacy";
 
 import { layoutChildren, naturalRows } from "./cardFit";
-import { useSectionLayout, COLLAPSED_ROWS_FALLBACK, type GridSlot } from "./sectionLayout";
+import { resolveCardHeight, useSectionLayout, COLLAPSED_ROWS_FALLBACK, type GridSlot } from "./sectionLayout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./SectionList.css";
@@ -80,7 +80,7 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
     const node = containerRef.current;
     if (!node || typeof ResizeObserver === "undefined") return;
     setWidth(node.clientWidth);
-    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width));
+    const observer = new ResizeObserver(([entry]) => setWidth(Math.floor(entry.contentRect.width)));
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
@@ -190,14 +190,15 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
   const rglLayout: Layout = declaredIds.map((id) => {
     // `slots()` covers every declared card; the fallback only guards a caller
     // (a test stub) that declares more cards than it stores.
-    const { x, y, w, h, manual } = slots[id] ?? ({} as GridSlot);
+    const slot = slots[id] ?? ({} as GridSlot);
+    const { x, y, w } = slot;
     const collapsed = layout.isCollapsed(id);
     return {
       i: id,
       x,
       y,
       w,
-      h: collapsed || manual ? h : (fitted[id] ?? h),
+      h: resolveCardHeight(slot, fitted[id], collapsed),
       // A collapsed card has no height to give: leaving the corner live would
       // let the user store a height that expanding immediately overwrites.
       isResizable: !collapsed,
@@ -242,6 +243,7 @@ export default function SectionList({ tabId, sections }: SectionListProps) {
   function onResizeStop(next: Layout, oldItem: Layout[number] | null, newItem: Layout[number] | null): void {
     const cards = toSlots(next);
     if (newItem && oldItem && newItem.h !== oldItem.h && cards[newItem.i]) {
+      cards[newItem.i].userResized = true;
       cards[newItem.i].manual = true;
     }
     layout.save(cards);
