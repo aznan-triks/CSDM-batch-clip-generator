@@ -110,16 +110,39 @@ fn save_png(path: &str, img: &egui::ColorImage) {
 }
 
 fn main() -> eframe::Result {
-    let script = match std::env::var_os(SCENARIO_ENV) {
-        Some(path) => ScriptedEngine::from_file(std::path::Path::new(&path)),
-        None => ScriptedEngine::from_json(BOOT_SCENARIO),
-    }
-    .unwrap_or_else(|e| panic!("{}", e.user_message()));
-    let (tx, rx) = channel();
-    let engine = DevEngine { script, tx, rx, next: 0 };
-    // The window opens at the settings' default size; the saved size is applied once they load.
-    let defaults = csdm_core::settings::defaults(None);
-    let size = |k: &str| defaults.get(k).and_then(serde_json::Value::as_f64).unwrap_or_default() as f32;
+    let (engine, settings): (Box<dyn Engine>, csdm_core::Settings) = match std::env::var_os(SCENARIO_ENV) {
+        Some(path) => {
+            let script = if path.is_empty() {
+                ScriptedEngine::from_json(BOOT_SCENARIO)
+            } else {
+                ScriptedEngine::from_file(std::path::Path::new(&path))
+            }
+            .unwrap_or_else(|e| panic!("{}", e.user_message()));
+            let (tx, rx) = channel();
+            (Box::new(DevEngine { script, tx, rx, next: 0 }), csdm_core::settings::defaults(None))
+        }
+        None => {
+            let secrets = csdm_engine::Secrets::default();
+            let places = csdm_engine::import35::SearchPlaces::from_env();
+            let (home, _opened) = match csdm_engine::settings_home::SettingsHome::open(&places, secrets.clone()) {
+                Ok(v) => v,
+                Err(e) => {
+                    rfd::MessageDialog::new().set_level(rfd::MessageLevel::Error).set_title(APP_TITLE).set_description(&e).show();
+                    return Ok(());
+                }
+            };
+            let settings = match home.load_config() {
+                Ok(v) => v.get("data").and_then(serde_json::Value::as_object).cloned().unwrap_or_else(|| csdm_core::settings::defaults(None)),
+                Err(e) => {
+                    rfd::MessageDialog::new().set_level(rfd::MessageLevel::Error).set_title(APP_TITLE).set_description(&e).show();
+                    return Ok(());
+                }
+            };
+            let journal = csdm_engine::journal::Journal::in_dir(home.active(), secrets.clone());
+            (Box::new(csdm_engine::RealEngine::start_with_home(settings.clone(), secrets, Some(journal), Some(home))), settings)
+        }
+    };
+    let size = |k: &str| settings.get(k).and_then(serde_json::Value::as_f64).unwrap_or_default() as f32;
     let mut vp = egui::ViewportBuilder::default().with_title(APP_TITLE).with_inner_size([size("ui_window_w"), size("ui_window_h")]).with_min_inner_size(WINDOW_MIN);
     if let Some((x, y)) = std::env::var(OFFSCREEN_ENV).ok().and_then(|v| v.split_once(',').and_then(|(x, y)| Some((x.trim().parse::<f32>().ok()?, y.trim().parse::<f32>().ok()?)))) {
         vp = vp.with_position([x, y]).with_active(false).with_taskbar(false);
@@ -130,6 +153,6 @@ fn main() -> eframe::Result {
     eframe::run_native(
         APP_TITLE,
         options,
-        Box::new(move |cc| Ok(Box::new(App { shell: Shell::new(&cc.egui_ctx, Box::new(engine), ShellOptions::from_env()).with_update_check(update_rx).with_tab(csdm_app::tabs::TabId::Settings, Box::new(csdm_app::tabs::settings::SettingsTab::new())).with_tab(csdm_app::tabs::TabId::Tags, Box::new(csdm_app::tabs::tags::TagsTab::new())).with_tab(csdm_app::tabs::TabId::Capture, Box::new(csdm_app::tabs::capture::CaptureTab::new())).with_tab(csdm_app::tabs::TabId::Editing, Box::new(csdm_app::tabs::editing::EditingTab::new())).with_tab(csdm_app::tabs::TabId::Video, Box::new(csdm_app::tabs::video::VideoTab::new())), frames: 0, ready, shot, shot_asked: false }))),
+        Box::new(move |cc| Ok(Box::new(App { shell: Shell::new(&cc.egui_ctx, engine, ShellOptions::from_env()).with_update_check(update_rx).with_tab(csdm_app::tabs::TabId::Settings, Box::new(csdm_app::tabs::settings::SettingsTab::new())).with_tab(csdm_app::tabs::TabId::Tags, Box::new(csdm_app::tabs::tags::TagsTab::new())).with_tab(csdm_app::tabs::TabId::Capture, Box::new(csdm_app::tabs::capture::CaptureTab::new())).with_tab(csdm_app::tabs::TabId::Editing, Box::new(csdm_app::tabs::editing::EditingTab::new())).with_tab(csdm_app::tabs::TabId::Video, Box::new(csdm_app::tabs::video::VideoTab::new())), frames: 0, ready, shot, shot_asked: false }))),
     )
 }
