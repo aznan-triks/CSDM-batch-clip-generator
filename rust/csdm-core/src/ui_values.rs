@@ -391,3 +391,14 @@ pub const EDITING_AXIS_MARGIN_S: f64 = 2.0;
 pub const EDITING_RULER_HEIGHT: f32 = 24.0;
 pub const EDITING_LANE_HEIGHT: f32 = 44.0;
 pub const EDITING_BLOCK: [f32; 2] = [9.0, 26.0];
+
+// ---- decisions (D-0004, D-0005, D-0011) ----
+/// Target frame interval for the primary action button's animated ring (~30 Hz instead of unbounded spin).
+pub const RING_FRAME_MS: u64 = 33;
+/// Extra rows above content needed for a legacy `manual` height without `userResized` to count as intentional (D-0005).
+pub const LEGACY_MANUAL_MARGIN_ROWS: i32 = 4;
+/// Silent background update check endpoint and timeouts (D-0011).
+pub const GITHUB_RELEASES_LATEST_URL: &str = "https://api.github.com/repos/aznan-triks/CSDM-batch-clip-generator/releases/latest";
+pub const GITHUB_RELEASES_ALLOWED_PREFIX: &str = "https://github.com/aznan-triks/CSDM-batch-clip-generator/";
+pub const UPDATE_HTTP_TIMEOUT_S: u32 = 4;
+pub const UPDATE_CONNECT_TIMEOUT_S: u32 = 3;

@@ -66,7 +66,7 @@ fn settings_tab_on_the_real_engine() {
     let secrets = Secrets::default();
     let places = SearchPlaces { explicit_root: Some(profile.path().into()), exe_dir: None, local_app_data: Some(lad.path().into()) };
     let (home, opened) = SettingsHome::open(&places, secrets.clone()).unwrap();
-    assert!(matches!(opened, Opened::Imported { .. }), "first launch imports the 3.5 copy");
+    assert_eq!(opened, Opened::Existing, "opens shared CONFIG_SUBDIR copy without writing yet");
     let loaded = home.load_config().unwrap();
     let settings = loaded["data"].as_object().unwrap().clone();
     let password = settings.get("pg_pass").and_then(Value::as_str).unwrap_or_default().to_string();
@@ -118,6 +118,6 @@ fn settings_tab_on_the_real_engine() {
         assert!(h.state().console.texts().iter().all(|l| !l.contains(&password)), "password in the console");
     }
     assert!(originals(src) == before, "the real 3.5 folder was not written");
-    assert!(originals(&old) == copies, "the 3.5 copy was not written");
+    assert!(originals(&old.join(csdm_core::values::PRE_V5_BACKUP_DIR)) == copies, "pre-v5 backup holds the unmodified 3.5 copy");
     println!("e2e ok: db connected, test & reload ok, preset saved ({} settings) and loaded, 3.5 files unchanged", data.len());
 }

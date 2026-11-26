@@ -1,11 +1,10 @@
 //! The SETTINGS tab's commands (T11): settings, presets and the settings folder
 //! (3.5 `config.py` + `bridge/host.py` `_cmd_*_config`, `_cmd_*_preset`, `_cmd_*_config_dir`).
 //!
-//! 5.x keeps its own folder (`V5_CONFIG_SUBDIR`) under the app root, `%LOCALAPPDATA%` or a
-//! chosen parent, and never writes into the 3.5 folder: on first launch the 3.5 state is read
-//! (`import35`, read-only) and written into the 5.x folder. A folder switch COPIES the files,
-//! backing up any it would overwrite, and the default folder keeps the pointer (`config_dir`)
-//! for the next launch, as 3.5 did.
+//! 5.x shares the 3.5 folder (`CONFIG_SUBDIR` = `CSDM-batch-clip_config`) under the app root,
+//! `%LOCALAPPDATA%` or a chosen parent (D-0016): it backs up any pre-existing files into
+//! `backup-pre-v5/` once before its first write and preserves unknown 3.5 keys across saves.
+//! Pre-3.1.1 legacy folders (`LEGACY_CONFIG_SUBDIR`) are imported read-only into `CONFIG_SUBDIR`.
 //!
 //! `SettingsHome::handle` answers the commands it owns; the real engine loop calls it for them
 //! (merge with T3). `SettingsEngine` serves those commands alone, for tests and recorded scenarios.
@@ -17,11 +16,12 @@ use crate::import35::{import_dir, locate, SearchPlaces};
 use crate::journal::{civil_from_days, SECS_PER_DAY, SECS_PER_HOUR, SECS_PER_MINUTE};
 use crate::Engine;
 use csdm_core::presets::{excludes, keys_for, normalize, payload};
-use csdm_core::values::{ASM_NAMES_FILE, CONFIG_BACKUP_PREFIX, CONFIG_DIR_APPDATA, CONFIG_DIR_DEFAULT, CONFIG_FILE, CONFIG_FILES, PRESETS_FILE, V5_CONFIG_SUBDIR};
+use csdm_core::values::{ASM_NAMES_FILE, CONFIG_BACKUP_PREFIX, CONFIG_DIR_APPDATA, CONFIG_DIR_DEFAULT, CONFIG_FILE, CONFIG_FILES, CONFIG_SUBDIR, PRE_V5_BACKUP_DIR, PRESETS_FILE};
 use csdm_core::Settings;
 use serde_json::{json, Map, Value};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Receiver};
+use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const FULL: &str = "full";
@@ -31,12 +31,14 @@ const PRESET_NAME_MESSAGE: &str = "Name for this preset";
 
 /// Where the settings live and how to reach the other places a switch can target.
 pub struct SettingsHome {
-    /// The app root: its `V5_CONFIG_SUBDIR` is the default folder and keeps the pointer.
+    /// The app root: its `CONFIG_SUBDIR` is the default folder and keeps the pointer.
     root: PathBuf,
     local_app_data: Option<PathBuf>,
     /// The folder holding the files now.
     active: PathBuf,
     secrets: Secrets,
+    /// True when pre-existing files need a one-time `backup-pre-v5/` copy before first write.
+    backup_pending: Mutex<bool>,
 }
 
 /// What opening the settings found, for the start-up console line.
@@ -107,11 +109,19 @@ pub fn build_preset(cfg: &Settings, cats: &[String], selected_clips: Option<&Val
 }
 
 impl SettingsHome {
-    /// Finds the 5.x folder (following its pointer), or imports the 3.5 state on first launch.
-    /// The root is the explicit root (tests, scripted launches), else the exe's folder.
+    /// Finds the shared `CSDM-batch-clip_config` folder (following its pointer), or imports a legacy
+    /// pre-3.1.1 folder on first launch. Never writes during `open` on existing 3.5 folders.
     pub fn open(places: &SearchPlaces, secrets: Secrets) -> Result<(Self, Opened), String> {
         let root = places.explicit_root.clone().or_else(|| places.exe_dir.clone()).ok_or("The app's own folder could not be found.")?;
-        let mut home = SettingsHome { active: root.join(V5_CONFIG_SUBDIR), root, local_app_data: places.local_app_data.clone(), secrets };
+        let mut home = SettingsHome {
+            active: root.join(CONFIG_SUBDIR),
+            root,
+            local_app_data: places.local_app_data.clone(),
+            secrets,
+            backup_pending: Mutex::new(false),
+        };
+        let has_files = |dir: &Path| CONFIG_FILES.iter().any(|f| dir.join(f).is_file());
+        let needs_backup = |dir: &Path| has_files(dir) && !dir.join(PRE_V5_BACKUP_DIR).exists();
         let pointer_file = home.default_dir().join(CONFIG_FILE);
         if pointer_file.is_file() {
             let pointer = read_object(&pointer_file)?.get("config_dir").and_then(Value::as_str).unwrap_or(CONFIG_DIR_DEFAULT).to_string();
@@ -121,6 +131,7 @@ impl SettingsHome {
                     home.active = dir;
                 }
             }
+            *home.backup_pending.get_mut().unwrap_or_else(|p| p.into_inner()) = needs_backup(&home.active);
             return Ok((home, Opened::Existing));
         }
         let from = match locate(places) {
@@ -128,9 +139,14 @@ impl SettingsHome {
             Err(EngineError::NoSettingsFound { .. }) => return Ok((home, Opened::Fresh)),
             Err(e) => return Err(e.user_message()),
         };
+        if from.file_name() == Some(std::ffi::OsStr::new(CONFIG_SUBDIR)) {
+            home.active = from;
+            *home.backup_pending.get_mut().unwrap_or_else(|p| p.into_inner()) = needs_backup(&home.active);
+            return Ok((home, Opened::Existing));
+        }
         let imported = import_dir(&from).map_err(|e| e.user_message())?;
-        let mut settings = imported.settings;
-        // The 3.5 pointer names 3.5 folders: the 5.x copy starts in its own default folder.
+        let mut settings = imported.unknown;
+        settings.extend(imported.settings);
         settings.insert("config_dir".into(), json!(CONFIG_DIR_DEFAULT));
         home.secrets.add(settings.get("pg_pass").and_then(Value::as_str).unwrap_or_default());
         write_json(&home.active.join(CONFIG_FILE), &Value::Object(settings))?;
@@ -148,16 +164,37 @@ impl SettingsHome {
     }
 
     fn default_dir(&self) -> PathBuf {
-        self.root.join(V5_CONFIG_SUBDIR)
+        self.root.join(CONFIG_SUBDIR)
     }
 
     /// 3.5 `resolve_config_dir`: `""` the app folder, `appdata` Local AppData, else a parent folder.
     fn resolve(&self, value: &str) -> Result<PathBuf, String> {
         match value {
             CONFIG_DIR_DEFAULT => Ok(self.default_dir()),
-            CONFIG_DIR_APPDATA => self.local_app_data.as_ref().map(|d| d.join(V5_CONFIG_SUBDIR)).ok_or_else(|| "Windows did not say where your Local AppData folder is: choose a folder instead.".to_string()),
-            path => Ok(Path::new(path).join(V5_CONFIG_SUBDIR)),
+            CONFIG_DIR_APPDATA => self.local_app_data.as_ref().map(|d| d.join(CONFIG_SUBDIR)).ok_or_else(|| "Windows did not say where your Local AppData folder is: choose a folder instead.".to_string()),
+            path => Ok(Path::new(path).join(CONFIG_SUBDIR)),
         }
+    }
+
+    /// Backs up existing settings files once into `backup-pre-v5/` before v5's first write (D-0016).
+    fn ensure_pre_v5_backup(&self) -> Result<(), String> {
+        let mut pending = self.backup_pending.lock().unwrap_or_else(|p| p.into_inner());
+        if !*pending {
+            return Ok(());
+        }
+        let backup = self.active.join(PRE_V5_BACKUP_DIR);
+        if !backup.exists() {
+            let existing: Vec<&str> = CONFIG_FILES.iter().copied().filter(|n| self.active.join(n).is_file()).collect();
+            if !existing.is_empty() {
+                std::fs::create_dir_all(&backup).map_err(|e| io(&backup, e))?;
+                for name in existing {
+                    let src = self.active.join(name);
+                    std::fs::copy(&src, backup.join(name)).map_err(|e| io(&backup.join(name), e))?;
+                }
+            }
+        }
+        *pending = false;
+        Ok(())
     }
 
     fn kind(&self, dir: &Path) -> &'static str {
@@ -177,14 +214,22 @@ impl SettingsHome {
         Ok(json!({"data": imported.settings, "notices": imported.notices}))
     }
 
-    /// Writes the settings the window holds. `config_dir` stays the engine's: a save racing a
-    /// folder switch never points the app back to the old folder (3.5 `ConfigFolderCard`).
+    /// Writes the settings the window holds, preserving unknown 3.5 keys and taking a one-time
+    /// `backup-pre-v5/` snapshot before the first write (D-0016). `config_dir` stays the engine's:
+    /// a save racing a folder switch never points the app back to the old folder.
     pub fn save_config(&self, cfg: &Settings) -> Result<Value, String> {
-        let mut cfg = cfg.clone();
+        self.ensure_pre_v5_backup()?;
+        let path = self.active.join(CONFIG_FILE);
+        let mut merged = if path.is_file() {
+            read_object(&path)?.into_iter().filter(|(k, _)| csdm_core::settings::def(k).is_none()).collect::<Map<String, Value>>()
+        } else {
+            Map::new()
+        };
+        merged.extend(cfg.clone());
         let pointer = self.pointer_value();
-        cfg.insert("config_dir".into(), json!(pointer));
-        self.secrets.add(cfg.get("pg_pass").and_then(Value::as_str).unwrap_or_default());
-        write_json(&self.active.join(CONFIG_FILE), &Value::Object(cfg))?;
+        merged.insert("config_dir".into(), json!(pointer));
+        self.secrets.add(merged.get("pg_pass").and_then(Value::as_str).unwrap_or_default());
+        write_json(&path, &Value::Object(merged))?;
         Ok(json!({}))
     }
 
@@ -229,6 +274,7 @@ impl SettingsHome {
             return Err("Tick at least one category to include in the preset.".into());
         }
         let mut presets = self.presets()?;
+        self.ensure_pre_v5_backup()?;
         let preset = build_preset(cfg, cats, selected_clips);
         let settings = preset["data"].as_object().map_or(0, Map::len);
         let clips = preset.get("selected_clips").and_then(Value::as_array).map_or(0, Vec::len);
@@ -254,6 +300,7 @@ impl SettingsHome {
         if presets.remove(name).is_none() {
             return Err(format!("There is no preset named '{name}' any more. Reload the preset list."));
         }
+        self.ensure_pre_v5_backup()?;
         write_json(&self.active.join(PRESETS_FILE), &Value::Object(presets.clone()))?;
         Ok(json!({"data": presets}))
     }
@@ -282,6 +329,7 @@ impl SettingsHome {
         if same_dir(&target_dir, &self.active) {
             return self.probe(Some(target));
         }
+        self.ensure_pre_v5_backup()?;
         std::fs::create_dir_all(&target_dir).map_err(|e| format!("Could not create the folder {} ({e}). Choose a folder on a drive that exists and that you can write to.", target_dir.display()))?;
         let backup = target_dir.join(backup_name());
         for name in CONFIG_FILES {
@@ -403,26 +451,51 @@ mod tests {
     }
 
     #[test]
-    fn first_launch_imports_35_into_its_own_folder_and_leaves_35_untouched() {
+    fn shared_folder_backs_up_once_before_first_write_and_preserves_unknown_35_keys() {
         let t = tempfile::tempdir().unwrap();
-        let old = t.path().join(CONFIG_SUBDIR);
-        write(&old.join(CONFIG_FILE), json!({"pg_pass": SECRET, "crf": 21, "config_dir": ""}));
-        write(&old.join(PRESETS_FILE), json!({"p": {"type": "full", "data": {"pg_pass": SECRET, "crf": 20}}}));
-        write(&old.join(PLAYERS_FILE), json!([{"steam_id": "7", "name": "a", "label": ""}]));
-        write(&old.join(ASM_NAMES_FILE), json!(["night"]));
-        let before = hashes(&old);
+        let dir = t.path().join(CONFIG_SUBDIR);
+        write(&dir.join(CONFIG_FILE), json!({"pg_pass": SECRET, "crf": 21, "config_dir": "", "custom_35_key": 42, "legacy_flag": "keep"}));
+        write(&dir.join(PRESETS_FILE), json!({"p": {"type": "full", "data": {"pg_pass": SECRET, "crf": 20}}}));
+        write(&dir.join(PLAYERS_FILE), json!([{"steam_id": "7", "name": "a", "label": ""}]));
+        write(&dir.join(ASM_NAMES_FILE), json!(["night"]));
+        let before = hashes(&dir);
         let (home, opened) = SettingsHome::open(&places(t.path(), None), Secrets::default()).unwrap();
-        assert!(matches!(opened, Opened::Imported { ref from, .. } if *from == old));
-        assert_eq!(home.active(), t.path().join(V5_CONFIG_SUBDIR));
-        assert_eq!(hashes(&old), before, "the 3.5 folder is never written");
+        assert_eq!(opened, Opened::Existing);
+        assert_eq!(home.active(), dir);
+        assert_eq!(hashes(&dir), before, "opening writes nothing to existing 3.5 files");
+        assert!(!dir.join(PRE_V5_BACKUP_DIR).exists(), "no backup created until first write");
+
         let loaded = home.load_config().unwrap();
         assert_eq!(loaded["data"]["crf"], json!(21));
         assert_eq!(loaded["data"]["saved_players"][0]["steam_id"], json!("7"));
         let presets = home.list_presets().unwrap();
         assert_eq!(presets["data"]["p"]["data"], json!({"crf": 20}), "the password never reaches a 5.x preset");
-        let names: Value = serde_json::from_slice(&fs::read(home.active().join(ASM_NAMES_FILE)).unwrap()).unwrap();
-        assert_eq!(names, json!(["night"]));
-        // Second launch reads the 5.x folder, no re-import.
+
+        home.save_config(&cfg(json!({"crf": 18}))).unwrap();
+        assert_eq!(hashes(&dir.join(PRE_V5_BACKUP_DIR)), before, "pre-v5 backup holds exact pre-write 3.5 files");
+        let saved = read_object(&dir.join(CONFIG_FILE)).unwrap();
+        assert_eq!(saved["crf"], json!(18));
+        assert_eq!(saved["custom_35_key"], json!(42));
+        assert_eq!(saved["legacy_flag"], json!("keep"));
+
+        // Second save does not overwrite the pre-v5 backup.
+        home.save_config(&cfg(json!({"crf": 16}))).unwrap();
+        assert_eq!(hashes(&dir.join(PRE_V5_BACKUP_DIR)), before);
+        assert_eq!(read_object(&dir.join(CONFIG_FILE)).unwrap()["custom_35_key"], json!(42));
+    }
+
+    #[test]
+    fn legacy_folder_imports_into_shared_config_subdir_untouched() {
+        let t = tempfile::tempdir().unwrap();
+        let old = t.path().join(csdm_core::values::LEGACY_CONFIG_SUBDIR);
+        write(&old.join(CONFIG_FILE), json!({"pg_pass": SECRET, "crf": 21, "config_dir": "", "legacy_extra": true}));
+        let before = hashes(&old);
+        let (home, opened) = SettingsHome::open(&places(t.path(), None), Secrets::default()).unwrap();
+        assert!(matches!(opened, Opened::Imported { ref from, .. } if *from == old));
+        assert_eq!(home.active(), t.path().join(CONFIG_SUBDIR));
+        assert_eq!(hashes(&old), before, "the legacy folder is never written");
+        assert_eq!(read_object(&home.active().join(CONFIG_FILE)).unwrap()["legacy_extra"], json!(true));
+        // Second launch reads the shared folder cleanly.
         let (again, opened) = SettingsHome::open(&places(t.path(), None), Secrets::default()).unwrap();
         assert_eq!((opened, again.active()), (Opened::Existing, home.active()));
     }
@@ -503,7 +576,7 @@ mod tests {
         assert_eq!((&status["data"]["kind"], &status["data"]["same"]), (&json!("app"), &json!(true)));
 
         // A custom folder already holding a config: the probe names it, the switch backs it up.
-        let target = custom.path().join(V5_CONFIG_SUBDIR);
+        let target = custom.path().join(CONFIG_SUBDIR);
         write(&target.join(CONFIG_FILE), json!({"crf": 99}));
         let target_value = custom.path().to_str().unwrap();
         let p = home.probe(Some(target_value)).unwrap();
@@ -511,14 +584,14 @@ mod tests {
         let source_before = hashes(home.active());
         let r = home.apply(target_value).unwrap();
         assert_eq!((&r["data"]["kind"], &r["data"]["same"]), (&json!("custom"), &json!(true)));
-        assert_eq!(hashes(&t.path().join(V5_CONFIG_SUBDIR)).into_iter().filter(|(n, _)| n != CONFIG_FILE).collect::<Vec<_>>(), source_before.into_iter().filter(|(n, _)| n != CONFIG_FILE).collect::<Vec<_>>(), "the source files stay in place");
+        assert_eq!(hashes(&t.path().join(CONFIG_SUBDIR)).into_iter().filter(|(n, _)| n != CONFIG_FILE).collect::<Vec<_>>(), source_before.into_iter().filter(|(n, _)| n != CONFIG_FILE).collect::<Vec<_>>(), "the source files stay in place");
         let backups: Vec<PathBuf> = fs::read_dir(&target).unwrap().map(|e| e.unwrap().path()).filter(|p| p.is_dir()).collect();
         assert_eq!(backups.len(), 1);
         assert!(backups[0].file_name().unwrap().to_string_lossy().starts_with(CONFIG_BACKUP_PREFIX));
         assert_eq!(read_object(&backups[0].join(CONFIG_FILE)).unwrap()["crf"], json!(99), "the overwritten file is kept");
         assert_eq!(read_object(&target.join(CONFIG_FILE)).unwrap()["crf"], json!(23));
         assert!(target.join(PRESETS_FILE).is_file());
-        assert_eq!(read_object(&t.path().join(V5_CONFIG_SUBDIR).join(CONFIG_FILE)).unwrap()["config_dir"], json!(target_value), "the default folder points to the new one");
+        assert_eq!(read_object(&t.path().join(CONFIG_SUBDIR).join(CONFIG_FILE)).unwrap()["config_dir"], json!(target_value), "the default folder points to the new one");
 
         // Saves now land in the new folder and keep its pointer.
         home.save_config(&cfg(json!({"crf": 24, "config_dir": ""}))).unwrap();
@@ -530,7 +603,7 @@ mod tests {
         // To Local AppData: no conflict, kind follows.
         let r = home.apply(CONFIG_DIR_APPDATA).unwrap();
         assert_eq!(r["data"]["kind"], json!("appdata"));
-        assert!(lad.path().join(V5_CONFIG_SUBDIR).join(CONFIG_FILE).is_file());
+        assert!(lad.path().join(CONFIG_SUBDIR).join(CONFIG_FILE).is_file());
         // Same place again: nothing to do.
         assert_eq!(home.probe(Some(CONFIG_DIR_APPDATA)).unwrap()["data"]["same"], json!(true));
     }

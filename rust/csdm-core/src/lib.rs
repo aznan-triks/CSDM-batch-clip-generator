@@ -17,6 +17,7 @@ pub mod registries;
 pub mod settings;
 pub mod theme_v12;
 pub mod ui_values;
+pub mod update;
 pub mod values;
 
 pub use error::CoreError;

@@ -12,7 +12,7 @@ use serde_json::{json, Map, Value};
 
 /// A card's rectangle and the two marks the grid library never knew about.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Slot { pub x: i32, pub y: i32, pub w: i32, pub h: i32, pub h_prev: Option<i32>, pub manual: bool }
+pub struct Slot { pub x: i32, pub y: i32, pub w: i32, pub h: i32, pub h_prev: Option<i32>, pub manual: bool, pub user_resized: bool }
 
 /// A card a tab declares: its id and whether it spans the full width (the mock's `wide`).
 #[derive(Clone, Copy, Debug)]
@@ -38,7 +38,7 @@ pub fn default_slots(declared: &[Decl], cols: i32) -> Vec<Slot> {
             cy += row_h;
             row_h = 0;
         }
-        out.push(Slot { x: cx, y: cy, w, h, h_prev: None, manual: false });
+        out.push(Slot { x: cx, y: cy, w, h, h_prev: None, manual: false, user_resized: false });
         cx += w;
         row_h = row_h.max(h);
         if cx >= columns {
@@ -70,7 +70,7 @@ pub fn migrate(raw: Option<&Value>, declared: &[Decl], cols: i32) -> TabLayout {
         let mut slot = match read {
             Some((x, y, w, h)) => {
                 let scale = if half_step { COLS_SCALE_V3_TO_V4 } else { 1 };
-                Slot { x: x as i32 * scale, y: y as i32, w: w as i32 * scale, h: h as i32, h_prev: None, manual: false }
+                Slot { x: x as i32 * scale, y: y as i32, w: w as i32 * scale, h: h as i32, h_prev: None, manual: false, user_resized: false }
             }
             None => reference_slots[k],
         };
@@ -79,7 +79,8 @@ pub fn migrate(raw: Option<&Value>, declared: &[Decl], cols: i32) -> TabLayout {
         slot.y = slot.y.max(0);
         slot.h = slot.h.max(1);
         slot.h_prev = s.and_then(|s| num(s, "hPrev")).filter(|h| *h >= 1).map(|h| h as i32);
-        slot.manual = s.and_then(|s| s.get("manual")) == Some(&Value::Bool(true));
+        slot.user_resized = s.and_then(|s| s.get("userResized")) == Some(&Value::Bool(true));
+        slot.manual = slot.user_resized || s.and_then(|s| s.get("manual")) == Some(&Value::Bool(true));
         slots.push((d.id.to_string(), slot));
     }
     let collapsed = tab
@@ -115,16 +116,18 @@ impl TabLayout {
 
     /// The grid model's items; an item's `id` is the card's index in `slots`.
     pub fn items(&self) -> Vec<Item> {
-        self.slots.iter().enumerate().map(|(k, (_, s))| Item { id: k as u32, x: s.x, y: s.y, w: s.w, h: s.h, manual: s.manual }).collect()
+        self.slots.iter().enumerate().map(|(k, (_, s))| Item { id: k as u32, x: s.x, y: s.y, w: s.w, h: s.h, manual: s.manual, user_resized: s.user_resized }).collect()
     }
 
-    /// Writes back the rectangles a finished gesture produced. `hPrev` survives; `manual`
-    /// is kept, and set on a card whose height the gesture changed by hand.
+    /// Writes back the rectangles a finished gesture produced. `hPrev` survives; `manual` and
+    /// `userResized` are kept, and set on a card whose height the gesture changed by hand.
     pub fn save_items(&mut self, items: &[Item], resized: Option<u32>) {
         for it in items {
             let (_, slot) = &mut self.slots[it.id as usize];
             let height_changed = resized == Some(it.id) && slot.h != it.h;
-            *slot = Slot { x: it.x, y: it.y, w: it.w, h: it.h, h_prev: slot.h_prev, manual: slot.manual || it.manual && height_changed };
+            let user_resized = slot.user_resized || (it.user_resized && height_changed);
+            let manual = slot.manual || (it.manual && height_changed) || user_resized;
+            *slot = Slot { x: it.x, y: it.y, w: it.w, h: it.h, h_prev: slot.h_prev, manual, user_resized };
         }
     }
 
@@ -135,6 +138,7 @@ impl TabLayout {
             let mut o = json!({"x": s.x, "y": s.y, "w": s.w, "h": s.h});
             if let Some(p) = s.h_prev { o["hPrev"] = json!(p); }
             if s.manual { o["manual"] = json!(true); }
+            if s.user_resized { o["userResized"] = json!(true); }
             cards.insert(id.clone(), o);
         }
         json!({"v": reference().ui_sections_version, "cards": cards, "collapsed": self.collapsed})
@@ -171,7 +175,7 @@ mod tests {
     fn missing_or_unreadable_slots_take_their_reference_place() {
         let raw = json!({"v": 5, "cards": {"a": {"x": 1, "y": 2, "w": 3, "h": 4}, "b": "junk"}});
         let l = migrate(Some(&raw), &CARDS, 15);
-        assert_eq!(l.slot("a"), Some(&Slot { x: 1, y: 2, w: 3, h: 4, h_prev: None, manual: false }));
+        assert_eq!(l.slot("a"), Some(&Slot { x: 1, y: 2, w: 3, h: 4, h_prev: None, manual: false, user_resized: false }));
         assert_eq!(l.slot("b").unwrap().x, default_slots(&CARDS, 15)[1].x);
         assert_eq!(l.slots.len(), CARDS.len());
     }
@@ -211,6 +215,7 @@ mod tests {
         let mut items = l.items();
         items[1].h += 3;
         items[1].manual = true;
+        items[1].user_resized = true;
         l.save_items(&items, Some(1));
         assert!(l.slot("b").unwrap().manual);
         assert_eq!(l.slot("a").unwrap().h_prev, Some(DEFAULT_CARD_ROWS), "hPrev survives a write-back");

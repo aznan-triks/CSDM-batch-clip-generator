@@ -126,9 +126,10 @@ fn main() -> eframe::Result {
     }
     let options = eframe::NativeOptions { viewport: vp, ..Default::default() };
     let (ready, shot) = (std::env::var(READY_ENV).ok(), std::env::var(SHOT_ENV).ok());
+    let update_rx = csdm_engine::update::spawn_check(env!("CARGO_PKG_VERSION"));
     eframe::run_native(
         APP_TITLE,
         options,
-        Box::new(move |cc| Ok(Box::new(App { shell: Shell::new(&cc.egui_ctx, Box::new(engine), ShellOptions::from_env()).with_tab(csdm_app::tabs::TabId::Settings, Box::new(csdm_app::tabs::settings::SettingsTab::new())).with_tab(csdm_app::tabs::TabId::Tags, Box::new(csdm_app::tabs::tags::TagsTab::new())).with_tab(csdm_app::tabs::TabId::Capture, Box::new(csdm_app::tabs::capture::CaptureTab::new())).with_tab(csdm_app::tabs::TabId::Editing, Box::new(csdm_app::tabs::editing::EditingTab::new())).with_tab(csdm_app::tabs::TabId::Video, Box::new(csdm_app::tabs::video::VideoTab::new())), frames: 0, ready, shot, shot_asked: false }))),
+        Box::new(move |cc| Ok(Box::new(App { shell: Shell::new(&cc.egui_ctx, Box::new(engine), ShellOptions::from_env()).with_update_check(update_rx).with_tab(csdm_app::tabs::TabId::Settings, Box::new(csdm_app::tabs::settings::SettingsTab::new())).with_tab(csdm_app::tabs::TabId::Tags, Box::new(csdm_app::tabs::tags::TagsTab::new())).with_tab(csdm_app::tabs::TabId::Capture, Box::new(csdm_app::tabs::capture::CaptureTab::new())).with_tab(csdm_app::tabs::TabId::Editing, Box::new(csdm_app::tabs::editing::EditingTab::new())).with_tab(csdm_app::tabs::TabId::Video, Box::new(csdm_app::tabs::video::VideoTab::new())), frames: 0, ready, shot, shot_asked: false }))),
     )
 }

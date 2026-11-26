@@ -8,6 +8,7 @@ use crate::Cx;
 use csdm_core::ui_values::{
     BRAND_CUT, BRAND_MARK, FONT_BRAND, FONT_BRAND_SUB, FONT_PILL, FONT_TAB, NAV_GAP, NAV_PAD_X, PILL_PAD, SPACING_BRAND, SPACING_BRAND_SUB, SPACING_TAB, TAB_ICON, TAB_ICON_GAP, TAB_ICON_REST_ALPHA, TAB_LIFT, TAB_OVERLAP, TAB_PAD_LEFT, TAB_PAD_RIGHT, TAB_SLANT,
 };
+use csdm_core::update::UpdateInfo;
 use eframe::egui::{self, Align2, Color32, Pos2, Rect, Sense, Shape, Stroke, StrokeKind, Vec2};
 use serde_json::Value;
 
@@ -18,8 +19,13 @@ const IND_HEIGHT: f32 = 2.0;
 const PLAY: f32 = 6.0;
 const NOTHING: &str = "--";
 
-/// Draws the band in `rect`; returns the tab the user picked, if any.
-pub fn show(ui: &mut egui::Ui, rect: Rect, cx: &Cx, link: &Link, active: TabId, editing_badge: bool) -> Option<TabId> {
+pub struct NavOut {
+    pub picked: Option<TabId>,
+    pub open_update: bool,
+}
+
+/// Draws the band in `rect`; returns the tab picked and whether the update pill was clicked.
+pub fn show(ui: &mut egui::Ui, rect: Rect, cx: &Cx, link: &Link, active: TabId, editing_badge: bool, update: Option<&UpdateInfo>) -> NavOut {
     let t = cx.theme;
     let p = ui.painter_at(rect);
     p.rect_filled(rect, 0.0, t.band);
@@ -44,6 +50,22 @@ pub fn show(ui: &mut egui::Ui, rect: Rect, cx: &Cx, link: &Link, active: TabId, 
         let label = format!("Version {v}");
         chip.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Label, true, &label));
         chip.on_hover_text(label);
+        x = r.right() + TAB_ICON_GAP;
+    }
+    let mut open_update = false;
+    if let Some(info) = update {
+        let r = pill(ui, &p, Pos2::new(x, cy), &info.version, Some("Update"), t);
+        p.rect_stroke(r, r.height() / 2.0, Stroke::new(1.0, t.accent), StrokeKind::Inside);
+        let resp = ui.interact(r, ui.scope_id().with("update-pill"), Sense::click());
+        let a11y = format!("Update available: {}", info.version);
+        resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, &a11y));
+        let resp = resp.on_hover_text(format!("Version {} is available on GitHub — click to open releases", info.version));
+        if resp.hovered() {
+            crate::cursor::snap_here(ui.ctx(), r);
+        }
+        if resp.clicked() {
+            open_update = true;
+        }
         x = r.right() + TAB_ICON_GAP;
     }
     x += NAV_GAP / 2.0;
@@ -108,7 +130,7 @@ pub fn show(ui: &mut egui::Ui, rect: Rect, cx: &Cx, link: &Link, active: TabId, 
         resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Label, true, &name));
         resp.on_hover_text(tip);
     }
-    picked
+    NavOut { picked, open_update }
 }
 
 fn pill_size(p: &egui::Painter, key: &str, value: &str) -> Vec2 {

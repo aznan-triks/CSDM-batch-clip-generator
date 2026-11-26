@@ -10,7 +10,7 @@ use crate::tabs::TabId;
 use crate::theme::Theme;
 use crate::Cx;
 use csdm_core::ui_values::{
-    ACTBAR_GAP, ACTBAR_PAD, BTN_CUT, BTN_ICON, BTN_ICON_GAP, BTN_PAD, BUTTON_HIT_S, C4_BEAT_S, C4_SIZE, DETONATION_S, FONT_BAND, FONT_BUTTON, KILL_RETRACT_PX, KILL_RETRACT_S, PROGRESS_BAR, RECOIL_PX, RETICLE_IN_S, RETICLE_IN_SIZE, RING_PERIOD_S, SHOT_S, SPACING_BUTTON,
+    ACTBAR_GAP, ACTBAR_PAD, BTN_CUT, BTN_ICON, BTN_ICON_GAP, BTN_PAD, BUTTON_HIT_S, C4_BEAT_S, C4_SIZE, DETONATION_S, FONT_BAND, FONT_BUTTON, KILL_RETRACT_PX, KILL_RETRACT_S, PROGRESS_BAR, RECOIL_PX, RETICLE_IN_S, RETICLE_IN_SIZE, RING_FRAME_MS, RING_PERIOD_S, SHOT_S, SPACING_BUTTON,
     WEAK_SHOT_FACTOR, WEAPON_SIZE, WEAPON_SVG_SCALE,
 };
 use csdm_engine::event::StateName;
@@ -236,7 +236,7 @@ impl ActionBar {
                 if cx.motion && b.enabled {
                     let phase = (cx.now / RING_PERIOD_S * std::f64::consts::TAU) as f32;
                     ring(p, r.expand(2.0), phase, t.lime_glow, t.accent);
-                    ui.ctx().request_repaint();
+                    ui.ctx().request_repaint_after(std::time::Duration::from_millis(RING_FRAME_MS));
                 }
                 gradient_pill(p, r, dim(t.blue2), dim(t.accent));
                 dim(Color32::WHITE)

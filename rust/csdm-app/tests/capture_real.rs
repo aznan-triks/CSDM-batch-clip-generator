@@ -121,6 +121,6 @@ fn capture_tab_on_the_real_engine() {
     until(&mut h, "the saved settings", |_| saved(&file, "steam_ids") == ids && saved(&file, "weapons").as_array().map(Vec::len) == Some(weapons));
 
     assert!(originals(src) == before, "the real 3.5 folder was not written");
-    assert!(originals(&old) == copies, "the 3.5 copy was not written");
+    assert!(originals(&old.join(csdm_core::values::PRE_V5_BACKUP_DIR)) == copies, "pre-v5 backup holds the unmodified 3.5 copy");
     println!("e2e ok: db connected, {} players, 1 toggled, {weapons} weapons, {rows} filter rows, {demos} demos listed, settings saved, 3.5 files unchanged", players.len());
 }

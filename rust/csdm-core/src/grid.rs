@@ -1,10 +1,13 @@
 //! Card grid model, toolkit-free (from the ticket 06 prototype, `proto/common/src/grid.rs`).
 //! Same rules as 3.5.x's react-grid-layout setup (`shell/SectionList.tsx`): vertical
-//! compaction, a moved or resized card pushes what it hits downwards, a resized card
-//! keeps its height (`manual`), every other card's height follows its content.
+//! compaction, a moved or resized card pushes what it hits downwards, a card whose height
+//! was dragged by the user (`user_resized`, or a legacy `manual` height far above content)
+//! keeps its height, every other card's height follows its content.
+
+use crate::ui_values::LEGACY_MANUAL_MARGIN_ROWS;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Item { pub id: u32, pub x: i32, pub y: i32, pub w: i32, pub h: i32, pub manual: bool }
+pub struct Item { pub id: u32, pub x: i32, pub y: i32, pub w: i32, pub h: i32, pub manual: bool, pub user_resized: bool }
 
 /// Pixel geometry of the grid: `cols` columns of `col` px, rows of `row` px, `gap` px between.
 #[derive(Clone, Copy, Debug)]
@@ -67,17 +70,27 @@ pub fn move_card(items: &mut [Item], id: u32, x: i32, y: i32, cols: i32) {
 
 pub fn resize_card(items: &mut [Item], id: u32, w: i32, h: i32, cols: i32) {
     let k = index(items, id);
-    items[k].w = w.clamp(1, cols - items[k].x);
-    items[k].h = h.max(1);
-    items[k].manual = true;
+    let next_w = w.clamp(1, cols - items[k].x);
+    let next_h = h.max(1);
+    let height_changed = next_h != items[k].h;
+    items[k].w = next_w;
+    items[k].h = next_h;
+    if height_changed {
+        items[k].manual = true;
+        items[k].user_resized = true;
+    }
     push_down(items, k);
     compact(items);
 }
 
-/// Height follows content unless the user sized the card. Returns true if anything changed.
+/// Height follows content unless explicitly sized by the user (`user_resized`), or a legacy
+/// `manual` height clearly exceeds content. Returns true if anything changed.
 pub fn fit(items: &mut [Item], id: u32, rows: i32) -> bool {
     let k = index(items, id);
-    if items[k].manual || items[k].h == rows { return false; }
+    let legacy_kept = items[k].manual && !items[k].user_resized && items[k].h > rows + LEGACY_MANUAL_MARGIN_ROWS;
+    if items[k].user_resized || legacy_kept || items[k].h == rows {
+        return false;
+    }
     items[k].h = rows;
     // Compaction only (as react-grid-layout on a height change): it walks cards top to
     // bottom, so their order never changes, whatever order the measurements arrive in.
@@ -92,7 +105,7 @@ mod tests {
 
     /// Starting layout for the prototypes: five cards, two columns of cards on a 12-column grid.
     pub fn demo_layout() -> Vec<Item> {
-        let it = |id, x, y, w| Item { id, x, y, w, h: 4, manual: false };
+        let it = |id, x, y, w| Item { id, x, y, w, h: 4, manual: false, user_resized: false };
         let mut v = vec![it(1, 0, 0, 5), it(2, 5, 0, 7), it(3, 0, 4, 5), it(4, 5, 4, 7), it(5, 0, 8, 12)];
         compact(&mut v);
         v
@@ -103,7 +116,7 @@ mod tests {
 
     #[test]
     fn compaction_closes_gaps() {
-        let mut v = vec![Item { id: 1, x: 0, y: 5, w: 4, h: 2, manual: false }];
+        let mut v = vec![Item { id: 1, x: 0, y: 5, w: 4, h: 2, manual: false, user_resized: false }];
         compact(&mut v);
         assert_eq!(get(&v, 1).y, 0);
     }
@@ -130,9 +143,21 @@ mod tests {
         let mut v = demo_layout();
         resize_card(&mut v, 2, 6, 9, C);
         assert!(get(&v, 2).manual);
+        assert!(get(&v, 2).user_resized);
         assert!(!fit(&mut v, 2, 3));
         assert_eq!(get(&v, 2).h, 9);
         no_overlap(&v);
+    }
+
+    #[test]
+    fn legacy_manual_height_fits_near_content_and_keeps_far_taller() {
+        let mut near = vec![Item { id: 1, x: 0, y: 0, w: 6, h: 8, manual: true, user_resized: false }];
+        assert!(fit(&mut near, 1, 6), "within LEGACY_MANUAL_MARGIN_ROWS fits to content");
+        assert_eq!(get(&near, 1).h, 6);
+
+        let mut tall = vec![Item { id: 1, x: 0, y: 0, w: 6, h: 12, manual: true, user_resized: false }];
+        assert!(!fit(&mut tall, 1, 6), "exceeding LEGACY_MANUAL_MARGIN_ROWS keeps saved height");
+        assert_eq!(get(&tall, 1).h, 12);
     }
 
     #[test]
@@ -165,6 +190,6 @@ mod tests {
         assert_eq!(g.rows_for(24.0), 1);
         assert_eq!(g.rows_for(60.0), 2); // 2 rows = 24 + 12 + 24 = 60 px
         assert_eq!(g.rows_for(61.0), 3);
-        assert_eq!(g.rect(&Item { id: 0, x: 1, y: 1, w: 2, h: 2, manual: false }), (112.0, 36.0, 212.0, 60.0));
+        assert_eq!(g.rect(&Item { id: 0, x: 1, y: 1, w: 2, h: 2, manual: false, user_resized: false }), (112.0, 36.0, 212.0, 60.0));
     }
 }

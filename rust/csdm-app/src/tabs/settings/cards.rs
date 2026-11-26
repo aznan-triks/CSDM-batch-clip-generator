@@ -222,7 +222,7 @@ pub fn config_folder(tab: &mut SettingsTab, ui: &mut egui::Ui, cx: &mut CardCx) 
             tab.ask(cx, Command::ProbeConfigDir { target: Some(value.clone()) }, Req::SwitchProbe { value, label });
         }
     }
-    hint(ui, t, "The four settings files (config, presets, players, assembly names) live in a \"CSDM-batch-clips-5_config\" subfolder of the selected location. Switching COPIES them there — the current files always stay in place.");
+    hint(ui, t, "The four settings files (config, presets, players, assembly names) live in a \"CSDM-batch-clip_config\" subfolder of the selected location. Switching COPIES them there — the current files always stay in place.");
     status_line(ui, &tab.folder_error, t.rose);
     if let Some(p) = tab.switch.clone() {
         switch_confirm(tab, ui, cx, p);

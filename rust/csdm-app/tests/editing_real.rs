@@ -90,7 +90,7 @@ fn editing_tab_on_the_real_engine() {
     let secrets = Secrets::default();
     let places = SearchPlaces { explicit_root: Some(profile.path().into()), exe_dir: None, local_app_data: Some(lad.path().into()) };
     let (home, opened) = SettingsHome::open(&places, secrets.clone()).unwrap();
-    assert!(matches!(opened, Opened::Imported { .. }), "first launch imports the 3.5 copy");
+    assert_eq!(opened, Opened::Existing, "opens shared CONFIG_SUBDIR copy without writing yet");
     let loaded = home.load_config().unwrap();
     let engine = RealEngine::start_with_home(loaded["data"].as_object().unwrap().clone(), secrets, None, Some(home));
     let dir = export.path().to_path_buf();

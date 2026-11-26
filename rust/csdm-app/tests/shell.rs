@@ -313,9 +313,17 @@ fn coquille_18_version_chip() {
 fn coquille_19_primary_ring_turns_only_with_motion() {
     let mut still = rig(&scenario(&[&boot(DEFAULTS)]));
     assert!(still.h.try_run().is_ok(), "no motion: the window comes to rest");
+    let still_delay = still.h.output().viewport_output[&egui::ViewportId::ROOT].repaint_delay;
+    assert_eq!(still_delay, std::time::Duration::MAX, "no motion schedules no repaint: {still_delay:?}");
     let mut moving = rig_with(&scenario(&[&boot(DEFAULTS)]), Motion::Full, None, false);
     moving.h.hover_at(egui::pos2(-10.0, -10.0));
-    assert!(moving.h.try_run().is_err(), "the ring keeps asking for frames");
+    let _ = moving.h.try_run();
+    moving.h.step();
+    let delay = moving.h.output().viewport_output[&egui::ViewportId::ROOT].repaint_delay;
+    assert!(
+        delay > std::time::Duration::ZERO && delay <= std::time::Duration::from_millis(csdm_core::ui_values::RING_FRAME_MS),
+        "the ring keeps asking for frames throttled to RING_FRAME_MS: {delay:?}"
+    );
 }
 
 #[test]
@@ -344,4 +352,40 @@ fn coquille_20_first_run_db_pending_then_hint() {
     let r = rig_with(&scenario(&[&failed]), Motion::Still, Some((TabId::Capture, Box::new(Cards::new(&[("b", "Presets", false)])))), false);
     r.h.get_by_label(csdm_app::widgets::DB_UNREACHABLE_HINT);
     assert_eq!(r.setting("pg_db").as_ref().and_then(Value::as_str), Some("csdm"));
+}
+
+#[test]
+fn coquille_21_update_pill_opens_release_and_ignores_none() {
+    let (tx_none, rx_none) = std::sync::mpsc::channel();
+    tx_none.send(None).unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let export_a = dir.path().to_path_buf();
+    let mut h_none = egui_kittest::Harness::builder().with_size(common::SIZE).build_eframe(move |cc| {
+        let engine = csdm_engine::scripted::ScriptedEngine::from_json(&scenario(&[&boot(DEFAULTS)])).unwrap();
+        csdm_app::Shell::new(&cc.egui_ctx, Box::new(engine), csdm_app::ShellOptions { motion: Motion::Still, export_dir: export_a }).with_update_check(rx_none)
+    });
+    h_none.run();
+    assert!(h_none.query_by_label("Update available: 5.9.0").is_none());
+
+    let (tx, rx) = std::sync::mpsc::channel();
+    tx.send(Some(csdm_core::update::UpdateInfo {
+        version: "5.9.0".into(),
+        url: "https://github.com/aznan-triks/CSDM-batch-clip-generator/releases/tag/v5.9.0".into(),
+    })).unwrap();
+    let opened = std::sync::Arc::new(std::sync::Mutex::new(Vec::<String>::new()));
+    let opened_log = opened.clone();
+    let export_b = dir.path().to_path_buf();
+    let mut h = egui_kittest::Harness::builder().with_size(common::SIZE).build_eframe(move |cc| {
+        let engine = csdm_engine::scripted::ScriptedEngine::from_json(&scenario(&[&boot(DEFAULTS)])).unwrap();
+        csdm_app::Shell::new(&cc.egui_ctx, Box::new(engine), csdm_app::ShellOptions { motion: Motion::Still, export_dir: export_b })
+            .with_update_check(rx)
+            .with_url_opener(move |_ctx, url| opened_log.lock().unwrap().push(url.to_string()))
+    });
+    h.run();
+    h.get_by_label("Update available: 5.9.0").click();
+    h.run();
+    assert_eq!(
+        *opened.lock().unwrap(),
+        vec!["https://github.com/aznan-triks/CSDM-batch-clip-generator/releases/tag/v5.9.0".to_string()]
+    );
 }

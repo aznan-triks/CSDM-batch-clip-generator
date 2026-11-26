@@ -76,10 +76,37 @@ fn grille_02_resize_by_the_corner_marks_the_height_manual() {
     r.drag(from, from + egui::vec2(-58.0, 3.0 * 34.0));
     let after = item(&r, "b");
     assert!(after.manual, "{after:?}");
+    assert!(after.user_resized, "{after:?}");
     assert_eq!(after.w, before.w - 1);
     assert!(after.h > before.h);
     assert_eq!(stored(&r)["capture"]["cards"]["b"]["manual"], json!(true));
+    assert_eq!(stored(&r)["capture"]["cards"]["b"]["userResized"], json!(true));
     no_overlap(&r);
+}
+
+#[test]
+fn grille_02b_legacy_manual_height_fits_near_content_and_keeps_far_taller() {
+    let base_h = item(&grid_rig(DEFAULTS), "a").h;
+    let near_h = base_h + 2;
+    let tall_h = base_h + csdm_core::ui_values::LEGACY_MANUAL_MARGIN_ROWS + 3;
+    let settings = json!({
+        "theme_bg": "white",
+        "theme_accent": "#2563EB",
+        "ui_sections": {
+            "capture": {
+                "v": 5,
+                "cards": {
+                    "a": {"x": 0, "y": 0, "w": 6, "h": near_h, "manual": true},
+                    "b": {"x": 6, "y": 0, "w": 6, "h": tall_h, "manual": true}
+                },
+                "collapsed": []
+            }
+        }
+    })
+    .to_string();
+    let r = grid_rig(&settings);
+    assert_eq!(item(&r, "a").h, base_h, "legacy manual height within margin fits to content");
+    assert_eq!(item(&r, "b").h, tall_h, "legacy manual height exceeding content by > margin stays locked");
 }
 
 #[test]

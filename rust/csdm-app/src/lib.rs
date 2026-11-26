@@ -32,11 +32,13 @@ use crate::theme::Theme;
 use csdm_core::ui_values::{
     EXPORT_DIR_ENV, EXPORT_SUBDIR, MOTION_ENV, NAV_HEIGHT, PANE_LEFT_MIN, PANE_RIGHT_MIN, SHELL_GAP, SHELL_PAD, SPLIT_PCT_DEFAULT, SPLIT_PCT_MAX, SPLIT_PCT_MIN,
 };
+use csdm_core::update::UpdateInfo;
 use csdm_engine::event::{Level, StateName};
 use csdm_engine::Engine;
 use eframe::egui::{self, Align2, Color32, Pos2, Rect, Sense, Stroke, Vec2};
 use serde_json::{json, Value};
 use std::path::PathBuf;
+use std::sync::mpsc::Receiver;
 
 pub const CORNER_MID: u8 = 13;
 pub const CORNER_SMALL: u8 = 10;
@@ -109,7 +111,13 @@ pub struct Shell {
     reduced: (bool, f64),
     /// `ui_font_family` last applied (T11).
     font_key: Option<String>,
+    /// D-0011: optional newer release discovered silently in the background.
+    pub update_available: Option<UpdateInfo>,
+    update_rx: Option<Receiver<Option<UpdateInfo>>>,
+    open_url: UrlOpener,
 }
+
+type UrlOpener = Box<dyn FnMut(&egui::Context, &str)>;
 
 fn text_setting(link: &Link, key: &str) -> String {
     link.get(key).and_then(Value::as_str).unwrap_or_default().to_string()
@@ -141,7 +149,22 @@ impl Shell {
             window_applied: false,
             reduced: (false, f64::NEG_INFINITY),
             font_key: None,
+            update_available: None,
+            update_rx: None,
+            open_url: Box::new(|ctx, url| ctx.open_url(egui::OpenUrl::new_tab(url))),
         }
+    }
+
+    /// Attaches a non-blocking update check receiver (D-0011).
+    pub fn with_update_check(mut self, rx: Receiver<Option<UpdateInfo>>) -> Self {
+        self.update_rx = Some(rx);
+        self
+    }
+
+    /// Overrides the URL opener (driven tests).
+    pub fn with_url_opener(mut self, f: impl FnMut(&egui::Context, &str) + 'static) -> Self {
+        self.open_url = Box::new(f);
+        self
     }
 
     /// Puts a tab's content in place (T7-T11).
@@ -335,9 +358,21 @@ impl Shell {
             }
         }
 
+        if let Some(rx) = &self.update_rx {
+            if let Ok(info) = rx.try_recv() {
+                self.update_available = info;
+                self.update_rx = None;
+            }
+        }
         self.console.show(ui, console, &cx, &mut self.link);
-        if let Some(t) = nav::show(ui, nav, &cx, &self.link, self.active, self.editing_badge) {
+        let nav_out = nav::show(ui, nav, &cx, &self.link, self.active, self.editing_badge, self.update_available.as_ref());
+        if let Some(t) = nav_out.picked {
             self.active = t;
+        }
+        if nav_out.open_update {
+            if let Some(info) = &self.update_available {
+                (self.open_url)(&ctx, &info.url);
+            }
         }
         let out = self.bar.show(ui, bar, &cx, &mut self.link, self.active);
         if out.go_capture {
