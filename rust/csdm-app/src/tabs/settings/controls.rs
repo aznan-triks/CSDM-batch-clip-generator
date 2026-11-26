@@ -79,10 +79,16 @@ fn label(ui: &mut egui::Ui, t: &Theme, text: &str) -> Response {
 
 /// A text setting's box. `hint_text` says what an empty value means. Returns whether it changed.
 pub fn text_box(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, hint_text: &str, tip_text: &str, password: bool) -> bool {
+    text_box_w(ui, cx, key, name, SETTINGS_LABEL_WIDTH, hint_text, tip_text, password)
+}
+
+/// `text_box` with a custom label column width (e.g. inside the compact PostgreSQL nodes).
+#[allow(clippy::too_many_arguments)]
+pub fn text_box_w(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, label_width: f32, hint_text: &str, tip_text: &str, password: bool) -> bool {
     let mut value = text_of(cx, key);
     let mut changed = false;
     ui.horizontal(|ui| {
-        let l = label(ui, cx.theme, name);
+        let l = label_w(ui, cx.theme, name, label_width);
         let edit = egui::TextEdit::singleline(&mut value).password(password).hint_text(hint_text).desired_width(SETTINGS_FIELD_WIDTH.min(ui.available_width()));
         let r = ui.add(edit).labelled_by(l.id);
         changed = r.changed();

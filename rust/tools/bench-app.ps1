@@ -55,8 +55,8 @@ try {
         $samples = Get-Counter '\GPU Engine(*)\Utilization Percentage' -SampleInterval 1 -MaxSamples $Seconds -ErrorAction SilentlyContinue
         $wall = $t.Elapsed.TotalMilliseconds
         $p.Refresh()
-        $gpu = @(foreach ($set in $samples) { $s = 0.0
-            foreach ($c in $set.CounterSamples) { if ($c.InstanceName -match "pid_$($p.Id)_") { $s += $c.CookedValue } }
+        $gpu = @(foreach ($sample in $samples) { $s = 0.0
+            foreach ($c in $sample.CounterSamples) { if ($c.InstanceName -match "pid_$($p.Id)_") { $s += $c.CookedValue } }
             $s })
         $g = $gpu | Measure-Object -Average -Maximum
         $out.cpu_pct_1core = [math]::Round(100 * ($p.TotalProcessorTime.TotalMilliseconds - $cpu0) / $wall, 2)

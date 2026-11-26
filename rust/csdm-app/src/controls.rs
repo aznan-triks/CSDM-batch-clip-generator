@@ -46,11 +46,12 @@ const NODE_ICON_RADIUS: f32 = 8.0;
 const NODE_ICON_TINT_PCT: f32 = 10.0;
 const NODE_GLYPH: f32 = 16.0;
 const NODE_GLYPH_STROKE: f32 = 1.6;
+const CYLINDER_CAP_SHARE: f32 = 6.0;
 /// `.st-link`: 3 px inset, dashes 5 on / 4 off, the arrow head.
 const LINK_INSET: f32 = 3.0;
 const LINK_DASH: [f32; 2] = [5.0, 4.0];
 const LINK_HEAD: f32 = 6.0;
-/// Width of the `.st-link` column (`grid-template-columns: … 28px …`).
+/// Width of the `.st-link` column (`grid-template-columns: â€¦ 28px â€¦`).
 pub const LINK_W: f32 = 28.0;
 
 /// Keys written by a control drawn this frame (the coverage guard reads them back).
@@ -185,7 +186,7 @@ pub fn switch(ui: &mut egui::Ui, t: &Theme, label: &str, on: bool) -> Response {
 
 /// `.st-node` (3.5.1 `SettingsCards.css`): a white sub-card with a hairline and a small shadow,
 /// its header an icon tile (`.st-ic`) and a bold title, `header` drawn at its right end.
-pub fn node<R>(ui: &mut egui::Ui, t: &Theme, icon: NodeIcon, title: &str, header: impl FnOnce(&mut egui::Ui), body: impl FnOnce(&mut egui::Ui) -> R) -> R {
+pub fn node<R>(ui: &mut egui::Ui, t: &Theme, icon: NodeIcon, title: &str, min_height: f32, header: impl FnOnce(&mut egui::Ui), body: impl FnOnce(&mut egui::Ui) -> R) -> R {
     egui::Frame::new()
         .fill(t.solid)
         .stroke(Stroke::new(1.0, t.hair))
@@ -193,21 +194,25 @@ pub fn node<R>(ui: &mut egui::Ui, t: &Theme, icon: NodeIcon, title: &str, header
         .inner_margin(egui::Margin { left: NODE_PAD[1], right: NODE_PAD[1], top: NODE_PAD[0], bottom: NODE_PAD[1] })
         .shadow(egui::epaint::Shadow { offset: NODE_SHADOW_OFFSET, blur: NODE_SHADOW_BLUR, spread: 0, color: Color32::from_black_alpha(NODE_SHADOW_ALPHA) })
         .show(ui, |ui| {
-            ui.set_width(ui.available_width());
-            ui.spacing_mut().item_spacing.y = NODE_GAP;
-            ui.horizontal(|ui| {
-                let (r, _) = ui.allocate_exact_size(Vec2::splat(NODE_ICON), Sense::hover());
-                let p = ui.painter();
-                p.rect_filled(r, NODE_ICON_RADIUS, mix(t.accent, t.solid, NODE_ICON_TINT_PCT));
-                let g = Rect::from_center_size(r.center(), Vec2::splat(NODE_GLYPH));
-                match icon {
-                    NodeIcon::Named(n) => crate::icons::paint(p, n, g, t.accent),
-                    NodeIcon::Cylinder => cylinder(p, g, t.accent),
-                }
-                ui.label(egui::RichText::new(title).font(semibold(FONT_NODE)).color(t.txt));
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), header);
-            });
-            body(ui)
+            ui.vertical(|ui| {
+                ui.set_width(ui.available_width());
+                ui.set_min_height((min_height - f32::from(NODE_PAD[0] + NODE_PAD[1])).max(0.0));
+                ui.spacing_mut().item_spacing.y = NODE_GAP;
+                ui.horizontal(|ui| {
+                    let (r, _) = ui.allocate_exact_size(Vec2::splat(NODE_ICON), Sense::hover());
+                    let p = ui.painter();
+                    p.rect_filled(r, NODE_ICON_RADIUS, mix(t.accent, t.solid, NODE_ICON_TINT_PCT));
+                    let g = Rect::from_center_size(r.center(), Vec2::splat(NODE_GLYPH));
+                    match icon {
+                        NodeIcon::Named(n) => crate::icons::paint(p, n, g, t.accent),
+                        NodeIcon::Cylinder => cylinder(p, g, t.accent),
+                    }
+                    ui.label(egui::RichText::new(title).font(semibold(FONT_NODE)).color(t.txt));
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), header);
+                });
+                body(ui)
+            })
+            .inner
         })
         .inner
 }
@@ -222,7 +227,7 @@ pub enum NodeIcon {
 fn cylinder(p: &egui::Painter, r: Rect, ink: Color32) {
     let s = Stroke::new(NODE_GLYPH_STROKE, ink);
     let rx = r.width() / 2.0 - NODE_GLYPH_STROKE;
-    let ry = r.height() / 6.0;
+    let ry = r.height() / CYLINDER_CAP_SHARE;
     let (top, bottom) = (r.top() + ry + NODE_GLYPH_STROKE, r.bottom() - ry - NODE_GLYPH_STROKE);
     for y in [top, (top + bottom) / 2.0, bottom] {
         p.add(egui::Shape::ellipse_stroke(pos2(r.center().x, y), vec2(rx, ry), s));

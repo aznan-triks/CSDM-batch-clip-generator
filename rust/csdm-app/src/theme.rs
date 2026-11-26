@@ -210,7 +210,7 @@ impl Theme {
         v.widgets.noninteractive.bg_stroke.color = self.hair;
         v.widgets.inactive.bg_fill = self.solid;
         v.widgets.inactive.weak_bg_fill = self.solid;
-        v.widgets.inactive.bg_stroke.color = self.hair;
+        v.widgets.inactive.bg_stroke = egui::Stroke::new(1.0, self.hair);
         v.widgets.hovered.bg_stroke.color = self.accent_alpha(QUARTER);
         v.widgets.active.bg_stroke.color = self.accent;
         v.text_cursor.stroke.color = self.accent;
@@ -249,9 +249,9 @@ mod tests {
 
     #[test]
     fn day_card_is_the_mock_white_not_grey() {
-        // rgba(255,255,255,.72) over #eaf0f6: what the V12 mock shows inside a card (#F9FBFD).
+        // rgba(255,255,255,.72) over #eaf0f6: what the V12 mock shows inside a card (#F9FBFC).
         let c = Theme::new("white", default_accent()).card;
-        assert_eq!(c.to_srgba_unmultiplied(), [0xF9, 0xFB, 0xFD, 0xFF]);
+        assert_eq!(c.to_srgba_unmultiplied(), [0xF9, 0xFB, 0xFC, 0xFF]);
     }
 
     #[test]
