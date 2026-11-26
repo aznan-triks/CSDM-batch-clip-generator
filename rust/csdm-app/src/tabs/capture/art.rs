@@ -87,7 +87,7 @@ fn rasterise(ctx: &egui::Context, name: &str, px: u32) -> Option<(TextureHandle,
     resvg::render(&tree, tiny_skia::Transform::from_scale(scale, scale), &mut pix.as_mut());
     // The pack carries no fill (3.5 paints it through a CSS mask): white with the shape's alpha.
     let mut data = pix.data().to_vec();
-    for c in data.chunks_exact_mut(RGBA) {
+    for c in data.as_chunks_mut::<RGBA>().0 {
         let a = c[ALPHA];
         c[0] = a;
         c[1] = a;

@@ -12,6 +12,9 @@ use eframe::egui;
 use serde_json::json;
 use std::collections::BTreeSet;
 
+const TEXT_MIN_W: f32 = 80.0;
+const TEXT_FRAME_ALLOWANCE: f32 = 14.0;
+
 /// Keys written by a control drawn this frame (the coverage guard reads them back).
 #[derive(Clone, Default)]
 pub struct Drawn(pub BTreeSet<String>);
@@ -70,6 +73,26 @@ pub fn codec(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, table: &
     mark(ui, key);
     if let Some(c) = picked {
         cx.link.set(cx.now, key, json!(c));
+    }
+}
+
+/// Single-line text setting bounded to the card's remaining width so it never stretches a narrow card.
+pub fn text_row(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, hint_text: &str, tip_text: &str) {
+    let mut value = text_of(cx, key);
+    let mut changed = false;
+    ui.horizontal(|ui| {
+        let l = ui.add_sized(
+            [SETTINGS_LABEL_WIDTH, ui.spacing().interact_size.y],
+            egui::Label::new(egui::RichText::new(name).font(regular(FONT_BODY)).color(cx.theme.muted)).truncate(),
+        );
+        let w = SETTINGS_FIELD_WIDTH.min((ui.available_width() - TEXT_FRAME_ALLOWANCE).max(TEXT_MIN_W));
+        let r = ui.add(egui::TextEdit::singleline(&mut value).font(mono(FONT_SMALL)).hint_text(hint_text).desired_width(w)).labelled_by(l.id);
+        changed = r.changed();
+        tip(ui, cx.theme, r, tip_text, false);
+    });
+    mark(ui, key);
+    if changed {
+        cx.link.set(cx.now, key, json!(value));
     }
 }
 

@@ -383,7 +383,7 @@ fn renders_the_tab_for_the_author() {
             let mut r = rig_sized(json!({"theme_bg": ground, "theme_accent": "blue", "assemble_after": true, "recsys": "HLAE"}), size, true);
             r.h.run();
             let img = r.h.render().expect("headless render");
-            img.save(out.join(format!("t10-video-{ground}-{name}.png"))).expect("save png");
+            img.save(out.join(format!("t10b-video-{ground}-{name}.png"))).expect("save png");
         }
     }
 }

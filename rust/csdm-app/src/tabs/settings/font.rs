@@ -46,7 +46,7 @@ fn listed(root: isize) -> Vec<(String, String)> {
         if rc != ERROR_SUCCESS {
             break;
         }
-        let wide: Vec<u16> = data[..data_len as usize].chunks_exact(2).map(|c| u16::from_le_bytes([c[0], c[1]])).take_while(|c| *c != 0).collect();
+        let wide: Vec<u16> = data[..data_len as usize].as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).take_while(|c| *c != 0).collect();
         out.push((String::from_utf16_lossy(&name[..name_len as usize]), String::from_utf16_lossy(&wide)));
     }
     // SAFETY: `key` was opened above.

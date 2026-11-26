@@ -8,7 +8,7 @@ use super::{is_hlae, Tables, VideoTab};
 use crate::grid::{CardCx, CardDecl};
 use crate::link::Link;
 use crate::paint::{mono, regular, semibold};
-use crate::tabs::settings::controls::{bool_of, hint, switch, text_box, text_of};
+use crate::tabs::settings::controls::{bool_of, hint, text_of};
 use csdm_core::batch::{FOV_NEUTRAL, RECSYS_CS, RECSYS_HLAE, SLOW_MOTION_NEUTRAL, WINDOW_MODE_ARGS};
 use csdm_core::ui_values::{FONT_BODY, FONT_SMALL};
 use eframe::egui::{self, vec2, Align, Layout, Rect, UiBuilder, Vec2};
@@ -49,6 +49,7 @@ const ASPECT_TERMS_MAX: i64 = 32;
 /// Room for a ‹ value › token beside the frame; the arrow between Final Assembly's stages; the
 /// FFmpeg flag boxes; the two-cell rows' shares.
 const TOKEN_BOX: [f32; 2] = [130.0, 26.0];
+const STAGE_LEFT_SHARE: f32 = 0.45;
 const STAGE_ARROW_H: f32 = 64.0;
 const FLAGS_W: f32 = 150.0;
 const CODEC_ROW: [f32; 2] = [0.42, 0.58];
@@ -127,13 +128,12 @@ pub fn decls(h: &Header) -> Vec<CardDecl> {
 // ---- small shared pieces ------------------------------------------------------------------------
 
 fn sw(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, tip_text: &str) {
-    switch(ui, cx, key, name, tip_text);
+    art::switch(ui, cx, key, name, tip_text);
     mark(ui, key);
 }
 
 fn text(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, hint_text: &str, tip_text: &str) {
-    text_box(ui, cx, key, name, hint_text, tip_text, false);
-    mark(ui, key);
+    kit::text_row(ui, cx, key, name, hint_text, tip_text);
 }
 
 /// One choice out of a fixed list in a segmented tray; a stored value outside it shows as the default.
@@ -145,9 +145,10 @@ fn choose(ui: &mut egui::Ui, cx: &mut CardCx, key: &str, name: &str, options: &[
     mark(ui, key);
 }
 
-/// Draws `add` inside `r`, laid out by `layout` (a token placed on a picture).
+/// Draws `add` inside `r`, laid out by `layout` without moving the parent `ui`'s cursor.
 fn place(ui: &mut egui::Ui, r: Rect, layout: Layout, add: impl FnOnce(&mut egui::Ui)) {
-    ui.scope_builder(UiBuilder::new().max_rect(r).layout(layout), add);
+    let mut child = ui.new_child(UiBuilder::new().max_rect(r).layout(layout));
+    add(&mut child);
 }
 
 /// Cells side by side, each its share of the width (3.5's two-cell lanes).
@@ -206,8 +207,9 @@ pub fn final_assembly(ui: &mut egui::Ui, cx: &mut CardCx) {
     let (assemble, concat) = (bool_of(cx, "assemble_after"), bool_of(cx, "concatenate_sequences"));
     let file = file_name(&text_of(cx, "assemble_output"));
     ui.horizontal_top(|ui| {
-        let w = (ui.available_width() - art::ARROW_SPACE) / 2.0;
-        ui.allocate_ui_with_layout(vec2(w, 0.0), Layout::top_down(Align::Min), |ui| {
+        let gap = ui.spacing().item_spacing.x;
+        let left_w = (ui.available_width() - art::ARROW_SPACE - gap * 2.0) * STAGE_LEFT_SHARE;
+        ui.allocate_ui_with_layout(vec2(left_w, 0.0), Layout::top_down(Align::Min), |ui| {
             subcard(ui, t, false, |ui| {
                 art::kick(ui, t, "Clips");
                 art::clips(ui, t, concat);
@@ -218,7 +220,10 @@ pub fn final_assembly(ui: &mut egui::Ui, cx: &mut CardCx) {
         ui.allocate_ui_with_layout(vec2(ui.available_width(), 0.0), Layout::top_down(Align::Min), |ui| {
             subcard(ui, t, !assemble, |ui| {
                 art::kick(ui, t, "Final video");
-                ui.add(egui::Label::new(egui::RichText::new(&file).font(mono(FONT_BODY)).strong().color(t.txt)).truncate());
+                ui.horizontal(|ui| {
+                    art::film_badge(ui, t, assemble);
+                    ui.add(egui::Label::new(egui::RichText::new(&file).font(mono(FONT_BODY)).strong().color(t.txt)).truncate());
+                });
                 sw(ui, cx, "assemble_after", "Assemble at the end", "Concatenates all captured clips into a single video file upon job completion");
             });
         });
@@ -272,7 +277,7 @@ pub fn resolution(tab: &VideoTab, ui: &mut egui::Ui, cx: &mut CardCx) {
             cx.link.set(cx.now, "height", json!(ph));
         }
         let frame = art::frame_stage(ui, t, w, h, if preset.is_empty() { "custom" } else { &preset }, &aspect(w, h));
-        let above = Rect::from_center_size(frame.center_top() - vec2(0.0, TOKEN_BOX[1] / 2.0), Vec2::from(TOKEN_BOX));
+        let above = Rect::from_center_size(frame.center_top() - vec2(0.0, 2.0), Vec2::from(TOKEN_BOX));
         place(ui, above, Layout::top_down(Align::Center), |ui| token(ui, cx, "width", "Width", 0, STEP_PIXELS, "", false, None));
         let beside = Rect::from_min_size(frame.right_center() + vec2(ui.spacing().item_spacing.x, -TOKEN_BOX[1] / 2.0), Vec2::from(TOKEN_BOX));
         place(ui, beside, Layout::left_to_right(Align::Center), |ui| token(ui, cx, "height", "Height", 0, STEP_PIXELS, "", false, None));

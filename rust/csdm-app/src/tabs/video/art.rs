@@ -9,15 +9,16 @@
 use super::kit::{fallback, mark, shown};
 use crate::grid::CardCx;
 use crate::paint::{mono, regular, semibold};
-use crate::tabs::settings::controls::{num_of, stored_number};
+use crate::tabs::settings::controls::{bool_of, num_of, stored_number};
 use crate::theme::Theme;
-use csdm_core::ui_values::{FONT_BODY, FONT_SMALL};
-use eframe::egui::{self, pos2, vec2, Align, Color32, Layout, Rect, Response, Sense, Stroke, StrokeKind, Ui, Vec2};
+use crate::widgets::tip;
+use csdm_core::ui_values::{FONT_BODY, FONT_SMALL, FONT_SWITCH, SWITCH_GAP, SWITCH_TRACK};
+use eframe::egui::{self, pos2, vec2, Align, Color32, Layout, Rect, Response, Sense, Stroke, StrokeKind, Ui, UiBuilder, Vec2};
 use serde_json::json;
 
 // Sub-card (`.vk-lane`, `.fa-stage`, `.fx-lane`).
 const SUB_RADIUS: u8 = 12;
-const SUB_PAD: i8 = 10;
+const SUB_PAD: i8 = 8;
 // Segmented tray (`.seg`).
 const TRAY_PAD: f32 = 3.0;
 const TRAY_RADIUS: f32 = 9.0;
@@ -31,7 +32,7 @@ const TOKEN_PAD: [f32; 2] = [6.0, 2.0];
 const TOKEN_RADIUS: f32 = 8.0;
 const FONT_TOKEN: f32 = 12.5;
 const TOKEN_MIN_CHARS: usize = 2;
-const ARROW_W: f32 = 12.0;
+const ARROW_W: f32 = 11.0;
 // Mini chips of a ruler or a shortcut row (`.fx-tick`, `QuickChips`).
 const TICK_PAD: [f32; 2] = [6.0, 2.0];
 const TICK_RADIUS: f32 = 7.0;
@@ -56,6 +57,8 @@ const SCREEN_H: f32 = 120.0;
 const RADAR_R: f32 = 11.0;
 const WALL: [f32; 2] = [52.0, 58.0];
 const MAN_R: f32 = 6.0;
+const MAN_TORSO_TOP: f32 = 1.5;
+const XRAY_RING_SCALE: f32 = 2.5;
 const ARROW_BOX: [f32; 2] = [22.0, 44.0];
 const ARROW_MAX: f32 = 16.0;
 const RAIL_H: f32 = 7.0;
@@ -73,13 +76,19 @@ const CHAIN_LANE_H: f32 = 40.0;
 const CHAIN_TITLE_W: f32 = 96.0;
 const CHAIN_LINK: f32 = 12.0;
 /// Width the Final Assembly arrow takes between its two stages (arrow and the gaps around it).
-pub const ARROW_SPACE: f32 = 40.0;
+pub const ARROW_SPACE: f32 = 24.0;
 const CLIP_RADIUS: f32 = 3.0;
 const CONE_STEPS: usize = 16;
 const FOV_DRAWN_MAX: f64 = 179.0;
 const EYE_R: f32 = 3.0;
 const ARROW_STROKE: f32 = 1.5;
 const THIRDS: f32 = 3.0;
+const HUD_PILL_ALPHA: f32 = 0.72;
+const HUD_PILL_PAD: [f32; 2] = [5.0, 1.0];
+const HUD_PILL_RADIUS: f32 = 4.0;
+const FILM_BADGE_SIZE: [f32; 2] = [14.0, 11.0];
+const FILM_BADGE_HOLE: f32 = 3.0;
+const TOKEN_TEXT_FUDGE: f32 = 6.0;
 
 /// The dark plate of the film strip and the FFmpeg line, in both grounds (3.5 `--ink`-like).
 fn ink(t: &Theme) -> Color32 {
@@ -120,12 +129,11 @@ pub fn head(ui: &mut Ui, t: &Theme, title: &str, right: impl FnOnce(&mut Ui)) {
 
 /// Which small picture a segmented option wears (CS2 window modes).
 #[derive(Clone, Copy)]
-pub enum SegMark { None, Dash, Full, Window, Borderless }
+pub enum SegMark { Dash, Full, Window, Borderless }
 
 fn paint_mark(p: &egui::Painter, r: Rect, mark: SegMark, c: Color32) {
     let s = Stroke::new(1.0, c);
     match mark {
-        SegMark::None => {}
         SegMark::Dash => {
             p.line_segment([pos2(r.left(), r.center().y), pos2(r.right(), r.center().y)], s);
         }
@@ -152,7 +160,7 @@ pub fn seg(ui: &mut Ui, t: &Theme, name: &str, options: &[&str], current: &str, 
         .enumerate()
         .map(|(i, o)| {
             let g = ui.painter().layout_no_wrap(o.to_string(), if *o == current { bold.clone() } else { font.clone() }, t.txt);
-            let m = if matches!(marks.get(i), Some(SegMark::None) | None) { 0.0 } else { MARK_W + MARK_GAP };
+            let m = if marks.get(i).is_some() { MARK_W + MARK_GAP } else { 0.0 };
             g.size() + Vec2::new(m, 0.0) + Vec2::from(OPT_PAD) * 2.0
         })
         .collect();
@@ -165,7 +173,7 @@ pub fn seg(ui: &mut Ui, t: &Theme, name: &str, options: &[&str], current: &str, 
     for (i, o) in options.iter().enumerate() {
         let r = Rect::from_min_size(pos2(x, tray.top() + TRAY_PAD), vec2(sizes[i].x, h));
         x += sizes[i].x;
-        let id = ui.id().with(("seg", name, i));
+        let id = ui.scope_id().with(("seg", name, i));
         let resp = ui.interact(r, id, Sense::click());
         let on = *o == current;
         resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, true, on, format!("{name}: {o}")));
@@ -174,7 +182,7 @@ pub fn seg(ui: &mut Ui, t: &Theme, name: &str, options: &[&str], current: &str, 
             ui.painter().rect(r, OPT_RADIUS, t.solid, Stroke::new(1.0, t.hair), StrokeKind::Inside);
         }
         let mut left = r.left() + OPT_PAD[0];
-        if let Some(m) = marks.get(i).copied().filter(|m| !matches!(m, SegMark::None)) {
+        if let Some(m) = marks.get(i).copied() {
             let mr = Rect::from_center_size(pos2(left + MARK_W / 2.0, r.center().y), Vec2::splat(MARK_W));
             paint_mark(ui.painter(), mr, m, color);
             left += MARK_W + MARK_GAP;
@@ -195,53 +203,60 @@ pub fn seg(ui: &mut Ui, t: &Theme, name: &str, options: &[&str], current: &str, 
 pub fn token(ui: &mut Ui, cx: &mut CardCx, key: &str, name: &str, decimals: i32, step: f64, unit: &str, alt: bool, by: Option<egui::Id>) {
     let t = cx.theme;
     let current = num_of(cx, key, fallback(key));
-    let id = ui.id().with(("token", key));
+    let id = ui.scope_id().with(("token", key));
     let mut text: String = ui.data(|d| d.get_temp(id)).unwrap_or_else(|| shown(current));
     let tone = if alt { t.emerald } else { t.accent };
     let font = semibold(FONT_TOKEN);
     let mut commit = None;
+    let shown_w = ui.painter().layout_no_wrap(format!("{text:0<w$}", w = TOKEN_MIN_CHARS), font.clone(), tone).size().x + TOKEN_TEXT_FUDGE;
+    let arrow_font = regular(FONT_TOKEN);
+    let arrow_w = |g: &str| ui.painter().layout_no_wrap(g.to_string(), arrow_font.clone(), t.faint).size().x;
+    let unit_w = if unit.is_empty() { 0.0 } else { ui.painter().layout_no_wrap(unit.to_string(), font.clone(), tone).size().x + 1.0 };
+    let gaps = if unit.is_empty() { 2.0 } else { 2.0 + 1.0 };
+    let total_w = TOKEN_PAD[0] * 2.0 + arrow_w("‹") + shown_w + unit_w + arrow_w("›") + gaps;
     let frame = egui::Frame::new()
         .fill(t.solid)
         .stroke(Stroke::new(1.0, tone.gamma_multiply(FAINT_ALPHA)))
         .corner_radius(egui::CornerRadius::same(TOKEN_RADIUS as u8))
         .inner_margin(egui::Margin::symmetric(TOKEN_PAD[0] as i8, TOKEN_PAD[1] as i8));
-    frame.show(ui, |ui| {
-        ui.spacing_mut().item_spacing.x = 1.0;
-        let arrow = |ui: &mut Ui, glyph: &str, what: &str| {
-            let r = ui.add(egui::Label::new(egui::RichText::new(glyph).font(regular(FONT_TOKEN)).color(t.faint)).sense(Sense::click()));
-            r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, format!("{what} {name}")));
-            r.on_hover_text(format!("{what} {name}")).clicked()
-        };
-        if arrow(ui, "‹", "Decrease") {
-            commit = Some(current - step);
-        }
-        let shown_w = ui.painter().layout_no_wrap(format!("{text:0<w$}", w = TOKEN_MIN_CHARS), font.clone(), tone).size().x;
-        let edit = egui::TextEdit::singleline(&mut text).frame(egui::Frame::NONE).font(font.clone()).text_color(tone).desired_width(shown_w).margin(egui::Margin::ZERO);
-        let r = ui.add(edit);
-        let (shown_text, enabled) = (text.clone(), ui.is_enabled());
-        r.widget_info(|| {
-            let mut i = egui::WidgetInfo::text_edit(enabled, &shown_text, &shown_text, "");
-            i.label = by.is_none().then(|| name.to_string());
-            i
+    ui.allocate_ui_with_layout(vec2(total_w, 0.0), Layout::left_to_right(Align::Center), |ui| {
+        frame.show(ui, |ui| {
+            ui.spacing_mut().item_spacing.x = 1.0;
+            let arrow = |ui: &mut Ui, glyph: &str, what: &str| {
+                let r = ui.add(egui::Label::new(egui::RichText::new(glyph).font(arrow_font.clone()).color(t.faint)).sense(Sense::click()));
+                r.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, format!("{what} {name}")));
+                r.on_hover_text(format!("{what} {name}")).clicked()
+            };
+            if arrow(ui, "‹", "Decrease") {
+                commit = Some(current - step);
+            }
+            let edit = egui::TextEdit::singleline(&mut text).frame(egui::Frame::NONE).font(font.clone()).text_color(tone).desired_width(shown_w).margin(egui::Margin::ZERO);
+            let r = ui.add(edit);
+            let (shown_text, enabled) = (text.clone(), ui.is_enabled());
+            r.widget_info(|| {
+                let mut i = egui::WidgetInfo::text_edit(enabled, &shown_text, &shown_text, "");
+                i.label = by.is_none().then(|| name.to_string());
+                i
+            });
+            let r = match by {
+                Some(id) => r.labelled_by(id),
+                None => r,
+            };
+            if r.changed() {
+                commit = text.trim().parse::<f64>().ok().filter(|v| v.is_finite());
+            }
+            if r.has_focus() || r.changed() {
+                ui.data_mut(|d| d.insert_temp(id, text.clone()));
+            } else {
+                ui.data_mut(|d| d.remove::<String>(id));
+            }
+            if !unit.is_empty() {
+                ui.label(egui::RichText::new(unit).font(font.clone()).color(tone));
+            }
+            if arrow(ui, "›", "Increase") {
+                commit = Some(current + step);
+            }
         });
-        let r = match by {
-            Some(id) => r.labelled_by(id),
-            None => r,
-        };
-        if r.changed() {
-            commit = text.trim().parse::<f64>().ok().filter(|v| v.is_finite());
-        }
-        if r.has_focus() || r.changed() {
-            ui.data_mut(|d| d.insert_temp(id, text.clone()));
-        } else {
-            ui.data_mut(|d| d.remove::<String>(id));
-        }
-        if !unit.is_empty() {
-            ui.label(egui::RichText::new(unit).font(font.clone()).color(tone));
-        }
-        if arrow(ui, "›", "Increase") {
-            commit = Some(current + step);
-        }
     });
     mark(ui, key);
     if let Some(v) = commit {
@@ -272,7 +287,7 @@ pub fn ticks(ui: &mut Ui, cx: &mut CardCx, key: &str, name: &str, values: &[f64]
         let r = Rect::from_min_size(pos2(x, row.top()), vec2(sizes[i].x, h));
         x += sizes[i].x + free;
         let on = *v == current;
-        let resp = ui.interact(r, ui.id().with(("tick", key, i)), Sense::click());
+        let resp = ui.interact(r, ui.scope_id().with(("tick", key, i)), Sense::click());
         resp.widget_info(|| egui::WidgetInfo::selected(egui::Role::Button, true, on, format!("{name} {}", shown(*v))));
         let (fill, edge, ink) = if on { (t.accent, t.accent, t.on_accent) } else { (t.solid, if resp.hovered() { t.accent } else { t.hair }, t.muted) };
         ui.painter().rect(r, TICK_RADIUS, fill, Stroke::new(1.0, edge), StrokeKind::Inside);
@@ -304,9 +319,45 @@ pub fn inline_text(ui: &mut Ui, cx: &mut CardCx, key: &str, name: &str, hint: &s
     }
 }
 
-/// Words placed with `ui.put`, readable by assistive tools (and tests).
+/// Compact switch matching 3.5's `ToggleSwitch` (`SWITCH_TRACK` + `FONT_SWITCH`).
+pub fn switch(ui: &mut Ui, cx: &mut CardCx, key: &str, name: &str, tip_text: &str) {
+    let on = bool_of(cx, key);
+    let t = cx.theme;
+    let galley = ui.painter().layout_no_wrap(name.to_string(), regular(FONT_SWITCH), t.txt);
+    let track = Vec2::from(SWITCH_TRACK);
+    let size = Vec2::new(track.x + SWITCH_GAP + galley.size().x, track.y.max(galley.size().y));
+    let (whole, r) = ui.allocate_exact_size(size, Sense::click());
+    r.widget_info(|| egui::WidgetInfo::selected(egui::Role::CheckBox, true, on, name));
+    let rect = Rect::from_min_size(pos2(whole.left(), whole.center().y - track.y / 2.0), track);
+    let radius = rect.height() / 2.0;
+    let (fill, edge) = if on { (t.emerald, t.emerald) } else { (t.surface2, if r.hovered() { t.accent } else { t.hair }) };
+    ui.painter().rect(rect, radius, fill, Stroke::new(1.0, edge), StrokeKind::Inside);
+    let x = if on { rect.right() - radius } else { rect.left() + radius };
+    ui.painter().circle_filled(pos2(x, rect.center().y), radius - 2.0, if on { t.on_accent } else { t.muted });
+    ui.painter().galley(pos2(rect.right() + SWITCH_GAP, whole.center().y - galley.size().y / 2.0), galley, t.txt);
+    let r = tip(ui, t, r, tip_text, cx.always_tips);
+    if r.clicked() {
+        cx.link.set(cx.now, key, json!(!on));
+    }
+}
+
+/// Words placed in `r` without moving the parent `ui`'s cursor, readable by assistive tools.
 fn words(ui: &mut Ui, r: Rect, text: &str, font: egui::FontId, color: Color32) {
-    ui.put(r, egui::Label::new(egui::RichText::new(text).font(font).color(color)).selectable(false));
+    let mut child = ui.new_child(UiBuilder::new().max_rect(r).layout(Layout::centered_and_justified(egui::Direction::LeftToRight)));
+    child.add(egui::Label::new(egui::RichText::new(text).font(font).color(color)).selectable(false));
+}
+
+fn words_left(ui: &mut Ui, r: Rect, text: &str, font: egui::FontId, color: Color32) {
+    let mut child = ui.new_child(UiBuilder::new().max_rect(r).layout(Layout::left_to_right(Align::Center)));
+    child.add(egui::Label::new(egui::RichText::new(text).font(font).color(color)).selectable(false));
+}
+
+/// Small film badge beside the final output file name.
+pub fn film_badge(ui: &mut Ui, t: &Theme, active: bool) {
+    let (r, _) = ui.allocate_exact_size(Vec2::from(FILM_BADGE_SIZE), Sense::hover());
+    let c = if active { t.accent } else { t.faint.gamma_multiply(GHOST_ALPHA) };
+    ui.painter().rect(r, 2.0, c.gamma_multiply(SOFT_ALPHA), Stroke::new(1.0, c), StrokeKind::Inside);
+    ui.painter().rect_filled(r.shrink(FILM_BADGE_HOLE), 1.0, c);
 }
 
 // ---- Final Assembly ------------------------------------------------------------------------------
@@ -424,7 +475,7 @@ pub fn cone(ui: &mut Ui, t: &Theme, fov: f64, words_text: &str) {
     ui.painter().add(egui::Shape::convex_polygon(pts, t.accent.gamma_multiply(SOFT_ALPHA * 2.0), Stroke::new(1.0, t.accent)));
     ui.painter().circle_filled(eye, EYE_R, t.accent);
     let at = Rect::from_min_max(pos2(eye.x + CONE_R + MARK_W, track.top()), track.max);
-    words(ui, at, words_text, regular(FONT_SMALL), t.muted);
+    words_left(ui, at, words_text, regular(FONT_SMALL), t.muted);
 }
 
 /// One match second (a quarter of the lane) against how long it lasts in the recording.
@@ -453,19 +504,32 @@ pub fn game_screen(ui: &mut Ui, t: &Theme, hud: bool, xray: bool, true_view: boo
     p.rect(s, OPT_RADIUS, t.surface2, Stroke::new(1.0, t.hair), StrokeKind::Inside);
     let lower = Rect::from_min_max(pos2(s.left() + 1.0, s.center().y), s.max - vec2(1.0, 1.0));
     p.rect_filled(lower, OPT_RADIUS, t.amber.gamma_multiply(SOFT_ALPHA / 2.0));
-    let hud_c = if hud { t.muted } else { t.faint.gamma_multiply(FAINT_ALPHA) };
-    p.circle_stroke(s.left_top() + vec2(RADAR_R + SUB_PAD as f32, RADAR_R + SUB_PAD as f32), RADAR_R, Stroke::new(1.0, hud_c));
-    p.text(s.left_bottom() + vec2(SUB_PAD as f32, -(SUB_PAD as f32)), egui::Align2::LEFT_BOTTOM, "100", mono(FONT_SMALL), hud_c);
-    p.text(s.right_bottom() - vec2(SUB_PAD as f32, SUB_PAD as f32), egui::Align2::RIGHT_BOTTOM, "30 / 90", mono(FONT_SMALL), hud_c);
+    let hud_c = if hud { on_ink(t) } else { on_ink(t).gamma_multiply(FAINT_ALPHA) };
+    let hud_bg = ink(t).gamma_multiply(if hud { HUD_PILL_ALPHA } else { SOFT_ALPHA });
+    p.circle_stroke(s.left_top() + vec2(RADAR_R + SUB_PAD as f32, RADAR_R + SUB_PAD as f32), RADAR_R, Stroke::new(1.0, if hud { t.muted } else { t.faint.gamma_multiply(FAINT_ALPHA) }));
+    for (text, pos, align) in [
+        ("100", s.left_bottom() + vec2(SUB_PAD as f32, -(SUB_PAD as f32)), egui::Align2::LEFT_BOTTOM),
+        ("30 / 90", s.right_bottom() - vec2(SUB_PAD as f32, SUB_PAD as f32), egui::Align2::RIGHT_BOTTOM),
+    ] {
+        let g = p.layout_no_wrap(text.to_string(), mono(FONT_SMALL), hud_c);
+        let pad = Vec2::from(HUD_PILL_PAD);
+        let size = g.size() + pad * 2.0;
+        let min = match align {
+            egui::Align2::LEFT_BOTTOM => pos2(pos.x, pos.y - size.y),
+            _ => pos2(pos.x - size.x, pos.y - size.y),
+        };
+        p.rect_filled(Rect::from_min_size(min, size), HUD_PILL_RADIUS, hud_bg);
+        p.galley(min + pad, g, hud_c);
+    }
     let wall = Rect::from_center_size(pos2(s.center().x, s.bottom() - WALL[1] / 2.0), Vec2::from(WALL));
     p.rect_filled(wall, 0.0, t.muted.gamma_multiply(RULE_ALPHA));
     let man = pos2(wall.center().x, wall.center().y + MAN_R);
     let man_c = if xray { t.amber } else { t.faint.gamma_multiply(FAINT_ALPHA) };
     p.circle_filled(man - vec2(0.0, MAN_R * 2.0), MAN_R / 2.0 + 1.0, man_c);
-    p.line_segment([man - vec2(0.0, MAN_R * 1.5), man + vec2(0.0, MAN_R)], Stroke::new(2.0, man_c));
+    p.line_segment([man - vec2(0.0, MAN_R * MAN_TORSO_TOP), man + vec2(0.0, MAN_R)], Stroke::new(2.0, man_c));
     p.line_segment([man - vec2(MAN_R, 0.0), man + vec2(MAN_R, -MAN_R)], Stroke::new(2.0, man_c));
     if xray {
-        p.circle_stroke(man - vec2(0.0, MAN_R / 2.0), MAN_R * 2.5, Stroke::new(ARROW_STROKE, t.amber));
+        p.circle_stroke(man - vec2(0.0, MAN_R / 2.0), MAN_R * XRAY_RING_SCALE, Stroke::new(ARROW_STROKE, t.amber));
     }
     if true_view {
         let badge = Rect::from_center_size(pos2(s.center().x, s.top() + SUB_PAD as f32), vec2(WALL[1] + SUB_PAD as f32, FONT_SMALL + 2.0));
